@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "7y348gVvJD8=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Bayra\\Documents\\GitHub\\mvc_api\\mvc_api\\mvc_api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Bayra\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.9\\microsoft.aspnetcore.openapi.9.0.9.nupkg.sha512",
+    "C:\\Users\\Bayra\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
