@@ -13,9 +13,11 @@ public class StudentController : ControllerBase
 
     // GET: api/Student/student
     [HttpGet("student")]
-    public Student GetStudent()
+    public ActionResult<Student> GetStudent()
     {
-        var student = new Student { Id = 1, Studentnummer = 25012345L, Naam = "Jelle" };
+        // Geef gewoon de eerste student terug
+        var student = Student.Students.FirstOrDefault();
+        if (student is null) return NotFound();
         return student;
     }
 
@@ -23,9 +25,9 @@ public class StudentController : ControllerBase
     [HttpGet("studentmetstatus")]
     public ActionResult<Student> GetStudentMetStatus()
     {
-        var student = new Student { Id = 1, Studentnummer = 25012345L, Naam = "Jelle" };
-        if (student.Naam == "Jelle")
-            return NotFound(); // laat zien hoe NotFound() werkt
+        // Zelfde idee, maar je kan hier bijv. de tweede student pakken
+        var student = Student.Students.Skip(1).FirstOrDefault();
+        if (student is null) return NotFound();
         return student;
     }
 
@@ -35,7 +37,7 @@ public class StudentController : ControllerBase
     {
         var student = Student.Students.FirstOrDefault(s => s.Id == id);
         if (student is null) return NotFound();
-        return student; // ActionResult<T> accepteert T of een IActionResult
+        return student;
     }
 
     // GET: api/Student/async/{id}
@@ -53,10 +55,9 @@ public class StudentController : ControllerBase
 public class Student
 {
     public int Id { get; set; }
-    public long Studentnummer { get; set; } // was string; past nu bij je 25012345L
+    public long Studentnummer { get; set; }
     public string Naam { get; set; }
 
-    // simpele in-memory "database" voor demo
     public static List<Student> Students { get; } = new()
     {
         new Student { Id = 1, Studentnummer = 25012345L, Naam = "Jelle" },
