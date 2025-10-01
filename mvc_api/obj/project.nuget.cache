@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "qDqDOp6jPMU=",
+  "dgSpecHash": "kjamXwb7m3M=",
   "success": true,
   "projectFilePath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Bayra\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\Bayra\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
-    "C:\\Users\\Bayra\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.9\\microsoft.aspnetcore.openapi.9.0.9.nupkg.sha512",
     "C:\\Users\\Bayra\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\8.0.0\\microsoft.bcl.asyncinterfaces.8.0.0.nupkg.sha512",
     "C:\\Users\\Bayra\\.nuget\\packages\\microsoft.bcl.cryptography\\9.0.4\\microsoft.bcl.cryptography.9.0.4.nupkg.sha512",
     "C:\\Users\\Bayra\\.nuget\\packages\\microsoft.data.sqlclient\\6.1.1\\microsoft.data.sqlclient.6.1.1.nupkg.sha512",
