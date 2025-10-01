@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Bayra\\Documents\\GitHub\\mvc_api\\mvc_api\\mvc_api.csproj": {}
+    "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Bayra\\Documents\\GitHub\\mvc_api\\mvc_api\\mvc_api.csproj": {
+    "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Bayra\\Documents\\GitHub\\mvc_api\\mvc_api\\mvc_api.csproj",
+        "projectUniqueName": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
         "projectName": "mvc_api",
-        "projectPath": "C:\\Users\\Bayra\\Documents\\GitHub\\mvc_api\\mvc_api\\mvc_api.csproj",
+        "projectPath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
         "packagesPath": "C:\\Users\\Bayra\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Bayra\\Documents\\GitHub\\mvc_api\\mvc_api\\obj\\",
+        "outputPath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Bayra\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -47,6 +47,10 @@
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.9, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[9.0.5, )"
             }
           },
           "imports": [
