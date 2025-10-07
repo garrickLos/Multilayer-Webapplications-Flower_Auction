@@ -1,36 +1,64 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using mvc_api.Data;
 
-namespace mvc_api.Controllers;
-
-// Haalt gebruikers op uit de nepdata.
-[Route("api/[controller]")]
-[ApiController]
-public class GebruikerController : ControllerBase
+namespace mvc_api.Controllers
 {
-    // GET: api/Gebruiker
-    [HttpGet]
-    public ActionResult<object> GetAll()
+    // Haalt gebruikers op uit de nepdata (DataStore).
+    [Route("api/[controller]")]
+    [ApiController]
+    public class GebruikerController : ControllerBase
     {
-        var data = DataStore.Gebruikers
-            .Select(g => new { g.GebruikerNr, g.Naam, g.Email, g.SOORT });
-        return Ok(data);
-    }
+        // GET: api/Gebruiker
+        // Lijst met basisinfo per gebruiker.
+        [HttpGet]
+        public ActionResult<object> GetAll()
+        {
+            var data = DataStore.Gebruikers
+                .Select(g => new
+                {
+                    g.GebruikerNr,
+                    g.Naam,
+                    g.Email,
+                    g.Soort
+                });
 
-    // GET: api/Gebruiker/2
-    [HttpGet("{id:int}")]
-    public ActionResult<object> GetById(int id)
-    {
-        var g = DataStore.Gebruikers.FirstOrDefault(x => x.GebruikerNr == id);
-        if (g is null) return NotFound();
+            return Ok(data);
+        }
 
-        var biedingen = DataStore.Biedingen
-            .Where(b => b.GebruikerNr == id)
-            .Select(b => new { b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr });
+        // GET: api/Gebruiker/{id}
+        // Eén gebruiker + zijn/haar biedingen.
+        [HttpGet("{id:int}")]
+        public ActionResult<object> GetById(int id)
+        {
+            var g = DataStore.Gebruikers.FirstOrDefault(x => x.GebruikerNr == id);
+            if (g is null)
+                return NotFound(new { Message = $"Geen gebruiker gevonden met ID {id}." });
 
-        return Ok(new {
-            g.GebruikerNr, g.Naam, g.Email, g.SOORT,
-            Biedingen = biedingen
-        });
+            var biedingen = DataStore.Biedingen
+                .Where(b => b.GebruikerNr == id)
+                .Select(b => new
+                {
+                    b.BiedNr,
+                    b.BedragPerFust,
+                    b.AantalStuks,
+                    b.VeilingNr
+                });
+
+            // Hier tonen we nu ALLE properties
+            return Ok(new
+            {
+                g.GebruikerNr,
+                g.Naam,
+                g.Email,
+                g.Soort,
+                g.LaatstIngelogd,
+                g.Kvk,
+                g.StraatAdres,
+                g.Postcode,
+                g.Assortiment,
+                g.PersoneelsNr,
+                Biedingen = biedingen
+            });
+        }
     }
 }
