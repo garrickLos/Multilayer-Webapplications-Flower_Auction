@@ -1,28 +1,27 @@
 using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using mvc_api.Data;
 
-//Dit hoort bij het maken van een database
-using var db = new FloraHolidayContext();
+var db = new FloraHolidayContext();
 
-//maken database:
+// Maken database:
 db.Database.EnsureCreated();
-Console.WriteLine("database hoort aangemaakt te zijn");
+Console.WriteLine("Database hoort aangemaakt te zijn");
 await db.SaveChangesAsync();
-
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

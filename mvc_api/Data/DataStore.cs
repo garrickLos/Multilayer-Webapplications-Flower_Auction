@@ -12,7 +12,7 @@ namespace mvc_api.Data
         [
             new Gebruiker
             {
-                GebruikerNr = 1,
+                GebruikerId = 1,
                 Naam = "Flora BV",
                 Email = "flora@example.nl",
                 Wachtwoord = "***",

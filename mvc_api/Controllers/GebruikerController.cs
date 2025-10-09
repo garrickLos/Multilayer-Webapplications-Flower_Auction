@@ -39,7 +39,7 @@ namespace mvc_api.Controllers
                 .Select(b => new
                 {
                     b.BiedNr,
-                    b.BedragPerFust,
+                    BedragPE = b.BedragPerFust,
                     b.AantalStuks,
                     b.VeilingNr
                 });

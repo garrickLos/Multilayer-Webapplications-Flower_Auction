@@ -87,3 +87,15 @@ C:\Users\Bayra\Documents\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\mv
 C:\Users\Bayra\Documents\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.pdb
 C:\Users\Bayra\Documents\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.genruntimeconfig.cache
 C:\Users\Bayra\Documents\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\ref\mvc_api.dll
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.csproj.AssemblyReference.cache
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\rpswa.dswa.cache.json
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.GeneratedMSBuildEditorConfig.editorconfig
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.AssemblyInfoInputs.cache
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.AssemblyInfo.cs
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.csproj.CoreCompileInputs.cache
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.MvcApplicationPartsAssemblyInfo.cs
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.MvcApplicationPartsAssemblyInfo.cache
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.sourcelink.json
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.dll
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\refint\mvc_api.dll
+C:\hhs school\jaar 2\Bitbusters-Multilayer-Webapplications-Groep-6\mvc_api\obj\Debug\net9.0\mvc_api.pdb
