@@ -1,41 +1,37 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace mvc_api.Models
 {
-    // Wordt gebruikt bij POST (aanmaken van een nieuw veilingproduct).
+    // Veilingproduct DTOs
     public record VeilingproductCreateDto(
-        string Naam,
-        DateTime GeplaatstDatum,
-        int Fust,
-        int Voorraad,
-        int Startprijs,
-        int CategorieNr
+        [property: Required, MaxLength(200)] string Naam,
+        [property: Required] DateTime GeplaatstDatum,
+        [property: Range(1, int.MaxValue)] int Fust,
+        [property: Range(0, int.MaxValue)] int Voorraad,
+        [property: Range(0, 999999999)] decimal Startprijs,
+        [property: Required] int CategorieNr
     );
 
-    // Wordt gebruikt bij PUT (volledige update van een bestaand veilingproduct).
     public record VeilingproductUpdateDto(
-        string Naam,
-        DateTime GeplaatstDatum,
-        int Fust,
-        int Voorraad,
-        int Startprijs,
-        int CategorieNr
+        [property: Required, MaxLength(200)] string Naam,
+        [property: Required] DateTime GeplaatstDatum,
+        [property: Range(1, int.MaxValue)] int Fust,
+        [property: Range(0, int.MaxValue)] int Voorraad,
+        [property: Range(0, 999999999)] decimal Startprijs,
+        [property: Required] int CategorieNr
     );
 
-    
-    // DTO's voor Bieding
-
-    // Wordt gebruikt bij POST (aanmaken van een nieuwe bieding).
+    // Bieding DTOs
     public record BiedingCreateDto(
-        decimal BedragPerFust,
-        int AantalStuks,
-        int GebruikerNr,
-        int VeilingNr
+        [property: Range(0, 999999999)] decimal BedragPerFust,
+        [property: Range(1, int.MaxValue)] int AantalStuks,
+        [property: Required] int GebruikerNr,
+        [property: Required] int VeilingNr
     );
 
-    // Wordt gebruikt bij PUT (aanpassen van een bestaande bieding).
     public record BiedingUpdateDto(
-        decimal BedragPerFust,
-        int AantalStuks
+        [property: Range(0, 999999999)] decimal BedragPerFust,
+        [property: Range(1, int.MaxValue)] int AantalStuks
     );
 }

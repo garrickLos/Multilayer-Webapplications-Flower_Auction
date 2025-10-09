@@ -1,55 +1,53 @@
+// cd mvc_api
+// dotnet ef migrations add InitialCreate
+// dotnet ef database update
+
+
+// "ConnectionStrings": {
+//     "Default": "Server=localhost;Database=BloemenVeiling;Trusted_Connection=True;TrustServerCertificate=True"
+// }
+
+
 using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
+using mvc_api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ------------------------------
-// SERVICES INSTELLEN
+// SERVICES
 // ------------------------------
-
-// Voeg controllers toe.
-// Een controller zorgt dat de API weet wat te doen bij een HTTP-verzoek.
 builder.Services.AddControllers();
-
-// Zet het systeem klaar om routes (URL-paden) te gebruiken.
-builder.Services.AddRouting();
-
-// Voeg Swagger toe.
-// Swagger maakt automatisch een overzicht van alle API-routes.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "API",
-        Version = "v1"
-    });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
 });
+
+// ORM / DbContext
+var connectionString = builder.Configuration.GetConnectionString("Default");
+
+// Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
+    // options.UseSqlServer(connectionString));
+
 
 var app = builder.Build();
 
-
 // ------------------------------
-// DE APP LATEN DRAAIEN
+// APP PIPELINE
 // ------------------------------
-
-// Toon Swagger alleen als we in de ontwikkelomgeving werken.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
-    });
+    app.UseSwaggerUI();
+    // Alleen in development automatisch migreren
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
-// Zorg dat de app altijd via HTTPS werkt (veiligere verbinding).
 app.UseHttpsRedirection();
-
-// Zet routering aan zodat verzoeken bij de juiste controller terechtkomen.
-app.UseRouting();
-
-// Koppel de controllers aan de routes.
 app.MapControllers();
-
-// Start de webapplicatie.
 app.Run();
