@@ -1,0 +1,36 @@
+header {
+    background-color: white;
+
+    min-height: 5%;
+    height: auto;
+}
+
+footer {
+    position: relative;
+
+    min-height: 250px;
+    height: auto;
+    
+    overflow: hidden;
+    z-index: 0;
+
+    background-color: #C0DDC5;
+
+    color: white;
+}
+
+.overlayBlock {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 75%;
+    
+    height: 100%;
+    
+    background-color: #3A4D41;
+
+    border-radius: 0 300px 0 0; 
+    
+    z-index: -1;
+}
