@@ -1,0 +1,73 @@
+body {
+    margin: 0;
+}
+
+.HoofschermContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+}
+
+.logoTitel, .veilingPLaatsen, .mijnVeilingenBekijken, .klantGegevens{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.floraLogo, .veilingPlaatsenLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
+    width: 50px;
+    height: auto;
+    display: block;
+    border: 1px solid white;
+    outline: 1px solid white;
+}
+        
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    color: green;
+}
+nav li {
+    cursor: pointer;
+}
+
+header {
+    background-color: white;
+
+    min-height: 5%;
+    height: auto;
+}
+
+footer {
+    position: relative;
+
+    min-height: 250px;
+    height: auto;
+    
+    overflow: hidden;
+    z-index: 0;
+
+    background-color: #C0DDC5;
+
+    color: white;
+}
+
+.overlayBlock {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 75%;
+    
+    height: 100%;
+    
+    background-color: #3A4D41;
+
+    border-radius: 0 300px 0 0; 
+    
+    z-index: -1;
+}
