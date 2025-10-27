@@ -2,120 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="/front-end/webpagina's/css/header_footer.css">
+    <link rel="stylesheet" href="/front-end/webpagina's/css/sellerScreenInfo.css">
     <title>Flora Holiday</title>
-</head>
-<style>
-    body {
-        margin: 0;
-    }
-    .HoofschermContainer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 20px;
-    }
-    .logoTitel, .mijnVeilingenBekijken, .klantGegevens{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .floraLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
-        width: 50px;
-        height: auto;
-        display: block;
-        border: 1px solid white;
-        outline: 1px solid white;
-    }
-    h1 {
-        font-size: 18px;
-        color: green;
-        margin: 0;
-    }
-    nav ul {
-        list-style: none;
-        display: flex;
-        gap: 20px;
-        margin: 0;
-        padding: 0;
-        color: green;
-    }
-
-    nav li {
-        cursor: pointer;
-    }
-    .kopje{
-        display: inline-flex;
-    }
-    .titelTekst {
-        color: saddlebrown;
-        font-size: 20px;
-    }
-
-    .kopje, nav ul{
-        list-style: none;
-        display: flex;
-        gap: 20px;
-        margin: 0;
-        padding: 0;
-        justify-content: space-between;
-    }
-    .productenPerDatum, .nieuweProductToevoegen, .winst{
-        background-color: blue;
-        color: white;
-    }
-    .rij{
-        display: flex;
-        justify-content: flex-start;
-        align-items: flex-start;
-        gap: 15px;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding-left: 10px;
-        padding-right: 10px;
-    }
-    .kolomLinks{
-        flex: 1;
-    }
-    .kolomRechts{
-        outline: 1px solid saddlebrown;
-        outline-offset: 0;
-        width: 60%;
-        padding-right: 30px;
-        display: flex;
-        flex-direction: column;
-    }
-    .fotoProduct{
-        width: 30%;
-        height: auto;
-    }
-    .linkerHelft, .rechterHelft{
-        display: flex;
-        justify-content: space-between;
-    }
-    .winst{
-        align-self: flex-end;
-    }
-    .productNaam, .productCategorie, .hoeveelheid, .plaats{
-        outline: 1px solid lightgray;
-        outline-offset: 0;
-    }
-    .footer{
-        background-image: url("/resources/pictures/webp/footer.webp");
-        height: 150px;
-        width: 100%;
-        background-size: cover;
-        background-position: center;
-        position: fixed;
-        justify-content: center;
-        align-items: center;
-        bottom: 0;
-        display: flex;
-    }
-    .overOns{
-        color: white;
-
-    }
-</style>
 </head>
 <body>
 <div class="HoofschermContainer">
@@ -127,7 +16,7 @@
     <nav>
         <ul>
             <div class="mijnVeilingenBekijken">
-                <img src="resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
+                <img src="/resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
                 <li>Mijn veilingen bekijken</li>
             </div>
             <div class="klantGegevens">
@@ -199,7 +88,8 @@
         </div>
     </div>
 </main>
-<footer class="footer">
-    <li class="overOns">Over ons</li>
+<footer>
+    footer item
+    <div class="overlayBlock"></div>
 </footer>
 </html>
