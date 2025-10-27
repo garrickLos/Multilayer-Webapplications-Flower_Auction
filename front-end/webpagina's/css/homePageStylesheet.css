@@ -69,6 +69,7 @@ main {
 }
 
 .veilingen-lijst {
+
     min-width: 60%;
     width: auto;
 
@@ -78,6 +79,8 @@ main {
     justify-content: center;
     align-items: center;
     text-align: center;
+
+    border-style: solid;
 }
 
 .sectie-titel {
@@ -99,11 +102,20 @@ main {
 
     margin: 2%;
 
+    border-style: solid;
+
     display: flex;
     flex-direction: column;
 }
 
 .sectie-items {
+
+    border-style: solid;
+
+    min-height: 45%;
+    height: auto;
+    max-height: 50%;
+
     margin: 0 1% 0 1%;
 
     justify-content: center;

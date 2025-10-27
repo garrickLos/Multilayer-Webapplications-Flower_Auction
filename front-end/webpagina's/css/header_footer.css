@@ -92,9 +92,14 @@ footer {
     flex: 0 0 80px;
 }
 
+.footer-image img {
+    width: auto;
+    height: 100%;
+}
+
 .text-column_one,
 .text-column_two {
-    flex: 1 1 auto; /* in deze volgorde: flex-grow: Meegroeit met de beschikbare ruimte., flex-shrink: Krimpt als er te weinig ruimte is. en flex-basis: Start met zijn standaardgrootte, tenzij anders gespecificeerd.*/
+    flex: 0 1 auto; /* in deze volgorde: flex-grow: Meegroeit met de beschikbare ruimte., flex-shrink: Krimpt als er te weinig ruimte is. en flex-basis: Start met zijn standaardgrootte, tenzij anders gespecificeerd.*/
 }
 
 .text-column_one{
