@@ -71,3 +71,32 @@ footer {
     
     z-index: -1;
 }
+
+.footerText {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* vertical centrering */
+    gap: 20px; /* ruimte tussen kolommen */
+    padding: 30px; /* binnenruimte in de footer */
+    position: relative; /* nodig om boven de absolute background te kunnen liggen */
+    z-index: 1; /* til de tekst boven de .overlayBlock (die z-index: -1 heeft) */
+    color: white;
+}
+
+/* child rules zodat de footer-items netjes naast elkaar staan */
+.footer-image {
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+    flex: 0 0 80px;
+}
+
+.text-column_one,
+.text-column_two {
+    flex: 1 1 auto; /* in deze volgorde: flex-grow: Meegroeit met de beschikbare ruimte., flex-shrink: Krimpt als er te weinig ruimte is. en flex-basis: Start met zijn standaardgrootte, tenzij anders gespecificeerd.*/
+}
+
+.text-column_one{
+    margin: 0 0 0 25%;
+}
