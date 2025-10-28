@@ -1,22 +1,36 @@
 import React from "react"
 
-/** ===== Fallback table cell formatter ===== */
-function formatCell(v: unknown) {
+/** interne helpers (geen exports) */
+function safeStringify(value: unknown): string {
+    const seen = new WeakSet<object>()
+    try {
+        return JSON.stringify(value, (_k, v) => {
+            if (typeof v === "object" && v !== null) { if (seen.has(v)) return "[Circular]"; seen.add(v) }
+            if (typeof v === "bigint") return v.toString()
+            return v
+        })
+    } catch {
+        try { return String(value) } catch { return "" }
+    }
+}
+function formatCell(v: unknown): string {
     if (v == null) return ""
     if (typeof v === "string") return v
     if (typeof v === "number" || typeof v === "boolean") return String(v)
-    try { return JSON.stringify(v) } catch { return String(v) }
+    return safeStringify(v)
 }
 
-/** ===== Generic array -> table renderer ===== */
-export function renderArrayAsTable(rows: Record<string, unknown>[]) {
+/** ===== Components (alleen components exporteren i.v.m. Fast Refresh) ===== */
+export type ArrayTableProps<T extends Record<string, unknown>> = {
+    rows: ReadonlyArray<T>
+    maxColumns?: number
+}
+export function ArrayTable<T extends Record<string, unknown>>({ rows, maxColumns = 10 }: ArrayTableProps<T>) {
     if (!rows.length) return <div className="text-center text-muted py-5">Geen resultaten.</div>
-    const cols = Array.from(
-        rows.reduce<Set<string>>((acc, r) => {
-            Object.keys(r).forEach((k) => acc.add(k))
-            return acc
-        }, new Set())
-    ).slice(0, 10)
+
+    const colSet = new Set<keyof T & string>()
+    for (const r of rows) for (const k of Object.keys(r) as Array<keyof T & string>) colSet.add(k)
+    const cols = Array.from(colSet).sort().slice(0, maxColumns)
 
     return (
         <div className="table-responsive">
@@ -27,7 +41,10 @@ export function renderArrayAsTable(rows: Record<string, unknown>[]) {
                 <tbody>
                 {rows.map((r, i) => (
                     <tr key={i}>
-                        {cols.map((c) => (<td key={c}>{formatCell((r as any)[c])}</td>))}
+                        {cols.map((c) => {
+                            const val = r[c]
+                            return <td key={c} title={typeof val === "string" ? val : undefined}>{formatCell(val)}</td>
+                        })}
                     </tr>
                 ))}
                 </tbody>
@@ -36,7 +53,6 @@ export function renderArrayAsTable(rows: Record<string, unknown>[]) {
     )
 }
 
-/** ===== Small UI bits ===== */
 export const SpinnerInline = ({ text = "Laden…" }: { text?: string }) => (
     <span className="d-inline-flex align-items-center gap-2 text-muted" aria-live="polite">
     <span className="spinner-border spinner-border-sm" role="status" aria-label="laden" />
@@ -51,21 +67,10 @@ export const Empty = ({ label = "Geen resultaten." }: { label?: string }) => (
     </div>
 )
 
-export const FilterChip = ({
-                               children,
-                               onClear,
-                           }: {
-    children: React.ReactNode
-    onClear: () => void
-}) => (
+export type FilterChipProps = { children: React.ReactNode; onClear: () => void }
+export const FilterChip = ({ children, onClear }: FilterChipProps) => (
     <span className="badge rounded-pill bg-light text-body-secondary border d-inline-flex align-items-center gap-2">
     <span className="ps-2">{children}</span>
-    <button
-        className="btn btn-sm btn-link text-body-secondary py-0 pe-2"
-        onClick={onClear}
-        aria-label="Verwijder filter"
-    >
-      ×
-    </button>
+    <button type="button" className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">×</button>
   </span>
 )
