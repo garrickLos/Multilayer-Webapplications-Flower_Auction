@@ -1,6 +1,5 @@
 import React from "react"
 
-/** interne helpers (geen exports) */
 function safeStringify(value: unknown): string {
     const seen = new WeakSet<object>()
     try {
@@ -9,9 +8,7 @@ function safeStringify(value: unknown): string {
             if (typeof v === "bigint") return v.toString()
             return v
         })
-    } catch {
-        try { return String(value) } catch { return "" }
-    }
+    } catch { try { return String(value) } catch { return "" } }
 }
 function formatCell(v: unknown): string {
     if (v == null) return ""
@@ -20,14 +17,13 @@ function formatCell(v: unknown): string {
     return safeStringify(v)
 }
 
-/** ===== Components (alleen components exporteren i.v.m. Fast Refresh) ===== */
 export type ArrayTableProps<T extends Record<string, unknown>> = {
     rows: ReadonlyArray<T>
     maxColumns?: number
+    onRowClick?: (row: T) => void   // <-- toegevoegd
 }
-export function ArrayTable<T extends Record<string, unknown>>({ rows, maxColumns = 10 }: ArrayTableProps<T>) {
+export function ArrayTable<T extends Record<string, unknown>>({ rows, maxColumns = 10, onRowClick }: ArrayTableProps<T>) {
     if (!rows.length) return <div className="text-center text-muted py-5">Geen resultaten.</div>
-
     const colSet = new Set<keyof T & string>()
     for (const r of rows) for (const k of Object.keys(r) as Array<keyof T & string>) colSet.add(k)
     const cols = Array.from(colSet).sort().slice(0, maxColumns)
@@ -40,7 +36,10 @@ export function ArrayTable<T extends Record<string, unknown>>({ rows, maxColumns
                 </thead>
                 <tbody>
                 {rows.map((r, i) => (
-                    <tr key={i}>
+                    <tr key={i}
+                        onClick={onRowClick ? () => onRowClick(r) : undefined}
+                        style={onRowClick ? { cursor: "pointer" } : undefined}
+                        role={onRowClick ? "button" : undefined}>
                         {cols.map((c) => {
                             const val = r[c]
                             return <td key={c} title={typeof val === "string" ? val : undefined}>{formatCell(val)}</td>
