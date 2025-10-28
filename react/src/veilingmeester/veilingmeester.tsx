@@ -22,6 +22,10 @@ function fmtDate(iso?: string) {
     return Number.isNaN(d.getTime()) ? "" : d.toLocaleString()
 }
 
+/** API types voor naam-resolutie */
+type ApiGebruiker = { gebruikerNr?: number; naam?: string } & Record<string, unknown>
+type ApiVeiling = { veilingNr?: number; product?: { naam?: string } | null } & Record<string, unknown>
+
 export default function Veilingmeester() {
     const [tab, setTab] = useState<"biedingen" | "producten">("biedingen")
 
@@ -119,6 +123,105 @@ export default function Veilingmeester() {
     useEffect(() => { setBPage(1) }, [gebruikerNr, veilingNr, bPageSize])
     useEffect(() => { setVPage(1) }, [q, categorieNr, vPageSize])
 
+    // ===== Naam-resolutie (gebruikers en veilingen)
+    const [gebruikersMap, setGebruikersMap] = useState<Record<number, string>>({})
+    const [veilingenMap, setVeilingenMap] = useState<Record<number, string>>({})
+
+    // Verzamel unieke ids uit biedingen (null-safe) en uit filters (indien ingevuld)
+    const pendingGebruikers = useMemo(() => {
+        const set = new Set<number>()
+        for (const r of filteredBiedingen) {
+            const n = (r["gebruikerNr"] as number | undefined)
+            if (typeof n === "number") set.add(n)
+        }
+        const f = toIntOrUndefined(gebruikerNr)
+        if (typeof f === "number") set.add(f)
+        // filter al bekende
+        return [...set].filter((id) => gebruikersMap[id] === undefined)
+    }, [filteredBiedingen, gebruikerNr, gebruikersMap])
+
+    const pendingVeilingen = useMemo(() => {
+        const set = new Set<number>()
+        for (const r of filteredBiedingen) {
+            const n = (r["veilingNr"] as number | undefined)
+            if (typeof n === "number") set.add(n)
+        }
+        const f = toIntOrUndefined(veilingNr)
+        if (typeof f === "number") set.add(f)
+        return [...set].filter((id) => veilingenMap[id] === undefined)
+    }, [filteredBiedingen, veilingNr, veilingenMap])
+
+    // Batch-resolve onbekende gebruikers/veilingen zodra nodig
+    useEffect(() => {
+        if (!pendingGebruikers.length) return
+        let cancelled = false
+        ;(async () => {
+            try {
+                const entries = await Promise.all(
+                    pendingGebruikers.map(async (id) => {
+                        try {
+                            const g = await apiGet<ApiGebruiker>(`/api/Gebruiker/${id}`)
+                            const naam = (typeof g?.naam === "string" && g.naam.trim()) ? g.naam : `Gebruiker ${id}`
+                            return [id, naam] as const
+                        } catch { return [id, `Gebruiker ${id}`] as const }
+                    })
+                )
+                if (!cancelled) {
+                    setGebruikersMap((prev) => {
+                        const next = { ...prev }
+                        for (const [id, naam] of entries) if (next[id] === undefined) next[id] = naam
+                        return next
+                    })
+                }
+            } catch { /* noop */ }
+        })()
+        return () => { cancelled = true }
+    }, [pendingGebruikers])
+
+    useEffect(() => {
+        if (!pendingVeilingen.length) return
+        let cancelled = false
+        ;(async () => {
+            try {
+                const entries = await Promise.all(
+                    pendingVeilingen.map(async (nr) => {
+                        try {
+                            const v = await apiGet<ApiVeiling>(`/api/Veiling/${nr}`)
+                            const label = v?.product?.naam ? `${v.veilingNr ?? nr} – ${v.product.naam}` : `Veiling ${nr}`
+                            return [nr, label] as const
+                        } catch { return [nr, `Veiling ${nr}`] as const }
+                    })
+                )
+                if (!cancelled) {
+                    setVeilingenMap((prev) => {
+                        const next = { ...prev }
+                        for (const [nr, label] of entries) if (next[nr] === undefined) next[nr] = label
+                        return next
+                    })
+                }
+            } catch { /* noop */ }
+        })()
+        return () => { cancelled = true }
+    }, [pendingVeilingen])
+
+    // Biedingen → platte rijen met namen
+    const bidRowsWithNames = useMemo(() => {
+        const items = filteredBiedingen
+        return items.map((r) => {
+            const gNr = r["gebruikerNr"] as number | undefined
+            const vNr = r["veilingNr"] as number | undefined
+            const gebruiker = (gNr != null && gebruikersMap[gNr] != null) ? gebruikersMap[gNr] : (gNr ?? "")
+            const veiling = (vNr != null && veilingenMap[vNr] != null) ? veilingenMap[vNr] : (vNr ?? "")
+            return {
+                biedNr: r["biedNr"] ?? "",
+                gebruiker,
+                veiling,
+                bedragPerFust: r["bedragPerFust"] ?? "",
+                aantalStuks: r["aantalStuks"] ?? "",
+            } as Record<string, unknown>
+        })
+    }, [filteredBiedingen, gebruikersMap, veilingenMap])
+
     // Producten → platte rijen voor ArrayTable (null-safe)
     const productRows = useMemo(() => {
         const items = Array.isArray(producten) ? producten : []
@@ -177,15 +280,21 @@ export default function Veilingmeester() {
                             <div className="col-12 col-md-3">
                                 <label className="form-label mb-1">Gebruiker</label>
                                 <input className="form-control form-control-sm" type="number" value={String(gebruikerNr)} onChange={(e) => setGebruikerNr(e.target.value === "" ? "" : Number(e.target.value))} placeholder="ID" inputMode="numeric" />
+                                {toIntOrUndefined(gebruikerNr) != null && gebruikersMap[toIntOrUndefined(gebruikerNr)!] && (
+                                    <div className="form-text">→ {gebruikersMap[toIntOrUndefined(gebruikerNr)!]}</div>
+                                )}
                             </div>
                             <div className="col-12 col-md-3">
                                 <label className="form-label mb-1">Veiling</label>
                                 <input className="form-control form-control-sm" type="number" value={String(veilingNr)} onChange={(e) => setVeilingNr(e.target.value === "" ? "" : Number(e.target.value))} placeholder="ID" inputMode="numeric" />
+                                {toIntOrUndefined(veilingNr) != null && veilingenMap[toIntOrUndefined(veilingNr)!] && (
+                                    <div className="form-text">→ {veilingenMap[toIntOrUndefined(veilingNr)!]}</div>
+                                )}
                             </div>
                             <div className="col-12 col-md-3">
                                 <label className="form-label mb-1">Per pagina</label>
                                 <select className="form-select form-select-sm" value={bPageSize} onChange={(e) => { setBPageSize(Number(e.target.value)); setBPage(1) }}>
-                                    {[2, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                                    {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
                                 </select>
                             </div>
                             <div className="col-12 col-md-3 text-md-end">
@@ -200,8 +309,21 @@ export default function Veilingmeester() {
                                 <div className="form-text">Zoekt in alle kolommen; hoofdletters en volgorde maken niet uit.</div>
                             </div>
                             <div className="col d-flex align-items-end justify-content-md-end">
-                                <span className="text-muted small">{bLoading ? <SpinnerInline /> : `Totaal: ${filteredBiedingen.length}`}</span>
+                                <span className="text-muted small">{bLoading ? <SpinnerInline /> : `Totaal: ${bidRowsWithNames.length}`}</span>
                             </div>
+                        </div>
+
+                        <div className="d-flex flex-wrap gap-2 mb-2">
+                            {gebruikerNr !== "" && (
+                                <FilterChip onClear={() => setGebruikerNr("")}>
+                                    Gebruiker: {gebruikersMap[toIntOrUndefined(gebruikerNr)!] ?? gebruikerNr}
+                                </FilterChip>
+                            )}
+                            {veilingNr !== "" && (
+                                <FilterChip onClear={() => setVeilingNr("")}>
+                                    Veiling: {veilingenMap[toIntOrUndefined(veilingNr)!] ?? veilingNr}
+                                </FilterChip>
+                            )}
                         </div>
 
                         {bError && <div className="alert alert-danger" role="alert">{bError}</div>}
@@ -214,7 +336,7 @@ export default function Veilingmeester() {
                                         <div className="placeholder col-8" />
                                     </div>
                                 ) : (
-                                    filteredBiedingen.length > 0 ? <ArrayTable rows={filteredBiedingen} /> : <Empty />
+                                    bidRowsWithNames.length > 0 ? <ArrayTable rows={bidRowsWithNames} /> : <Empty />
                                 )}
 
                                 <div className="d-flex justify-content-between align-items-center mt-3">
