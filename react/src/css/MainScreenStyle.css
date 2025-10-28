@@ -1,0 +1,168 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #fff;
+    color: #333;
+}
+
+/* banner */
+.banner {
+    background-color: #388547;
+    color: #fff;
+    height: 23vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 0 0 1% 1%;
+}
+
+.banner-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Banner heading style */
+.banner h1 {
+    font-size: 25px;
+    margin: 0;
+}
+
+.banner .registratie-knoppen {
+    display: inline-flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 10px;
+}
+
+.registratie-knoppen button {
+    background-color: transparent;
+    color: white;
+    border-style: unset;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.registratie-knoppen button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* SECTION TITLES */
+section {
+    display: block;
+    padding: 30px 40px;
+
+    height: 500px;
+}
+
+section h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+/* SLIDER */
+.slider-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 0 2% 0 2%;
+
+    width: 95%;
+    height: 100%;
+}
+
+.slider {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    gap: 20px;
+    padding: 10px 0;
+
+    min-height: 95%;
+    height: auto;
+}
+
+.slider::-webkit-scrollbar {
+    display: none;
+}
+
+.card {
+    min-width: 300px;
+    width: auto;
+
+    flex: 0 0 250px;
+    
+    background-color: #fff;
+    border: 1px solid #ccc;
+    scroll-snap-align: start;
+    text-align: center;
+    padding: 10px;
+}
+.card img {
+    min-width: 95%;
+    width: auto;
+
+    min-height: 200px;
+    height: auto;
+    background-color: #ddd;
+}
+.card h3 {
+    font-size: 14px;
+    margin: 10px 0;
+}
+.card p {
+    font-size: 12px;
+    color: #666;
+}
+.arrow {
+    background-color: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.slider {
+    width: 100%;
+
+    display: flex; /* Zorgt voor items op één rij */
+    overflow-x: auto; /* Belangrijk: Maakt de horizontale scroll mogelijk */
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.slider::-webkit-scrollbar {
+    display: none; /* Verbergt de scrollbar */
+}
+
+.deal-item {
+    min-width: 250px;
+    width: auto;
+    
+    min-height: 400px;
+    height: auto;
+
+    flex: 1 0 250px;
+
+    background-color: #b7dcf9;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    scroll-snap-align: start; /* Zorgt ervoor dat de scroll stopt op een item */
+}
+
+.deal-item button {
+    margin: 10px;
+    padding: 8px 16px;
+    background-color: black;
+    color: white;
+    border: none;
+    cursor: pointer;
+}

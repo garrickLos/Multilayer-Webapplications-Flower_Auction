@@ -1,0 +1,109 @@
+body {
+    margin: 0;
+}
+
+.HoofschermContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+}
+
+.logoTitel, .veilingPLaatsen, .mijnVeilingenBekijken, .klantGegevens{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.floraLogo, .veilingPlaatsenLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
+    width: 50px;
+    height: auto;
+    display: block;
+    border: 1px solid white;
+    outline: 1px solid white;
+}
+        
+nav ul, .navbar {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    color: green;
+
+    text-decoration: none;
+}
+nav li {
+    cursor: pointer;
+}
+
+header {
+    background-color: white;
+
+    min-height: 5%;
+    height: auto;
+}
+
+footer {
+    position: relative;
+
+    min-height: 250px;
+    height: auto;
+    
+    overflow: hidden;
+    z-index: 0;
+
+    background-color: #C0DDC5;
+
+    color: white;
+}
+
+.overlayBlock {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 75%;
+    
+    height: 100%;
+    
+    background-color: #3A4D41;
+
+    border-radius: 0 300px 0 0; 
+    
+    z-index: -1;
+}
+
+.footerText {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* vertical centrering */
+    gap: 20px; /* ruimte tussen kolommen */
+    padding: 30px; /* binnenruimte in de footer */
+    position: relative; /* nodig om boven de absolute background te kunnen liggen */
+    z-index: 1; /* til de tekst boven de .overlayBlock (die z-index: -1 heeft) */
+    color: white;
+}
+
+/* child rules zodat de footer-items netjes naast elkaar staan */
+.footer-image {
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+    flex: 0 0 80px;
+}
+
+.footer-image img {
+    width: auto;
+    height: 100%;
+}
+
+.text-column_one,
+.text-column_two {
+    flex: 0 1 auto; /* in deze volgorde: flex-grow: Meegroeit met de beschikbare ruimte., flex-shrink: Krimpt als er te weinig ruimte is. en flex-basis: Start met zijn standaardgrootte, tenzij anders gespecificeerd.*/
+}
+
+.text-column_one{
+    margin: 0 0 0 25%;
+}
