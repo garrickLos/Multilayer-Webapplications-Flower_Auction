@@ -1,0 +1,20 @@
+[
+  {
+    "productName": "Tulp",
+    "Amount": 30,
+    "ProductCategory": "Bloem",
+    "Place": "Leiden"
+  },
+  {
+    "productName": "Aardappel",
+    "Amount": 100,
+    "ProductCategory": "Groente",
+    "Place": "Amsterdam"
+  },
+  {
+    "productName": "Kers",
+    "Amount": 50,
+    "ProductCategory": "Fruit",
+    "Place": "Utrecht"
+  }
+]
