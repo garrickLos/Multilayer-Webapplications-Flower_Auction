@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
+import {useCallback, useEffect, useId, useMemo, useRef, useState} from "react"
 
 /**
  * ===== Types =====
@@ -27,28 +27,17 @@ type Categorie = {
  * ===== Small helpers =====
  */
 const isNonEmpty = (v: unknown) => v !== undefined && v !== null && v !== ""
+const isAbort = (e: unknown) => (e instanceof DOMException && e.name === "AbortError") || (typeof e === "object" && e !== null && (e as any).name === "AbortError")
 
-function getCategorieId(c: Categorie): number | undefined {
-    return (typeof c.id === "number" ? c.id : undefined) ??
-        (typeof c.categorieNr === "number" ? c.categorieNr : undefined)
-}
-function getCategorieNaam(c: Categorie): string {
-    return (typeof c.naam === "string" ? c.naam : undefined) ?? (typeof c.name === "string" ? c.name : "")
-}
-
-function toIntOrUndefined(v: MaybeNumber): number | undefined {
+const toIntOrUndefined = (v: MaybeNumber): number | undefined => {
     const n = Number(v)
     return Number.isFinite(n) && v !== "" ? n : undefined
 }
 
-function firstExistingKey<T extends object>(rows: T[], candidates: string[]): string | undefined {
-    // Prefer a key that actually has a non-empty value in at least one row
-    return candidates.find(
-        (k) => rows.some((r) => Object.prototype.hasOwnProperty.call(r, k) && isNonEmpty((r as any)[k]))
-    )
-}
+const getCategorieId = (c: Categorie): number | undefined => (typeof c.id === "number" ? c.id : undefined) ?? (typeof c.categorieNr === "number" ? c.categorieNr : undefined)
+const getCategorieNaam = (c: Categorie): string => (typeof c.naam === "string" ? c.naam : undefined) ?? (typeof c.name === "string" ? c.name : "")
 
-// Maak van een rij 1 doorzoekbare string (alle velden, nested & arrays)
+// Maak van een rij 1 doorzoekbare string (alle waarden, nested & arrays)
 function rowToSearchString(row: Record<string, unknown>): string {
     const out: string[] = []
     const stack: any[] = [row]
@@ -57,22 +46,15 @@ function rowToSearchString(row: Record<string, unknown>): string {
     while (stack.length && guard++ < 5000) {
         const cur = stack.pop()
         if (cur == null) continue
-        if (typeof cur === "string" || typeof cur === "number" || typeof cur === "boolean") {
-            out.push(String(cur))
-        } else if (Array.isArray(cur)) {
-            for (const v of cur) stack.push(v)
-        } else if (typeof cur === "object") {
+        if (typeof cur === "string" || typeof cur === "number" || typeof cur === "boolean") out.push(String(cur))
+        else if (Array.isArray(cur)) for (const v of cur) stack.push(v)
+        else if (typeof cur === "object") {
             if (seen.has(cur)) continue
             seen.add(cur)
             for (const v of Object.values(cur)) stack.push(v)
         }
     }
     return out.join(" ").toLowerCase()
-}
-
-function matchesTokens(hay: string, q: string): boolean {
-    const tokens = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-    return tokens.every((t) => hay.includes(t))
 }
 
 /**
@@ -96,37 +78,104 @@ function useDebounced<T>(value: T, delay = 300): T {
 /**
  * ===== API helper (robust JSON parsing) =====
  */
-async function apiGet<T>(
-    path: string,
-    params: Record<string, string | number | undefined> = {},
-    signal?: AbortSignal
-): Promise<T> {
+async function apiGet<T>(path: string, params: Record<string, string | number | undefined> = {}, signal?: AbortSignal): Promise<T> {
     const usp = new URLSearchParams()
-    Object.entries(params).forEach(([k, v]) => {
-        if (isNonEmpty(v)) usp.set(k, String(v))
-    })
+    for (const [k, v] of Object.entries(params)) if (isNonEmpty(v)) usp.set(k, String(v))
     const url = `${path}${usp.toString() ? `?${usp.toString()}` : ""}`
     const res = await fetch(url, { signal })
-
     if (!res.ok) {
-        // Try get body text for debugging
         let text = ""
-        try {
-            text = await res.text()
-        } catch {}
+        try { text = await res.text() } catch {}
         throw new Error(`GET ${path} failed: ${res.status} ${res.statusText} ${text}`)
     }
-
-    const contentLength = res.headers.get("content-length")
     const ct = (res.headers.get("content-type") || "").toLowerCase()
-
-    if (contentLength === "0") return ([] as unknown) as T
-    if (ct.includes("application/json")) {
-        return (await res.json()) as T
-    }
-    // Fallback to text -> JSON if possible, else empty array
+    if (res.headers.get("content-length") === "0") return ([] as unknown) as T
+    if (ct.includes("application/json")) return (await res.json()) as T
     const text = await res.text()
     return (text ? JSON.parse(text) : ([] as unknown)) as T
+}
+
+/**
+ * ===== Generic paged fetch hook =====
+ * Encapsuleert: aborts, loading, error, data, lastCount, page reset bij filterwijziging.
+ */
+function usePagedList<T>({
+                             path,
+                             params,
+                             page,
+                             pageSize,
+                             resetDeps,
+                         }: {
+    path: string
+    params: Record<string, string | number | undefined>
+    page: number
+    pageSize: number
+    resetDeps: any[] // deps die page -> 1 moeten zetten
+}) {
+    const [data, setData] = useState<T[] | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [lastCount, setLastCount] = useState(0)
+    const abortRef = useRef<AbortController | null>(null)
+
+    // Reset pagina naar 1 als filters wijzigen
+    useEffect(() => {
+        // alleen als we niet al op 1 staan
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const fetcher = useCallback(async () => {
+        abortRef.current?.abort()
+        const ctl = new AbortController()
+        abortRef.current = ctl
+        setLoading(true)
+        setError(null)
+        try {
+            const data = await apiGet<T[]>(path, { ...params, page, pageSize }, ctl.signal)
+            const arr = Array.isArray(data) ? data : []
+            setLastCount(arr.length)
+            setData(arr)
+        } catch (e) {
+            if (!isAbort(e)) setError(e instanceof Error ? e.message : "Er is iets misgegaan.")
+        } finally {
+            setLoading(false)
+        }
+    }, [path, JSON.stringify(params), page, pageSize])
+
+    useEffect(() => { fetcher() }, [fetcher])
+
+    useEffect(() => () => abortRef.current?.abort(), [])
+
+    return { data, loading, error, lastCount }
+}
+
+/**
+ * ===== Fallback table =====
+ */
+function formatCell(v: unknown) {
+    if (v == null) return ""
+    if (typeof v === "string") return v
+    if (typeof v === "number" || typeof v === "boolean") return String(v)
+    try { return JSON.stringify(v) } catch { return String(v) }
+}
+
+function renderArrayAsTable(rows: Record<string, unknown>[]) {
+    if (!rows.length) return <div className="text-center text-muted py-5">Geen resultaten.</div>
+    const cols = Array.from(rows.reduce<Set<string>>((acc, r) => { Object.keys(r).forEach((k) => acc.add(k)); return acc }, new Set())).slice(0, 10)
+    return (
+        <div className="table-responsive">
+            <table className="table table-sm table-striped table-hover align-middle">
+                <thead className="table-light sticky-top" style={{ top: 0, zIndex: 1 }}>
+                <tr>{cols.map((c) => <th key={c} className="text-nowrap">{c}</th>)}</tr>
+                </thead>
+                <tbody>
+                {rows.map((r, i) => (
+                    <tr key={i}>{cols.map((c) => (<td key={c}>{formatCell((r as any)[c])}</td>))}</tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    )
 }
 
 /**
@@ -141,103 +190,28 @@ export default function Veilingmeester() {
     const [veilingNr, setVeilingNr] = useState<MaybeNumber>("")
     const [bPage, setBPage] = useState(1)
     const [bPageSize, setBPageSize] = useState(10)
-    const [biedingen, setBiedingen] = useState<Bieding[] | null>(null)
-    const [bLoading, setBLoading] = useState(false)
-    const [bError, setBError] = useState<string | null>(null)
-    const [bLastCount, setBLastCount] = useState(0)
-    // Biedingen: client-side zoekbalk
     const [bQuery, setBQuery] = useState("")
     const dBQuery = useDebounced(bQuery)
 
     // Producten filters + paging
-    const [q, setQ] = useState<string>("")
+    const [q, setQ] = useState("")
     const [categorieNr, setCategorieNr] = useState<MaybeNumber>("")
     const [vPage, setVPage] = useState(1)
     const [vPageSize, setVPageSize] = useState(10)
-    const [producten, setProducten] = useState<Veilingproduct[] | null>(null)
-    const [vLoading, setVLoading] = useState(false)
-    const [vError, setVError] = useState<string | null>(null)
-    const [vLastCount, setVLastCount] = useState(0)
 
-    // Categorieën
-    const [catsMap, setCatsMap] = useState<Record<number, string>>({})
-    const [catsLoading, setCatsLoading] = useState(false)
-    const [catsError, setCatsError] = useState<string | null>(null)
-
-    // Abort
-    const biedingAbort = useRef<AbortController | null>(null)
-    const productAbort = useRef<AbortController | null>(null)
-    const catsAbort = useRef<AbortController | null>(null)
-
-    const isAbort = (e: unknown) =>
-        (e instanceof DOMException && e.name === "AbortError") ||
-        (typeof e === "object" && e !== null && (e as any).name === "AbortError")
-
-    // Debounced filters (avoid hammering API)
+    // Debounced filters (server-side)
     const dGebruikerNr = useDebounced(gebruikerNr)
     const dVeilingNr = useDebounced(veilingNr)
     const dQ = useDebounced(q)
     const dCategorieNr = useDebounced(categorieNr)
 
-    // Fetchers (useCallback for stable identities)
-    const fetchBiedingen = useCallback(async () => {
-        biedingAbort.current?.abort()
-        const ctl = new AbortController()
-        biedingAbort.current = ctl
-        setBLoading(true)
-        setBError(null)
-        try {
-            const data = await apiGet<Bieding[]>(
-                "/api/Bieding",
-                {
-                    gebruikerNr: toIntOrUndefined(dGebruikerNr),
-                    veilingNr: toIntOrUndefined(dVeilingNr),
-                    page: bPage,
-                    pageSize: bPageSize,
-                },
-                ctl.signal
-            )
-            const arr = Array.isArray(data) ? data : []
-            setBLastCount(arr.length)
-            if (arr.length === 0 && bPage > 1) {
-                // Try one step back to avoid dead-end page
-                setBPage((p) => Math.max(1, p - 1))
-                return
-            }
-            setBiedingen(arr)
-        } catch (e) {
-            if (!isAbort(e)) setBError(e instanceof Error ? e.message : "Er is iets misgegaan.")
-        } finally {
-            setBLoading(false)
-        }
-    }, [dGebruikerNr, dVeilingNr, bPage, bPageSize])
+    // Categorieën
+    const [catsMap, setCatsMap] = useState<Record<number, string>>({})
+    const [catsLoading, setCatsLoading] = useState(false)
+    const [catsError, setCatsError] = useState<string | null>(null)
+    const catsAbort = useRef<AbortController | null>(null)
 
-    const fetchProducten = useCallback(async () => {
-        productAbort.current?.abort()
-        const ctl = new AbortController()
-        productAbort.current = ctl
-        setVLoading(true)
-        setVError(null)
-        try {
-            const data = await apiGet<Veilingproduct[]>(
-                "/api/Veilingproduct",
-                { q: dQ || undefined, categorieNr: toIntOrUndefined(dCategorieNr), page: vPage, pageSize: vPageSize },
-                ctl.signal
-            )
-            const arr = Array.isArray(data) ? data : []
-            setVLastCount(arr.length)
-            if (arr.length === 0 && vPage > 1) {
-                setVPage((p) => Math.max(1, p - 1))
-                return
-            }
-            setProducten(arr)
-        } catch (e) {
-            if (!isAbort(e)) setVError(e instanceof Error ? e.message : "Er is iets misgegaan.")
-        } finally {
-            setVLoading(false)
-        }
-    }, [dQ, dCategorieNr, vPage, vPageSize])
-
+    // Fetch categorieën
     const fetchCategorieen = useCallback(async () => {
         catsAbort.current?.abort()
         const ctl = new AbortController()
@@ -259,37 +233,35 @@ export default function Veilingmeester() {
         }
     }, [])
 
-    // Initial
     useEffect(() => {
         fetchCategorieen()
-        return () => {
-            catsAbort.current?.abort()
-            biedingAbort.current?.abort()
-            productAbort.current?.abort()
-        }
+        return () => catsAbort.current?.abort()
     }, [fetchCategorieen])
 
-    // Reset page naar 1 bij filter changes
-    useEffect(() => {
-        setBPage(1)
-    }, [dGebruikerNr, dVeilingNr, bPageSize])
+    // Reset page bij filter changes
+    useEffect(() => { setBPage(1) }, [dGebruikerNr, dVeilingNr, bPageSize])
+    useEffect(() => { setVPage(1) }, [dQ, dCategorieNr, vPageSize])
 
-    useEffect(() => {
-        setVPage(1)
-    }, [dQ, dCategorieNr, vPageSize])
+    // Server data hooks
+    const { data: biedingen = [], loading: bLoading, error: bError, lastCount: bLastCount } = usePagedList<Bieding>({
+        path: "/api/Bieding",
+        params: { gebruikerNr: toIntOrUndefined(dGebruikerNr), veilingNr: toIntOrUndefined(dVeilingNr) },
+        page: bPage,
+        pageSize: bPageSize,
+        resetDeps: [dGebruikerNr, dVeilingNr, bPageSize],
+    })
 
-    // Auto-fetch
-    useEffect(() => {
-        fetchBiedingen()
-    }, [fetchBiedingen])
-
-    useEffect(() => {
-        fetchProducten()
-    }, [fetchProducten])
+    const { data: producten = [], loading: vLoading, error: vError, lastCount: vLastCount } = usePagedList<Veilingproduct>({
+        path: "/api/Veilingproduct",
+        params: { q: dQ || undefined, categorieNr: toIntOrUndefined(dCategorieNr) },
+        page: vPage,
+        pageSize: vPageSize,
+        resetDeps: [dQ, dCategorieNr, vPageSize],
+    })
 
     // Biedingen: client-side filter
     const filteredBiedingen = useMemo(() => {
-        if (!Array.isArray(biedingen) || !dBQuery.trim()) return biedingen ?? []
+        if (!biedingen?.length || !dBQuery.trim()) return biedingen as Record<string, unknown>[]
         const tokens = dBQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
         return (biedingen as Record<string, unknown>[]).filter((row) => {
             const hay = rowToSearchString(row)
@@ -300,10 +272,10 @@ export default function Veilingmeester() {
     // Producten: slimme kolommen
     const productenTable = useMemo(() => {
         if (!producten?.length) return null
-        const idKey = firstExistingKey(producten, ["veilingNr", "biedNr", "id", "veilingProductNr", "productNr"]) ?? "id"
-        const looksLike = producten.some((p) => "naam" in p || "startprijs" in p || "geplaatstDatum" in p)
-
-        const formatDateTime = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "")
+        const idKeyCandidates = ["veilingNr", "biedNr", "id", "veilingProductNr", "productNr"]
+        const idKey = idKeyCandidates.find((k) => producten.some((p: any) => p[k] != null && p[k] !== "")) || "id"
+        const looksLike = producten.some((p: any) => "naam" in p || "startprijs" in p || "geplaatstDatum" in p)
+        const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "")
 
         return (
             <div className="table-responsive">
@@ -311,36 +283,28 @@ export default function Veilingmeester() {
                     <thead className="table-light sticky-top" style={{ top: 0, zIndex: 1 }}>
                     <tr>
                         <th className="text-nowrap">{idKey}</th>
-                        {looksLike && (
-                            <>
-                                <th className="text-nowrap">Naam</th>
-                                <th className="text-nowrap">Geplaatst</th>
-                                <th className="text-nowrap">Fust</th>
-                                <th className="text-nowrap">Voorraad</th>
-                                <th className="text-nowrap">Startprijs</th>
-                                <th className="text-nowrap">Categorie</th>
-                            </>
-                        )}
+                        {looksLike && (<>
+                            <th className="text-nowrap">Naam</th>
+                            <th className="text-nowrap">Geplaatst</th>
+                            <th className="text-nowrap">Fust</th>
+                            <th className="text-nowrap">Voorraad</th>
+                            <th className="text-nowrap">Startprijs</th>
+                            <th className="text-nowrap">Categorie</th>
+                        </>)}
                     </tr>
                     </thead>
                     <tbody>
-                    {producten.map((p, i) => (
-                        <tr key={(p as any)[idKey] ?? i}>
-                            <td>{(p as any)[idKey] ?? ""}</td>
-                            {looksLike && (
-                                <>
-                                    <td>{(p as any).naam ?? ""}</td>
-                                    <td>{formatDateTime((p as any).geplaatstDatum)}</td>
-                                    <td>{(p as any).fust ?? ""}</td>
-                                    <td>{(p as any).voorraad ?? ""}</td>
-                                    <td>{(p as any).startprijs ?? ""}</td>
-                                    <td>
-                                        {(p as any).categorieNr != null && catsMap[(p as any).categorieNr]
-                                            ? catsMap[(p as any).categorieNr]
-                                            : (p as any).categorieNr ?? ""}
-                                    </td>
-                                </>
-                            )}
+                    {producten.map((p: any, i: number) => (
+                        <tr key={p[idKey] ?? i}>
+                            <td>{p[idKey] ?? ""}</td>
+                            {looksLike && (<>
+                                <td>{p.naam ?? ""}</td>
+                                <td>{fmtDate(p.geplaatstDatum)}</td>
+                                <td>{p.fust ?? ""}</td>
+                                <td>{p.voorraad ?? ""}</td>
+                                <td>{p.startprijs ?? ""}</td>
+                                <td>{p.categorieNr != null && catsMap[p.categorieNr] ? catsMap[p.categorieNr] : (p.categorieNr ?? "")}</td>
+                            </>)}
                         </tr>
                     ))}
                     </tbody>
@@ -370,9 +334,7 @@ export default function Veilingmeester() {
     const FilterChip = ({ children, onClear }: { children: React.ReactNode; onClear: () => void }) => (
         <span className="badge rounded-pill bg-light text-body-secondary border d-inline-flex align-items-center gap-2">
       <span className="ps-2">{children}</span>
-      <button className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">
-        ×
-      </button>
+      <button className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">×</button>
     </span>
     )
 
@@ -386,21 +348,13 @@ export default function Veilingmeester() {
             <section className="mb-4 rounded-4 p-4 p-md-5 shadow-sm" style={{ background: "linear-gradient(135deg, #e6f3ea 0%, #ffffff 60%)" }}>
                 <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div>
-                        <h2 className="mb-1" style={{ background: "linear-gradient(90deg,#2f4137,#4caf50)", WebkitBackgroundClip: "text", color: "transparent" }}>
-                            Veilingmeester
-                        </h2>
+                        <h2 className="mb-1" style={{ background: "linear-gradient(90deg,#2f4137,#4caf50)", WebkitBackgroundClip: "text", color: "transparent" }}>Veilingmeester</h2>
                         <p className="text-muted mb-0">Zoek, filter en bekijk biedingen en veilingproducten.</p>
                     </div>
                     <div className="d-flex gap-2">
-                        <button id={helpBtnId} className="btn btn-outline-secondary" type="button" aria-describedby={helpBtnId + "-desc"}>
-                            Handleiding
-                        </button>
-                        <span id={helpBtnId + "-desc"} className="visually-hidden">
-              Open de handleiding in een nieuw venster
-            </span>
-                        <button id={newBtnId} className="btn btn-success" type="button">
-                            Nieuwe veiling
-                        </button>
+                        <button id={helpBtnId} className="btn btn-outline-secondary" type="button" aria-describedby={helpBtnId + "-desc"}>Handleiding</button>
+                        <span id={helpBtnId + "-desc"} className="visually-hidden">Open de handleiding in een nieuw venster</span>
+                        <button id={newBtnId} className="btn btn-success" type="button">Nieuwe veiling</button>
                     </div>
                 </div>
             </section>
@@ -408,14 +362,10 @@ export default function Veilingmeester() {
             {/* TABS */}
             <ul className="nav nav-pills mb-3 rounded-3 bg-light p-2 gap-2" role="tablist">
                 <li className="nav-item">
-                    <button className={`nav-link ${tab === "biedingen" ? "active" : ""}`} onClick={() => setTab("biedingen")} role="tab" aria-selected={tab === "biedingen"}>
-                        Biedingen
-                    </button>
+                    <button className={`nav-link ${tab === "biedingen" ? "active" : ""}`} onClick={() => setTab("biedingen")} role="tab" aria-selected={tab === "biedingen"}>Biedingen</button>
                 </li>
                 <li className="nav-item">
-                    <button className={`nav-link ${tab === "producten" ? "active" : ""}`} onClick={() => setTab("producten")} role="tab" aria-selected={tab === "producten"}>
-                        Producten
-                    </button>
+                    <button className={`nav-link ${tab === "producten" ? "active" : ""}`} onClick={() => setTab("producten")} role="tab" aria-selected={tab === "producten"}>Producten</button>
                 </li>
             </ul>
 
@@ -423,61 +373,24 @@ export default function Veilingmeester() {
             {tab === "biedingen" && (
                 <section className="card border-0 shadow-sm rounded-4 mb-4">
                     <div className="card-body">
-                        {/* Filters + Reset op dezelfde rij */}
+                        {/* Filters + Reset */}
                         <div className="row g-2 align-items-end mb-2">
                             <div className="col-12 col-md-3">
                                 <label className="form-label mb-1">Gebruiker</label>
-                                <input
-                                    className="form-control form-control-sm"
-                                    type="number"
-                                    value={String(gebruikerNr)}
-                                    onChange={(e) => setGebruikerNr(e.target.value === "" ? "" : Number(e.target.value))}
-                                    placeholder="ID"
-                                    inputMode="numeric"
-                                />
+                                <input className="form-control form-control-sm" type="number" value={String(gebruikerNr)} onChange={(e) => setGebruikerNr(e.target.value === "" ? "" : Number(e.target.value))} placeholder="ID" inputMode="numeric" />
                             </div>
                             <div className="col-12 col-md-3">
                                 <label className="form-label mb-1">Veiling</label>
-                                <input
-                                    className="form-control form-control-sm"
-                                    type="number"
-                                    value={String(veilingNr)}
-                                    onChange={(e) => setVeilingNr(e.target.value === "" ? "" : Number(e.target.value))}
-                                    placeholder="ID"
-                                    inputMode="numeric"
-                                />
+                                <input className="form-control form-control-sm" type="number" value={String(veilingNr)} onChange={(e) => setVeilingNr(e.target.value === "" ? "" : Number(e.target.value))} placeholder="ID" inputMode="numeric" />
                             </div>
                             <div className="col-12 col-md-3">
                                 <label className="form-label mb-1">Per pagina</label>
-                                <select
-                                    className="form-select form-select-sm"
-                                    value={bPageSize}
-                                    onChange={(e) => {
-                                        setBPageSize(Number(e.target.value))
-                                        setBPage(1)
-                                    }}
-                                >
-                                    {[10, 25, 50, 100].map((n) => (
-                                        <option key={n} value={n}>
-                                            {n}
-                                        </option>
-                                    ))}
+                                <select className="form-select form-select-sm" value={bPageSize} onChange={(e) => { setBPageSize(Number(e.target.value)); setBPage(1) }}>
+                                    {[10, 25, 50, 100].map((n) => (<option key={n} value={n}>{n}</option>))}
                                 </select>
                             </div>
                             <div className="col-12 col-md-3 text-md-end">
-                                <button
-                                    className="btn btn-outline-secondary btn-sm"
-                                    onClick={() => {
-                                        setGebruikerNr("")
-                                        setVeilingNr("")
-                                        setBQuery("")
-                                        setBPage(1)
-                                        setBPageSize(10)
-                                    }}
-                                    disabled={bLoading}
-                                >
-                                    Reset
-                                </button>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => { setGebruikerNr(""); setVeilingNr(""); setBQuery(""); setBPage(1); setBPageSize(10) }} disabled={bLoading}>Reset</button>
                             </div>
                         </div>
 
@@ -489,22 +402,18 @@ export default function Veilingmeester() {
                                 <div className="form-text">Zoekt in alle kolommen; hoofdletters en volgorde maken niet uit.</div>
                             </div>
                             <div className="col d-flex align-items-end justify-content-md-end">
-                                <span className="text-muted small">{bLoading ? "Laden…" : `Totaal: ${filteredBiedingen?.length ?? 0}`}</span>
+                                <span className="text-muted small">{bLoading ? <SpinnerInline /> : `Totaal: ${filteredBiedingen?.length ?? 0}`}</span>
                             </div>
                         </div>
 
-                        {/* Actieve filters (server-side) */}
+                        {/* Actieve filters */}
                         <div className="d-flex flex-wrap gap-2 mb-2">
                             {gebruikerNr !== "" && <FilterChip onClear={() => setGebruikerNr("")}>Gebruiker: {gebruikerNr}</FilterChip>}
                             {veilingNr !== "" && <FilterChip onClear={() => setVeilingNr("")}>Veiling: {veilingNr}</FilterChip>}
                         </div>
 
                         {/* Content */}
-                        {bError && (
-                            <div className="alert alert-danger" role="alert">
-                                {bError}
-                            </div>
-                        )}
+                        {bError && (<div className="alert alert-danger" role="alert">{bError}</div>)}
                         {!bError && (
                             <div className="mt-2">
                                 {bLoading && (
@@ -517,13 +426,9 @@ export default function Veilingmeester() {
                                 {!bLoading && (Array.isArray(filteredBiedingen) && filteredBiedingen.length > 0 ? renderArrayAsTable(filteredBiedingen as Record<string, unknown>[]) : <Empty />)}
 
                                 <div className="d-flex justify-content-between align-items-center mt-3">
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => Math.max(1, p - 1))} disabled={bLoading || bPage <= 1}>
-                                        ← Vorige
-                                    </button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => Math.max(1, p - 1))} disabled={bLoading || bPage <= 1}>← Vorige</button>
                                     <div className="small text-muted">Pagina {bPage} • Per pagina: {bPageSize}</div>
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => p + 1)} disabled={bLoading || !bHasNext}>
-                                        Volgende →
-                                    </button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => p + 1)} disabled={bLoading || !bHasNext}>Volgende →</button>
                                 </div>
                             </div>
                         )}
@@ -544,35 +449,18 @@ export default function Veilingmeester() {
                                 <label className="form-label mb-1">Categorie</label>
                                 <select className="form-select form-select-sm" value={String(categorieNr)} onChange={(e) => setCategorieNr(e.target.value === "" ? "" : Number(e.target.value))} disabled={catsLoading}>
                                     <option value="">(alle)</option>
-                                    {Object.entries(catsMap).map(([id, naam]) => (
-                                        <option key={id} value={id}>
-                                            {naam}
-                                        </option>
-                                    ))}
+                                    {Object.entries(catsMap).map(([id, naam]) => (<option key={id} value={id}>{naam}</option>))}
                                 </select>
                                 {catsError && <div className="form-text text-danger">{catsError}</div>}
                             </div>
                             <div className="col-md-2">
                                 <label className="form-label mb-1">Per pagina</label>
-                                <select
-                                    className="form-select form-select-sm"
-                                    value={vPageSize}
-                                    onChange={(e) => {
-                                        setVPageSize(Number(e.target.value))
-                                        setVPage(1)
-                                    }}
-                                >
-                                    {[10, 25, 50, 100].map((n) => (
-                                        <option key={n} value={n}>
-                                            {n}
-                                        </option>
-                                    ))}
+                                <select className="form-select form-select-sm" value={vPageSize} onChange={(e) => { setVPageSize(Number(e.target.value)); setVPage(1) }}>
+                                    {[10, 25, 50, 100].map((n) => (<option key={n} value={n}>{n}</option>))}
                                 </select>
                             </div>
                             <div className="col-md-2 text-md-end">
-                                <button className="btn btn-outline-secondary btn-sm" onClick={() => { setQ(""); setCategorieNr(""); setVPage(1); setVPageSize(10) }} disabled={vLoading}>
-                                    Reset
-                                </button>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={() => { setQ(""); setCategorieNr(""); setVPage(1); setVPageSize(10) }} disabled={vLoading}>Reset</button>
                             </div>
                         </div>
 
@@ -584,11 +472,7 @@ export default function Veilingmeester() {
                             <span className="text-muted small">Pagina {vPage} • Per pagina: {vPageSize}</span>
                         </div>
 
-                        {vError && (
-                            <div className="alert alert-danger" role="alert">
-                                {vError}
-                            </div>
-                        )}
+                        {vError && (<div className="alert alert-danger" role="alert">{vError}</div>)}
                         {!vError && (
                             <div className="mt-2">
                                 {vLoading && (
@@ -601,13 +485,9 @@ export default function Veilingmeester() {
                                 {!vLoading && (productenTable || (Array.isArray(producten) && producten.length > 0 ? renderArrayAsTable(producten as Record<string, unknown>[]) : <Empty />))}
 
                                 <div className="d-flex justify-content-between align-items-center mt-3">
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => Math.max(1, p - 1))} disabled={vLoading || vPage <= 1}>
-                                        ← Vorige
-                                    </button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => Math.max(1, p - 1))} disabled={vLoading || vPage <= 1}>← Vorige</button>
                                     <div />
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => p + 1)} disabled={vLoading || !vHasNext}>
-                                        Volgende →
-                                    </button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => p + 1)} disabled={vLoading || !vHasNext}>Volgende →</button>
                                 </div>
                             </div>
                         )}
@@ -616,47 +496,4 @@ export default function Veilingmeester() {
             )}
         </div>
     )
-}
-
-/**
- * ===== Fallback table =====
- */
-function renderArrayAsTable(rows: Record<string, unknown>[]) {
-    if (!rows.length) return <div className="text-center text-muted py-5">Geen resultaten.</div>
-    const cols = Array.from(
-        rows.reduce<Set<string>>((acc, r) => {
-            Object.keys(r).forEach((k) => acc.add(k))
-            return acc
-        }, new Set())
-    ).slice(0, 10)
-
-    return (
-        <div className="table-responsive">
-            <table className="table table-sm table-striped table-hover align-middle">
-                <thead className="table-light sticky-top" style={{ top: 0, zIndex: 1 }}>
-                <tr>{cols.map((c) => <th key={c} className="text-nowrap">{c}</th>)}</tr>
-                </thead>
-                <tbody>
-                {rows.map((r, i) => (
-                    <tr key={i}>
-                        {cols.map((c) => (
-                            <td key={c}>{formatCell((r as any)[c])}</td>
-                        ))}
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
-    )
-}
-
-function formatCell(v: unknown) {
-    if (v == null) return ""
-    if (typeof v === "string") return v
-    if (typeof v === "number" || typeof v === "boolean") return String(v)
-    try {
-        return JSON.stringify(v)
-    } catch {
-        return String(v)
-    }
 }
