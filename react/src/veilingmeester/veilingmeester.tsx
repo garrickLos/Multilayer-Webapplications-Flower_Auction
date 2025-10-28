@@ -1,186 +1,20 @@
-import {useCallback, useEffect, useId, useMemo, useRef, useState} from "react"
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
+import {
+    apiGet,
+    type Bieding,
+    type Categorie,
+    getCategorieId,
+    getCategorieNaam,
+    isAbort,
+    type MaybeNumber,
+    rowToSearchString,
+    toIntOrUndefined,
+    useDebounced,
+    usePagedList,
+    type Veilingproduct,
+} from "./data"
+import { Empty, FilterChip, renderArrayAsTable, SpinnerInline } from "./ui"
 
-/**
- * ===== Types =====
- */
-type MaybeNumber = number | "" | null | undefined
-
-export type Bieding = Record<string, unknown>
-export type Veilingproduct = {
-    id?: number
-    naam?: string | null
-    geplaatstDatum?: string
-    fust?: number
-    voorraad?: number
-    startprijs?: number
-    categorieNr?: number
-} & Record<string, unknown>
-
-type Categorie = {
-    id?: number
-    categorieNr?: number
-    naam?: string
-    name?: string
-} & Record<string, unknown>
-
-/**
- * ===== Small helpers =====
- */
-const isNonEmpty = (v: unknown) => v !== undefined && v !== null && v !== ""
-const isAbort = (e: unknown) => (e instanceof DOMException && e.name === "AbortError") || (typeof e === "object" && e !== null && (e as any).name === "AbortError")
-
-const toIntOrUndefined = (v: MaybeNumber): number | undefined => {
-    const n = Number(v)
-    return Number.isFinite(n) && v !== "" ? n : undefined
-}
-
-const getCategorieId = (c: Categorie): number | undefined => (typeof c.id === "number" ? c.id : undefined) ?? (typeof c.categorieNr === "number" ? c.categorieNr : undefined)
-const getCategorieNaam = (c: Categorie): string => (typeof c.naam === "string" ? c.naam : undefined) ?? (typeof c.name === "string" ? c.name : "")
-
-// Maak van een rij 1 doorzoekbare string (alle waarden, nested & arrays)
-function rowToSearchString(row: Record<string, unknown>): string {
-    const out: string[] = []
-    const stack: any[] = [row]
-    const seen = new WeakSet<object>()
-    let guard = 0
-    while (stack.length && guard++ < 5000) {
-        const cur = stack.pop()
-        if (cur == null) continue
-        if (typeof cur === "string" || typeof cur === "number" || typeof cur === "boolean") out.push(String(cur))
-        else if (Array.isArray(cur)) for (const v of cur) stack.push(v)
-        else if (typeof cur === "object") {
-            if (seen.has(cur)) continue
-            seen.add(cur)
-            for (const v of Object.values(cur)) stack.push(v)
-        }
-    }
-    return out.join(" ").toLowerCase()
-}
-
-/**
- * ===== Debounce hook (stable timeout) =====
- */
-function useDebounced<T>(value: T, delay = 300): T {
-    const [debounced, setDebounced] = useState(value)
-    const timeoutRef = useRef<number | null>(null)
-
-    useEffect(() => {
-        if (timeoutRef.current != null) window.clearTimeout(timeoutRef.current)
-        timeoutRef.current = window.setTimeout(() => setDebounced(value), delay)
-        return () => {
-            if (timeoutRef.current != null) window.clearTimeout(timeoutRef.current)
-        }
-    }, [value, delay])
-
-    return debounced
-}
-
-/**
- * ===== API helper (robust JSON parsing) =====
- */
-async function apiGet<T>(path: string, params: Record<string, string | number | undefined> = {}, signal?: AbortSignal): Promise<T> {
-    const usp = new URLSearchParams()
-    for (const [k, v] of Object.entries(params)) if (isNonEmpty(v)) usp.set(k, String(v))
-    const url = `${path}${usp.toString() ? `?${usp.toString()}` : ""}`
-    const res = await fetch(url, { signal })
-    if (!res.ok) {
-        let text = ""
-        try { text = await res.text() } catch {}
-        throw new Error(`GET ${path} failed: ${res.status} ${res.statusText} ${text}`)
-    }
-    const ct = (res.headers.get("content-type") || "").toLowerCase()
-    if (res.headers.get("content-length") === "0") return ([] as unknown) as T
-    if (ct.includes("application/json")) return (await res.json()) as T
-    const text = await res.text()
-    return (text ? JSON.parse(text) : ([] as unknown)) as T
-}
-
-/**
- * ===== Generic paged fetch hook =====
- * Encapsuleert: aborts, loading, error, data, lastCount, page reset bij filterwijziging.
- */
-function usePagedList<T>({
-                             path,
-                             params,
-                             page,
-                             pageSize,
-                             resetDeps,
-                         }: {
-    path: string
-    params: Record<string, string | number | undefined>
-    page: number
-    pageSize: number
-    resetDeps: any[] // deps die page -> 1 moeten zetten
-}) {
-    const [data, setData] = useState<T[] | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [lastCount, setLastCount] = useState(0)
-    const abortRef = useRef<AbortController | null>(null)
-
-    // Reset pagina naar 1 als filters wijzigen
-    useEffect(() => {
-        // alleen als we niet al op 1 staan
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    const fetcher = useCallback(async () => {
-        abortRef.current?.abort()
-        const ctl = new AbortController()
-        abortRef.current = ctl
-        setLoading(true)
-        setError(null)
-        try {
-            const data = await apiGet<T[]>(path, { ...params, page, pageSize }, ctl.signal)
-            const arr = Array.isArray(data) ? data : []
-            setLastCount(arr.length)
-            setData(arr)
-        } catch (e) {
-            if (!isAbort(e)) setError(e instanceof Error ? e.message : "Er is iets misgegaan.")
-        } finally {
-            setLoading(false)
-        }
-    }, [path, JSON.stringify(params), page, pageSize])
-
-    useEffect(() => { fetcher() }, [fetcher])
-
-    useEffect(() => () => abortRef.current?.abort(), [])
-
-    return { data, loading, error, lastCount }
-}
-
-/**
- * ===== Fallback table =====
- */
-function formatCell(v: unknown) {
-    if (v == null) return ""
-    if (typeof v === "string") return v
-    if (typeof v === "number" || typeof v === "boolean") return String(v)
-    try { return JSON.stringify(v) } catch { return String(v) }
-}
-
-function renderArrayAsTable(rows: Record<string, unknown>[]) {
-    if (!rows.length) return <div className="text-center text-muted py-5">Geen resultaten.</div>
-    const cols = Array.from(rows.reduce<Set<string>>((acc, r) => { Object.keys(r).forEach((k) => acc.add(k)); return acc }, new Set())).slice(0, 10)
-    return (
-        <div className="table-responsive">
-            <table className="table table-sm table-striped table-hover align-middle">
-                <thead className="table-light sticky-top" style={{ top: 0, zIndex: 1 }}>
-                <tr>{cols.map((c) => <th key={c} className="text-nowrap">{c}</th>)}</tr>
-                </thead>
-                <tbody>
-                {rows.map((r, i) => (
-                    <tr key={i}>{cols.map((c) => (<td key={c}>{formatCell((r as any)[c])}</td>))}</tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
-    )
-}
-
-/**
- * ===== Component =====
- */
 export default function Veilingmeester() {
     // Tabs
     const [tab, setTab] = useState<"biedingen" | "producten">("biedingen")
@@ -243,20 +77,28 @@ export default function Veilingmeester() {
     useEffect(() => { setVPage(1) }, [dQ, dCategorieNr, vPageSize])
 
     // Server data hooks
-    const { data: biedingen = [], loading: bLoading, error: bError, lastCount: bLastCount } = usePagedList<Bieding>({
+    const {
+        data: biedingen = [],
+        loading: bLoading,
+        error: bError,
+        lastCount: bLastCount,
+    } = usePagedList<Bieding>({
         path: "/api/Bieding",
         params: { gebruikerNr: toIntOrUndefined(dGebruikerNr), veilingNr: toIntOrUndefined(dVeilingNr) },
         page: bPage,
         pageSize: bPageSize,
-        resetDeps: [dGebruikerNr, dVeilingNr, bPageSize],
     })
 
-    const { data: producten = [], loading: vLoading, error: vError, lastCount: vLastCount } = usePagedList<Veilingproduct>({
+    const {
+        data: producten = [],
+        loading: vLoading,
+        error: vError,
+        lastCount: vLastCount,
+    } = usePagedList<Veilingproduct>({
         path: "/api/Veilingproduct",
         params: { q: dQ || undefined, categorieNr: toIntOrUndefined(dCategorieNr) },
         page: vPage,
         pageSize: vPageSize,
-        resetDeps: [dQ, dCategorieNr, vPageSize],
     })
 
     // Biedingen: client-side filter
@@ -283,28 +125,32 @@ export default function Veilingmeester() {
                     <thead className="table-light sticky-top" style={{ top: 0, zIndex: 1 }}>
                     <tr>
                         <th className="text-nowrap">{idKey}</th>
-                        {looksLike && (<>
-                            <th className="text-nowrap">Naam</th>
-                            <th className="text-nowrap">Geplaatst</th>
-                            <th className="text-nowrap">Fust</th>
-                            <th className="text-nowrap">Voorraad</th>
-                            <th className="text-nowrap">Startprijs</th>
-                            <th className="text-nowrap">Categorie</th>
-                        </>)}
+                        {looksLike && (
+                            <>
+                                <th className="text-nowrap">Naam</th>
+                                <th className="text-nowrap">Geplaatst</th>
+                                <th className="text-nowrap">Fust</th>
+                                <th className="text-nowrap">Voorraad</th>
+                                <th className="text-nowrap">Startprijs</th>
+                                <th className="text-nowrap">Categorie</th>
+                            </>
+                        )}
                     </tr>
                     </thead>
                     <tbody>
                     {producten.map((p: any, i: number) => (
                         <tr key={p[idKey] ?? i}>
                             <td>{p[idKey] ?? ""}</td>
-                            {looksLike && (<>
-                                <td>{p.naam ?? ""}</td>
-                                <td>{fmtDate(p.geplaatstDatum)}</td>
-                                <td>{p.fust ?? ""}</td>
-                                <td>{p.voorraad ?? ""}</td>
-                                <td>{p.startprijs ?? ""}</td>
-                                <td>{p.categorieNr != null && catsMap[p.categorieNr] ? catsMap[p.categorieNr] : (p.categorieNr ?? "")}</td>
-                            </>)}
+                            {looksLike && (
+                                <>
+                                    <td>{p.naam ?? ""}</td>
+                                    <td>{fmtDate(p.geplaatstDatum)}</td>
+                                    <td>{p.fust ?? ""}</td>
+                                    <td>{p.voorraad ?? ""}</td>
+                                    <td>{p.startprijs ?? ""}</td>
+                                    <td>{p.categorieNr != null && catsMap[p.categorieNr] ? catsMap[p.categorieNr] : (p.categorieNr ?? "")}</td>
+                                </>
+                            )}
                         </tr>
                     ))}
                     </tbody>
@@ -313,32 +159,11 @@ export default function Veilingmeester() {
         )
     }, [producten, catsMap])
 
-    // UI bits
+    // UI ids
     const helpBtnId = useId()
     const newBtnId = useId()
 
-    const SpinnerInline = ({ text = "Laden…" }: { text?: string }) => (
-        <span className="d-inline-flex align-items-center gap-2 text-muted" aria-live="polite">
-      <span className="spinner-border spinner-border-sm" role="status" aria-label="laden" />
-      <span>{text}</span>
-    </span>
-    )
-
-    const Empty = ({ label = "Geen resultaten." }: { label?: string }) => (
-        <div className="text-center text-muted py-5" role="status" aria-live="polite">
-            <div className="display-6 mb-2">🌿</div>
-            <p className="m-0">{label}</p>
-        </div>
-    )
-
-    const FilterChip = ({ children, onClear }: { children: React.ReactNode; onClear: () => void }) => (
-        <span className="badge rounded-pill bg-light text-body-secondary border d-inline-flex align-items-center gap-2">
-      <span className="ps-2">{children}</span>
-      <button className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">×</button>
-    </span>
-    )
-
-    // Derived booleans for paging controls
+    // Paging flags
     const bHasNext = bLastCount >= bPageSize
     const vHasNext = vLastCount >= vPageSize
 
@@ -348,7 +173,9 @@ export default function Veilingmeester() {
             <section className="mb-4 rounded-4 p-4 p-md-5 shadow-sm" style={{ background: "linear-gradient(135deg, #e6f3ea 0%, #ffffff 60%)" }}>
                 <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div>
-                        <h2 className="mb-1" style={{ background: "linear-gradient(90deg,#2f4137,#4caf50)", WebkitBackgroundClip: "text", color: "transparent" }}>Veilingmeester</h2>
+                        <h2 className="mb-1" style={{ background: "linear-gradient(90deg,#2f4137,#4caf50)", WebkitBackgroundClip: "text", color: "transparent" }}>
+                            Veilingmeester
+                        </h2>
                         <p className="text-muted mb-0">Zoek, filter en bekijk biedingen en veilingproducten.</p>
                     </div>
                     <div className="d-flex gap-2">
@@ -362,10 +189,14 @@ export default function Veilingmeester() {
             {/* TABS */}
             <ul className="nav nav-pills mb-3 rounded-3 bg-light p-2 gap-2" role="tablist">
                 <li className="nav-item">
-                    <button className={`nav-link ${tab === "biedingen" ? "active" : ""}`} onClick={() => setTab("biedingen")} role="tab" aria-selected={tab === "biedingen"}>Biedingen</button>
+                    <button className={`nav-link ${tab === "biedingen" ? "active" : ""}`} onClick={() => setTab("biedingen")} role="tab" aria-selected={tab === "biedingen"}>
+                        Biedingen
+                    </button>
                 </li>
                 <li className="nav-item">
-                    <button className={`nav-link ${tab === "producten" ? "active" : ""}`} onClick={() => setTab("producten")} role="tab" aria-selected={tab === "producten"}>Producten</button>
+                    <button className={`nav-link ${tab === "producten" ? "active" : ""}`} onClick={() => setTab("producten")} role="tab" aria-selected={tab === "producten"}>
+                        Producten
+                    </button>
                 </li>
             </ul>
 
@@ -428,7 +259,7 @@ export default function Veilingmeester() {
                                 <div className="d-flex justify-content-between align-items-center mt-3">
                                     <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => Math.max(1, p - 1))} disabled={bLoading || bPage <= 1}>← Vorige</button>
                                     <div className="small text-muted">Pagina {bPage} • Per pagina: {bPageSize}</div>
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => p + 1)} disabled={bLoading || !bHasNext}>Volgende →</button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => p + 1)} disabled={bLoading || !(bLastCount >= bPageSize)}>Volgende →</button>
                                 </div>
                             </div>
                         )}
@@ -487,7 +318,7 @@ export default function Veilingmeester() {
                                 <div className="d-flex justify-content-between align-items-center mt-3">
                                     <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => Math.max(1, p - 1))} disabled={vLoading || vPage <= 1}>← Vorige</button>
                                     <div />
-                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => p + 1)} disabled={vLoading || !vHasNext}>Volgende →</button>
+                                    <button className="btn btn-outline-secondary btn-sm" onClick={() => setVPage((p) => p + 1)} disabled={vLoading || !(vLastCount >= vPageSize)}>Volgende →</button>
                                 </div>
                             </div>
                         )}
