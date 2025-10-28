@@ -6,7 +6,6 @@ import {
     getCategorieId,
     getCategorieNaam,
     isAbort,
-    type MaybeNumber,
     rowToSearchString,
     toIntOrUndefined,
     useDebounced,
@@ -29,18 +28,12 @@ type ApiVeiling = { veilingNr?: number; product?: { naam?: string } | null } & R
 export default function Veilingmeester() {
     const [tab, setTab] = useState<"biedingen" | "producten">("biedingen")
 
-    // ===== Biedingen filters + paging
-    const [gebruikerNr, setGebruikerNr] = useState<MaybeNumber>("")
-    const [veilingNr, setVeilingNr] = useState<MaybeNumber>("")
+    // ===== Biedingen (alleen paging + client search)
     const [bPage, setBPage] = useState(1)
     const [bPageSize, setBPageSize] = useState(10)
     const [bQuery, setBQuery] = useState("")
     const dBQuery = useDebounced(bQuery)
 
-    const bParams = useMemo(
-        () => ({ gebruikerNr: toIntOrUndefined(gebruikerNr), veilingNr: toIntOrUndefined(veilingNr) }),
-        [gebruikerNr, veilingNr]
-    )
     const {
         data: biedingen = [],
         loading: bLoading,
@@ -48,26 +41,25 @@ export default function Veilingmeester() {
         lastCount: bLastCount,
     } = usePagedList<Bieding>({
         path: "/api/Bieding",
-        params: bParams,
+        params: {},
         page: bPage,
         pageSize: bPageSize,
-        paramsKey: `${bParams.gebruikerNr ?? ""}|${bParams.veilingNr ?? ""}`,
+        paramsKey: "all", // geen server-side filters
     })
 
-    // Null-safe filtering
+    // Null-safe filtering (één zoekbalk zoekt in alle kolommen)
     const filteredBiedingen = useMemo(() => {
         const items = Array.isArray(biedingen)
             ? (biedingen as ReadonlyArray<Record<string, unknown>>)
             : ([] as ReadonlyArray<Record<string, unknown>>)
-
         if (!items.length || !dBQuery.trim()) return items
         const tokens = dBQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
         return items.filter((row) => tokens.every((t) => rowToSearchString(row).includes(t)))
     }, [biedingen, dBQuery])
 
-    // ===== Producten filters + paging
+    // ===== Producten filters + paging (onveranderd)
     const [q, setQ] = useState("")
-    const [categorieNr, setCategorieNr] = useState<MaybeNumber>("")
+    const [categorieNr, setCategorieNr] = useState<number | "" | null | undefined>("")
     const [vPage, setVPage] = useState(1)
     const [vPageSize, setVPageSize] = useState(10)
 
@@ -109,36 +101,28 @@ export default function Veilingmeester() {
             setCatsMap(map)
         } catch (e) {
             if (!isAbort(e)) setCatsError(e instanceof Error ? e.message : "Kon categorieën niet laden")
-        } finally {
-            setCatsLoading(false)
-        }
+        } finally { setCatsLoading(false) }
     }, [])
 
-    useEffect(() => {
-        fetchCategorieen()
-        return () => catsAbort.current?.abort()
-    }, [fetchCategorieen])
+    useEffect(() => { fetchCategorieen(); return () => catsAbort.current?.abort() }, [fetchCategorieen])
 
-    // Page reset bij filterwijziging
-    useEffect(() => { setBPage(1) }, [gebruikerNr, veilingNr, bPageSize])
+    // Page reset bij relevante wijzigingen
+    useEffect(() => { setBPage(1) }, [dBQuery, bPageSize])                 // zoek of per-pagina wijzigt
     useEffect(() => { setVPage(1) }, [q, categorieNr, vPageSize])
 
-    // ===== Naam-resolutie (gebruikers en veilingen)
+    // ===== Naam-resolutie (gebruikers en veilingen) o.b.v. biedingen
     const [gebruikersMap, setGebruikersMap] = useState<Record<number, string>>({})
     const [veilingenMap, setVeilingenMap] = useState<Record<number, string>>({})
 
-    // Verzamel unieke ids uit biedingen (null-safe) en uit filters (indien ingevuld)
+    // Verzamel unieke ids uit gefilterde biedingen
     const pendingGebruikers = useMemo(() => {
         const set = new Set<number>()
         for (const r of filteredBiedingen) {
             const n = (r["gebruikerNr"] as number | undefined)
             if (typeof n === "number") set.add(n)
         }
-        const f = toIntOrUndefined(gebruikerNr)
-        if (typeof f === "number") set.add(f)
-        // filter al bekende
         return [...set].filter((id) => gebruikersMap[id] === undefined)
-    }, [filteredBiedingen, gebruikerNr, gebruikersMap])
+    }, [filteredBiedingen, gebruikersMap])
 
     const pendingVeilingen = useMemo(() => {
         const set = new Set<number>()
@@ -146,12 +130,9 @@ export default function Veilingmeester() {
             const n = (r["veilingNr"] as number | undefined)
             if (typeof n === "number") set.add(n)
         }
-        const f = toIntOrUndefined(veilingNr)
-        if (typeof f === "number") set.add(f)
         return [...set].filter((id) => veilingenMap[id] === undefined)
-    }, [filteredBiedingen, veilingNr, veilingenMap])
+    }, [filteredBiedingen, veilingenMap])
 
-    // Batch-resolve onbekende gebruikers/veilingen zodra nodig
     useEffect(() => {
         if (!pendingGebruikers.length) return
         let cancelled = false
@@ -204,7 +185,7 @@ export default function Veilingmeester() {
         return () => { cancelled = true }
     }, [pendingVeilingen])
 
-    // Biedingen → platte rijen met namen
+    // Biedingen → platte rijen met namen (voor ArrayTable)
     const bidRowsWithNames = useMemo(() => {
         const items = filteredBiedingen
         return items.map((r) => {
@@ -222,7 +203,7 @@ export default function Veilingmeester() {
         })
     }, [filteredBiedingen, gebruikersMap, veilingenMap])
 
-    // Producten → platte rijen voor ArrayTable (null-safe)
+    // Producten → platte rijen voor ArrayTable
     const productRows = useMemo(() => {
         const items = Array.isArray(producten) ? producten : []
         const pickId = (p: Veilingproduct) => {
@@ -276,54 +257,28 @@ export default function Veilingmeester() {
             {tab === "biedingen" && (
                 <section className="card border-0 shadow-sm rounded-4 mb-4">
                     <div className="card-body">
+                        {/* Alleen nog de algemene zoekbalk + per-pagina */}
                         <div className="row g-2 align-items-end mb-2">
-                            <div className="col-12 col-md-3">
-                                <label className="form-label mb-1">Gebruiker</label>
-                                <input className="form-control form-control-sm" type="number" value={String(gebruikerNr)} onChange={(e) => setGebruikerNr(e.target.value === "" ? "" : Number(e.target.value))} placeholder="ID" inputMode="numeric" />
-                                {toIntOrUndefined(gebruikerNr) != null && gebruikersMap[toIntOrUndefined(gebruikerNr)!] && (
-                                    <div className="form-text">→ {gebruikersMap[toIntOrUndefined(gebruikerNr)!]}</div>
-                                )}
+                            <div className="col-12 col-md-8">
+                                <label className="form-label mb-1">Zoek in biedingen</label>
+                                <input
+                                    className="form-control form-control-sm"
+                                    value={bQuery}
+                                    onChange={(e) => setBQuery(e.target.value)}
+                                    placeholder="zoek op gebruiker, veiling, bedrag, aantal, etc."
+                                />
+                                <div className="form-text">Zoekt in alle kolommen (incl. gebruikers- en veilingnaam).</div>
                             </div>
-                            <div className="col-12 col-md-3">
-                                <label className="form-label mb-1">Veiling</label>
-                                <input className="form-control form-control-sm" type="number" value={String(veilingNr)} onChange={(e) => setVeilingNr(e.target.value === "" ? "" : Number(e.target.value))} placeholder="ID" inputMode="numeric" />
-                                {toIntOrUndefined(veilingNr) != null && veilingenMap[toIntOrUndefined(veilingNr)!] && (
-                                    <div className="form-text">→ {veilingenMap[toIntOrUndefined(veilingNr)!]}</div>
-                                )}
-                            </div>
-                            <div className="col-12 col-md-3">
+                            <div className="col-12 col-md-4">
                                 <label className="form-label mb-1">Per pagina</label>
-                                <select className="form-select form-select-sm" value={bPageSize} onChange={(e) => { setBPageSize(Number(e.target.value)); setBPage(1) }}>
+                                <select
+                                    className="form-select form-select-sm"
+                                    value={bPageSize}
+                                    onChange={(e) => { setBPageSize(Number(e.target.value)); setBPage(1) }}
+                                >
                                     {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
                                 </select>
                             </div>
-                            <div className="col-12 col-md-3 text-md-end">
-                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => { setGebruikerNr(""); setVeilingNr(""); setBQuery(""); setBPage(1); setBPageSize(10) }} disabled={bLoading}>Reset</button>
-                            </div>
-                        </div>
-
-                        <div className="row g-2 align-items-end mb-3">
-                            <div className="col-12 col-md-6">
-                                <label className="form-label mb-1">Zoek in resultaten</label>
-                                <input className="form-control form-control-sm" value={bQuery} onChange={(e) => setBQuery(e.target.value)} placeholder="bijv. 12.5 jan gebruiker123 ..." />
-                                <div className="form-text">Zoekt in alle kolommen; hoofdletters en volgorde maken niet uit.</div>
-                            </div>
-                            <div className="col d-flex align-items-end justify-content-md-end">
-                                <span className="text-muted small">{bLoading ? <SpinnerInline /> : `Totaal: ${bidRowsWithNames.length}`}</span>
-                            </div>
-                        </div>
-
-                        <div className="d-flex flex-wrap gap-2 mb-2">
-                            {gebruikerNr !== "" && (
-                                <FilterChip onClear={() => setGebruikerNr("")}>
-                                    Gebruiker: {gebruikersMap[toIntOrUndefined(gebruikerNr)!] ?? gebruikerNr}
-                                </FilterChip>
-                            )}
-                            {veilingNr !== "" && (
-                                <FilterChip onClear={() => setVeilingNr("")}>
-                                    Veiling: {veilingenMap[toIntOrUndefined(veilingNr)!] ?? veilingNr}
-                                </FilterChip>
-                            )}
                         </div>
 
                         {bError && <div className="alert alert-danger" role="alert">{bError}</div>}
@@ -341,7 +296,9 @@ export default function Veilingmeester() {
 
                                 <div className="d-flex justify-content-between align-items-center mt-3">
                                     <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => Math.max(1, p - 1))} disabled={bLoading || bPage <= 1}>← Vorige</button>
-                                    <div className="small text-muted">Pagina {bPage} • Per pagina: {bPageSize}</div>
+                                    <div className="small text-muted">
+                                        Totaal: {bidRowsWithNames.length} • Pagina {bPage} • Per pagina: {bPageSize}
+                                    </div>
                                     <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setBPage((p) => p + 1)} disabled={bLoading || !(bLastCount >= bPageSize)}>Volgende →</button>
                                 </div>
                             </>
