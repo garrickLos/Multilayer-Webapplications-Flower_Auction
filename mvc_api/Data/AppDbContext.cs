@@ -48,9 +48,10 @@ namespace mvc_api.Data
                 .HasForeignKey(x => x.GebruikerNr)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Bieding.VeilingNr -> Veilingproduct.VeilingNr
             b.Entity<Bieding>()
-                .HasOne(x => x.Veilingproduct)
-                .WithMany(v => v.Biedingen!)
+                .HasOne(x => x.Veiling)
+                .WithMany(v => v.Biedingen)
                 .HasForeignKey(x => x.VeilingNr)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -60,6 +61,7 @@ namespace mvc_api.Data
                 .HasForeignKey(vp => vp.CategorieNr)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Veiling.VeilingProduct -> Veilingproduct.VeilingNr
             b.Entity<Veiling>()
                 .HasOne(v => v.Veilingproduct)
                 .WithMany(p => p.Veilingen!)
@@ -75,26 +77,8 @@ namespace mvc_api.Data
             // ----------------------------
             // Geld-precisie
             // ----------------------------
-            // Zorg dat je DomainModels 'Startprijs' als decimal heeft.
             b.Entity<Bieding>().Property(x => x.BedragPerFust).HasPrecision(18, 2);
             b.Entity<Veilingproduct>().Property(x => x.Startprijs).HasPrecision(18, 2);
-
-            // ----------------------------
-            // SQLite: TimeSpan converteren naar ticks
-            // ----------------------------
-            if (Database.ProviderName!.Contains("Sqlite"))
-            {
-                b.Entity<Veiling>().Property(x => x.Begintijd)
-                    .HasConversion(
-                        v => v.HasValue ? v.Value.Ticks : (long?)null,
-                        v => v.HasValue ? new TimeSpan(v.Value) : (TimeSpan?)null
-                    );
-                b.Entity<Veiling>().Property(x => x.Eindtijd)
-                    .HasConversion(
-                        v => v.HasValue ? v.Value.Ticks : (long?)null,
-                        v => v.HasValue ? new TimeSpan(v.Value) : (TimeSpan?)null
-                    );
-            }
 
             // ----------------------------
             // Seed data (ALLEEN statische waarden!)
@@ -134,25 +118,31 @@ namespace mvc_api.Data
                 }
             );
 
+            // Veiling gebruikt nu DateTime? ipv TimeSpan?
+            var dag = new DateTime(2025, 10, 10, 0, 0, 0, DateTimeKind.Utc);
             b.Entity<Veiling>().HasData(
                 new Veiling {
-                    VeilingNr = 201, Begintijd = new TimeSpan(9,0,0),
-                    Eindtijd = new TimeSpan(10,0,0), VeilingProduct = 101
+                    VeilingNr = 201,
+                    Begintijd = dag.AddHours(9),
+                    Eindtijd  = dag.AddHours(10),
+                    VeilingProduct = 101
                 },
                 new Veiling {
-                    VeilingNr = 202, Begintijd = new TimeSpan(10,0,0),
-                    Eindtijd = new TimeSpan(11,0,0), VeilingProduct = 102
+                    VeilingNr = 202,
+                    Begintijd = dag.AddHours(10),
+                    Eindtijd  = dag.AddHours(11),
+                    VeilingProduct = 102
                 }
             );
 
             b.Entity<Bieding>().HasData(
                 new Bieding {
                     BiedNr = 1001, BedragPerFust = 13.50m, AantalStuks = 5,
-                    GebruikerNr = 2, VeilingNr = 101
+                    GebruikerNr = 2, VeilingNr = 201 // was 101
                 },
                 new Bieding {
                     BiedNr = 1002, BedragPerFust = 21.00m, AantalStuks = 3,
-                    GebruikerNr = 2, VeilingNr = 102
+                    GebruikerNr = 2, VeilingNr = 202 // was 102
                 }
             );
         }
