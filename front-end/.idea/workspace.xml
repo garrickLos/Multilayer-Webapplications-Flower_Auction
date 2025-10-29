@@ -4,13 +4,78 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="" />
+    <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/front-end.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/Registration.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/header_footer.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/homePageStylesheet.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/registration.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenAdd.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenInfo.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/pictures/webp/Contact2.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/pictures/webp/Home.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/webpagina's/css/registration.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/webpagina's/html/Registration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webpagina's/css/header_footer.css" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/css/header_footer.css" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Be3tlejuice&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/BayramGurel/Bitbusters-Multilayer-Webapplications-Groep-6.git&quot;,
+    &quot;accountId&quot;: &quot;1e0fc052-cee7-4652-97d1-0a1bbf8d8d24&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="34gmZ41FhKLP2TNRpJGU3c17B36" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "Yash",
+    "last_opened_file_path": "C:/Users/ymbso/OneDrive/Documenten/GitHub/Bitbusters-Multilayer-Webapplications-Groep-6/front-end/mijn-veiling/src"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\front-end\mijn-veiling\src" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\front-end\mijn-veiling\src" />
+    </key>
+  </component>
   <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="" />
+      <created>1761643437443</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1761643437443</updated>
+    </task>
     <servers />
   </component>
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />

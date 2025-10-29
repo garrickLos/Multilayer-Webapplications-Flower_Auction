@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Registreren – Royal FloraHolland</title>
+
+    <!-- van html/ naar css/ = één map omhoog -->
+    <link rel="stylesheet" href="../css/registration.css" />
+    <link rel="stylesheet" href="../css/homePageStylesheet.css" />
+    <link rel="stylesheet" href="../css/header_footer.css" />
+</head>
+<body>
+
+<header>
+    <div class="HoofschermContainer">
+        <div class="logoTitel">
+            <!-- van html/ naar pictures/webp/ = twee mappen omhoog -->
+            <img src="../../pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
+            <h1>Flora Royal Holland</h1>
+        </div>
+
+        <nav>
+            <ul>
+                <div class="veilingPLaatsen">
+                    <img src="../../pictures/webp/Contact2.webp" alt="Contact" class="ContactPersoonLogo">
+                    <li>Service en contact</li>
+                </div>
+                <div class="klantGegevens">
+                    <img src="../../pictures/webp/Home.webp" alt="home" class="HomeButtonLogo">
+                    <li>Home</li>
+                </div>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="hero">
+    <div class="container hero-grid">
+        <div class="hero-left">
+            <h1>Registreren</h1>
+
+            <form class="form" action="#" method="post" novalidate>
+                <label class="visually-hidden" for="rol">Klant of Kweker</label>
+                <div class="select-wrap">
+                    <select id="rol" name="rol" required>
+                        <option value="" selected disabled>Klant of Kweker</option>
+                        <option value="klant">Klant</option>
+                        <option value="kweker">Kweker</option>
+                    </select>
+                    <span class="chev" aria-hidden="true">▾</span>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label class="visually-hidden" for="voornaam">Voornaam</label>
+                        <input id="voornaam" name="voornaam" type="text" placeholder="Voornaam" required>
+                    </div>
+                    <div>
+                        <label class="visually-hidden" for="achternaam">Achternaam</label>
+                        <input id="achternaam" name="achternaam" type="text" placeholder="Achternaam" required>
+                    </div>
+                </div>
+
+                <label class="visually-hidden" for="email">E-mailadres</label>
+                <input id="email" name="email" type="email" placeholder="Emailadres" inputmode="email" required>
+
+                <label class="visually-hidden" for="wachtwoord">Wachtwoord</label>
+                <input id="wachtwoord" name="wachtwoord" type="password" placeholder="Wachtwoord" required>
+
+                <div class="grid-2">
+                    <div>
+                        <label class="visually-hidden" for="straat">Straatnaam + huisnummer</label>
+                        <input id="straat" name="straat" type="text" placeholder="Straatnaam + huisnummer">
+                    </div>
+                    <div>
+                        <label class="visually-hidden" for="postcode">Postcode</label>
+                        <!-- NL patroon (bijv. 1234 AB) -->
+                        <input id="postcode" name="postcode" type="text" placeholder="Postcode"
+                               inputmode="text" pattern="^[1-9][0-9]{3}\s?[A-Za-z]{2}$">
+                    </div>
+                </div>
+
+                <p class="subtle-label">Alleen voor Kweker</p>
+                <div class="grid-2">
+                    <div>
+                        <label class="visually-hidden" for="bedrijf">Bedrijf</label>
+                        <input id="bedrijf" name="bedrijf" type="text" placeholder="Bedrijf">
+                    </div>
+                    <div>
+                        <label class="visually-hidden" for="kvk">KvK-nummer</label>
+                        <!-- Meest voorkomend: 8 cijfers -->
+                        <input id="kvk" name="kvk" type="text" placeholder="KvK-nummer"
+                               inputmode="numeric" pattern="^\d{8}$">
+                    </div>
+                </div>
+
+                <div class="consent-row">
+                    <label class="checkbox">
+                        <input type="checkbox" name="terms" required>
+                        <span>Ik accepteer de algemene voorwaarden van uw site.</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary">Registreren</button>
+
+                <p class="login-hint">
+                    Heb je al een account?
+                    <a id="loginTekst" href="#">Log hier in</a>
+                </p>
+            </form>
+        </div>
+
+        <div class="hero-right" aria-hidden="true"></div>
+    </div>
+</main>
+
+<footer>
+    <div class="overlayBlock">
+        <div class="footerText">
+            <div class="footer-image">
+                <!-- ico in pictures/ico/ -->
+                <img src="../../pictures/ico/Screenshot_2025-10-27_114430-removebg-preview.ico" alt="">
+            </div>
+            <div class="text-column_one">
+                <p>Intranet Royal FloraHolland</p>
+            </div>
+            <div class="text-column_two"></div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
