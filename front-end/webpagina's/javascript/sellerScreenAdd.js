@@ -33,6 +33,3 @@ document.querySelector(".placeProduct").addEventListener("click", async () => {
     }
 })
 
-document.querySelector(".mijnVeilingenBekijken").addEventListener("click", () => {
-    window.location.href = "../html/sellerScreenInfo.html";
-});
