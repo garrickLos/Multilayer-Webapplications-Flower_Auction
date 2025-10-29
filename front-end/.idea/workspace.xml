@@ -5,23 +5,46 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/front-end.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/Registration.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/header_footer.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/homePageStylesheet.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/registration.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenAdd.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenInfo.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/pictures/webp/Contact2.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/pictures/webp/Home.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webpagina's/css/registration.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webpagina's/html/Registration.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/Screenshot_2025-10-27_114430-removebg-preview.ico" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/Contact2.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/Home.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/download.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/floraHolidayLogo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/floraHolidayLogo.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/footer.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/footer.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/klantGegevens.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/klantGegevens.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/mijnVeilingenBekijken.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/mijnVeilingenBekijken.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/veilingPlaatsen.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/public/webp/veilingPlaatsen.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/index.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webpagina's/css/header_footer.css" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/css/header_footer.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/favicon.ico" beforeDir="false" afterPath="$PROJECT_DIR$/public/favicon.ico" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/public/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/logo192.png" beforeDir="false" afterPath="$PROJECT_DIR$/public/logo192.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/logo512.png" beforeDir="false" afterPath="$PROJECT_DIR$/public/logo512.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/public/manifest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/robots.txt" beforeDir="false" afterPath="$PROJECT_DIR$/public/robots.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/App.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/App.test.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.test.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/Registration.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/Registration.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/header_footer.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/header_footer.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/homePageStylesheet.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/homePageStylesheet.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/index.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/logo.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/logo.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/registration.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/registration.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/reportWebVitals.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/reportWebVitals.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenAdd.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/sellerScreenAdd.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenInfo.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/sellerScreenInfo.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/setupTests.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/setupTests.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webpagina's/html/Registration.html" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/html/Registration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,14 +80,17 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "Yash",
-    "last_opened_file_path": "C:/Users/ymbso/OneDrive/Documenten/GitHub/Bitbusters-Multilayer-Webapplications-Groep-6/front-end/mijn-veiling/src"
+    "last_opened_file_path": "C:/Users/ymbso/OneDrive/Documenten/GitHub/1Bitbusters-Multilayer-Webapplications-Groep-6/front-end/public"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\1Bitbusters-Multilayer-Webapplications-Groep-6\front-end\public" />
       <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\front-end\mijn-veiling\src" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\1Bitbusters-Multilayer-Webapplications-Groep-6\front-end" />
+      <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\1Bitbusters-Multilayer-Webapplications-Groep-6\front-end\mijn-veiling\src" />
       <recent name="C:\Users\ymbso\OneDrive\Documenten\GitHub\Bitbusters-Multilayer-Webapplications-Groep-6\front-end\mijn-veiling\src" />
     </key>
   </component>

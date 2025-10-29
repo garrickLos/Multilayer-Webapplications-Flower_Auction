@@ -88,7 +88,7 @@ function App() {
         <div className="overlayBlock">
           <div className="footerText">
             <div className="footer-image">
-              <img src="/resources/pictures/ico/Screenshot_2025-10-27_114430-removebg-preview.ico" alt="" />
+              <img src="/Screenshot_2025-10-27_114430-removebg-preview.ico" alt="" />
             </div>
             <div className="text-column_one">
               <p>Intranet Royal FloraHolland</p>

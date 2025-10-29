@@ -4,7 +4,7 @@ export default function Header() {
       <div className="HoofschermContainer">
         <div className="logoTitel">
           <img
-            src="/resources/pictures/webp/floraHolidayLogo.webp"
+            src="/webp/floraHolidayLogo.webp"
             alt="Royal Flora Holland logo"
             className="floraLogo"
           />
@@ -15,7 +15,7 @@ export default function Header() {
           <ul>
             <li className="veilingPlaatsen">
               <img
-                src="front-end/resources/pictures/webp/Contact2.webp"
+                src="/webp/Contact2.webp"
                 alt="Contact"
                 className="ContactPersoonLogo"
               />
@@ -23,7 +23,7 @@ export default function Header() {
             </li>
             <li className="klantGegevens">
               <img
-                src="/resources/pictures/webp/Home.webp"
+                src="/webp/Home.webp"
                 alt="home"
                 className="HomeButtonLogo"
               />
