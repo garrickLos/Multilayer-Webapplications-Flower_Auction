@@ -16,13 +16,13 @@ main {
     padding: 10px 20px;
 }
 
-.logoTitel, .veilingPlaatsen, .mijnVeilingenBekijken, .klantGegevens {
+.logoTitel, .mijnVeilingenBekijken, .klantGegevens {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.floraLogo, .veilingPlaatsenLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
+.floraLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
     width: 50px;
     height: auto;
     display: block;

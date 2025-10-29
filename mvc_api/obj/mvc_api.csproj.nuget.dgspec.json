@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj": {}
+    "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj": {
+    "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
+        "projectUniqueName": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
         "projectName": "mvc_api",
-        "projectPath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
-        "packagesPath": "C:\\Users\\Bayra\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
+        "projectPath": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
+        "packagesPath": "C:\\Users\\thoma\\.nuget\\packages\\",
+        "outputPath": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Bayra\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\thoma\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -52,23 +52,7 @@
               "target": "Package",
               "version": "[9.0.9, )"
             },
-            "Microsoft.EntityFrameworkCore.Design": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[9.0.9, )"
-            },
             "Microsoft.EntityFrameworkCore.SqlServer": {
-              "target": "Package",
-              "version": "[9.0.9, )"
-            },
-            "Microsoft.EntityFrameworkCore.Sqlite": {
-              "target": "Package",
-              "version": "[9.0.9, )"
-            },
-            "Microsoft.EntityFrameworkCore.Tools": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
               "target": "Package",
               "version": "[9.0.9, )"
             },
@@ -78,7 +62,19 @@
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[9.0.5, )"
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.Swagger": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.SwaggerGen": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.SwaggerUI": {
+              "target": "Package",
+              "version": "[9.0.6, )"
             }
           },
           "imports": [
