@@ -1,4 +1,4 @@
-function genereerDataItem(jsonBestand, containerId, divClass, imagePath) {
+async function genereerDataItem(containerId, divClass, jsonItem) {
     const container = document.getElementById(containerId);
 
     if (!container) {
@@ -7,22 +7,47 @@ function genereerDataItem(jsonBestand, containerId, divClass, imagePath) {
             return;
     }
 
-    const itemcontainer = document.createElement('div');
-    itemcontainer.classList.add(divClass);
+    const dealsArray = await dataOphalen(jsonItem);
 
-    if (!imagePath) {
-        imagePath = "/front-end/resources/pictures/webp/download.webp";
+    if (!dealsArray || dealsArray.length === 0) {
+        console.warn('Geen deals gevonden of er is een fout opgetreden bij het ophalen.');
+        return;
     }
-    dataOphalen();
-    itemcontainer.innerHTML = `
-        <img src="${imagePath}" alt="Afbeelding van het item">
-        <h3>Artificial Citroen boom in deco pot</h3>
-        <p>Lorem ipsum dolor sit amet.</p>
-    `;
+    
+    dealsArray.forEach(itemInfo => {          
+            const itemcontainer = document.createElement('div');
+            itemcontainer.classList.add(divClass);  
+            const ImagePath = itemInfo.imagePath || '/front-end/resources/pictures/webp/MissingPicture.webp';
+            const altText = itemInfo["afbeelding-alt"] || "Afbeelding van het item";
+            const headerText = itemInfo.header_info || "Geen Titel";
+            const paragraafTekst = itemInfo.paragraph || "Geen beschrijving beschikbaar.";
 
-    container.appendChild(itemcontainer);
+            itemcontainer.innerHTML = `
+                <img src="${ImagePath}" alt=${altText}>
+                <h3>${headerText}</h3>
+                <p>${paragraafTekst}</p>
+            `;
+
+        container.appendChild(itemcontainer);
+        });
 }
 
-function dataOphalen(){
-    console.log("dit is wat data");
+async function dataOphalen(jsonItem){
+    const url = '/front-end/resources/Json/HoofdschermMock.json'; // Het pad naar je JSON-bestand
+
+    try {
+        const response = await fetch(url);
+
+        
+        if (!response.ok) {
+            throw new Error(`Fout bij het ophalen: ${response.status} ${response.statusText}`);
+        }
+
+        const jsonData = await response.json();
+
+        return jsonData[jsonItem];
+
+    } catch (error) {
+        console.error('Er ging iets mis tijdens de fetch-operatie:', error);
+    }
 }

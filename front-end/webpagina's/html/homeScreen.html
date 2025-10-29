@@ -65,14 +65,6 @@
             <div class="slider-container">
                 <button class="arrow" onclick="scrollSlider('upcoming', -1)">&#10094;</button>
                 <div class="slider" id="upcoming">
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
                 </div>
                 <button class="arrow" onclick="scrollSlider('upcoming', 1)">&#10095;</button>
             </div>
@@ -83,14 +75,6 @@
             <div class="slider-container alle_deals ">
                 <button class="arrow" onclick="scrollSlider('alleDeals', -1)">&#10094;</button>
                 <div class="slider" id="alleDeals">
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
                 </div>
                 <button class="arrow" onclick="scrollSlider('alleDeals', 1)">&#10095;</button>
             </div>
@@ -116,9 +100,15 @@
     <script src='../javascript/itemFiller.js'></script>
     <script src="../javascript/headers.js"></script>
     
+    <!-- voor het ophalen en genereren van specifieke items op het scherm -->
     <script>
-        genereerDataItem("dede", containerId='lastChance', divClass='card', imagePath='/front-end/resources/pictures/webp/veilingPlaatsen.webp');
+        genereerDataItem(containerId='lastChance', divClass='card', jsonItem='alleDeals');
+        genereerDataItem(containerId='upcoming', divClass='card', jsonItem='AankomendeVeilingen')
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='alleDeals');
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='AankomendeVeilingen');
     </script>
+
+    <!-- voor het linken van de ene scherm naar de andere scherm -->
     <script>headerItems(".knop-registreren", '../html/Registration.html')</script>
     <script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
     <script>headerItems(".mijnVeilingenBekijken", "../html/sellerScreenInfo.html")</script>

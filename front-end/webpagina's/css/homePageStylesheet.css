@@ -5,6 +5,10 @@ body {
     color: #333;
 }
 
+main {
+    margin: 0 0 50px 0;
+}
+
 /* banner */
 .banner {
     background-color: #388547;
@@ -101,12 +105,19 @@ section h2 {
     text-align: center;
     padding: 10px;
 }
+
+/* .slider :hover {
+    width: 50%;
+} */
+
 .card img {
     min-width: 300px;
-    width: 100%;
+    width: auto;
+    max-width: 75%;
 
     min-width: 200px;
     height: auto;
+    max-height: 50%;
     background-color: #ddd;
 }
 .card h3 {
