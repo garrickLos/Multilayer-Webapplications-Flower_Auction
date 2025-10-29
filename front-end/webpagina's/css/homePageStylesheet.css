@@ -104,7 +104,9 @@ section h2 {
 .card img {
     min-width: 300px;
     width: 100%;
-    height: 150px;
+
+    min-width: 200px;
+    height: auto;
     background-color: #ddd;
 }
 .card h3 {

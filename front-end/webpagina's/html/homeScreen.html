@@ -55,14 +55,6 @@
             <div class="slider-container">
                 <button class="arrow" onclick="scrollSlider('lastChance', -1)">&#10094;</button>
                 <div class="slider" id="lastChance">
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
                 </div>
                 <button class="arrow" onclick="scrollSlider('lastChance', 1)">&#10095;</button>
             </div>
@@ -121,5 +113,9 @@
     </footer>
 
     <script src="/front-end/webpagina's/javascript/slidersCommand.js"></script>
+    <script src='../javascript/itemFiller.js'></script>
+    <script>
+        genereerDataItem("dede", containerId='lastChance', divClass='card', imagePath='/front-end/resources/pictures/webp/veilingPlaatsen.webp');
+    </script>
 </body>
 </html>

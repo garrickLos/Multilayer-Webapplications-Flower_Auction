@@ -2355,24 +2355,47 @@
     ]
   },
   "packageFolders": {
+<<<<<<< Updated upstream
     "C:\\Users\\thoma\\.nuget\\packages\\": {}
+=======
+    "C:\\Users\\garri\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+>>>>>>> Stashed changes
   },
   "project": {
     "version": "1.0.0",
     "restore": {
+<<<<<<< Updated upstream
       "projectUniqueName": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
       "projectName": "mvc_api",
       "projectPath": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
       "packagesPath": "C:\\Users\\thoma\\.nuget\\packages\\",
       "outputPath": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
+=======
+      "projectUniqueName": "d:\\Github\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
+      "projectName": "mvc_api",
+      "projectPath": "d:\\Github\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
+      "packagesPath": "C:\\Users\\garri\\.nuget\\packages\\",
+      "outputPath": "d:\\Github\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
+>>>>>>> Stashed changes
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
+<<<<<<< Updated upstream
         "C:\\Users\\thoma\\AppData\\Roaming\\NuGet\\NuGet.Config"
+=======
+        "C:\\Users\\garri\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+>>>>>>> Stashed changes
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2449,7 +2472,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
