@@ -7,12 +7,12 @@ body {
     justify-content: space-between;
     padding: 10px 20px;
 }
-.logoTitel, .mijnVeilingenBekijken, .klantGegevens {
+.logoTitel, .veilingPlaatsen, .klantGegevens {
     display: flex;
     align-items: center;
     gap: 10px;
 }
-.floraLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
+.floraLogo, .VeilingPLaatsenLogo, .klantGegevensLogo {
     width: 50px;
     height: auto;
     display: block;
@@ -41,7 +41,7 @@ nav li {
     color: saddlebrown;
     font-size: 20px;
 }
-.productenPerDatum, .nieuweProductToevoegen, .winst {
+.productenPerDatum, .nieuweProductToevoegen {
     background-color: blue;
     color: white;
 }
@@ -80,7 +80,7 @@ nav li {
 .winst {
     align-self: flex-end;
 }
-.productNaam, .productCategorie, .hoeveelheid, .plaats {
+.productNaam, .productCategorie, .hoeveelheid, .plaats, .winst{
     outline: 1px solid lightgray;
     outline-offset: 0;
 }
