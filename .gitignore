@@ -1,0 +1,8 @@
+mvc_api/obj/project.nuget.cache
+mvc_api/obj/project.assets.json
+mvc_api/obj/mvc_api.csproj.nuget.g.props
+mvc_api/obj/mvc_api.csproj.nuget.dgspec.json
+mvc_api/obj/Debug/net9.0/mvc_api.GeneratedMSBuildEditorConfig.editorconfig
+mvc_api/obj/Debug/net9.0/mvc_api.csproj.AssemblyReference.cache
+mvc_api/obj/Debug/net9.0/mvc_api.assets.cache
+*.cache
