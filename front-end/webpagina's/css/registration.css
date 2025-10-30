@@ -21,12 +21,7 @@ body{
 }
 
 .container{width:min(1100px, 92%); margin-inline:auto}
-.header-inner, .footer-grid{display:flex; align-items:center; justify-content:space-between}
 
-.site-header{
-  background:#fff;
-  border-bottom:1px solid #e5e7eb;
-}
 .brand{
   display:flex; align-items:center; gap:.5rem; text-decoration:none; color:inherit;
   font-weight:700;
@@ -164,25 +159,6 @@ color: black;
 .visually-hidden{
   position:absolute!important; width:1px; height:1px; margin:-1px; padding:0; border:0; clip:rect(0 0 0 0); overflow:hidden
 }
-
-.hero-right{}
-
-.site-footer{
-  background:var(--brand-2);
-  padding:2.2rem 0;
-}
-.footer-grid{align-items:flex-start; gap:2rem}
-.footer-brand{display:flex; align-items:center; gap:.5rem; font-weight:700}
-.footer-cols{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:2rem 3rem;
-}
-.footer-cols ul{margin:0; padding:0; list-style:none}
-.footer-cols a{color:#0b3d2e; text-decoration:none}
-.footer-cols a:hover{text-decoration:underline}
-
-.site-header + .hero{margin-top:-1px}
 
 @media (max-width: 900px){
   .hero-grid{grid-template-columns:1fr}
