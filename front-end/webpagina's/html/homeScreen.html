@@ -79,6 +79,22 @@
                 <button class="arrow" onclick="scrollSlider('alleDeals', 1)">&#10095;</button>
             </div>
         </section>
+
+        <aside class="cookie_overlay" id="cookie_popup">
+            <div class="cookie_container">
+                <h4>Cookie beleid</h4>
+                <p>GEEF ONS JE DATA!!</p>
+
+                <label class="switch">
+                    <p>Specifieke data opslaan</p>
+                    <input type="checkbox">
+                    <span class="slider round"></span>
+                </label>
+                
+                <button id="close_cookie_button">X Sluiten</button> 
+                
+            </div>
+        </aside>
     </main>
 
     <footer>
@@ -110,8 +126,10 @@
 
     <!-- voor het linken van de ene scherm naar de andere scherm -->
     <script>headerItems(".knop-registreren", '../html/Registration.html')</script>
+    <script>headerItems(".knop-inloggen", "../html/Login.html")</script>
     <script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
     <script>headerItems(".mijnVeilingenBekijken", "../html/sellerScreenInfo.html")</script>
     <script>headerItems(".veilingPLaatsen", "../html/sellerScreenAdd.html")</script>
+    
 </body>
 </html>

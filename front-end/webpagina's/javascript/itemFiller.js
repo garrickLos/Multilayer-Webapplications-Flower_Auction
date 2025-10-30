@@ -33,7 +33,7 @@ async function genereerDataItem(containerId, divClass, jsonItem) {
 }
 
 async function dataOphalen(jsonItem){
-    const url = '/front-end/resources/Json/HoofdschermMock.json'; // Het pad naar je JSON-bestand
+    const url = '/front-end/dummydata/HoofdschermMock.json'; // Het pad naar je JSON-bestand
 
     try {
         const response = await fetch(url);
