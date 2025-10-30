@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { apiGet } from "./data"
 
-/* ===== helpers/formatters ===== */
+/* ===================== utils & formatters ===================== */
+const cx = (...p: Array<string | false | null | undefined>) => p.filter(Boolean).join(" ")
+
 const safeString = (v: unknown): string => {
     if (v == null) return ""
     if (typeof v === "string") return v
@@ -10,23 +12,23 @@ const safeString = (v: unknown): string => {
     try {
         const seen = new WeakSet<object>()
         return JSON.stringify(v, (_k, val) => {
-            if (typeof val === "bigint") return val.toString()
+            if (typeof val === "bigint") return String(val)
             if (val && typeof val === "object") { if (seen.has(val)) return "[Circular]"; seen.add(val) }
             return val
         })
-    } catch { try { return String(v) } catch { return "" } }
+    } catch { return (() => { try { return String(v) } catch { return "" } })() }
 }
 
+const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" })
 export const fmt = {
     text: (v: unknown) => safeString(v),
-    number: (v: unknown, digits = 0) => (typeof v === "number" && Number.isFinite(v) ? v.toFixed(digits) : ""),
+    number: (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v.toFixed(d) : ""),
     dateIso: (v: unknown) => (v ? new Date(String(v)).toISOString() : ""),
-    localDateTime: (iso?: string) => { if (!iso) return ""; const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleString() },
-    eur: (v: unknown) => (v == null || Number.isNaN(Number(v)) ? "" :
-        new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(v))),
+    localDateTime: (iso?: string) => { const d = iso ? new Date(iso) : null; return d && !Number.isNaN(d.getTime()) ? d.toLocaleString() : "" },
+    eur: (v: unknown) => (v == null || Number.isNaN(Number(v)) ? "" : EUR.format(Number(v))),
 }
 
-/* ===== DataTable ===== */
+/* ========================= DataTable ========================= */
 export type Column<T extends Record<string, unknown>> = {
     key: keyof T & string
     header?: React.ReactNode
@@ -34,84 +36,91 @@ export type Column<T extends Record<string, unknown>> = {
     width?: React.CSSProperties["width"]
     className?: string
     hideSm?: boolean
+    titleFromValue?: boolean // default true when no custom render
 }
+
 export type DataTableProps<T extends Record<string, unknown>> = {
     rows: ReadonlyArray<T>
     columns?: ReadonlyArray<Column<T>>
     maxColumns?: number
+    caption?: string
     onRowClick?: (row: T) => void
     getRowKey?: (row: T, index: number) => React.Key
     wrapperClassName?: string
     tableClassName?: string
     stickyHeader?: boolean
+    emptyLabel?: string
 }
 
+const autoCols = <T extends Record<string, unknown>>(rows: ReadonlyArray<T>, max = 8): ReadonlyArray<Column<T>> => {
+    const keys = new Set<keyof T & string>()
+    rows.forEach(r => Object.keys(r as object).forEach(k => keys.add(k as keyof T & string)))
+    return Array.from(keys).sort().slice(0, max).map(key => ({ key, titleFromValue: true }))
+}
+
+const autoKey = (row: Record<string, unknown>, i: number) =>
+    (row.id ?? (row as any).veilingProductNr ?? (row as any).veilingNr ?? (row as any).categorieNr ?? i) as React.Key
+
 export function DataTable<T extends Record<string, unknown>>({
-                                                                 rows, columns, maxColumns = 8, onRowClick, getRowKey,
+                                                                 rows,
+                                                                 columns,
+                                                                 maxColumns = 8,
+                                                                 caption,
+                                                                 onRowClick,
+                                                                 getRowKey,
                                                                  wrapperClassName = "table-responsive",
                                                                  tableClassName = "table table-sm table-striped table-hover align-middle",
                                                                  stickyHeader = true,
+                                                                 emptyLabel = "Geen resultaten.",
                                                              }: DataTableProps<T>) {
-    if (!rows?.length) return <Empty />
-
-    const cols: ReadonlyArray<Column<T>> = useMemo(() => {
-        if (columns?.length) return columns
-        const set = new Set<keyof T & string>()
-        for (const r of rows) for (const k of Object.keys(r) as Array<keyof T & string>) set.add(k)
-        return Array.from(set).sort().slice(0, maxColumns).map<Column<T>>((key) => ({ key }))
-    }, [columns, rows, maxColumns])
+    if (!rows?.length) return <Empty label={emptyLabel} />
+    const cols = useMemo(() => columns?.length ? columns : autoCols(rows, maxColumns), [columns, rows, maxColumns])
+    const interactive = Boolean(onRowClick)
 
     return (
         <div className={wrapperClassName}>
-            <table className={tableClassName}>
-                <thead className={stickyHeader ? "table-light sticky-top" : "table-light"} style={stickyHeader ? { top: 0, zIndex: 1 } : undefined}>
+            <table className={tableClassName} role="table">
+                {caption && <caption className="text-muted">{caption}</caption>}
+                <thead className={cx("table-light", stickyHeader && "sticky-top")} style={stickyHeader ? { top: 0, zIndex: 1 } : undefined}>
                 <tr>
-                    {cols.map((c) => (
-                        <th key={c.key} className={`${c.className ?? ""} ${c.hideSm ? "d-none d-md-table-cell" : ""}`.trim()} style={c.width ? { width: c.width } : undefined}>
+                    {cols.map(c => (
+                        <th key={c.key} scope="col" className={cx(c.className, c.hideSm && "d-none d-md-table-cell")} style={c.width ? { width: c.width } : undefined}>
                             {c.header ?? c.key}
                         </th>
                     ))}
                 </tr>
                 </thead>
                 <tbody>
-                {rows.map((row, i) => {
-                    const key =
-                        getRowKey?.(row, i) ??
-                        ((row as any).id ?? (row as any).veilingProductNr ?? (row as any).veilingNr ?? (row as any).categorieNr ?? i)
-
-                    const rowHandlers = onRowClick
-                        ? {
-                            onClick: () => onRowClick(row),
-                            onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(row) } },
-                            role: "button" as const,
-                            tabIndex: 0,
-                            style: { cursor: "pointer" },
-                            "aria-label": "Selecteer rij",
-                        }
-                        : {}
-
-                    return (
-                        <tr key={key} {...rowHandlers}>
-                            {cols.map((c) => {
-                                const val = row[c.key]
-                                const content = c.render ? c.render(val, row) : fmt.text(val)
-                                const title = typeof val === "string" && val ? val : undefined
-                                return (
-                                    <td key={c.key} className={`${c.className ?? ""} ${c.hideSm ? "d-none d-md-table-cell" : ""}`.trim()} title={title}>
-                                        {content}
-                                    </td>
-                                )
-                            })}
-                        </tr>
-                    )
-                })}
+                {rows.map((row, i) => (
+                    <tr
+                        key={getRowKey?.(row, i) ?? autoKey(row, i)}
+                        {...(interactive ? {
+                            onClick: () => onRowClick?.(row),
+                            onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick?.(row) } },
+                            role: "button" as const, tabIndex: 0, style: { cursor: "pointer" }, "aria-label": "Selecteer rij",
+                        } : {})}
+                    >
+                        {cols.map(c => {
+                            const val = row[c.key]
+                            const content = c.render ? c.render(val, row) : fmt.text(val)
+                            const title = (c.render ? c.titleFromValue : c.titleFromValue ?? true)
+                                ? (typeof val === "string" && val) || (typeof val === "number" ? String(val) : undefined)
+                                : undefined
+                            return (
+                                <td key={c.key} className={cx("text-truncate", c.className, c.hideSm && "d-none d-md-table-cell")} title={title} style={{ maxWidth: 0 }}>
+                                    {content}
+                                </td>
+                            )
+                        })}
+                    </tr>
+                ))}
                 </tbody>
             </table>
         </div>
     )
 }
 
-/* ===== Kleine UI bits ===== */
+/* =========================== small UI bits =========================== */
 export const SpinnerInline = ({ text = "Laden…" }: { text?: string }) => (
     <span className="d-inline-flex align-items-center gap-2 text-muted" aria-live="polite" role="status">
     <span className="spinner-border spinner-border-sm" aria-hidden="true" />
@@ -129,14 +138,37 @@ export const Empty = ({ label = "Geen resultaten." }: { label?: string }) => (
 export type FilterChipProps = { children: React.ReactNode; onClear: () => void; title?: string }
 export const FilterChip = ({ children, onClear, title }: FilterChipProps) => (
     <span className="badge rounded-pill bg-light text-body-secondary border d-inline-flex align-items-center gap-2" title={title}>
-    <span className="ps-2">{children}</span>
-    <button type="button" className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">
-      ×
-    </button>
+    <span className="ps-2 text-truncate" style={{ maxWidth: 240 }}>{children}</span>
+    <button type="button" className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">×</button>
   </span>
 )
 
-/* ===== Modal: veilingen per product ===== */
+/* ============================== Modal ============================== */
+
+type ModalProps = { title: React.ReactNode; onClose: () => void; children: React.ReactNode; size?: "sm" | "lg" | "xl" }
+export const Modal: React.FC<ModalProps> = ({ title, onClose, children, size }) => {
+    const ref = useRef<HTMLDivElement>(null)
+    useEffect(() => { const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose(); window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey) }, [onClose])
+    useLayoutEffect(() => { const prev = document.activeElement as HTMLElement | null; ref.current?.focus(); return () => prev?.focus() }, [])
+    const dialogCls = cx("modal-dialog", size === "sm" && "modal-sm", size === "lg" && "modal-lg", size === "xl" && "modal-xl")
+    return (
+        <div className="modal d-block" tabIndex={-1} role="dialog" aria-modal="true">
+            <div className="modal-backdrop fade show" onClick={onClose} />
+            <div className={dialogCls} role="document">
+                <div className="modal-content shadow" ref={ref} tabIndex={0}>
+                    <div className="modal-header">
+                        <h5 className="modal-title m-0">{title}</h5>
+                        <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
+                    </div>
+                    <div className="modal-body">{children}</div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/* ============================ VeilingModal ============================ */
+
 type ApiVeiling = {
     veilingNr?: number
     begintijd?: string
@@ -149,84 +181,82 @@ type ApiVeiling = {
 export function VeilingModal({ productId, onClose }: { productId: number; onClose: () => void }) {
     const [lijst, setLijst] = useState<ApiVeiling[] | null>(null)
     const [sel, setSel] = useState<ApiVeiling | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        setLijst(null); setSel(null)
+        let canceled = false
+        setLijst(null); setSel(null); setError(null)
         ;(async () => {
             try {
                 const res = await apiGet<ApiVeiling[]>("/api/Veiling", { veilingProduct: productId, page: 1, pageSize: 100 })
-                setLijst(res ?? [])
-                setSel((res ?? [])[0] ?? null)
+                if (canceled) return
+                const rows = res ?? []
+                setLijst(rows)
+                setSel(rows[0] ?? null)
             } catch {
-                setLijst([])
-                setSel(null)
+                if (!canceled) { setLijst([]); setSel(null); setError("Kon veilingen niet ophalen.") }
             }
         })()
+        return () => { canceled = true }
     }, [productId])
 
+    const columns = useMemo(() => ([
+        { key: "veilingNr", header: "#", width: 100, className: "text-nowrap" },
+        { key: "begintijd", header: "Begintijd", className: "text-nowrap" },
+        { key: "eindtijd", header: "Eindtijd", className: "text-nowrap" },
+        { key: "status", header: "Status", className: "text-nowrap" },
+        { key: "product", header: "Product", className: "w-100" },
+    ] as const), [])
+
+    const rows = useMemo(() => (lijst ?? []).map(v => ({
+        veilingNr: v.veilingNr ?? "",
+        begintijd: fmt.localDateTime(v.begintijd),
+        eindtijd: fmt.localDateTime(v.eindtijd),
+        status: v.status ?? "",
+        product: v.product?.naam ?? "",
+    })), [lijst])
+
     return (
-        <div className="position-fixed top-0 start-0 w-100 h-100" style={{ background: "rgba(0,0,0,.4)", zIndex: 1050 }} onClick={onClose}>
-            <div className="card shadow-lg position-absolute top-50 start-50 translate-middle" style={{ maxWidth: 960, width: "96%" }} onClick={(e) => e.stopPropagation()}>
-                <div className="card-header d-flex justify-content-between align-items-center">
-                    <strong>Veilingen voor product #{productId}</strong>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={onClose}>Sluiten</button>
-                </div>
-                <div className="card-body">
-                    {!lijst && (
-                        <div className="placeholder-glow">
-                            <div className="placeholder col-12 mb-2" />
-                            <div className="placeholder col-10" />
-                        </div>
-                    )}
-
-                    {lijst && lijst.length === 0 && <div className="alert alert-warning mb-0">Geen veilingen gevonden.</div>}
-
-                    {lijst && lijst.length > 0 && (
-                        <div className="row g-3">
-                            <div className="col-md-6">
-                                <h6 className="mb-2">Veilingen</h6>
-                                <DataTable
-                                    rows={lijst.map((v) => ({
-                                        veilingNr: v.veilingNr ?? "",
-                                        begintijd: fmt.localDateTime(v.begintijd),
-                                        eindtijd: fmt.localDateTime(v.eindtijd),
-                                        status: v.status ?? "",
-                                        product: v.product?.naam ?? "",
-                                    }))}
-                                    onRowClick={(row) => setSel(lijst.find((v) => v.veilingNr === (row as any).veilingNr) ?? null)}
-                                />
-                            </div>
-
-                            <div className="col-md-6">
-                                <h6 className="mb-2">Details</h6>
-                                {!sel && <div className="text-muted">Selecteer een veiling in de tabel.</div>}
-                                {sel && (
-                                    <div className="row g-3">
-                                        {sel.afbeelding && (
-                                            <div className="col-12">
-                                                <img src={sel.afbeelding} alt={sel.product?.naam ?? "product"} className="img-fluid rounded" />
-                                            </div>
-                                        )}
-                                        <div className="col-12">
-                                            <h5 className="mb-1">{sel.product?.naam}</h5>
-                                            <div className="text-muted mb-2">Veiling #{sel.veilingNr} • {sel.status ?? "Status onbekend"}</div>
-                                            <dl className="row mb-0">
-                                                <dt className="col-5 col-md-4">Startprijs</dt><dd className="col-7 col-md-8">{fmt.eur(sel.product?.startprijs)}</dd>
-                                                <dt className="col-5 col-md-4">Voorraad</dt><dd className="col-7 col-md-8">{sel.product?.voorraad ?? ""}</dd>
-                                                <dt className="col-5 col-md-4">Begintijd</dt><dd className="col-7 col-md-8">{fmt.localDateTime(sel.begintijd)}</dd>
-                                                <dt className="col-5 col-md-4">Eindtijd</dt><dd className="col-7 col-md-8">{fmt.localDateTime(sel.eindtijd)}</dd>
-                                            </dl>
-                                        </div>
+        <Modal title={<span>Veilingen voor product <span className="text-muted">#{productId}</span></span>} onClose={onClose} size="xl">
+            {!lijst && !error && (
+                <div className="placeholder-glow"><div className="placeholder col-12 mb-2" /><div className="placeholder col-10" /></div>
+            )}
+            {error && <div className="alert alert-danger" role="alert">{error}</div>}
+            {lijst && !lijst.length && !error && <div className="alert alert-warning mb-0">Geen veilingen gevonden.</div>}
+            {lijst && lijst.length > 0 && (
+                <div className="row g-3">
+                    <div className="col-md-6">
+                        <h6 className="mb-2">Veilingen</h6>
+                        <DataTable rows={rows} columns={columns as any} caption="Klik een rij voor details" onRowClick={(r: any) => setSel(lijst?.find(v => v.veilingNr === r.veilingNr) ?? null)} emptyLabel="Geen veilingen." />
+                    </div>
+                    <div className="col-md-6">
+                        <h6 className="mb-2">Details</h6>
+                        {!sel && <div className="text-muted">Selecteer een veiling in de tabel.</div>}
+                        {sel && (
+                            <div className="row g-3">
+                                {sel.afbeelding && (
+                                    <div className="col-12">
+                                        <img src={sel.afbeelding} alt={sel.product?.naam ?? "product"} className="img-fluid rounded" loading="lazy" />
                                     </div>
                                 )}
+                                <div className="col-12">
+                                    <h5 className="mb-1">{sel.product?.naam}</h5>
+                                    <div className="text-muted mb-2">Veiling #{sel.veilingNr} • {sel.status ?? "Status onbekend"}</div>
+                                    <dl className="row mb-0">
+                                        <dt className="col-5 col-md-4">Startprijs</dt><dd className="col-7 col-md-8">{fmt.eur(sel.product?.startprijs)}</dd>
+                                        <dt className="col-5 col-md-4">Voorraad</dt><dd className="col-7 col-md-8">{sel.product?.voorraad ?? ""}</dd>
+                                        <dt className="col-5 col-md-4">Begintijd</dt><dd className="col-7 col-md-8">{fmt.localDateTime(sel.begintijd)}</dd>
+                                        <dt className="col-5 col-md-4">Eindtijd</dt><dd className="col-7 col-md-8">{fmt.localDateTime(sel.eindtijd)}</dd>
+                                    </dl>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
-        </div>
+            )}
+        </Modal>
     )
 }
 
-/* compat alias */
+// Back-compat alias
 export { DataTable as ArrayTable }
