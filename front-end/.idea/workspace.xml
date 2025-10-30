@@ -4,52 +4,28 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/public/Screenshot_2025-10-27_114430-removebg-preview.ico" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/Contact2.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/Home.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/download.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/floraHolidayLogo.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/floraHolidayLogo.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/footer.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/footer.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/klantGegevens.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/klantGegevens.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/mijnVeilingenBekijken.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/mijnVeilingenBekijken.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/veilingPlaatsen.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/webp/veilingPlaatsen.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/index.js" afterDir="false" />
+    <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="yash en thomas branche samengevoegd (homescherm kan naar seller schermen, register kan naar home alleen nog home naar register">
+      <change afterPath="$PROJECT_DIR$/.idea/projectSettingsUpdater.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dummydata/customerScreen.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/webpagina's/css/customerScreen.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/webpagina's/html/customerScreen.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/webpagina's/javascript/customerScreen.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/favicon.ico" beforeDir="false" afterPath="$PROJECT_DIR$/public/favicon.ico" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/public/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/logo192.png" beforeDir="false" afterPath="$PROJECT_DIR$/public/logo192.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/logo512.png" beforeDir="false" afterPath="$PROJECT_DIR$/public/logo512.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/public/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/public/robots.txt" beforeDir="false" afterPath="$PROJECT_DIR$/public/robots.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/App.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/App.test.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.test.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/Registration.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/Registration.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/header_footer.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/header_footer.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/homePageStylesheet.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/homePageStylesheet.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/logo.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/logo.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/registration.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/registration.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/reportWebVitals.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/reportWebVitals.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenAdd.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/sellerScreenAdd.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/sellerScreenInfo.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/sellerScreenInfo.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mijn-veiling/src/setupTests.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/setupTests.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webpagina's/html/Registration.html" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/html/Registration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="CSS File" />
+        <option value="JSON File" />
+        <option value="JavaScript File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
@@ -60,27 +36,42 @@
     &quot;assignee&quot;: &quot;Be3tlejuice&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/BayramGurel/Bitbusters-Multilayer-Webapplications-Groep-6.git&quot;,
-    &quot;accountId&quot;: &quot;1e0fc052-cee7-4652-97d1-0a1bbf8d8d24&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/BayramGurel/Bitbusters-Multilayer-Webapplications-Groep-6.git",
+    "accountId": "b0fe724c-ebbe-44a9-8c89-c41d69c5fdde"
   }
-}</component>
+}]]></component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/package-lock.json" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="false" />
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
 }</component>
   <component name="ProjectId" id="34gmZ41FhKLP2TNRpJGU3c17B36" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "Yash",
-    "last_opened_file_path": "C:/Users/ymbso/OneDrive/Documenten/GitHub/1Bitbusters-Multilayer-Webapplications-Groep-6/front-end/public"
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "Thomas",
+    "last_opened_file_path": "C:/Users/ymbso/OneDrive/Documenten/GitHub/1Bitbusters-Multilayer-Webapplications-Groep-6/front-end/public",
+    "list.type.of.created.stylesheet": "CSS",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -101,8 +92,45 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1761643437443</updated>
+      <workItem from="1761812657419" duration="5513000" />
     </task>
+    <task id="LOCAL-00001" summary="yash en thomas branche samengevoegd (homescherm kan naar seller schermen, register kan naar home alleen nog home naar register">
+      <option name="closed" value="true" />
+      <created>1761734653708</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1761734653708</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="false" />
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+    <MESSAGE value="yash en thomas branche samengevoegd (homescherm kan naar seller schermen, register kan naar home alleen nog home naar register" />
+    <option name="LAST_COMMIT_MESSAGE" value="yash en thomas branche samengevoegd (homescherm kan naar seller schermen, register kan naar home alleen nog home naar register" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.OperationCanceledException" breakIfHandledByOtherCode="false" displayValue="System.OperationCanceledException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.Tasks.TaskCanceledException" breakIfHandledByOtherCode="false" displayValue="System.Threading.Tasks.TaskCanceledException" />
+          <option name="timeStamp" value="2" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="3" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
 </project>
