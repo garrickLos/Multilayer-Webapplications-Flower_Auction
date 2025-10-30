@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -14,7 +15,7 @@ public class GebruikerController(AppDbContext db) : ControllerBase
     public sealed record GDetail(
         int GebruikerNr, string Naam, string Email, string Soort,
         DateTime? LaatstIngelogd, string? Kvk, string? StraatAdres, string? Postcode,
-        int Assortiment, string? PersoneelsNr, IEnumerable<GBid> Biedingen);
+        int? Assortiment, string? PersoneelsNr, IEnumerable<GBid> Biedingen);
 
     // GET: api/Gebruiker?q=jan&page=1&pageSize=50
     [HttpGet]
@@ -62,7 +63,7 @@ public class GebruikerController(AppDbContext db) : ControllerBase
                 g.GebruikerNr, g.Naam, g.Email, g.Soort,
                 g.LaatstIngelogd, g.Kvk, g.StraatAdres, g.Postcode,
                 g.Assortiment, g.PersoneelsNr,
-                g.Biedingen!
+                g.Biedingen
                     .OrderByDescending(b => b.BiedNr)
                     .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))
             ))
@@ -81,13 +82,13 @@ public class GebruikerController(AppDbContext db) : ControllerBase
         {
             Naam = dto.Naam,
             Email = dto.Email,
-            Wachtwoord = dto.Wachtwoord,   // <-- verplicht veld uit model
+            Wachtwoord = dto.Wachtwoord,   // verplicht veld in model
             Soort = dto.Soort,
-            Kvk = dto.Kvk ?? string.Empty,
-            StraatAdres = dto.StraatAdres ?? string.Empty,
-            Postcode = dto.Postcode ?? string.Empty,
-            Assortiment = dto.Assortiment,
-            PersoneelsNr = dto.PersoneelsNr ?? string.Empty
+            Kvk = dto.Kvk,                 // laat null als null
+            StraatAdres = dto.StraatAdres, // laat null als null
+            Postcode = dto.Postcode,       // laat null als null
+            Assortiment = dto.Assortiment, // laat null als null
+            PersoneelsNr = dto.PersoneelsNr// laat null als null
         };
 
         db.Gebruikers.Add(e);
@@ -111,17 +112,17 @@ public class GebruikerController(AppDbContext db) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<GDetail>> Update(int id, [FromBody] GebruikerUpdateDto dto, CancellationToken ct = default)
     {
-        var e = await db.Gebruikers.FindAsync([id], ct);
+        var e = await db.Gebruikers.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
         e.Naam = dto.Naam;
         e.Email = dto.Email;
         e.Soort = dto.Soort;
-        e.Kvk = dto.Kvk ?? string.Empty;
-        e.StraatAdres = dto.StraatAdres ?? string.Empty;
-        e.Postcode = dto.Postcode ?? string.Empty;
+        e.Kvk = dto.Kvk;
+        e.StraatAdres = dto.StraatAdres;
+        e.Postcode = dto.Postcode;
         e.Assortiment = dto.Assortiment;
-        e.PersoneelsNr = dto.PersoneelsNr ?? string.Empty;
+        e.PersoneelsNr = dto.PersoneelsNr;
 
         await db.SaveChangesAsync(ct);
 
@@ -131,7 +132,7 @@ public class GebruikerController(AppDbContext db) : ControllerBase
                 g.GebruikerNr, g.Naam, g.Email, g.Soort,
                 g.LaatstIngelogd, g.Kvk, g.StraatAdres, g.Postcode,
                 g.Assortiment, g.PersoneelsNr,
-                g.Biedingen!.OrderByDescending(b => b.BiedNr)
+                g.Biedingen.OrderByDescending(b => b.BiedNr)
                     .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))
             ))
             .FirstAsync(ct);
@@ -143,7 +144,7 @@ public class GebruikerController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await db.Gebruikers.FindAsync([id], ct);
+        var e = await db.Gebruikers.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
         db.Gebruikers.Remove(e);

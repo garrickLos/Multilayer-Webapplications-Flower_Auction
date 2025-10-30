@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -55,11 +56,20 @@ public class BiedingController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<BDetail>> Create([FromBody] BiedingCreateDto dto, CancellationToken ct = default)
     {
         if (!await db.Gebruikers.AnyAsync(g => g.GebruikerNr == dto.GebruikerNr, ct))
-            return BadRequest("Gebruiker bestaat niet.");
-        if (!await db.Veilingproducten.AnyAsync(v => v.VeilingNr == dto.VeilingNr, ct))
-            return BadRequest("Veilingproduct bestaat niet.");
+            return BadRequest(Problem("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
 
-        var e = new Bieding { BedragPerFust = dto.BedragPerFust, AantalStuks = dto.AantalStuks, GebruikerNr = dto.GebruikerNr, VeilingNr = dto.VeilingNr };
+        // ✨ Fix: check bestaat van Veiling (niet Veilingproduct)
+        if (!await db.Veilingen.AnyAsync(v => v.VeilingNr == dto.VeilingNr, ct))
+            return BadRequest(Problem("Ongeldige referentie", "Veiling bestaat niet.", 400));
+
+        var e = new Bieding
+        {
+            BedragPerFust = dto.BedragPerFust,
+            AantalStuks   = dto.AantalStuks,
+            GebruikerNr   = dto.GebruikerNr,
+            VeilingNr     = dto.VeilingNr
+        };
+
         db.Biedingen.Add(e);
         await db.SaveChangesAsync(ct);
 
@@ -71,7 +81,7 @@ public class BiedingController(AppDbContext db) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<BDetail>> Update(int id, [FromBody] BiedingUpdateDto dto, CancellationToken ct = default)
     {
-        var e = await db.Biedingen.FindAsync([id], ct);
+        var e = await db.Biedingen.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen bieding met ID {id}.", 404));
 
         e.BedragPerFust = dto.BedragPerFust;
@@ -85,7 +95,7 @@ public class BiedingController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await db.Biedingen.FindAsync([id], ct);
+        var e = await db.Biedingen.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen bieding met ID {id}.", 404));
 
         db.Biedingen.Remove(e);
@@ -93,6 +103,6 @@ public class BiedingController(AppDbContext db) : ControllerBase
         return NoContent();
     }
 
-    ProblemDetails Problem(string title, string? detail = null, int statusCode = 400) =>
+    private ProblemDetails Problem(string title, string? detail = null, int statusCode = 400) =>
         new() { Title = title, Detail = detail, Status = statusCode, Instance = HttpContext?.Request?.Path };
 }

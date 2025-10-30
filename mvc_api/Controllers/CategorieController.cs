@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -75,7 +76,7 @@ public class CategorieController(AppDbContext db) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<CDetail>> Update(int id, [FromBody] CategorieUpdateDto dto, CancellationToken ct = default)
     {
-        var e = await db.Categorieen.FindAsync([id], ct);
+        var e = await db.Categorieen.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen categorie met ID {id}.", 404));
 
         e.Naam = dto.Naam;
@@ -88,7 +89,7 @@ public class CategorieController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await db.Categorieen.FindAsync([id], ct);
+        var e = await db.Categorieen.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen categorie met ID {id}.", 404));
 
         db.Categorieen.Remove(e);

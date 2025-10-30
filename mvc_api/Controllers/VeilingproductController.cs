@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -8,12 +9,12 @@ namespace mvc_api.Controllers;
 [ApiController, Route("api/[controller]"), Produces("application/json")]
 public class VeilingproductController(AppDbContext db) : ControllerBase
 {
-    // Response DTO's
+    // Response DTO's (namen en keys afgestemd op model)
     public sealed record VpList(
-        int VeilingNr, string Naam, DateTime GeplaatstDatum, int Fust, int Voorraad, decimal Startprijs, string? Categorie);
+        int VeilingProductNr, string Naam, DateTime GeplaatstDatum, int Fust, int Voorraad, decimal Startprijs, string? Categorie);
     public sealed record VBList(int BiedNr, decimal BedragPerFust, int AantalStuks, int GebruikerNr);
     public sealed record VpDetail(
-        int VeilingNr, string Naam, DateTime GeplaatstDatum, int Fust, int Voorraad, decimal Startprijs,
+        int VeilingProductNr, string Naam, DateTime GeplaatstDatum, int Fust, int Voorraad, decimal Startprijs,
         string? Categorie, IEnumerable<VBList> Biedingen);
 
     // GET: api/Veilingproduct?q=tulp&categorieNr=1&page=1&pageSize=50
@@ -36,8 +37,11 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
             query = query.Where(vp => vp.Naam.Contains(term));
         }
 
-        if (categorieNr is not null)
-            query = query.Where(vp => vp.CategorieNr == categorieNr);
+        if (categorieNr.HasValue)
+        {
+            var cnr = categorieNr.Value;
+            query = query.Where(vp => vp.CategorieNr == cnr);
+        }
 
         var total = await query.CountAsync(ct);
 
@@ -45,14 +49,14 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
             .OrderBy(vp => vp.Naam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(vp => new VpList(
-                vp.VeilingNr,
-                vp.Naam,
-                vp.GeplaatstDatum,
-                vp.Fust,
-                vp.Voorraad,
-                vp.Startprijs,
-                vp.Categorie == null ? null : vp.Categorie.Naam
+            .Select(v => new VpList(
+                v.VeilingProductNr,
+                v.Naam,
+                v.GeplaatstDatum,
+                v.Fust,
+                v.Voorraad,
+                v.Startprijs,
+                v.Categorie == null ? null : v.Categorie.Naam
             ))
             .ToListAsync(ct);
 
@@ -69,16 +73,17 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
     {
         var dto = await db.Veilingproducten
             .AsNoTracking()
-            .Where(v => v.VeilingNr == id)
+            .Where(v => v.VeilingProductNr == id)
             .Select(v => new VpDetail(
-                v.VeilingNr,
+                v.VeilingProductNr,
                 v.Naam,
                 v.GeplaatstDatum,
                 v.Fust,
                 v.Voorraad,
                 v.Startprijs,
                 v.Categorie == null ? null : v.Categorie.Naam,
-                v.Biedingen!
+                v.Veilingen
+                    .SelectMany(vei => vei.Biedingen)
                     .OrderByDescending(b => b.BiedNr)
                     .Select(b => new VBList(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.GebruikerNr))
             ))
@@ -93,28 +98,29 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<VpDetail>> Create([FromBody] VeilingproductCreateDto dto, CancellationToken ct = default)
     {
-        // FK check (optioneel: je kunt ook op DbUpdateException vertrouwen)
         var categorieBestaat = await db.Categorieen.AnyAsync(c => c.CategorieNr == dto.CategorieNr, ct);
         if (!categorieBestaat)
             return BadRequest(Problem("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
+        // Model heeft default voor GeplaatstDatum; alleen overschrijven als DTO deze meegeeft
         var e = new Veilingproduct
         {
             Naam = dto.Naam.Trim(),
-            GeplaatstDatum = dto.GeplaatstDatum,
             Fust = dto.Fust,
             Voorraad = dto.Voorraad,
             Startprijs = dto.Startprijs,
             CategorieNr = dto.CategorieNr
         };
+        if (dto.GeplaatstDatum.HasValue)
+            e.GeplaatstDatum = dto.GeplaatstDatum.Value;
 
         db.Veilingproducten.Add(e);
         await db.SaveChangesAsync(ct);
 
         var r = await db.Veilingproducten.AsNoTracking()
-            .Where(v => v.VeilingNr == e.VeilingNr)
+            .Where(v => v.VeilingProductNr == e.VeilingProductNr)
             .Select(v => new VpDetail(
-                v.VeilingNr,
+                v.VeilingProductNr,
                 v.Naam,
                 v.GeplaatstDatum,
                 v.Fust,
@@ -125,14 +131,14 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
             ))
             .FirstAsync(ct);
 
-        return CreatedAtAction(nameof(GetById), new { id = e.VeilingNr }, r);
+        return CreatedAtAction(nameof(GetById), new { id = e.VeilingProductNr }, r);
     }
 
     // PUT: api/Veilingproduct/1234
     [HttpPut("{id:int}")]
     public async Task<ActionResult<VpDetail>> Update(int id, [FromBody] VeilingproductUpdateDto dto, CancellationToken ct = default)
     {
-        var e = await db.Veilingproducten.FindAsync([id], ct);
+        var e = await db.Veilingproducten.FindAsync(new object[] { id }, ct);
         if (e is null)
             return NotFound(Problem("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
 
@@ -141,7 +147,8 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
             return BadRequest(Problem("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
         e.Naam = dto.Naam.Trim();
-        e.GeplaatstDatum = dto.GeplaatstDatum;
+        if (dto.GeplaatstDatum.HasValue)
+            e.GeplaatstDatum = dto.GeplaatstDatum.Value; // anders bestaande waarde behouden
         e.Fust = dto.Fust;
         e.Voorraad = dto.Voorraad;
         e.Startprijs = dto.Startprijs;
@@ -150,15 +157,19 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
         await db.SaveChangesAsync(ct);
 
         var r = await db.Veilingproducten.AsNoTracking()
-            .Where(v => v.VeilingNr == id)
+            .Where(v => v.VeilingProductNr == id)
             .Select(v => new VpDetail(
-                v.VeilingNr,
+                v.VeilingProductNr,
                 v.Naam,
                 v.GeplaatstDatum,
                 v.Fust,
                 v.Voorraad,
-                v.Startprijs, 
+                v.Startprijs,
                 v.Categorie == null ? null : v.Categorie.Naam,
+                v.Veilingen
+                    .SelectMany(vei => vei.Biedingen)
+                    .OrderByDescending(b => b.BiedNr)
+                    .Select(b => new VBList(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.GebruikerNr))
             ))
             .FirstAsync(ct);
 
@@ -169,7 +180,7 @@ public class VeilingproductController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await db.Veilingproducten.FindAsync([id], ct);
+        var e = await db.Veilingproducten.FindAsync(new object[] { id }, ct);
         if (e is null)
             return NotFound(Problem("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
 
