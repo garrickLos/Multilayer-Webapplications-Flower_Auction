@@ -118,10 +118,10 @@
     
     <!-- voor het ophalen en genereren van specifieke items op het scherm -->
     <script>
-        genereerDataItem(containerId='lastChance', divClass='card', jsonItem='alleDeals');
-        genereerDataItem(containerId='upcoming', divClass='card', jsonItem='AankomendeVeilingen')
-        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='alleDeals');
-        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='AankomendeVeilingen');
+        genereerDataItem(containerId='lastChance', divClass='card', jsonItem='alleDeals', url='/front-end/dummydata/HoofdschermMock.json');
+        genereerDataItem(containerId='upcoming', divClass='card', jsonItem='AankomendeVeilingen' , url='/front-end/dummydata/HoofdschermMock.json')
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='alleDeals' , url='/front-end/dummydata/HoofdschermMock.json');
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='AankomendeVeilingen' , url='/front-end/dummydata/HoofdschermMock.json');
     </script>
 
     <!-- voor het linken van de ene scherm naar de andere scherm -->
