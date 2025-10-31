@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { memo, useEffect, useId, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { apiGet } from "./data";
 
@@ -22,6 +22,7 @@ const safeString = (v: unknown): string => {
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 const DTF = new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" });
+const COLL = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
 
 export const fmt = {
     text: (v: unknown) => safeString(v),
@@ -108,10 +109,8 @@ export function DataTableInner<T extends Record<string, unknown>>({
         copy.sort((a, b) => {
             const av = (a as any)[sortKey];
             const bv = (b as any)[sortKey];
-            const as = typeof av === "number" ? av : safeString(av).toLowerCase();
-            const bs = typeof bv === "number" ? bv : safeString(bv).toLowerCase();
-            // @ts-expect-error compare number|string
-            const cmp = as < bs ? -1 : as > bs ? 1 : 0;
+            if (typeof av === "number" && typeof bv === "number") return sortDir === "asc" ? av - bv : bv - av;
+            const cmp = COLL.compare(safeString(av), safeString(bv));
             return sortDir === "asc" ? cmp : -cmp;
         });
         return copy;
@@ -119,13 +118,11 @@ export function DataTableInner<T extends Record<string, unknown>>({
 
     const tableId = useId();
 
-    const onThClick = (e: React.MouseEvent) => {
-        const th = (e.target as HTMLElement)?.closest("th[data-key]") as HTMLTableCellElement | null; if (!th) return;
-        if (th.getAttribute("data-sortable") !== "1") return;
-        const key = th.getAttribute("data-key") || undefined;
+    const toggleSort = useCallback((key: string | undefined) => {
+        if (!key) return;
         setSortKey(key);
         setSortDir(prev => (sortKey === key ? (prev === "asc" ? "desc" : "asc") : "asc"));
-    };
+    }, [sortKey]);
 
     return (
         <section className="p-2" aria-label="tabel">
@@ -147,26 +144,34 @@ export function DataTableInner<T extends Record<string, unknown>>({
 
                     <div className={wrapperClassName}>
                         <table className={tableClassName} aria-describedby={caption ? `${tableId}-caption` : undefined}>
-                            <thead className={cls(stickyHeader && "position-sticky top-0", "bg-success-subtle")} style={stickyHeader ? { zIndex: 1 } : undefined} onClick={onThClick}>
+                            <thead className={cls(stickyHeader && "position-sticky top-0", "bg-success-subtle")} style={stickyHeader ? { zIndex: 1 } : undefined}>
                             <tr>
                                 {cols.map(c => {
                                     const active = sortKey === c.key;
                                     const ariaSort = active ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+                                    const thClass = cls("text-nowrap text-success", c.className, c.hideSm && "d-none d-md-table-cell", c.sortable && "user-select-none");
                                     return (
                                         <th
                                             key={c.key}
-                                            data-key={c.key}
-                                            data-sortable={c.sortable ? "1" : ""}
-                                            aria-sort={ariaSort as any}
                                             scope="col"
-                                            className={cls("text-nowrap text-success", c.className, c.hideSm && "d-none d-md-table-cell", c.sortable && "user-select-none")}
+                                            aria-sort={ariaSort as any}
+                                            className={thClass}
                                             style={c.width != null ? ({ width: c.width } as const) : undefined}
                                             title={c.sortable ? "Klik om te sorteren" : undefined}
                                         >
-                        <span className="d-inline-flex align-items-center gap-1">
-                          {c.header ?? c.key}
-                            {c.sortable && active && <span className="small">{sortDir === "asc" ? "▲" : "▼"}</span>}
-                        </span>
+                                            {c.sortable ? (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-link p-0 text-success text-decoration-none d-inline-flex align-items-center gap-1"
+                                                    onClick={() => toggleSort(c.key)}
+                                                    aria-label={`Sorteer op ${String(c.header ?? c.key)}`}
+                                                >
+                                                    {c.header ?? c.key}
+                                                    {active && <span className="small">{sortDir === "asc" ? "▲" : "▼"}</span>}
+                                                </button>
+                                            ) : (
+                                                <span className="d-inline-flex align-items-center gap-1">{c.header ?? c.key}</span>
+                                            )}
                                         </th>
                                     );
                                 })}
@@ -312,7 +317,7 @@ export function VeilingModal({ productId, onClose }: { productId: number; onClos
         { key: "begintijd", header: "Begintijd", className: "text-nowrap", sortable: true },
         { key: "eindtijd", header: "Eindtijd", className: "text-nowrap", sortable: true, hideSm: true },
         { key: "status", header: "Status", className: "text-nowrap", sortable: true, hideSm: true },
-        { key: "product", header: "Product", className: "w-100", sortable: true },
+        { key: "product", header: "Product", className: "text-nowrap", sortable: true },
     ], []);
 
     const rows: VeilingRow[] = useMemo(() => (rowsRaw ?? []).map(v => ({
