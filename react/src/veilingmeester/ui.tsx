@@ -4,10 +4,12 @@ import React, {
 import { createPortal } from "react-dom";
 import { apiGet } from "./data";
 
-/* ------------------------------- small utils ------------------------------ */
+/* =============================== internal utils =============================== */
+/* not exported — keeps Fast Refresh happy */
 const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
 const cx = (...a: Array<string | false | null | undefined>) => a.filter(Boolean).join(" ");
-const S = (v: unknown) =>
+
+const S = (v: unknown): string =>
     v == null ? "" :
         v instanceof Date ? v.toISOString() :
             typeof v === "object" ? (() => { try { return JSON.stringify(v as Record<string, unknown>); } catch { return ""; } })() :
@@ -15,11 +17,19 @@ const S = (v: unknown) =>
 
 const collator = isBrowser ? new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" }) : null;
 const compareStr = (a: string, b: string) => (collator ? collator.compare(a, b) : a.localeCompare(b));
-const fmtDate = (d: Date) => (isBrowser ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(d) : d.toISOString());
-const fmtEur = (n?: number | null) => (n == null || Number.isNaN(+n) ? "" : (isBrowser ? new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(+n) : `€${(+n).toFixed(2)}`));
-const stableSort = <T,>(a: readonly T[], cmp: (x: T, y: T) => number) => a.map((x, i) => [x, i] as const).sort((A, B) => cmp(A[0], B[0]) || A[1]-B[1]).map(([x]) => x);
 
-/* --------------------------------- table ---------------------------------- */
+const fmtDate = (d: Date) =>
+    isBrowser ? new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(d) : d.toISOString();
+
+const fmtEur = (n?: number | null) =>
+    n == null || Number.isNaN(+n)
+        ? ""
+        : (isBrowser ? new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(+n) : `€${(+n).toFixed(2)}`);
+
+const stableSort = <T,>(a: readonly T[], cmp: (x: T, y: T) => number) =>
+    a.map((x, i) => [x, i] as const).sort((A, B) => cmp(A[0], B[0]) || A[1] - B[1]).map(([x]) => x);
+
+/* =================================== table =================================== */
 export type SortDir = "asc" | "desc";
 type RowBase = Record<string, unknown>;
 
@@ -90,7 +100,7 @@ export function DataTableInner<T extends RowBase>({
     const data = useMemo(() => (cmp ? stableSort(filtered, cmp) : filtered), [filtered, cmp]);
 
     const toggleSort = useCallback((key: keyof T & string) => {
-        setSortKey((prev) => (prev === key ? key : key));
+        setSortKey(key);
         setSortDir((d) => (sortKey === key ? (d === "asc" ? "desc" : "asc") : "asc"));
     }, [sortKey]);
 
@@ -165,7 +175,7 @@ export function DataTableInner<T extends RowBase>({
 }
 export const DataTable = memo(DataTableInner) as typeof DataTableInner;
 
-/* --------------------------------- bits ----------------------------------- */
+/* ================================== bits ================================== */
 export const Empty = ({ label = "Geen resultaten." }: { label?: string }) => (
     <div className="text-center text-muted py-5" role="status" aria-live="polite" aria-label="geen resultaten">
         <div className="display-6 mb-2">🌿</div>
@@ -173,7 +183,7 @@ export const Empty = ({ label = "Geen resultaten." }: { label?: string }) => (
     </div>
 );
 
-/* --------------------------------- modal ---------------------------------- */
+/* ================================== modal ================================= */
 type ModalProps = { title: React.ReactNode; onClose: () => void; children: React.ReactNode; size?: "sm"|"lg"|"xl"; fullscreenUntil?: "sm"|"md"|"lg"|"xl"|"xxl"; maxWidthPx?: number; autoFocusSelector?: string; };
 
 export const Modal: React.FC<ModalProps> = ({ title, onClose, children, size, fullscreenUntil, maxWidthPx, autoFocusSelector }) => {
@@ -204,7 +214,7 @@ export const Modal: React.FC<ModalProps> = ({ title, onClose, children, size, fu
                 <div className="modal-content shadow border-0">
                     <div className="modal-header bg-success-subtle">
                         <h5 id={titleId} className="modal-title m-0 text-success">{title}</h5>
-                        <button type="button" className="btn btn-close" aria-label="Sluiten" onClick={onClose} />
+                        <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
                     </div>
                     <div className="modal-body p-3">{children}</div>
                 </div>
@@ -215,7 +225,7 @@ export const Modal: React.FC<ModalProps> = ({ title, onClose, children, size, fu
     return portalRoot ? (<>{createPortal(backdropNode, portalRoot)}{createPortal(modalNode, portalRoot)}</>) : modalNode;
 };
 
-/* -------------------------------- veiling --------------------------------- */
+/* ============================== veiling modal ============================== */
 type ApiVeiling = {
     veilingNr?: number;
     begintijd?: string; // ISO
@@ -255,7 +265,9 @@ export function VeilingModal({ productId, onClose }: { productId: number; onClos
         setRowsRaw(null); setSel(null); setError(null);
         (async () => {
             try {
-                const res = await apiGet<ApiVeiling[]>("/api/Veiling", { veilingProduct: productId, page: 1, pageSize: 100, signal: ctl.signal } as unknown as RequestInit);
+                /* TS2345 fix: query in URL, pass only { signal } to apiGet */
+                const url = `/api/Veiling?veilingProduct=${encodeURIComponent(productId)}&page=1&pageSize=100`;
+                const res = await apiGet<ApiVeiling[]>(url, { signal: ctl.signal });
                 if (ctl.signal.aborted) return;
                 const rows = res ?? [];
                 setRowsRaw(rows);
@@ -343,7 +355,7 @@ export function VeilingModal({ productId, onClose }: { productId: number; onClos
     );
 }
 
-/* ------------------------------- FilterChip -------------------------------- */
+/* ================================ FilterChip ================================ */
 export const FilterChip = ({
                                children,
                                onClear,
@@ -370,18 +382,6 @@ export const FilterChip = ({
     </button>
   </span>
 );
-/* ------------------------------- public fmt -------------------------------- */
-export const fmt = {
-    text: (v: unknown): string => S(v),
-    eur: (v?: number | string | null): string =>
-        v == null || Number.isNaN(Number(v)) ? "" : fmtEur(Number(v)),
-    localDateTime: (v?: string | Date | null): string => {
-        if (!v) return "";
-        const d = typeof v === "string" ? new Date(v) : v;
-        return Number.isNaN(d.getTime()) ? "" : fmtDate(d);
-    },
-};
 
-
-/* alias */
+/* alias (components only) */
 export { DataTable as ArrayTable };

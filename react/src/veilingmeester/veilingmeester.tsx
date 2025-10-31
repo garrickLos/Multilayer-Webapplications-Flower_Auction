@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     apiGet,
     type Bieding,
@@ -12,23 +12,77 @@ import {
     usePagedList,
     type Veilingproduct,
 } from "./data";
-import { Empty, FilterChip, DataTable as ArrayTable, VeilingModal, fmt } from "./ui";
+import { Empty, FilterChip, DataTable as ArrayTable, VeilingModal } from "./ui";
 
-/* =============================== UI atoms =============================== */
+/* ------------------------------ minimal debug ----------------------------- */
+const DEBUG = true;
+const logInfo = (...a: unknown[]) => {
+    if (DEBUG) console.log("[Veilingmeester]", ...a);
+};
+const logErr = (...a: unknown[]) => {
+    if (DEBUG) console.error("[Veilingmeester]", ...a);
+};
+
+/* --------------------------------- utils ---------------------------------- */
 const SIZES = [10, 25, 50, 100] as const;
+const fmtDate = (d: Date) =>
+    new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(d);
+const localDT = (v?: string | null) => (v ? fmtDate(new Date(v)) : "");
+const fmtEur = (n?: number | null) =>
+    n == null || Number.isNaN(+n)
+        ? ""
+        : new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(+n);
+const splitTokens = (q: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+const isString = (v: unknown): v is string => typeof v === "string";
+
+/* Safe accessors (avoid `any`) */
+const getProp = (o: unknown, k: string): unknown =>
+    o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined;
+const asStr = (v: unknown) => (typeof v === "string" ? v : "");
+const asNum = (v: unknown) => (typeof v === "number" ? v : 0);
+
+/* --------------------------------- atoms ---------------------------------- */
+const SearchInput = ({
+                         id,
+                         label,
+                         value,
+                         onChange,
+                         placeholder,
+                     }: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+}) => (
+    <div>
+        <label htmlFor={id} className="form-label mb-1">
+            {label}
+        </label>
+        <input
+            id={id}
+            className="form-control form-control-sm"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            inputMode="search"
+            aria-label={label}
+        />
+    </div>
+);
 
 const SelectSm = ({
+                      id,
+                      label,
                       value,
                       onChange,
                       values = SIZES,
-                      id,
-                      label,
                   }: {
+    id: string;
+    label?: string;
     value: number;
     onChange: (n: number) => void;
     values?: readonly number[];
-    id: string;
-    label?: string;
 }) => (
     <div>
         {label && (
@@ -41,7 +95,7 @@ const SelectSm = ({
             className="form-select form-select-sm"
             value={value}
             onChange={(e) => onChange(+e.target.value)}
-            aria-label={label || "Selecteer hoeveelheid per pagina"}
+            aria-label={label || "Per pagina"}
         >
             {values.map((n) => (
                 <option key={n} value={n}>
@@ -49,6 +103,14 @@ const SelectSm = ({
                 </option>
             ))}
         </select>
+    </div>
+);
+
+const Loading = () => (
+    <div className="placeholder-glow" aria-live="polite" aria-busy="true">
+        <div className="placeholder col-12 mb-2" />
+        <div className="placeholder col-10 mb-2" />
+        <div className="placeholder col-8" />
     </div>
 );
 
@@ -89,107 +151,67 @@ const Pager = ({
     </div>
 );
 
-const Loading = () => (
-    <div className="placeholder-glow" aria-live="polite" aria-busy="true">
-        <div className="placeholder col-12 mb-2" />
-        <div className="placeholder col-10 mb-2" />
-        <div className="placeholder col-8" />
-    </div>
-);
-
-const SearchInput = ({
-                         id,
-                         label,
-                         value,
-                         onChange,
-                         placeholder,
-                     }: {
-    id: string;
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    placeholder?: string;
-}) => (
-    <div>
-        <label htmlFor={id} className="form-label mb-1">
-            {label}
-        </label>
-        <input
-            id={id}
-            className="form-control form-control-sm"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            inputMode="search"
-            aria-label={label}
-        />
-    </div>
-);
-
-const ResetButton = ({
-                         onClick,
-                         disabled,
-                         label = "Reset",
-                     }: {
-    onClick: () => void;
-    disabled?: boolean;
-    label?: string;
-}) => (
-    <button className="btn btn-outline-secondary btn-sm" onClick={onClick} disabled={disabled} aria-label={label}>
-        {label}
-    </button>
-);
-
-/* ============================ tiny data helpers ============================ */
-const splitTokens = (q: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-
-/** heel simpele cache + in-flight guard om dubbele requests te voorkomen */
+/* -------------------------- name-resolution cache ------------------------- */
 function useNameCache() {
     const [gebruikersMap, setGebruikersMap] = useState<Record<number, string>>({});
     const [veilingenMap, setVeilingenMap] = useState<Record<number, string>>({});
-    const inFlightGebr = useRef<Set<number>>(new Set());
-    const inFlightVeil = useRef<Set<number>>(new Set());
+    const inFlightGebr = React.useRef<Set<number>>(new Set());
+    const inFlightVeil = React.useRef<Set<number>>(new Set());
 
-    const fetchGebruikers = async (ids: number[]) => {
-        const todo = ids.filter((id) => !inFlightGebr.current.has(id) && gebruikersMap[id] === undefined);
-        if (!todo.length) return;
-        todo.forEach((id) => inFlightGebr.current.add(id));
-        const pairs = await Promise.all(
-            todo.map(async (id) => {
-                try {
-                    const g = await apiGet<{ gebruikerNr?: number; naam?: string }>(`/api/Gebruiker/${id}`);
-                    return [id, g?.naam?.trim() || `Gebruiker ${id}`] as const;
-                } catch {
-                    return [id, `Gebruiker ${id}`] as const;
-                }
-            })
-        );
-        setGebruikersMap((p) => ({ ...p, ...Object.fromEntries(pairs) }));
-        todo.forEach((id) => inFlightGebr.current.delete(id));
-    };
+    const fetchGebruikers = useCallback(
+        async (ids: number[]) => {
+            const todo = ids.filter((id) => !inFlightGebr.current.has(id) && !(id in gebruikersMap));
+            if (!todo.length) return;
+            todo.forEach((id) => inFlightGebr.current.add(id));
+            try {
+                const pairs = await Promise.all(
+                    todo.map(async (id) => {
+                        try {
+                            const g = await apiGet<{ gebruikerNr?: number; naam?: unknown }>(`/api/Gebruiker/${id}`);
+                            const naam = isString(g?.naam) ? g!.naam.trim() : "";
+                            return [id, naam || `Gebruiker ${id}`] as const;
+                        } catch {
+                            return [id, `Gebruiker ${id}`] as const;
+                        }
+                    })
+                );
+                setGebruikersMap((p) => ({ ...p, ...Object.fromEntries(pairs) }));
+            } finally {
+                todo.forEach((id) => inFlightGebr.current.delete(id));
+            }
+        },
+        [gebruikersMap]
+    );
 
-    const fetchVeilingen = async (ids: number[]) => {
-        const todo = ids.filter((id) => !inFlightVeil.current.has(id) && veilingenMap[id] === undefined);
-        if (!todo.length) return;
-        todo.forEach((id) => inFlightVeil.current.add(id));
-        const pairs = await Promise.all(
-            todo.map(async (nr) => {
-                try {
-                    const v = await apiGet<{ veilingNr?: number; product?: { naam?: string } }>(`/api/Veiling/${nr}`);
-                    return [nr, v?.product?.naam ? `${v.veilingNr ?? nr} – ${v.product.naam}` : `Veiling ${nr}`] as const;
-                } catch {
-                    return [nr, `Veiling ${nr}`] as const;
-                }
-            })
-        );
-        setVeilingenMap((p) => ({ ...p, ...Object.fromEntries(pairs) }));
-        todo.forEach((id) => inFlightVeil.current.delete(id));
-    };
+    const fetchVeilingen = useCallback(
+        async (ids: number[]) => {
+            const todo = ids.filter((id) => !inFlightVeil.current.has(id) && !(id in veilingenMap));
+            if (!todo.length) return;
+            todo.forEach((id) => inFlightVeil.current.add(id));
+            try {
+                const pairs = await Promise.all(
+                    todo.map(async (nr) => {
+                        try {
+                            const v = await apiGet<{ veilingNr?: number; product?: { naam?: unknown } }>(`/api/Veiling/${nr}`);
+                            const prodName = isString(v?.product?.naam) ? v!.product!.naam : undefined;
+                            return [nr, prodName ? `${v?.veilingNr ?? nr} – ${prodName}` : `Veiling ${nr}`] as const;
+                        } catch {
+                            return [nr, `Veiling ${nr}`] as const;
+                        }
+                    })
+                );
+                setVeilingenMap((p) => ({ ...p, ...Object.fromEntries(pairs) }));
+            } finally {
+                todo.forEach((id) => inFlightVeil.current.delete(id));
+            }
+        },
+        [veilingenMap]
+    );
 
     return { gebruikersMap, veilingenMap, fetchGebruikers, fetchVeilingen };
 }
 
-/* ================================== Main ================================== */
+/* ================================== page ================================== */
 export default function Veilingmeester() {
     const [tab, setTab] = useState<"biedingen" | "producten">("producten");
 
@@ -204,13 +226,7 @@ export default function Veilingmeester() {
         loading: bLoading,
         error: bError,
         lastCount: bLastCount,
-    } = usePagedList<Bieding>({
-        path: "/api/Bieding",
-        params: {},
-        page: bPage,
-        pageSize: bPageSize,
-        paramsKey: "all",
-    });
+    } = usePagedList<Bieding>({ path: "/api/Bieding", params: {}, page: bPage, pageSize: bPageSize, paramsKey: "all" });
 
     useEffect(() => setBPage(1), [dBQuery, bPageSize]);
 
@@ -220,10 +236,7 @@ export default function Veilingmeester() {
     const [vPage, setVPage] = useState(1);
     const [vPageSize, setVPageSize] = useState(25);
 
-    const vParams = useMemo(
-        () => ({ q: q || undefined, categorieNr: toIntOrUndef(categorieNr) }),
-        [q, categorieNr]
-    );
+    const vParams = useMemo(() => ({ q: q || undefined, categorieNr: toIntOrUndef(categorieNr) }), [q, categorieNr]);
 
     const {
         data: producten = [],
@@ -244,27 +257,37 @@ export default function Veilingmeester() {
     const [catsMap, setCatsMap] = useState<Record<number, string>>({});
     const [catsLoading, setCatsLoading] = useState(false);
     const [catsError, setCatsError] = useState<string | null>(null);
-    const catsAbort = useRef<AbortController | null>(null);
 
     useEffect(() => {
-        catsAbort.current?.abort();
         const ctl = new AbortController();
-        catsAbort.current = ctl;
         setCatsLoading(true);
         setCatsError(null);
+        if (DEBUG) {
+            console.time("[Veilingmeester] categorieën");
+        }
         (async () => {
             try {
-                const cats = await apiGet<Categorie[]>("/api/Categorie", { page: 1, pageSize: 1000 }, ctl.signal);
+                logInfo("Categorieën laden…");
+                const cats = await apiGet<Categorie[]>("/api/Categorie?page=1&pageSize=1000", { signal: ctl.signal });
                 const map: Record<number, string> = {};
                 for (const c of cats) {
                     const id = getCategorieId(c);
-                    if (id != null) map[id] = getCategorieNaam(c) || `Categorie ${id}`;
+                    const nm = getCategorieNaam(c);
+                    const naam = isString(nm) ? nm : "";
+                    if (id != null) map[id] = naam || `Categorie ${id}`;
                 }
                 setCatsMap(map);
+                logInfo("Categorieën geladen:", Object.keys(map).length);
             } catch (e) {
-                if (!isAbort(e)) setCatsError(e instanceof Error ? e.message : "Kon categorieën niet laden");
+                if (!isAbort(e)) {
+                    setCatsError("Kon categorieën niet laden");
+                    logErr("Categorieën fout:", e);
+                }
             } finally {
                 setCatsLoading(false);
+                if (DEBUG) {
+                    console.timeEnd("[Veilingmeester] categorieën");
+                }
             }
         })();
         return () => ctl.abort();
@@ -278,11 +301,15 @@ export default function Veilingmeester() {
     );
 
     useEffect(() => {
-        const gIds = [...new Set(biedingenAsRows.map((r) => r["gebruikerNr"]).filter((n): n is number => typeof n === "number"))];
-        const vIds = [...new Set(biedingenAsRows.map((r) => r["veilingNr"]).filter((n): n is number => typeof n === "number"))];
+        const gIds = [
+            ...new Set(biedingenAsRows.map((r) => r["gebruikerNr"]).filter((n): n is number => typeof n === "number")),
+        ];
+        const vIds = [
+            ...new Set(biedingenAsRows.map((r) => r["veilingNr"]).filter((n): n is number => typeof n === "number")),
+        ];
         if (gIds.length) fetchGebruikers(gIds);
         if (vIds.length) fetchVeilingen(vIds);
-    }, [biedingenAsRows, fetchGebruikers, fetchVeilingen]); // fetchers zijn stabiel via hook
+    }, [biedingenAsRows, fetchGebruikers, fetchVeilingen]);
 
     /* -------- Biedingen-rows & filter -------- */
     const bidRows = useMemo(
@@ -302,10 +329,10 @@ export default function Veilingmeester() {
     );
 
     const filteredBidRows = useMemo(() => {
-        const base = bidRows;
         const tokens = splitTokens(dBQuery);
-        if (!base.length || !tokens.length) return base;
-        return base.filter((row) => tokens.every((t) => rowToSearchString(row).includes(t)));
+        return !bidRows.length || !tokens.length
+            ? bidRows
+            : bidRows.filter((row) => tokens.every((t) => rowToSearchString(row).includes(t)));
     }, [bidRows, dBQuery]);
 
     /* -------- Product-rows -------- */
@@ -316,20 +343,44 @@ export default function Veilingmeester() {
         fust?: number;
         voorraad?: number;
         startprijs?: string;
-        categorie?: string;
+        categorie?: string; // keep string only
     };
 
     const productRows = useMemo<ProductRow[]>(
         () =>
-            (Array.isArray(producten) ? producten : []).map((p: any) => ({
-                veilingProductNr: p.veilingProductNr,
-                naam: p.naam ?? "",
-                geplaatst: fmt.localDateTime(p.geplaatstDatum),
-                fust: p.fust ?? 0,
-                voorraad: p.voorraad ?? 0,
-                startprijs: fmt.eur(p.startprijs),
-                categorie: p.categorie ?? p.categorieNaam ?? (p.categorieNr != null ? catsMap[p.categorieNr] ?? "" : ""),
-            })),
+            (Array.isArray(producten) ? producten : []).map((p: Veilingproduct) => {
+                let categorieName = asStr(getProp(p, "categorieNaam"));
+
+                if (!categorieName && p.categorie && typeof p.categorie === "object") {
+                    const nm = getCategorieNaam(p.categorie as Categorie);
+                    if (isString(nm) && nm) categorieName = nm;
+                }
+                if (!categorieName && p.categorieNr != null) {
+                    const lookedUp = catsMap[p.categorieNr];
+                    if (isString(lookedUp) && lookedUp) categorieName = lookedUp;
+                }
+
+                const geplaatstRaw = getProp(p, "geplaatstDatum");
+                const geplaatst = isString(geplaatstRaw) ? localDT(geplaatstRaw) : "";
+
+                const startprijsRaw = getProp(p, "startprijs");
+                const startprijs =
+                    typeof startprijsRaw === "number"
+                        ? fmtEur(startprijsRaw)
+                        : isString(startprijsRaw) && !Number.isNaN(Number(startprijsRaw))
+                            ? fmtEur(Number(startprijsRaw))
+                            : "";
+
+                return {
+                    veilingProductNr: p.veilingProductNr,
+                    naam: asStr(getProp(p, "naam")),
+                    geplaatst,
+                    fust: asNum(getProp(p, "fust")),
+                    voorraad: asNum(getProp(p, "voorraad")),
+                    startprijs,
+                    categorie: categorieName ?? "",
+                };
+            }),
         [producten, catsMap]
     );
 
@@ -338,11 +389,14 @@ export default function Veilingmeester() {
     const bHasNext = bLastCount >= bPageSize;
     const vHasNext = vLastCount >= vPageSize;
 
-    /* -------- Tab IDs for a11y -------- */
-    const tabIds = {
-        biedingen: { tab: "tab-biedingen", panel: "panel-biedingen" },
-        producten: { tab: "tab-producten", panel: "panel-producten" },
-    } as const;
+    const tabIds = useMemo(
+        () =>
+            ({
+                biedingen: { tab: "tab-biedingen", panel: "panel-biedingen" },
+                producten: { tab: "tab-producten", panel: "panel-producten" },
+            } as const),
+        []
+    );
 
     return (
         <div className="container py-4">
@@ -446,8 +500,8 @@ export default function Veilingmeester() {
                                 aria-busy={catsLoading || undefined}
                             >
                                 <option value="">(alle)</option>
-                                {Object.entries(catsMap).map(([id, naam]) => (
-                                    <option key={id} value={id}>
+                                {Object.entries(catsMap).map(([catId, naam]) => (
+                                    <option key={catId} value={catId}>
                                         {naam}
                                     </option>
                                 ))}
@@ -467,15 +521,20 @@ export default function Veilingmeester() {
                         </div>
                         <div className="col-md-2 text-md-end">
                             <label className="form-label mb-1 d-block">&nbsp;</label>
-                            <ResetButton
+                            <button
+                                className="btn btn-outline-secondary btn-sm"
                                 onClick={() => {
+                                    logInfo("Reset filters");
                                     setQ("");
                                     setCategorieNr("");
                                     setVPage(1);
                                     setVPageSize(25);
                                 }}
                                 disabled={vLoading}
-                            />
+                                aria-label="Reset"
+                            >
+                                Reset
+                            </button>
                         </div>
                     </div>
 
@@ -495,7 +554,12 @@ export default function Veilingmeester() {
                         ) : productRows.length ? (
                             <ArrayTable
                                 rows={productRows}
-                                onRowClick={(row) => row.veilingProductNr && setProductIdForModal(row.veilingProductNr)}
+                                onRowClick={(row) => {
+                                    if (row.veilingProductNr) {
+                                        logInfo("Open modal product:", row.veilingProductNr);
+                                        setProductIdForModal(row.veilingProductNr);
+                                    }
+                                }}
                                 caption="Klik een rij voor details"
                             />
                         ) : (
@@ -507,7 +571,13 @@ export default function Veilingmeester() {
             </section>
 
             {productIdForModal != null && (
-                <VeilingModal productId={productIdForModal} onClose={() => setProductIdForModal(null)} />
+                <VeilingModal
+                    productId={productIdForModal}
+                    onClose={() => {
+                        logInfo("Close modal");
+                        setProductIdForModal(null);
+                    }}
+                />
             )}
         </div>
     );
