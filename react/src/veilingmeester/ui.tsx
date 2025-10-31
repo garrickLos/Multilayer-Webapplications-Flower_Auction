@@ -1,272 +1,291 @@
-import React, {
-    memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useId, useCallback,
-} from "react";
+import React, { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { apiGet } from "./data";
 
-/* ============== env & tiny helpers ============== */
-const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
-const useIsoLE = isBrowser ? useLayoutEffect : useEffect;
+/**
+ * Ultra‑lean, Bootstrap‑first rewrite (single source of truth for search + results)
+ * — The ONLY search bar and results badge live inside DataTable
+ * — VeilingModal passes raw rows; no extra filtering or badges there
+ */
 
-// tiny cx (strings|numbers|arrays|objects) without temp arrays
-type CxArg = string | number | null | false | undefined | CxArg[] | Record<string, boolean>;
-export const cx = (...a: CxArg[]) => {
-    let out = "";
-    const put = (s: string) => (out += (out && " ") + s);
-    const push = (v: CxArg): void => {
-        if (!v) return;
-        if (typeof v === "string" || typeof v === "number") return put(String(v));
-        if (Array.isArray(v)) for (let i = 0; i < v.length; i++) push(v[i]);
-        else for (const k in v) (v as Record<string, boolean>)[k] && put(k);
-    };
-    for (let i = 0; i < a.length; i++) push(a[i]);
-    return out;
-};
+/* ===================== small helpers (SSR‑safe) ===================== */
+const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
+const cls = (...a: Array<string | false | null | undefined>) => a.filter(Boolean).join(" ");
 
 const safeString = (v: unknown): string => {
     if (v == null) return "";
     const t = typeof v;
     if (t === "string" || t === "number" || t === "boolean" || t === "bigint") return String(v);
     if (v instanceof Date) return v.toISOString();
-    try {
-        const seen = new WeakSet<object>();
-        return JSON.stringify(v as unknown, (_k, val) => {
-            if (typeof val === "bigint") return String(val);
-            if (val && typeof val === "object") { if (seen.has(val)) return "[Circular]"; seen.add(val); }
-            return val;
-        });
-    } catch { try { return String(v as unknown); } catch { return ""; } }
+    try { return JSON.stringify(v as any); } catch { return ""; }
 };
 
-// Intl caches
-const nfCache = new Map<number, Intl.NumberFormat>();
-const getNF = (d = 0) => nfCache.get(d) ?? (nfCache.set(d, new Intl.NumberFormat("nl-NL",{minimumFractionDigits:d,maximumFractionDigits:d})), nfCache.get(d)!);
-const EUR = new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR"});
-const DTF = new Intl.DateTimeFormat("nl-NL",{dateStyle:"short",timeStyle:"short"});
+const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+const DTF = new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" });
 
 export const fmt = {
     text: (v: unknown) => safeString(v),
-    number: (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? getNF(d).format(v) : ""),
-    dateIso: (v: unknown) => (v ? new Date(String(v)).toISOString() : ""),
+    eur: (v: unknown) => (v == null || Number.isNaN(Number(v)) ? "" : EUR.format(Number(v))),
     localDateTime: (v?: string | Date | null) => {
         const d = typeof v === "string" ? new Date(v) : v ?? null;
         return d && !Number.isNaN(d.getTime()) ? DTF.format(d) : "";
     },
-    eur: (v: unknown) => (v == null || Number.isNaN(Number(v)) ? "" : EUR.format(Number(v))),
 };
 
-/* ========================= DataTable ========================= */
+/* ============================ DataTable ============================ */
 export type Column<T extends Record<string, unknown>> = {
-    key: keyof T & string; header?: React.ReactNode;
+    key: keyof T & string;
+    header?: React.ReactNode;
     render?: (value: T[keyof T], row: T) => React.ReactNode;
-    width?: React.CSSProperties["width"]; className?: string; hideSm?: boolean;
-    titleFromValue?: boolean; smartTitle?: boolean;
+    className?: string;
+    width?: React.CSSProperties["width"];
+    sortable?: boolean;
+    hideSm?: boolean;
 };
+
 export type DataTableProps<T extends Record<string, unknown>> = {
-    rows: ReadonlyArray<T>; columns?: ReadonlyArray<Column<T>>; maxColumns?: number; caption?: string;
-    onRowClick?: (row: T) => void; getRowKey?: (row: T, index: number) => React.Key;
-    wrapperClassName?: string; tableClassName?: string; stickyHeader?: boolean; emptyLabel?: string;
+    rows: ReadonlyArray<T>;
+    columns?: ReadonlyArray<Column<T>>;
+    maxColumns?: number;
+    caption?: string;
+    onRowClick?: (row: T) => void;
+    getRowKey?: (row: T, i: number) => React.Key;
+    stickyHeader?: boolean;
+    emptyLabel?: string;
+    defaultSortKey?: keyof T & string;
+    defaultSortDir?: "asc" | "desc";
+    wrapperClassName?: string;
+    tableClassName?: string;
+    /** optional list of keys to search; defaults to visible columns */
+    filterKeys?: ReadonlyArray<keyof T & string>;
+    /** placeholder text for the built-in filter */
+    filterPlaceholder?: string;
 };
-const autoCols = <T extends Record<string, unknown>>(rows: ReadonlyArray<T>, max = 8): ReadonlyArray<Column<T>> => {
-    const keys = new Set<string>(); for (let i = 0; i < rows.length; i++) for (const k of Object.keys(rows[i])) keys.add(k);
-    return Array.from(keys).sort().slice(0,max).map((key)=>({key:key as keyof T & string, titleFromValue:true}));
-};
-const autoKey = (row: Record<string, unknown>, i: number) =>
-    (row.id ?? (row as any).veilingProductNr ?? (row as any).veilingNr ?? (row as any).categorieNr ?? i) as React.Key;
 
-const S_CELL_MAX0 = { maxWidth: 0 } as const;
-const S_Z1 = { zIndex: 1 } as const;
-
-const titleIfTruncated = (el: HTMLTableCellElement | null, title?: string) => {
-    if (!el || !title || !isBrowser) return;
-    requestAnimationFrame(() => { if (!el) return; el.scrollWidth > el.clientWidth ? (el.title = title) : el.removeAttribute("title"); });
+const autoCols = <T extends Record<string, unknown>>(rows: ReadonlyArray<T>, max = 8) => {
+    const keys = new Set<string>();
+    for (let i = 0; i < rows.length; i++) for (const k of Object.keys(rows[i])) keys.add(k);
+    return Array.from(keys).sort().slice(0, max).map(key => ({ key: key as keyof T & string, sortable: true }));
 };
 
-function useGridNav(enabled: boolean) {
-    const ref = useRef<HTMLTableSectionElement | null>(null);
-    useEffect(() => {
-        if (!enabled || !isBrowser) return;
-        const el = ref.current; if (!el) return;
-        const onKey = (e: KeyboardEvent) => {
-            const row = (e.target as HTMLElement)?.closest("tr[tabindex]") as HTMLTableRowElement | null; if (!row) return;
-            const rows = Array.from(el.querySelectorAll<HTMLTableRowElement>("tr[tabindex]"));
-            const i = rows.indexOf(row); let next: HTMLTableRowElement | null = null;
-            switch (e.key) { case "ArrowDown": next = rows[i+1]??null; break;
-                case "ArrowUp": next = rows[i-1]??null; break;
-                case "Home": next = rows[0]??null; break;
-                case "End": next = rows[rows.length-1]??null; break;
-                default: return; }
-            if (next) { e.preventDefault(); next.focus(); }
-        };
-        el.addEventListener("keydown", onKey);
-        return () => el.removeEventListener("keydown", onKey);
-    }, [enabled]);
-    return ref;
-}
+const autoKey = (row: Record<string, unknown>, i: number) => (row.id ?? (row as any).veilingProductNr ?? (row as any).veilingNr ?? (row as any).categorieNr ?? i) as React.Key;
 
-function DataTableInner<T extends Record<string, unknown>>({
-                                                               rows, columns, maxColumns = 8, caption, onRowClick, getRowKey,
-                                                               wrapperClassName = "table-responsive rounded-3 border",
-                                                               tableClassName = "table table-sm table-striped table-hover align-middle caption-top",
-                                                               stickyHeader = true, emptyLabel = "Geen resultaten.",
-                                                           }: DataTableProps<T>) {
+export function DataTableInner<T extends Record<string, unknown>>({
+                                                                      rows,
+                                                                      columns,
+                                                                      maxColumns = 8,
+                                                                      caption,
+                                                                      onRowClick,
+                                                                      getRowKey,
+                                                                      stickyHeader = true,
+                                                                      emptyLabel = "Geen resultaten.",
+                                                                      defaultSortKey,
+                                                                      defaultSortDir = "asc",
+                                                                      wrapperClassName = "table-responsive rounded-3 border bg-body",
+                                                                      tableClassName = "table table-sm table-striped table-hover align-middle caption-top",
+                                                                      filterKeys,
+                                                                      filterPlaceholder = "zoeken…",
+                                                                  }: DataTableProps<T>) {
     if (!rows?.length) return <Empty label={emptyLabel} />;
-    const cols = useMemo(() => (columns?.length ? columns : autoCols(rows, maxColumns)), [columns, rows, maxColumns]);
-    const interactive = !!onRowClick, tableId = useId(), tbodyRef = useGridNav(interactive);
-    const rowsRef = useRef(rows); rowsRef.current = rows;
 
-    const onTbodyEvent = useCallback((
-        ev: React.MouseEvent<HTMLTableSectionElement> | React.KeyboardEvent<HTMLTableSectionElement>
-    ) => {
-        if (!onRowClick) return;
-        if ("key" in ev) { const e = ev as React.KeyboardEvent; if (e.key !== "Enter" && e.key !== " ") return; e.preventDefault(); }
-        const tr = (ev.target as HTMLElement | null)?.closest("tr[data-i]") as HTMLTableRowElement | null; if (!tr) return;
-        const idx = Number(tr.getAttribute("data-i")); Number.isFinite(idx) && onRowClick(rowsRef.current[idx]!);
-    }, [onRowClick]);
+    const cols = useMemo(() => (columns?.length ? columns : autoCols(rows, maxColumns)), [columns, rows, maxColumns]);
+    const [sortKey, setSortKey] = useState<string | undefined>(defaultSortKey);
+    const [sortDir, setSortDir] = useState<"asc" | "desc">(defaultSortDir);
+    const [q, setQ] = useState("");
+
+    const keysToSearch = useMemo(() => (filterKeys?.length ? filterKeys : cols.map(c => c.key)), [filterKeys, cols]);
+
+    const filtered = useMemo(() => {
+        const t = q.trim().toLowerCase();
+        if (!t) return rows;
+        return rows.filter(r => keysToSearch.some(k => String((r as any)[k] ?? "").toLowerCase().includes(t)));
+    }, [rows, q, keysToSearch]);
+
+    const sorted = useMemo(() => {
+        const base = filtered;
+        if (!sortKey) return base;
+        const copy = base.slice();
+        copy.sort((a, b) => {
+            const av = (a as any)[sortKey];
+            const bv = (b as any)[sortKey];
+            const as = typeof av === "number" ? av : safeString(av).toLowerCase();
+            const bs = typeof bv === "number" ? bv : safeString(bv).toLowerCase();
+            // @ts-expect-error compare number|string
+            const cmp = as < bs ? -1 : as > bs ? 1 : 0;
+            return sortDir === "asc" ? cmp : -cmp;
+        });
+        return copy;
+    }, [filtered, sortKey, sortDir]);
+
+    const tableId = useId();
+
+    const onThClick = (e: React.MouseEvent) => {
+        const th = (e.target as HTMLElement)?.closest("th[data-key]") as HTMLTableCellElement | null; if (!th) return;
+        if (th.getAttribute("data-sortable") !== "1") return;
+        const key = th.getAttribute("data-key") || undefined;
+        setSortKey(key);
+        setSortDir(prev => (sortKey === key ? (prev === "asc" ? "desc" : "asc") : "asc"));
+    };
 
     return (
-        <div className={wrapperClassName}>
-            <table className={tableClassName} aria-describedby={caption ? `${tableId}-caption` : undefined}>
-                {caption && <caption id={`${tableId}-caption`} className="text-muted small px-2 pt-2">{caption}</caption>}
-                <thead className={cx(stickyHeader && "position-sticky top-0","bg-body")} style={stickyHeader ? S_Z1 : undefined}>
-                <tr className="table-light">
-                    {cols.map((c) => (
-                        <th key={c.key} scope="col"
-                            className={cx("text-nowrap", c.className, c.hideSm && "d-none d-md-table-cell")}
-                            style={c.width != null ? ({ width: c.width } as const) : undefined}>
-                            {c.header ?? c.key}
-                        </th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody ref={tbodyRef} onClick={interactive ? onTbodyEvent : undefined} onKeyDown={interactive ? onTbodyEvent : undefined}>
-                {rows.map((row, i) => (
-                    <tr key={getRowKey?.(row, i) ?? autoKey(row, i)} data-i={i} {...(interactive ? { tabIndex: 0, "aria-label": "Selecteer rij" } : { tabIndex: -1 })}>
-                        {cols.map((c) => {
-                            const val = row[c.key] as T[keyof T];
-                            const content = c.render ? c.render(val, row) : fmt.text(val);
-                            const wantsTitle = c.render ? c.titleFromValue : c.titleFromValue ?? true;
-                            const rawTitle = wantsTitle ? (typeof val === "string" ? val : typeof val === "number" ? String(val) : undefined) : undefined;
-                            const tdCls = cx("text-truncate", c.className, c.hideSm && "d-none d-md-table-cell");
-                            return c.smartTitle && rawTitle ? (
-                                <td key={c.key} className={tdCls} style={S_CELL_MAX0} ref={(el) => titleIfTruncated(el, rawTitle)}>{content}</td>
-                            ) : (
-                                <td key={c.key} className={tdCls} title={rawTitle} style={S_CELL_MAX0}>{content}</td>
-                            );
-                        })}
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
+        <section className="p-2" aria-label="tabel">
+            <div className="card shadow-sm border-0 border border-success-subtle">
+                {caption && (
+                    <div className="card-header bg-success-subtle border-0 py-2">
+                        <div id={`${tableId}-caption`} className="small text-success">{caption}</div>
+                    </div>
+                )}
+                <div className="card-body pt-2">
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span className="badge bg-success-subtle text-success">{sorted.length.toLocaleString("nl-NL")} resultaten</span>
+                        <div className="input-group input-group-sm" style={{ maxWidth: 320 }}>
+                            <span className="input-group-text bg-success-subtle text-success border-success-subtle">Zoek</span>
+                            <input className="form-control" value={q} onChange={(e)=>setQ(e.target.value)} placeholder={filterPlaceholder} aria-label="Filter resultaten" />
+                            {!!q && <button className="btn btn-outline-secondary" onClick={()=>setQ("")}>Wissen</button>}
+                        </div>
+                    </div>
+
+                    <div className={wrapperClassName}>
+                        <table className={tableClassName} aria-describedby={caption ? `${tableId}-caption` : undefined}>
+                            <thead className={cls(stickyHeader && "position-sticky top-0", "bg-success-subtle")} style={stickyHeader ? { zIndex: 1 } : undefined} onClick={onThClick}>
+                            <tr>
+                                {cols.map(c => {
+                                    const active = sortKey === c.key;
+                                    const ariaSort = active ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+                                    return (
+                                        <th
+                                            key={c.key}
+                                            data-key={c.key}
+                                            data-sortable={c.sortable ? "1" : ""}
+                                            aria-sort={ariaSort as any}
+                                            scope="col"
+                                            className={cls("text-nowrap text-success", c.className, c.hideSm && "d-none d-md-table-cell", c.sortable && "user-select-none")}
+                                            style={c.width != null ? ({ width: c.width } as const) : undefined}
+                                            title={c.sortable ? "Klik om te sorteren" : undefined}
+                                        >
+                        <span className="d-inline-flex align-items-center gap-1">
+                          {c.header ?? c.key}
+                            {c.sortable && active && <span className="small">{sortDir === "asc" ? "▲" : "▼"}</span>}
+                        </span>
+                                        </th>
+                                    );
+                                })}
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {sorted.map((row, i) => (
+                                <tr
+                                    key={getRowKey?.(row, i) ?? autoKey(row, i)}
+                                    onClick={() => onRowClick?.(row)}
+                                    tabIndex={onRowClick ? 0 : -1}
+                                    role={onRowClick ? "button" : undefined}
+                                    onKeyDown={(e) => { if (onRowClick && (e.key === "Enter" || e.key === " ")) onRowClick(row); }}
+                                >
+                                    {cols.map(c => {
+                                        const val = row[c.key] as T[keyof T];
+                                        const content = c.render ? c.render(val, row) : fmt.text(val);
+                                        return (
+                                            <td key={c.key} className={cls("text-truncate", c.className, c.hideSm && "d-none d-md-table-cell")} style={{ maxWidth: 0 }}>{content}</td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
     );
 }
+
 export const DataTable = memo(DataTableInner) as typeof DataTableInner;
 
-/* =========================== small UI bits =========================== */
+/* ============================== small UI bits ============================== */
 export const SpinnerInline = ({ text = "Laden…" }: { text?: string }) => (
     <span className="d-inline-flex align-items-center gap-2 text-muted" aria-live="polite" role="status">
     <span className="spinner-border spinner-border-sm" aria-hidden="true" /><span>{text}</span>
   </span>
 );
+
 export const Empty = ({ label = "Geen resultaten." }: { label?: string }) => (
     <div className="text-center text-muted py-5" role="status" aria-live="polite" aria-label="geen resultaten">
         <div className="display-6 mb-2">🌿</div><p className="m-0">{label}</p>
     </div>
 );
-export type FilterChipProps = { children: React.ReactNode; onClear: () => void; title?: string };
-export const FilterChip = ({ children, onClear, title }: FilterChipProps) => (
-    <span className="badge rounded-pill bg-light text-body-secondary border d-inline-flex align-items-center gap-2" title={title}>
+
+export const FilterChip = ({ children, onClear, title }: { children: React.ReactNode; onClear: () => void; title?: string; }) => (
+    <span className="badge rounded-pill bg-success-subtle text-success border d-inline-flex align-items-center gap-2 border-success-subtle" title={title}>
     <span className="ps-2 text-truncate" style={{ maxWidth: 240 }}>{children}</span>
-    <button type="button" className="btn btn-sm btn-link text-body-secondary py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">×</button>
+    <button type="button" className="btn btn-sm btn-link text-success py-0 pe-2" onClick={onClear} aria-label="Verwijder filter">×</button>
   </span>
 );
 
-/* ============================== Modal (fixed backdrop layering) ============================== */
-type ModalProps = { title: React.ReactNode; onClose: () => void; children: React.ReactNode; size?: "sm" | "lg" | "xl" };
+/* ================================== Modal ================================== */
 
-/** Portal modal: backdrop rendered as a separate sibling (z-index 1050) under dialog (1055). */
-export const Modal: React.FC<ModalProps> = ({ title, onClose, children, size }) => {
+type ModalProps = {
+    title: React.ReactNode;
+    onClose: () => void;
+    children: React.ReactNode;
+    size?: "sm" | "lg" | "xl";
+    fullscreenUntil?: "sm" | "md" | "lg" | "xl" | "xxl";
+    maxWidthPx?: number;
+};
+
+export const Modal: React.FC<ModalProps> = ({ title, onClose, children, size, fullscreenUntil, maxWidthPx }) => {
     const portalRoot = isBrowser ? document.body : null;
-    const contentRef = useRef<HTMLDivElement>(null);
     const titleId = `${useId()}-title`;
-    const Z_BACKDROP = { zIndex: 1050 } as const;
-    const Z_MODAL = { zIndex: 1055 } as const;
 
-    // Scroll lock + focus trap + restore + ESC
-    useIsoLE(() => {
+    useEffect(() => {
         if (!isBrowser) return;
-        const body = document.body, html = document.documentElement;
-        const prevOverflow = body.style.overflow, prevPR = body.style.paddingRight;
-        const sb = window.innerWidth - html.clientWidth;
-        body.style.overflow = "hidden"; if (sb > 0) body.style.paddingRight = `${sb}px`;
-
-        const prev = (document.activeElement as HTMLElement) || null;
-        const q = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
-        const first = contentRef.current?.querySelector<HTMLElement>(q);
-        (first ?? contentRef.current)?.focus();
-
-        const onTab = (e: KeyboardEvent) => {
-            if (e.key !== "Tab") return;
-            const nodes = contentRef.current?.querySelectorAll<HTMLElement>(q); if (!nodes?.length) return;
-            const f = Array.from(nodes).filter(n=>!n.hasAttribute("disabled"));
-            const a = f[0], z = f[f.length-1];
-            if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
-            else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
-        };
         const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-
-        document.addEventListener("keydown", onTab, true);
         window.addEventListener("keydown", onEsc);
-
-        return () => {
-            body.style.overflow = prevOverflow; body.style.paddingRight = prevPR;
-            document.removeEventListener("keydown", onTab, true);
-            window.removeEventListener("keydown", onEsc);
-            prev?.focus();
-        };
+        return () => window.removeEventListener("keydown", onEsc);
     }, [onClose]);
 
-    const dialogCls = cx("modal-dialog modal-dialog-centered", size==="sm"&&"modal-sm", size==="lg"&&"modal-lg", size==="xl"&&"modal-xl");
+    const fsClass = fullscreenUntil ? `modal-fullscreen-${fullscreenUntil}-down` : "modal-fullscreen-sm-down";
+    const dialogCls = cls("modal-dialog modal-dialog-centered modal-dialog-scrollable", fsClass, size === "sm" && "modal-sm", size === "lg" && "modal-lg", size === "xl" && "modal-xl");
+    const dialogStyle = fullscreenUntil ? undefined : (maxWidthPx ? ({ maxWidth: `min(98vw, ${maxWidthPx}px)` } as const) : undefined);
 
     const modalNode = (
-        <div className="modal fade show d-block" style={Z_MODAL} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-            <div className={dialogCls} role="document">
-                <div className="modal-content shadow" ref={contentRef} tabIndex={0}>
-                    <div className="modal-header">
-                        <h5 id={titleId} className="modal-title m-0">{title}</h5>
+        <div className="modal show d-block" style={{ zIndex: 1055 }} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+            <div className={dialogCls} role="document" style={dialogStyle}>
+                <div className="modal-content shadow border-0">
+                    <div className="modal-header bg-success-subtle">
+                        <h5 id={titleId} className="modal-title m-0 text-success">{title}</h5>
                         <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
                     </div>
-                    <div className="modal-body">{children}</div>
+                    <div className="modal-body p-3">{children}</div>
                 </div>
             </div>
         </div>
     );
 
     const backdropNode = (
-        <div
-            className="modal-backdrop fade show"
-            style={Z_BACKDROP}
-            aria-hidden="true"
-            onMouseDown={onClose}
-        />
+        <div className="modal-backdrop show" style={{ zIndex: 1050 }} aria-hidden="true" onMouseDown={onClose} />
     );
 
-    // Render backdrop and modal as siblings at <body> level to respect stacking order.
-    return portalRoot
-        ? <>
-            {createPortal(backdropNode, portalRoot)}
-            {createPortal(modalNode, portalRoot)}
-        </>
-        : modalNode;
+    return portalRoot ? (<>
+        {createPortal(backdropNode, portalRoot)}
+        {createPortal(modalNode, portalRoot)}
+    </>) : modalNode;
 };
 
-/* ============================ VeilingModal ============================ */
+/* ============================= VeilingModal ============================= */
+
 type ApiVeiling = {
     veilingNr?: number; begintijd?: string; eindtijd?: string; status?: string; afbeelding?: string;
     product?: { naam?: string; startprijs?: number; voorraad?: number };
 };
-type VeilingRow = { veilingNr: number | ""; begintijd: string; eindtijd: string; status: string; product: string; };
+
+type VeilingRow = { veilingNr: number | ""; begintijd: string; eindtijd: string; status: string; product: string };
+
+const StatusBadge = ({ status }: { status?: string | null }) => {
+    if (!status) return null;
+    const s = status.toLowerCase();
+    const clsName = s.includes("actief") ? "bg-success-subtle text-success" : s.includes("afgesloten") ? "bg-secondary-subtle text-secondary" : s.includes("gepland") ? "bg-info-subtle text-info" : "bg-light text-body";
+    return <span className={cls("badge", clsName)}>{status}</span>;
+};
 
 export function VeilingModal({ productId, onClose }: { productId: number; onClose: () => void }) {
     const [rowsRaw, setRowsRaw] = useState<ApiVeiling[] | null>(null);
@@ -289,63 +308,75 @@ export function VeilingModal({ productId, onClose }: { productId: number; onClos
     }, [productId]);
 
     const columns = useMemo<ReadonlyArray<Column<VeilingRow>>>(() => [
-        { key: "veilingNr", header: "#", width: 100, className: "text-nowrap" },
-        { key: "begintijd", header: "Begintijd", className: "text-nowrap", smartTitle: true },
-        { key: "eindtijd", header: "Eindtijd", className: "text-nowrap", smartTitle: true },
-        { key: "status", header: "Status", className: "text-nowrap" },
-        { key: "product", header: "Product", className: "w-100", smartTitle: true },
+        { key: "veilingNr", header: "#", width: 96, className: "text-nowrap", sortable: true },
+        { key: "begintijd", header: "Begintijd", className: "text-nowrap", sortable: true },
+        { key: "eindtijd", header: "Eindtijd", className: "text-nowrap", sortable: true, hideSm: true },
+        { key: "status", header: "Status", className: "text-nowrap", sortable: true, hideSm: true },
+        { key: "product", header: "Product", className: "w-100", sortable: true },
     ], []);
 
-    const rows: VeilingRow[] = useMemo(() => (rowsRaw ?? []).map((v) => ({
-        veilingNr: v.veilingNr ?? "", begintijd: fmt.localDateTime(v.begintijd), eindtijd: fmt.localDateTime(v.eindtijd),
-        status: v.status ?? "", product: v.product?.naam ?? "",
+    const rows: VeilingRow[] = useMemo(() => (rowsRaw ?? []).map(v => ({
+        veilingNr: v.veilingNr ?? "",
+        begintijd: fmt.localDateTime(v.begintijd),
+        eindtijd: fmt.localDateTime(v.eindtijd),
+        status: v.status ?? "",
+        product: v.product?.naam ?? "",
     })), [rowsRaw]);
 
     return (
-        <Modal title={<span>Veilingen voor product <span className="text-muted">#{productId}</span></span>} onClose={onClose} size="xl">
+        <Modal title={<span>Veilingen <span className="text-muted">#{productId}</span></span>} onClose={onClose} size="xl" fullscreenUntil="lg" maxWidthPx={1400}>
             {!rowsRaw && !error && (
                 <div className="placeholder-glow" aria-live="polite" aria-busy="true">
                     <div className="placeholder col-12 mb-2" /><div className="placeholder col-10" />
                 </div>
             )}
             {error && <div className="alert alert-danger" role="alert">{error}</div>}
-            {rowsRaw && !rowsRaw.length && !error && <div className="alert alert-warning mb-0">Geen veilingen gevonden.</div>}
-            {rowsRaw && rowsRaw.length > 0 && (
+            {rowsRaw && (
                 <div className="row g-3">
-                    <div className="col-md-6">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
-                            <h6 className="m-0">Veilingen</h6>
-                            <span className="badge bg-secondary-subtle text-secondary">{rowsRaw.length.toLocaleString("nl-NL")}</span>
-                        </div>
+                    <div className="col-lg-8 col-md-7">
                         <DataTable<VeilingRow>
-                            rows={rows} columns={columns} caption="Klik een rij voor details"
-                            onRowClick={(r) => setSel(rowsRaw?.find((v) => (v.veilingNr ?? "") === r.veilingNr) ?? null)}
+                            rows={rows}
+                            columns={columns}
+                            caption="Klik een rij voor details"
+                            onRowClick={(r) => setSel(rowsRaw?.find(v => (v.veilingNr ?? "") === r.veilingNr) ?? null)}
                             emptyLabel="Geen veilingen."
+                            defaultSortKey="begintijd"
+                            defaultSortDir="asc"
                         />
                     </div>
-                    <div className="col-md-6">
-                        <h6 className="mb-2">Details</h6>
-                        {!sel && <div className="text-muted">Selecteer een veiling in de tabel.</div>}
-                        {sel && (
-                            <div className="row g-3">
-                                {sel.afbeelding && (
-                                    <div className="col-12">
-                                        <img src={sel.afbeelding} alt={sel.product?.naam || "product"} className="img-fluid rounded"
-                                             loading="lazy" decoding="async" fetchpriority="low" sizes="(max-width: 768px) 100vw, 50vw" />
-                                    </div>
-                                )}
-                                <div className="col-12">
-                                    <h5 className="mb-1">{sel.product?.naam}</h5>
-                                    <div className="text-muted mb-2">Veiling #{sel.veilingNr} • {sel.status ?? "Status onbekend"}</div>
-                                    <dl className="row mb-0">
-                                        <dt className="col-5 col-md-4">Startprijs</dt><dd className="col-7 col-md-8">{fmt.eur(sel.product?.startprijs)}</dd>
-                                        <dt className="col-5 col-md-4">Voorraad</dt><dd className="col-7 col-md-8">{sel.product?.voorraad ?? ""}</dd>
-                                        <dt className="col-5 col-md-4">Begintijd</dt><dd className="col-7 col-md-8">{fmt.localDateTime(sel.begintijd)}</dd>
-                                        <dt className="col-5 col-md-4">Eindtijd</dt><dd className="col-7 col-md-8">{fmt.localDateTime(sel.eindtijd)}</dd>
-                                    </dl>
+
+                    <div className="col-lg-4 col-md-5">
+                        <article className="card shadow-sm border-0 border border-success-subtle">
+                            {sel?.afbeelding && (
+                                <div className="ratio ratio-16x9">
+                                    <img src={sel.afbeelding} alt={sel.product?.naam || "product"} className="w-100 h-100 object-fit-cover rounded-top" loading="lazy" decoding="async" fetchpriority="low" sizes="(max-width: 768px) 100vw, 50vw" />
                                 </div>
+                            )}
+                            <div className="card-body">
+                                <h5 className="card-title d-flex align-items-center gap-2 mb-1 text-success">
+                                    {sel?.product?.naam || <span className="text-muted">Geen naam</span>}
+                                    <StatusBadge status={sel?.status} />
+                                </h5>
+                                <div className="text-muted mb-3">{sel ? <>Veiling #{sel.veilingNr}</> : "Selecteer een veiling in de tabel."}</div>
+
+                                {sel && (
+                                    <ul className="list-group list-group-flush">
+                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                            <span className="text-muted">Startprijs</span><strong>{fmt.eur(sel.product?.startprijs)}</strong>
+                                        </li>
+                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                            <span className="text-muted">Voorraad</span><span>{sel.product?.voorraad ?? ""}</span>
+                                        </li>
+                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                            <span className="text-muted">Begintijd</span><span>{fmt.localDateTime(sel.begintijd)}</span>
+                                        </li>
+                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                            <span className="text-muted">Eindtijd</span><span>{fmt.localDateTime(sel.eindtijd)}</span>
+                                        </li>
+                                    </ul>
+                                )}
                             </div>
-                        )}
+                        </article>
                     </div>
                 </div>
             )}
@@ -353,5 +384,5 @@ export function VeilingModal({ productId, onClose }: { productId: number; onClos
     );
 }
 
-// Back-compat alias
+// Back‑compat alias
 export { DataTable as ArrayTable };
