@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kleurenpalet, Header & UI-demo – Royal Flora Holland</title>
+  <style>
+    :root{
+      /* Achtergrondkleuren */
+      --bg:#f6f7f5;
+      --surface:#ffffff;
+      --card:#ffffff;
+      --section-bg:#eaf2eb;
+
+      /* Hoofdkleuren (brand) */
+      --brand:#2e4a41;
+      --brand-light:#3e6157;
+      --brand-2:#cfe5d2;
+      --brand-gradient:linear-gradient(90deg,#2e4a41 0%,#3e6157 100%);
+
+      /* Accentkleuren */
+      --accent:#25a18e;
+      --accent-light:#42b9a6;
+      --accent-muted:#a0e0d5;
+
+      /* Tekstkleuren */
+      --ink:#0f172a;
+      --ink-light:#334155;
+      --muted:#6b7280;
+      --inverse-text:#ffffff;
+
+      /* Status */
+      --error:#dc2626;
+      --error-bg:#fee2e2;
+      --success:#16a34a;
+      --success-bg:#dcfce7;
+
+      /* UI */
+      --border:#d1d5db;
+      --border-focus:#25a18e;
+      --radius:12px;
+
+      /* Buttons */
+      --btn-primary-bg:var(--accent);
+      --btn-primary-hover:var(--accent-light);
+      --btn-primary-text:var(--inverse-text);
+
+      --btn-secondary-bg:var(--brand);
+      --btn-secondary-hover:var(--brand-light);
+      --btn-secondary-text:var(--inverse-text);
+
+      /* Klok */
+      --clock-bg:#ffffff;
+      --clock-border:#2e4a41;
+      --clock-text:#0f172a;
+      --clock-price:#25a18e;
+
+      /* Footer */
+      --footer-bg:#2e4a41;
+      --footer-text:#e5e7eb;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      line-height:1.5;
+    }
+    a{color:inherit}
+
+    /* ===== Header voorbeeld ===== */
+    .site-header{
+      background:var(--brand-gradient);
+      color:var(--inverse-text);
+    }
+    .nav{
+      max-width:1100px;margin:0 auto;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:16px;padding:14px 20px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px
+    }
+    .brand .logo{
+      width:30px;height:30px;flex:0 0 30px;
+    }
+    .nav-left, .nav-right{display:flex;align-items:center;gap:14px}
+    .nav-link{
+      display:flex;align-items:center;gap:8px;
+      color:var(--inverse-text);text-decoration:none;opacity:.9;font-weight:600
+    }
+    .nav-link:hover{opacity:1;text-decoration:underline}
+    .btn{appearance:none;border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;transition:.15s}
+    .btn:focus{outline:3px solid var(--border-focus);outline-offset:2px}
+    .btn-primary{background:var(--btn-primary-bg);color:var(--btn-primary-text)}
+    .btn-primary:hover{background:var(--btn-primary-hover)}
+    .btn-secondary{background:var(--btn-secondary-bg);color:var(--btn-secondary-text)}
+    .btn-secondary:hover{background:var(--btn-secondary-hover)}
+    .btn-ghost{background:transparent;border:1px solid #ffffff55;color:#fff}
+    .btn-ghost:hover{background:#ffffff12}
+
+    /* Header hero met afbeeldingen (SVG placeholders) */
+    .hero{
+      background:
+        radial-gradient(1600px 1600px at -200px 180px, var(--brand) 60%, transparent 61%) left top/100% 100% no-repeat,
+        linear-gradient(#ffffff, #ffffff) 0 0/100% 100% no-repeat;
+      color:var(--ink);
+    }
+    .hero-inner{
+      max-width:1100px;margin:0 auto;padding:26px 20px 12px;
+      display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:center
+    }
+    .hero h1{margin:0 0 .25rem;font-size:clamp(1.6rem,3vw,2.2rem);color:#fff}
+    .hero p{margin:0 0 1rem;color:#e7f6ef}
+    .hero .cta{display:flex;gap:10px;flex-wrap:wrap}
+    .hero-card{
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+      padding:14px;display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center
+    }
+    .thumb{
+      width:84px;height:84px;border-radius:12px;border:1px solid var(--border);
+      background:
+        conic-gradient(from 0deg, var(--brand-2), #fff 25%, var(--brand-2) 50%, #fff 75%, var(--brand-2) 100%);
+      display:grid;place-items:center;font-weight:800;color:var(--brand)
+    }
+
+    /* ===== Algemene layout ===== */
+    .container{max-width:1100px;margin-inline:auto;padding:24px}
+    h2{margin:0 0 .5rem;color:var(--ink-light)}
+    p{color:var(--muted);margin:.25rem 0 1rem}
+    .section{padding:28px 0}
+    .section.alt{background:var(--section-bg)}
+
+    /* Swatches */
+    .swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+    .swatch{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .chip{height:72px;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .meta{padding:10px 12px}
+    code{background:#0000000a;border:1px solid #00000014;padding:.1rem .35rem;border-radius:6px}
+    .hex{color:var(--muted);font-size:.9rem;font-weight:700;margin-top:4px}
+
+    /* Cards */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+
+    /* Form */
+    form.demo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    form.demo .full{grid-column:1/-1}
+    label{font-size:.9rem;color:var(--ink-light)}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1rem}
+    input:focus,select:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px color-mix(in oklab, var(--border-focus) 25%, transparent)}
+    .help{font-size:.85rem;color:var(--muted)}
+
+    /* Alerts */
+    .alert{border-radius:12px;padding:12px 14px;border:1px solid transparent}
+    .alert-success{background:var(--success-bg);border-color:color-mix(in oklab,var(--success) 25%, transparent);color:#065f46}
+    .alert-error{background:var(--error-bg);border-color:color-mix(in oklab,var(--error) 25%, transparent);color:#7f1d1d}
+
+    /* Klok */
+    .clock{
+      display:grid;place-items:center;width:210px;height:210px;border-radius:50%;
+      background:var(--clock-bg);color:var(--clock-text);border:6px dotted var(--clock-border);
+      font-variant-numeric:tabular-nums;font-size:2.2rem;font-weight:800;margin-inline:auto
+    }
+    .price{margin-top:10px;text-align:center}
+    .price .amount{font-size:1.8rem;font-weight:800;color:var(--clock-price)}
+
+    /* Footer */
+    footer{background:var(--footer-bg);color:var(--footer-text);margin-top:28px}
+    footer .container{padding:24px}
+    .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+    .muted{color:#cbd5e1}
+  </style>
+</head>
+<body>
+
+<!-- ===== Header voorbeeld ===== -->
+<header class="site-header" role="banner">
+  <div class="nav" aria-label="Hoofdnavigatie">
+    <div class="nav-left">
+      <!-- Logo (SVG afbeelding) -->
+      <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2"/>
+        <path d="M8 13l2 2 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="brand">Royal Flora Holland</div>
+
+    </div>
+
+    <div class="nav-right">
+      <button class="btn btn-ghost" type="button">
+        <!-- User icoon -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;vertical-align:-2px"><circle cx="12" cy="8" r="4" stroke="#fff" stroke-width="2"/><path d="M4 20a8 8 0 0 1 16 0" stroke="#fff" stroke-width="2"/></svg>
+        Inloggen
+      </button>
+      <button class="btn btn-primary" type="button">
+        <!-- Check/plus icoon -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;vertical-align:-2px"><path d="M5 12l4 4 10-10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Registreren
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero met “afbeeldingen” (SVG thumbs) en CTA in headerkleuren -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div>
+        <h1>Verkoop wereldwijd met Royal FloraHolland</h1>
+        <p>Start met registreren of bekijk de aankomende veilingen. De header toont de knoppenkleuren en iconen.</p>
+        <div class="cta">
+          <button class="btn btn-primary">Start verkoop</button>
+          <button class="btn btn-secondary">Meer informatie</button>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="thumb">🌿</div>
+        <div>
+          <strong>Artificial Citroen boom in deco pot</strong>
+          <p class="muted" style="margin:.25rem 0 0">A3-36838-132 • 24 stuks • €2,00</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Palet & HEX-codes ===== -->
+<section id="palet" class="section">
+  <div class="swatches" aria-label="Kleurstalen">
+    <!-- Achtergrond & surfaces -->
+    <div class="swatch">
+      <div class="chip" style="background:#f6f7f5">Achtergrond (site)</div>
+      <div class="meta"><div class="hex">#f6f7f5</div><code>var(--bg)</code><div class="use">Pagina-achtergrond</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#eaf2eb">Sectie-achtergrond</div>
+      <div class="meta"><div class="hex">#eaf2eb</div><code>var(--section-bg)</code><div class="use">Alternatieve secties/hero</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#ffffff">Oppervlak / Panel</div>
+      <div class="meta"><div class="hex">#ffffff</div><code>var(--surface)</code><div class="use">Cards, formulieren</div></div>
+    </div>
+
+    <!-- Brand -->
+    <div class="swatch">
+      <div class="chip" style="background:#2e4a41;color:white">Brand primair (donkergroen)</div>
+      <div class="meta"><div class="hex">#2e4a41</div><code>var(--brand)</code><div class="use">Header, secundaire knoppen</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#3e6157;color:white">Brand hover</div>
+      <div class="meta"><div class="hex">#3e6157</div><code>var(--brand-light)</code><div class="use">Hover/active op brand</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#cfe5d2">Brand licht (decor)</div>
+      <div class="meta"><div class="hex">#cfe5d2</div><code>var(--brand-2)</code><div class="use">Decoratieve vlakken</div></div>
+    </div>
+
+    <!-- Accent (actie) -->
+    <div class="swatch">
+      <div class="chip" style="background:#25a18e;color:white">Accent primair (actieknop)</div>
+      <div class="meta"><div class="hex">#25a18e</div><code>var(--accent)</code><div class="use">Primaire CTA</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#42b9a6;color:white">Accent hover</div>
+      <div class="meta"><div class="hex">#42b9a6</div><code>var(--accent-light)</code><div class="use">Hover/active op CTA</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#a0e0d5">Accent muted</div>
+      <div class="meta"><div class="hex">#a0e0d5</div><code>var(--accent-muted)</code><div class="use">Subtiele badges/achtergrond</div></div>
+    </div>
+
+    <!-- Tekst -->
+    <div class="swatch">
+      <div class="chip" style="background:#0f172a;color:white">Tekst hoofd</div>
+      <div class="meta"><div class="hex">#0f172a</div><code>var(--ink)</code><div class="use">Body, titels</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#334155;color:white">Tekst secundair</div>
+      <div class="meta"><div class="hex">#334155</div><code>var(--ink-light)</code><div class="use">Subkoppen</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#6b7280;color:white">Tekst muted</div>
+      <div class="meta"><div class="hex">#6b7280</div><code>var(--muted)</code><div class="use">Hulpteksten/labels</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#ffffff;color:#000">Tekst op donker</div>
+      <div class="meta"><div class="hex">#ffffff</div><code>var(--inverse-text)</code><div class="use">Op knoppen/header</div></div>
+    </div>
+
+    <!-- Status -->
+    <div class="swatch">
+      <div class="chip" style="background:#dc2626;color:white">Status fout</div>
+      <div class="meta"><div class="hex">#dc2626</div><code>var(--error)</code><div class="use">Foutmeldingen/icoon</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#fee2e2">Status fout – bg</div>
+      <div class="meta"><div class="hex">#fee2e2</div><code>var(--error-bg)</code><div class="use">Achtergrond alert</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#16a34a;color:white">Status succes</div>
+      <div class="meta"><div class="hex">#16a34a</div><code>var(--success)</code><div class="use">Succes/icoon</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#dcfce7">Status succes – bg</div>
+      <div class="meta"><div class="hex">#dcfce7</div><code>var(--success-bg)</code><div class="use">Achtergrond alert</div></div>
+    </div>
+
+    <!-- Randen & footer -->
+    <div class="swatch">
+      <div class="chip" style="background:#d1d5db">Rand standaard</div>
+      <div class="meta"><div class="hex">#d1d5db</div><code>var(--border)</code><div class="use">Borderranden</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#25a18e;color:white">Focus rand</div>
+      <div class="meta"><div class="hex">#25a18e</div><code>var(--border-focus)</code><div class="use">Focus states</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#2e4a41;color:white">Footer achtergrond</div>
+      <div class="meta"><div class="hex">#2e4a41</div><code>var(--footer-bg)</code><div class="use">Footer/header donker</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:#e5e7eb">Footer tekst</div>
+      <div class="meta"><div class="hex">#e5e7eb</div><code>var(--footer-text)</code><div class="use">Tekst op footer</div></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===== Componenten ===== -->
+<section id="componenten" class="section alt">
+  <div class="container">
+    <h2>🧩 Componenten</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Knoppen</h3>
+        <p class="help">Staten: standaard, hover & focus (AA contrast).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary">Primair (accent)</button>
+          <button class="btn btn-secondary">Secundair (brand)</button>
+          <button class="btn btn-ghost">Ghost</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Alerts / Meldingen</h3>
+        <div class="alert alert-success" role="status" aria-live="polite" style="margin-bottom:8px">
+          ✔️ Succes: je product is geplaatst.
+        </div>
+        <div class="alert alert-error" role="alert">
+          ⚠️ Fout: vul alle verplichte velden in a.u.b.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Veilingklok & prijs</h3>
+        <div class="clock" aria-label="Veilingklok">08:38</div>
+        <div class="price">
+          <div class="help">Huidige prijs</div>
+          <div class="amount">€ 2,00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Formulier ===== -->
+<section id="form" class="section">
+  <div class="container">
+    <h2>📝 Formulier-voorbeeld</h2>
+    <form class="demo" aria-label="Registratieformulier demo" novalidate>
+      <div>
+        <label for="role">Rol</label>
+        <select id="role" name="role" aria-describedby="roleHelp">
+          <option>Klant</option>
+          <option>Kweker</option>
+        </select>
+        <div id="roleHelp" class="help">Selecteer je rol</div>
+      </div>
+      <div>
+        <label for="email">E-mailadres</label>
+        <input id="email" name="email" type="email" placeholder="naam@voorbeeld.nl" />
+      </div>
+      <div>
+        <label for="postcode">Postcode</label>
+        <input id="postcode" name="postcode" placeholder="1234 AB" />
+      </div>
+      <div>
+        <label for="kvk">KvK-nummer</label>
+        <input id="kvk" name="kvk" placeholder="12345678" />
+      </div>
+      <div class="full">
+        <label for="street">Straat + huisnummer</label>
+        <input id="street" name="street" placeholder="Bloemenlaan 10" />
+      </div>
+      <div class="full" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn btn-primary">Registreren</button>
+        <button type="button" class="btn btn-secondary">Annuleren</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ===== Kaarten ===== -->
+<section class="section alt">
+  <div class="container">
+    <h2>📦 Kaarten / Lijsten</h2>
+    <div class="grid">
+      <article class="card">
+        <h3>Artificial Citroen boom in deco pot</h3>
+        <p>Actienummer: A3-36838-132</p>
+        <button class="btn btn-primary">Nu bieden</button>
+      </article>
+      <article class="card">
+        <h3>Kwekerspagina – nieuw product</h3>
+        <p>Vul details in en stel je startprijs vast.</p>
+        <button class="btn btn-secondary">Plaats product</button>
+      </article>
+      <article class="card" style="background:var(--brand-2)">
+        <h3>Decoratief vlak (brand-2)</h3>
+        <p class="help">Gebruik voor subtiele secties of hero-curves.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Snelle lijst HEX ===== -->
+<section id="codes" class="section">
+  <div class="container">
+    <h2>📋 Snelle lijst met alle HEX-codes</h2>
+    <pre style="background:white;padding:16px;border-radius:12px;overflow:auto;font-size:.9rem">
+--bg: #f6f7f5;
+--surface: #ffffff;
+--section-bg: #eaf2eb;
+--brand: #2e4a41;
+--brand-light: #3e6157;
+--brand-2: #cfe5d2;
+--accent: #25a18e;
+--accent-light: #42b9a6;
+--accent-muted: #a0e0d5;
+--ink: #0f172a;
+--ink-light: #334155;
+--muted: #6b7280;
+--inverse-text: #ffffff;
+--error: #dc2626;
+--error-bg: #fee2e2;
+--success: #16a34a;
+--success-bg: #dcfce7;
+--border: #d1d5db;
+--border-focus: #25a18e;
+--footer-bg: #2e4a41;
+--footer-text: #e5e7eb;
+      </pre>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <strong>Royal Flora Holland</strong>
+        <p class="muted">Verkoop wereldwijd met Royal FloraHolland.</p>
+      </div>
+      <div>
+        <strong>Service & contact</strong>
+        <p class="muted">+31 88 789 89 89</p>
+      </div>
+      <div>
+        <strong>Links</strong>
+        <p class="muted">Whatsapp • Contactformulier • Locaties</p>
+      </div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

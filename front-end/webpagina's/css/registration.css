@@ -22,16 +22,7 @@ body{
 
 .container{width:min(1100px, 92%); margin-inline:auto}
 
-.brand{
-  display:flex; align-items:center; gap:.5rem; text-decoration:none; color:inherit;
-  font-weight:700;
-}
-.brand-mark{font-size:1.3rem}
-.brand-text{white-space:nowrap}
-.top-nav{display:flex; gap:1.2rem}
-.top-nav a{color:#111827; text-decoration:none; font-weight:600}
-.top-nav a.accent{color:#22c55e;}
-
+/* Hero */
 .hero {
   position: relative;
   overflow: hidden;
@@ -53,14 +44,7 @@ body{
   font-size:2.2rem;
 }
 
-.card {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(6px);
-}
-
+/* Formulier */
 .form{
   width:min(600px,100%);
   display:flex;
@@ -130,13 +114,14 @@ input::placeholder{color:#9ca3af}
   font-weight:700;
   cursor:pointer;
 }
-
 .btn-primary:hover {
   background: linear-gradient(90deg, #8fd6df, #45d0be);
   color: #ffffff;
 }
 
-.btn-primary:focus-visible, .select-wrap select:focus-visible, input:focus-visible{
+.btn-primary:focus-visible,
+.select-wrap select:focus-visible,
+input:focus-visible{
   outline:2px solid var(--focus);
   outline-offset:2px;
 }
@@ -147,13 +132,12 @@ input::placeholder{color:#9ca3af}
   font-size:.95rem;
 }
 .login-hint a{
-color: #fff;
-font-weight:600;
-text-decoration:underline
+  color:#fff;
+  font-weight:600;
+  text-decoration:underline
 }
-
 .login-hint a:hover{
-color: black;
+  color:black;
 }
 
 .visually-hidden{
@@ -164,5 +148,4 @@ color: black;
   .hero-grid{grid-template-columns:1fr}
   .hero-left h1{margin-bottom:1rem}
   .grid-2{grid-template-columns:1fr}
-  .footer-grid{flex-direction:column}
 }

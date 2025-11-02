@@ -4,13 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/webpagina's/html/Login.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webpagina's/javascript/Login.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webpagina's/javascript/Registration.js" afterDir="false" />
+    <list default="true" id="7bb24190-f2d7-4d7f-9c1b-8bbed50a3ed8" name="Changes" comment="Registratie en login + javascript">
+      <change afterPath="$PROJECT_DIR$/webpagina's/Kleurenpalet.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/webpagina's/css/registration.css" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/css/registration.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/webpagina's/html/Registration.html" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/html/Registration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webpagina's/javascript/Registration.js" beforeDir="false" afterPath="$PROJECT_DIR$/webpagina's/javascript/Registration.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,10 +75,23 @@
       <option name="presentableId" value="Default" />
       <updated>1761643437443</updated>
     </task>
+    <task id="LOCAL-00001" summary="Registratie en login + javascript">
+      <option name="closed" value="true" />
+      <created>1761825790104</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1761825790104</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="robots.txt" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Registratie en login + javascript" />
+    <option name="LAST_COMMIT_MESSAGE" value="Registratie en login + javascript" />
   </component>
 </project>
