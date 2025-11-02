@@ -86,6 +86,19 @@
     .brand .logo{
       width:30px;height:30px;flex:0 0 30px;
     }
+
+    .hex:hover {
+      color: var(--accent);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .swatch .use{
+      margin-top:4px;
+      font-size:.85rem;
+      color:#6b7280; /* of var(--muted) */
+    }
+
     .nav-left, .nav-right{display:flex;align-items:center;gap:14px}
     .nav-link{
       display:flex;align-items:center;gap:8px;
@@ -227,6 +240,7 @@
 
 <!-- ===== Palet & HEX-codes ===== -->
 <section id="palet" class="section">
+  <div class="container">
   <div class="swatches" aria-label="Kleurstalen">
     <!-- Achtergrond & surfaces -->
     <div class="swatch">
@@ -323,6 +337,7 @@
       <div class="chip" style="background:#e5e7eb">Footer tekst</div>
       <div class="meta"><div class="hex">#e5e7eb</div><code>var(--footer-text)</code><div class="use">Tekst op footer</div></div>
     </div>
+  </div>
   </div>
 
 </section>
@@ -425,7 +440,7 @@
 </section>
 
 <!-- ===== Snelle lijst HEX ===== -->
-<section id="codes" class="section">
+<section class="section">
   <div class="container">
     <h2>📋 Snelle lijst met alle HEX-codes</h2>
     <pre style="background:white;padding:16px;border-radius:12px;overflow:auto;font-size:.9rem">
@@ -473,5 +488,58 @@
     </div>
   </div>
 </footer>
+
+<script>
+  (function(){
+    // simpele toast
+    const toast = document.createElement('div');
+    toast.setAttribute('role','status');
+    toast.style.position='fixed';
+    toast.style.left='50%';
+    toast.style.bottom='18px';
+    toast.style.transform='translateX(-50%)';
+    toast.style.background='rgba(17,24,39,.95)';
+    toast.style.color='#fff';
+    toast.style.padding='10px 14px';
+    toast.style.borderRadius='10px';
+    toast.style.fontSize='14px';
+    toast.style.boxShadow='0 6px 24px rgba(0,0,0,.18)';
+    toast.style.opacity='0';
+    toast.style.transition='opacity .18s ease, transform .18s ease';
+    toast.style.pointerEvents='none';
+    document.body.appendChild(toast);
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.style.opacity='1';
+      toast.style.transform='translateX(-50%) translateY(-2px)';
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>{
+        toast.style.opacity='0';
+        toast.style.transform='translateX(-50%)';
+      }, 1100);
+    }
+
+    // maak .hex en code klikbaar
+    document.querySelectorAll('.swatch .hex, .swatch code, section#codes pre').forEach(el=>{
+      el.style.cursor='copy';
+      el.setAttribute('title','Klik om te kopiëren');
+      el.tabIndex = 0; // keyboard focus
+      el.addEventListener('click', async ()=>{
+        const text = (el.tagName.toLowerCase()==='pre') ? el.textContent.trim() : el.textContent.trim();
+        try{
+          await navigator.clipboard.writeText(text);
+          showToast('Gekopieerd ✅');
+        }catch{
+          showToast('Niet gelukt om te kopiëren');
+        }
+      });
+      el.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); el.click(); }
+      });
+    });
+  })();
+</script>
+
 </body>
 </html>
