@@ -1,32 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form.form");
   const rol = document.getElementById("rol");
+
   const bedrijf = document.getElementById("bedrijf");
   const kvk = document.getElementById("kvk");
-
-  // (Optioneel) delen tonen/verbergen
-  const kwekerLabel = document.querySelector(".subtle-label");
-  const kwekerRow = kwekerLabel ? kwekerLabel.nextElementSibling : null; // de grid-2 met bedrijf/kvk
-
-  function updateKwekerFields() {
-    const isKweker = rol.value === "kweker";
-
-    // Alleen verplicht als kweker
-    [bedrijf, kvk].forEach(el => {
-      el.required = isKweker;
-      el.disabled = !isKweker;
-      if (!isKweker) { el.value = ""; el.setCustomValidity(""); }
-    });
-
-    // (Optioneel) verberg UI bij klant
-    if (kwekerLabel && kwekerRow) {
-      kwekerLabel.style.display = isKweker ? "" : "none";
-      kwekerRow.style.display = isKweker ? "" : "none";
-    }
-  }
-
-  rol.addEventListener("change", updateKwekerFields);
-  updateKwekerFields();
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -40,7 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
       straat: document.getElementById("straat").value,
       postcode: document.getElementById("postcode").value,
       bedrijf: bedrijf.value,
-      kvk: kvk.value
+      kvk: kvk.value,
+      btw: document.getElementById("btw").value
     };
 
     const verplichteVelden = [
@@ -51,7 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
       registratie.wachtwoord,
       registratie.straat,
       registratie.postcode,
-      ...(registratie.rol === "kweker" ? [registratie.bedrijf, registratie.kvk] : [])
+      registratie.bedrijf,
+      registratie.kvk,
+      registratie.btw
     ];
 
     const isVeldLeeg = verplichteVelden.some(v => !v || v === "");
@@ -61,7 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     alert("U heeft uw account geregistreerd");
-    updateKwekerFields();
     console.log("Registratie:", registratie);
-      });
+  });
 });
