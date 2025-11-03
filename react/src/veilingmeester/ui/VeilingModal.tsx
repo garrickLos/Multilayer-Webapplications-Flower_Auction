@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Modal from './Modal';
 import DataTable, { type Column, type RowBase } from './DataTable';
-import { apiGet } from '../data/utils';
+import { useLiveData } from '../data/live';
 import { Empty, Loading } from './components';
 
 // Formatting helpers for dates and euro values using Dutch locale
@@ -49,43 +49,25 @@ const StatusBadge: React.FC<{ status?: string | null }> = ({ status }) => {
 };
 
 /**
- * Modal that displays the list of auctions for a given product.  Shows a
- * table of auctions on the left and details of the selected auction on the
- * right.  Fetches up to 100 auctions for the product on mount and allows
- * selecting rows for more details.  Uses the revised modal and data table
- * components with improved accessibility and performance.
+ * Modal that displays the list of auctions for a given product.  Uses the
+ * live data hook to fetch auctions and automatically revalidate when the
+ * underlying data changes.  Shows a table of auctions on the left and
+ * details of the selected auction on the right.
  */
-export default function VeilingModal({ productId, onClose }: { productId: number; onClose: () => void }) {
-    const [rowsRaw, setRowsRaw] = useState<ReadonlyArray<ApiVeiling> | null>(null);
+export default function VeilingModalLive({ productId, onClose }: { productId: number; onClose: () => void }) {
+    // Use live data to fetch up to 100 auctions for the given product.  The
+    // response will update automatically if the server returns a new ETag or
+    // Last-Modified header.  Refreshes every minute and on window focus.
+    const { data: rowsRaw, error } = useLiveData<ReadonlyArray<ApiVeiling>>('/api/Veiling', {
+        params: { veilingProduct: productId, page: 1, pageSize: 100 },
+        refreshMs: 60_000,
+        revalidateOnFocus: true,
+    });
     const [selected, setSelected] = useState<ApiVeiling | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const abortRef = useRef<AbortController | null>(null);
-    // Fetch auctions whenever the productId changes
+    // When rows update, select the first one by default
     useEffect(() => {
-        abortRef.current?.abort();
-        const ctl = new AbortController();
-        abortRef.current = ctl;
-        (async () => {
-            try {
-                setRowsRaw(null);
-                setSelected(null);
-                setError(null);
-                const url = `/api/Veiling?veilingProduct=${encodeURIComponent(productId)}&page=1&pageSize=100`;
-                const res = await apiGet<ReadonlyArray<ApiVeiling>>(url, { signal: ctl.signal });
-                if (!ctl.signal.aborted) {
-                    const rows = res ?? [];
-                    setRowsRaw(rows);
-                    setSelected(rows[0] ?? null);
-                }
-            } catch {
-                if (!ctl.signal.aborted) {
-                    setRowsRaw([]);
-                    setError('Kon veilingen niet ophalen.');
-                }
-            }
-        })();
-        return () => ctl.abort();
-    }, [productId]);
+        setSelected(rowsRaw && rowsRaw.length ? rowsRaw[0] : null);
+    }, [rowsRaw]);
     // Define columns for the data table once
     const columns = useMemo<ReadonlyArray<Column<VeilingRow>>>(
         () => [
@@ -136,6 +118,7 @@ export default function VeilingModal({ productId, onClose }: { productId: number
         },
         [rowsRaw],
     );
+    const isLoading = !rowsRaw && !error;
     return (
         <Modal
             title={
@@ -149,11 +132,11 @@ export default function VeilingModal({ productId, onClose }: { productId: number
             maxWidthPx={1400}
         >
             {/* Loading state */}
-            {!rowsRaw && !error && <Loading />}
+            {isLoading && <Loading />}
             {/* Error state */}
             {error && (
                 <div className="alert alert-danger" role="alert">
-                    {error}
+                    {(error as any)?.message || 'Kon veilingen niet ophalen.'}
                 </div>
             )}
             {/* Content when data is loaded */}
@@ -196,9 +179,7 @@ export default function VeilingModal({ productId, onClose }: { productId: number
                                 </h5>
                                 <div className="text-muted mb-3">
                                     {selected ? (
-                                        <>
-                                            Veiling #{selected.veilingNr}
-                                        </>
+                                        <>Veiling #{selected.veilingNr}</>
                                     ) : (
                                         'Selecteer een veiling in de tabel.'
                                     )}
@@ -232,5 +213,5 @@ export default function VeilingModal({ productId, onClose }: { productId: number
     );
 }
 
-// Export the FilterChip alias for backwards compatibility
+// Alias for compatibility
 export { DataTable as ArrayTable };

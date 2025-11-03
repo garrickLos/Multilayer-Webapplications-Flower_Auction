@@ -47,10 +47,12 @@ export default function Veilingmeester() {
     useEffect(() => setBPage(1), [dBQuery, bPageSize]);
     /* -------- Producten -------- */
     const [q, setQ] = useState('');
+    // Debounce product search query to avoid triggering pagination resets on every keystroke
+    const dQ = useDebounced(q, 250);
     const [categorieNr, setCategorieNr] = useState<number | '' | null | undefined>('');
     const [vPage, setVPage] = useState(1);
     const [vPageSize, setVPageSize] = useState(25);
-    const vParams = useMemo(() => ({ q: q || undefined, categorieNr: toIntOrUndef(categorieNr) }), [q, categorieNr]);
+    const vParams = useMemo(() => ({ q: dQ || undefined, categorieNr: toIntOrUndef(categorieNr) }), [dQ, categorieNr]);
     const {
         data: producten = [],
         loading: vLoading,
@@ -63,7 +65,7 @@ export default function Veilingmeester() {
         pageSize: vPageSize,
         paramsKey: `${vParams.q ?? ''}|${vParams.categorieNr ?? ''}`,
     });
-    useEffect(() => setVPage(1), [q, categorieNr, vPageSize]);
+    useEffect(() => setVPage(1), [dQ, categorieNr, vPageSize]);
     /* -------- Categorieën -------- */
     const [catsMap, setCatsMap] = useState<Record<number, string>>({});
     const [catsLoading, setCatsLoading] = useState(false);
