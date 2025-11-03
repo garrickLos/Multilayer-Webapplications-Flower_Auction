@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useDeferredValue, useId, useMemo, useState } from 'react';
+import React, { memo, useCallback, useId, useMemo, useState } from 'react';
 
 /* --------------------------------------------------------------------------
  * Helpers
@@ -103,7 +103,8 @@ function DataTableInner<T extends RowBase>({
     const [sortDir, setSortDir] = useState<SortDir>(defaultSortDir);
     // Filter state
     const [query, setQuery] = useState('');
-    const dq = useDeferredValue(query).trim().toLowerCase();
+    // Compute the normalised query immediately on each change to update filtering
+    const dq = query.trim().toLowerCase();
     // Unique id for caption
     const tableId = useId();
 

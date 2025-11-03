@@ -13,7 +13,7 @@ import {
     rowToSearchString,
     toIntOrUndef,
 } from './data/utils';
-import { useDebounced, usePagedList } from './data/live';
+import { useDebounced, useLivePagedList } from './data/live';
 import { useLiveNameCache } from './data/liveNameCache';
 
 /* ------------------------------ utils ------------------------------ */
@@ -43,7 +43,15 @@ export default function Veilingmeester() {
         loading: bLoading,
         error: bError,
         lastCount: bLastCount,
-    } = usePagedList<Bieding>({ path: '/api/Bieding', params: {}, page: bPage, pageSize: bPageSize, paramsKey: 'all' });
+    } = useLivePagedList<Bieding>({
+        path: '/api/Bieding',
+        params: {},
+        page: bPage,
+        pageSize: bPageSize,
+        paramsKey: 'all',
+        refreshMs: 60_000,
+        revalidateOnFocus: true,
+    });
     useEffect(() => setBPage(1), [dBQuery, bPageSize]);
     /* -------- Producten -------- */
     const [q, setQ] = useState('');
@@ -58,12 +66,14 @@ export default function Veilingmeester() {
         loading: vLoading,
         error: vError,
         lastCount: vLastCount,
-    } = usePagedList<Veilingproduct>({
+    } = useLivePagedList<Veilingproduct>({
         path: '/api/Veilingproduct',
         params: vParams,
         page: vPage,
         pageSize: vPageSize,
         paramsKey: `${vParams.q ?? ''}|${vParams.categorieNr ?? ''}`,
+        refreshMs: 60_000,
+        revalidateOnFocus: true,
     });
     useEffect(() => setVPage(1), [dQ, categorieNr, vPageSize]);
     /* -------- Categorieën -------- */

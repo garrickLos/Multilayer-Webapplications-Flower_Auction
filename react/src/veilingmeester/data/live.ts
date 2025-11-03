@@ -252,3 +252,31 @@ export function usePagedList<T>(args: {
     }, [path, page, pageSize, stableStringify(params ?? {}), paramsKey, timeoutMs, retry, retryBackoffMs]);
     return { data, loading, error, lastCount };
 }
+
+/**
+ * Live paginated fetcher that leverages `useLiveData` for automatic revalidation.
+ * Pass `refreshMs` and `revalidateOnFocus` in the options to enable periodic
+ * refreshes and focus-based revalidation.  The returned `data` updates
+ * automatically when the server returns a new ETag or Last-Modified header.
+ */
+export function useLivePagedList<T>(args: {
+    path: string;
+    params?: Query;
+    page: number;
+    pageSize: number;
+    paramsKey: string;
+    init?: RequestInit;
+    refreshMs?: number;
+    revalidateOnFocus?: boolean;
+}): { data: ReadonlyArray<T>; loading: boolean; error: unknown; lastCount: number } {
+    const { path, params, page, pageSize, paramsKey, init, refreshMs, revalidateOnFocus } = args;
+    const { data, error } = useLiveData<ReadonlyArray<T>>(path, {
+        params: { ...(params || {}), page, pageSize },
+        init,
+        refreshMs,
+        revalidateOnFocus,
+    });
+    const loading = data === undefined && !error;
+    const lastCount = data ? data.length : 0;
+    return { data: data || [], loading, error, lastCount };
+}
