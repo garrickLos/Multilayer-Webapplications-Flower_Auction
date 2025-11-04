@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useId, useRef, useCallback } from 'react';
+import React, { memo, useEffect, useId, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 
 /**
@@ -50,22 +50,25 @@ const Modal: React.FC<ModalProps> = memo(
         const containerRef = useRef<HTMLDivElement | null>(null);
 
         // Compute CSS classes for the dialog element based on props
-        const dialogClass = [
-            'modal-dialog',
-            'modal-dialog-centered',
-            'modal-dialog-scrollable',
-            fullscreenUntil ? `modal-fullscreen-${fullscreenUntil}-down` : 'modal-fullscreen-sm-down',
-            size && `modal-${size}`,
-        ]
-            .filter(Boolean)
-            .join(' ');
-
+        const dialogClass = useMemo(() => {
+            return [
+                'modal-dialog',
+                'modal-dialog-centered',
+                'modal-dialog-scrollable',
+                fullscreenUntil ? `modal-fullscreen-${fullscreenUntil}-down` : 'modal-fullscreen-sm-down',
+                size && `modal-${size}`,
+            ]
+                .filter(Boolean)
+                .join(' ');
+        }, [size, fullscreenUntil]);
         // Inline styles for the dialog when not fullscreen and a max width is provided
-        const dialogStyle = fullscreenUntil
-            ? undefined
-            : maxWidthPx
-                ? { maxWidth: `min(98vw, ${maxWidthPx}px)` }
-                : undefined;
+        const dialogStyle = useMemo(() => {
+            return fullscreenUntil
+                ? undefined
+                : maxWidthPx
+                    ? { maxWidth: `min(98vw, ${maxWidthPx}px)` }
+                    : undefined;
+        }, [fullscreenUntil, maxWidthPx]);
 
         // Handle Escape key dismissal and focus trapping/restoration
         useEffect(() => {
