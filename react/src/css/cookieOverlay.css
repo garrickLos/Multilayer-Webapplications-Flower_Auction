@@ -1,0 +1,53 @@
+.cookie_overlay {
+    position: fixed;
+
+    bottom: 1%;
+    left: 1%;
+
+    width: 25%;
+    min-height: 25%;
+    height: auto;
+    max-height: 35%;
+    
+    z-index: 100; 
+    
+    background-color: rgba(0, 0, 0, 0); 
+    
+    justify-content: left;
+    align-items:last baseline;
+}
+
+.cookie_overlay.show {
+    display: flex; 
+    background-color: rgba(0, 0, 0, 0.7); 
+}
+
+.cookie_container {
+    position: relative;
+    bottom: 2%;
+    left: 2%;
+    width: auto; 
+    max-width: 90%;
+    height: auto;
+    max-height: 90%;
+    padding: 20px;
+    background-color: white; 
+    z-index: 101; 
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.cookie_container h4 {
+    margin: 0;
+    color: #333;
+} 
+
+#close_cookie_button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    cursor: pointer;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
