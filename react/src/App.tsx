@@ -1,6 +1,6 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
 import Wpfw from './wpfw'
-import Veilingmeester from './veilingmeester'
+import Veilingmeester from './veilingmeester/veilingmeester.tsx'
 
 export default function App() {
     return (

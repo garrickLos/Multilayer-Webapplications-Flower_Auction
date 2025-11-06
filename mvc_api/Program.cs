@@ -1,53 +1,55 @@
-using System;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
+// cd mvc_api
+// dotnet ef migrations add InitialCreate
+// dotnet ef database update
+
+// dotnet ef database drop --force
+
+
+// "ConnectionStrings": {
+//     "Default": "Server=localhost;Database=BloemenVeiling;Trusted_Connection=True;TrustServerCertificate=True"
+// }
+
+
 using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
-
-var db = new FloraHolidayContext();
-
-// Maken database:
-db.Database.EnsureCreated();
-Console.WriteLine("Database hoort aangemaakt te zijn");
-await db.SaveChangesAsync();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ------------------------------
+// SERVICES
+// ------------------------------
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
+});
+
+// ORM / DbContext
+var connectionString = builder.Configuration.GetConnectionString("Default");
+
+// Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
+    // options.UseSqlServer(connectionString));
+
 
 var app = builder.Build();
 
+// ------------------------------
+// APP PIPELINE
+// ------------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    // Alleen in development automatisch migreren
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
-
+app.MapControllers();
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

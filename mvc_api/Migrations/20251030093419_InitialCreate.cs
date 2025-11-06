@@ -19,7 +19,7 @@ namespace mvc_api.Migrations
                 {
                     CategorieNr = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Naam = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false)
+                    Naam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -37,11 +37,11 @@ namespace mvc_api.Migrations
                     Wachtwoord = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     LaatstIngelogd = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Soort = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Kvk = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    StraatAdres = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Postcode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
-                    Assortiment = table.Column<int>(type: "INTEGER", nullable: false),
-                    PersoneelsNr = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false)
+                    Kvk = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
+                    StraatAdres = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
+                    Postcode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
+                    Assortiment = table.Column<int>(type: "INTEGER", nullable: true),
+                    PersoneelsNr = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -52,7 +52,7 @@ namespace mvc_api.Migrations
                 name: "Veilingproduct",
                 columns: table => new
                 {
-                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
+                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Naam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     GeplaatstDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -63,13 +63,34 @@ namespace mvc_api.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Veilingproduct", x => x.VeilingNr);
+                    table.PrimaryKey("PK_Veilingproduct", x => x.VeilingProductNr);
                     table.ForeignKey(
                         name: "FK_Veilingproduct_Categorie_CategorieNr",
                         column: x => x.CategorieNr,
                         principalTable: "Categorie",
                         principalColumn: "CategorieNr",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Veiling",
+                columns: table => new
+                {
+                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Begintijd = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Eindtijd = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Veiling", x => x.VeilingNr);
+                    table.ForeignKey(
+                        name: "FK_Veiling_Veilingproduct_VeilingProductNr",
+                        column: x => x.VeilingProductNr,
+                        principalTable: "Veilingproduct",
+                        principalColumn: "VeilingProductNr",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -93,30 +114,9 @@ namespace mvc_api.Migrations
                         principalColumn: "GebruikerNr",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Bieding_Veilingproduct_VeilingNr",
+                        name: "FK_Bieding_Veiling_VeilingNr",
                         column: x => x.VeilingNr,
-                        principalTable: "Veilingproduct",
-                        principalColumn: "VeilingNr",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Veiling",
-                columns: table => new
-                {
-                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Begintijd = table.Column<long>(type: "INTEGER", nullable: true),
-                    Eindtijd = table.Column<long>(type: "INTEGER", nullable: true),
-                    VeilingProduct = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Veiling", x => x.VeilingNr);
-                    table.ForeignKey(
-                        name: "FK_Veiling_Veilingproduct_VeilingProduct",
-                        column: x => x.VeilingProduct,
-                        principalTable: "Veilingproduct",
+                        principalTable: "Veiling",
                         principalColumn: "VeilingNr",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -141,7 +141,7 @@ namespace mvc_api.Migrations
 
             migrationBuilder.InsertData(
                 table: "Veilingproduct",
-                columns: new[] { "VeilingNr", "CategorieNr", "Fust", "GeplaatstDatum", "Naam", "Startprijs", "Voorraad" },
+                columns: new[] { "VeilingProductNr", "CategorieNr", "Fust", "GeplaatstDatum", "Naam", "Startprijs", "Voorraad" },
                 values: new object[,]
                 {
                     { 101, 1, 10, new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Tulp Mix", 12m, 500 },
@@ -149,21 +149,21 @@ namespace mvc_api.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Veiling",
+                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "VeilingProductNr" },
+                values: new object[,]
+                {
+                    { 201, new DateTime(2025, 10, 10, 9, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc), 101 },
+                    { 202, new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 10, 11, 0, 0, 0, DateTimeKind.Utc), 102 }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Bieding",
                 columns: new[] { "BiedNr", "AantalStuks", "BedragPerFust", "GebruikerNr", "VeilingNr" },
                 values: new object[,]
                 {
-                    { 1001, 5, 13.50m, 2, 101 },
-                    { 1002, 3, 21.00m, 2, 102 }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Veiling",
-                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "VeilingProduct" },
-                values: new object[,]
-                {
-                    { 201, 324000000000L, 360000000000L, 101 },
-                    { 202, 360000000000L, 396000000000L, 102 }
+                    { 1001, 5, 13.50m, 2, 201 },
+                    { 1002, 3, 21.00m, 2, 202 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -183,9 +183,9 @@ namespace mvc_api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Veiling_VeilingProduct",
+                name: "IX_Veiling_VeilingProductNr",
                 table: "Veiling",
-                column: "VeilingProduct");
+                column: "VeilingProductNr");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Veilingproduct_CategorieNr_Naam",
@@ -200,10 +200,10 @@ namespace mvc_api.Migrations
                 name: "Bieding");
 
             migrationBuilder.DropTable(
-                name: "Veiling");
+                name: "Gebruiker");
 
             migrationBuilder.DropTable(
-                name: "Gebruiker");
+                name: "Veiling");
 
             migrationBuilder.DropTable(
                 name: "Veilingproduct");
