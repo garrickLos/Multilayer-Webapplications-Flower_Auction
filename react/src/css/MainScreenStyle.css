@@ -1,15 +1,73 @@
+:root{
+      /* Achtergrondkleuren */
+      --bg:#f6f7f5;
+      --surface:#ffffff;
+      --card:#ffffff;
+      --section-bg:#eaf2eb;
+
+      /* Hoofdkleuren (brand) */
+      --brand:#2e4a41;
+      --brand-light:#3e6157;
+      --brand-2:#cfe5d2;
+      --brand-gradient:linear-gradient(90deg,#2e4a41 0%,#3e6157 100%);
+
+      /* Accentkleuren */
+      --accent:#25a18e;
+      --accent-light:#42b9a6;
+      --accent-muted:#a0e0d5;
+
+      /* Tekstkleuren */
+      --ink:#0f172a;
+      --ink-light:#334155;
+      --muted:#6b7280;
+      --inverse-text:#ffffff;
+
+      /* Status */
+      --error:#dc2626;
+      --error-bg:#fee2e2;
+      --success:#16a34a;
+      --success-bg:#dcfce7;
+
+      /* UI */
+      --border:#d1d5db;
+      --border-focus:#25a18e;
+      --radius:12px;
+
+      /* Buttons */
+      --btn-primary-bg:var(--accent);
+      --btn-primary-hover:var(--accent-light);
+      --btn-primary-text:var(--inverse-text);
+
+      --btn-secondary-bg:var(--brand);
+      --btn-secondary-hover:var(--brand-light);
+      --btn-secondary-text:var(--inverse-text);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand) rgba(255, 255, 255, 0);
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #fff;
-    color: #333;
+    background-color: var(--bg);
+    color: var(--ink);
+}
+
+main {
+    margin: 0 0 50px 0;
 }
 
 /* banner */
 .banner {
-    background-color: #388547;
-    color: #fff;
-    height: 23vh;
+    display: inline-block;
+    background-color: var(--accent);
+    color: var(--inverse-text);
+
+    min-height: 25vh;
+    height: auto;
+    
     display: flex;
     justify-content: center;
     align-items: center;
@@ -91,46 +149,69 @@ section h2 {
 }
 
 .card {
-    min-width: 300px;
-    width: auto;
+    width: 25%;
 
     flex: 0 0 250px;
     
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: var(--brand-gradient);
+    border: 1px solid var(--brand-light);
     scroll-snap-align: start;
     text-align: center;
     padding: 10px;
 }
-.card img {
-    min-width: 95%;
-    width: auto;
 
-    min-height: 200px;
+.card img {
+    display: inline-block;
+
+    min-width: 50%;
+    width: auto;
+    max-width: 75%;
+
+    min-height: 50%;
     height: auto;
-    background-color: #ddd;
+    max-height: 50%;
+
+    object-fit: contain;
+
+    align-self: center;
 }
+
+.card .ImageErrorMsg {
+    margin: 0;
+}
+
 .card h3 {
     font-size: 14px;
     margin: 10px 0;
 }
 .card p {
     font-size: 12px;
-    color: #666;
+    color: var(--ink-light);
 }
+
+.text-container {
+    display: inline-block;
+
+    min-height: 10%;
+    height: 35%;
+    max-height: 50%;
+
+    overflow-y: hidden;
+}
+
 .arrow {
     background-color: transparent;
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #333;
+    color: var(--ink);
 }
 
 .slider {
     width: 100%;
 
-    display: flex; /* Zorgt voor items op één rij */
-    overflow-x: auto; /* Belangrijk: Maakt de horizontale scroll mogelijk */
+    display: flex; 
+    overflow-x: auto; 
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     gap: 20px;
@@ -138,31 +219,74 @@ section h2 {
 }
 
 .slider::-webkit-scrollbar {
-    display: none; /* Verbergt de scrollbar */
+    display: none; 
 }
 
-.deal-item {
-    min-width: 250px;
-    width: auto;
-    
-    min-height: 400px;
-    height: auto;
-
-    flex: 1 0 250px;
-
-    background-color: #b7dcf9;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    scroll-snap-align: start; /* Zorgt ervoor dat de scroll stopt op een item */
-}
-
-.deal-item button {
+.slider-container button {
     margin: 10px;
     padding: 8px 16px;
-    background-color: black;
-    color: white;
     border: none;
     cursor: pointer;
+}
+
+.auctionButton {
+    background-color: var(--accent);
+    color: var(--inverse-text);
+
+    border-radius: 50px;
+}
+
+.auctionButton:hover {
+    background-color: var(--accent-light);
+}
+
+.cookie_overlay {
+    position: fixed; 
+    top: 0;
+    left: 0;    
+    width: 100%;
+    height: 100%;
+    
+    z-index: 100; 
+    
+    background-color: rgba(0, 0, 0, 0); 
+    
+    display: none;
+    justify-content: left;
+    align-items:last baseline;
+}
+
+.cookie_overlay.show {
+    display: flex; 
+    background-color: rgba(0, 0, 0, 0.7); 
+}
+
+.cookie_container {
+    position: relative;
+    bottom: 2%;
+    left: 2%;
+    width: auto; 
+    max-width: 90%;
+    height: auto;
+    max-height: 90%;
+    padding: 20px;
+    background-color: white; 
+    z-index: 101; 
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.cookie_container h4 {
+    margin: 0;
+    color: #333;
+} 
+
+#close_cookie_button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    cursor: pointer;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 5px;
 }
