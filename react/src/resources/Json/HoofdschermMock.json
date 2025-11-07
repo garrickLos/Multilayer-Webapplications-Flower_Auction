@@ -2,7 +2,7 @@
     "alleDeals": [
         {
             "id": "item1",
-            "imagePath": "./front-end/resources/pictures/mockPictures/EleganteTulpCrimsonGlory.webp",
+            "imagePath": "/",
             "afbeelding-alt": "Een afbeelding met helderrode tulpen",
             "header_info": "Elegante Tulp 'Crimson Glory'",
             "paragraph": "Lot 1: Vier verfijnde, dieprode tulpenbollen van de zeldzame variëteit 'Crimson Glory'. Uitmuntende stengelsterkte, ideaal voor premium snijbloemproductie of een majestueuze tuin. Startbod: €50."

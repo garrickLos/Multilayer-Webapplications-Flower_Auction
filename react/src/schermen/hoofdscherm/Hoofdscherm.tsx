@@ -5,7 +5,7 @@ import '../../css/MainScreenStyle.css';
 import '../../css/cookieOverlay.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { useAuctionData } from '../../typeScript/jsonOphalen.tsx';
+import { useFetchDatajson } from '../../typeScript/jsonOphalen.tsx';
 
 export default function MainScreen() {
     const url = "src/resources/json/HoofdschermMock.json"; 
@@ -83,6 +83,14 @@ interface CardItems{
     paragraafText: string;
 }
 
+export interface AuctionItems {
+    imagePath?: string;
+    "afbeelding-alt"?: string;
+    header_info?: string;
+    paragraph?: string;
+}
+
+
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
 const AuctionCard: React.FC<CardItems> = ({ imagePath, altText, headerText, paragraafText }) => {
@@ -122,7 +130,7 @@ const AuctionCard: React.FC<CardItems> = ({ imagePath, altText, headerText, para
 };
 
 const renderContent = (item_key: string, url: string) => {
-    let { data, isLoading, error } = useAuctionData(item_key , url);
+    let { data, isLoading, error } = useFetchDatajson<AuctionItems>(item_key , url, );
 
     if (isLoading) {
         return <div key="loading">Laden van items...</div>; 
@@ -143,7 +151,11 @@ const renderContent = (item_key: string, url: string) => {
         const paragraafTekst = item.paragraph || "Geen beschrijving beschikbaar.";
 
         return (
-            <AuctionCard key={index} imagePath={ImagePath} altText={altText} headerText={headerText} paragraafText={paragraafTekst}
+            <AuctionCard key={index} 
+                         imagePath={ImagePath} 
+                         altText={altText} 
+                         headerText={headerText} 
+                         paragraafText={paragraafTekst}
             />
         );
     });

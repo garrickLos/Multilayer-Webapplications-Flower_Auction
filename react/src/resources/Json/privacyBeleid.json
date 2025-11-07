@@ -1,15 +1,20 @@
 {
-    "algemene gegevens": {
-        "paragraph1": "we verzamelen je gegevens voor redenen",
-        "paragraph2": "andere paragraaph"
-    },
-
-    "persoonlijke gegevens": {
-        "paragraph1": "we willen dit:",
-        "List": [{
-            "item1": "verzamelen van de cookie",
-            "item2": "verzamelen van je email",
-            "item3": "verzamelen van je naam"            
-        }]
-    }
+    "algemene gegevens": [
+        { "type": "paragraph", "content": "we verzamelen je gegevens voor redenen" },
+        { "type": "paragraph", "content": "andere paragraaph" }
+    ],
+    "persoonlijke gegevens": [
+        { "type": "paragraph", "content": "we willen dit:" },
+        { 
+            "type": "list", 
+            "content": [
+                "verzamelen van de cookie",
+                "verzamelen van je email",
+                "verzamelen van je naam"
+            ]
+        }
+    ],
+    "cookies": [
+        { "type": "paragraph", "content": "Dit is ons cookie beleid" }
+    ]
 }
