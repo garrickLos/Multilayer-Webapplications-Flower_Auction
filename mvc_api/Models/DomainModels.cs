@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace mvc_api.Models
 {
+    // Gebruiker
     public class Gebruiker
     {
         [Key]
@@ -41,6 +42,7 @@ namespace mvc_api.Models
         public ICollection<Bieding> Biedingen { get; set; } = new List<Bieding>();
     }
 
+    // Bieding
     public class Bieding
     {
         [Key]
@@ -63,6 +65,7 @@ namespace mvc_api.Models
         public Veiling? Veiling { get; set; }
     }
 
+    // Veilingproduct
     public class Veilingproduct
     {
         [Key]
@@ -71,6 +74,7 @@ namespace mvc_api.Models
         [Required, MaxLength(200)]
         public string Naam { get; set; } = string.Empty;
 
+        // Default in C#; DB default kun je optioneel ook in OnModelCreating zetten
         public DateTime GeplaatstDatum { get; set; } = DateTime.UtcNow;
 
         [Range(1, int.MaxValue)]
@@ -90,6 +94,7 @@ namespace mvc_api.Models
         public ICollection<Veiling> Veilingen { get; set; } = new List<Veiling>();
     }
 
+    // Categorie
     public class Categorie
     {
         [Key]
@@ -101,6 +106,7 @@ namespace mvc_api.Models
         public ICollection<Veilingproduct> Veilingproducten { get; set; } = new List<Veilingproduct>();
     }
 
+    // Veiling
     public class Veiling
     {
         [Key]
@@ -111,6 +117,10 @@ namespace mvc_api.Models
 
         [ForeignKey(nameof(Veilingproduct))]
         public int VeilingProductNr { get; set; }
+
+        // Status van de veiling: "active", "inactive" of "sold"
+        [Required, MaxLength(20)]
+        public string Status { get; set; } = "inactive";
 
         public Veilingproduct? Veilingproduct { get; set; }
         public ICollection<Bieding> Biedingen { get; set; } = new List<Bieding>();

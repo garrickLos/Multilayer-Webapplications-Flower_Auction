@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace mvc_api.Models
 {
+    // Categorie CRUD
     public record CategorieCreateDto(
         [Required, MaxLength(200)] string Naam
     );
@@ -10,11 +11,11 @@ namespace mvc_api.Models
     public record CategorieUpdateDto(
         [Required, MaxLength(200)] string Naam
     );
-    
-    // Veilingproduct DTOs
+
+    // Veilingproduct CRUD
     public record VeilingproductCreateDto(
         [Required, MaxLength(200)] string Naam,
-        DateTime? GeplaatstDatum, // model heeft default -> optioneel in create
+        DateTime? GeplaatstDatum,
         [Range(1, int.MaxValue)] int Fust,
         [Range(0, int.MaxValue)] int Voorraad,
         [Range(0, 999_999_999)] decimal Startprijs,
@@ -23,14 +24,14 @@ namespace mvc_api.Models
 
     public record VeilingproductUpdateDto(
         [Required, MaxLength(200)] string Naam,
-        DateTime? GeplaatstDatum, // mag leeg blijven als je de datum niet wijzigt
+        DateTime? GeplaatstDatum,
         [Range(1, int.MaxValue)] int Fust,
         [Range(0, int.MaxValue)] int Voorraad,
         [Range(0, 999_999_999)] decimal Startprijs,
         [Range(1, int.MaxValue)] int CategorieNr
     );
 
-    // Bieding DTOs
+    // Bieding CRUD
     public record BiedingCreateDto(
         [Range(0, 999_999_999)] decimal BedragPerFust,
         [Range(1, int.MaxValue)] int AantalStuks,
@@ -42,7 +43,8 @@ namespace mvc_api.Models
         [Range(0, 999_999_999)] decimal BedragPerFust,
         [Range(1, int.MaxValue)] int AantalStuks
     );
-    
+
+    // Gebruiker CRUD
     public record GebruikerCreateDto(
         [Required, MaxLength(200)] string Naam,
         [Required, EmailAddress, MaxLength(200)] string Email,
@@ -51,7 +53,7 @@ namespace mvc_api.Models
         [MaxLength(20)] string? Kvk,
         [MaxLength(200)] string? StraatAdres,
         [MaxLength(10)] string? Postcode,
-        int? Assortiment,                 // model: int? -> nullable
+        int? Assortiment,
         [MaxLength(50)] string? PersoneelsNr
     );
 
@@ -62,20 +64,25 @@ namespace mvc_api.Models
         [MaxLength(20)] string? Kvk,
         [MaxLength(200)] string? StraatAdres,
         [MaxLength(10)] string? Postcode,
-        int? Assortiment,                 // model: int? -> nullable
+        int? Assortiment,
         [MaxLength(50)] string? PersoneelsNr
         // Wachtwoord via aparte DTO/endpoint voor password-change
     );
-    
+
+    // Veiling CRUD
     public record VeilingCreateDto(
         DateTime? Begintijd,
         DateTime? Eindtijd,
-        [Range(1, int.MaxValue)] int VeilingProductNr // model: VeilingProductNr
+        [Range(1, int.MaxValue)] int VeilingProductNr,
+        // Optioneel: "active", "inactive", "sold"
+        [MaxLength(20)] string? Status
     );
 
     public record VeilingUpdateDto(
         DateTime? Begintijd,
         DateTime? Eindtijd,
-        [Range(1, int.MaxValue)] int VeilingProductNr // model: VeilingProductNr
+        [Range(1, int.MaxValue)] int VeilingProductNr,
+        // Optioneel: "active", "inactive", "sold"
+        [MaxLength(20)] string? Status
     );
 }

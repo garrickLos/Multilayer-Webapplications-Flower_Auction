@@ -11,7 +11,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251030093419_InitialCreate")]
+    [Migration("20251107130243_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -156,7 +156,7 @@ namespace mvc_api.Migrations
                             Assortiment = 12,
                             Email = "flora@example.nl",
                             Kvk = "12345678",
-                            LaatstIngelogd = new DateTime(2025, 10, 8, 0, 0, 0, 0, DateTimeKind.Utc),
+                            LaatstIngelogd = new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc),
                             Naam = "Flora BV",
                             PersoneelsNr = "P1001",
                             Postcode = "1234AB",
@@ -170,7 +170,7 @@ namespace mvc_api.Migrations
                             Assortiment = 0,
                             Email = "jan@example.nl",
                             Kvk = "00000000",
-                            LaatstIngelogd = new DateTime(2025, 10, 7, 0, 0, 0, 0, DateTimeKind.Utc),
+                            LaatstIngelogd = new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc),
                             Naam = "Jan Jansen",
                             PersoneelsNr = "P0000",
                             Postcode = "2345BC",
@@ -192,6 +192,11 @@ namespace mvc_api.Migrations
                     b.Property<DateTime?>("Eindtijd")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("VeilingProductNr")
                         .HasColumnType("INTEGER");
 
@@ -205,15 +210,17 @@ namespace mvc_api.Migrations
                         new
                         {
                             VeilingNr = 201,
-                            Begintijd = new DateTime(2025, 10, 10, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Eindtijd = new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Begintijd = new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Eindtijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "active",
                             VeilingProductNr = 101
                         },
                         new
                         {
                             VeilingNr = 202,
-                            Begintijd = new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Eindtijd = new DateTime(2025, 10, 10, 11, 0, 0, 0, DateTimeKind.Utc),
+                            Begintijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
+                            Eindtijd = new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "active",
                             VeilingProductNr = 102
                         });
                 });
@@ -257,7 +264,7 @@ namespace mvc_api.Migrations
                             VeilingProductNr = 101,
                             CategorieNr = 1,
                             Fust = 10,
-                            GeplaatstDatum = new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             Naam = "Tulp Mix",
                             Startprijs = 12m,
                             Voorraad = 500
@@ -267,7 +274,7 @@ namespace mvc_api.Migrations
                             VeilingProductNr = 102,
                             CategorieNr = 2,
                             Fust = 10,
-                            GeplaatstDatum = new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             Naam = "Rode Roos",
                             Startprijs = 20m,
                             Voorraad = 300

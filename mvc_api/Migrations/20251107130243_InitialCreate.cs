@@ -80,7 +80,8 @@ namespace mvc_api.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Begintijd = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Eindtijd = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false)
+                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -135,8 +136,8 @@ namespace mvc_api.Migrations
                 columns: new[] { "GebruikerNr", "Assortiment", "Email", "Kvk", "LaatstIngelogd", "Naam", "PersoneelsNr", "Postcode", "Soort", "StraatAdres", "Wachtwoord" },
                 values: new object[,]
                 {
-                    { 1, 12, "flora@example.nl", "12345678", new DateTime(2025, 10, 8, 0, 0, 0, 0, DateTimeKind.Utc), "Flora BV", "P1001", "1234AB", "Bedrijf", "Bloemig 10", "***" },
-                    { 2, 0, "jan@example.nl", "00000000", new DateTime(2025, 10, 7, 0, 0, 0, 0, DateTimeKind.Utc), "Jan Jansen", "P0000", "2345BC", "Koper", "Laan 5", "***" }
+                    { 1, 12, "flora@example.nl", "12345678", new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc), "Flora BV", "P1001", "1234AB", "Bedrijf", "Bloemig 10", "***" },
+                    { 2, 0, "jan@example.nl", "00000000", new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc), "Jan Jansen", "P0000", "2345BC", "Koper", "Laan 5", "***" }
                 });
 
             migrationBuilder.InsertData(
@@ -144,17 +145,17 @@ namespace mvc_api.Migrations
                 columns: new[] { "VeilingProductNr", "CategorieNr", "Fust", "GeplaatstDatum", "Naam", "Startprijs", "Voorraad" },
                 values: new object[,]
                 {
-                    { 101, 1, 10, new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Tulp Mix", 12m, 500 },
-                    { 102, 2, 10, new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Rode Roos", 20m, 300 }
+                    { 101, 1, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Tulp Mix", 12m, 500 },
+                    { 102, 2, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Rode Roos", 20m, 300 }
                 });
 
             migrationBuilder.InsertData(
                 table: "Veiling",
-                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "VeilingProductNr" },
+                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "Status", "VeilingProductNr" },
                 values: new object[,]
                 {
-                    { 201, new DateTime(2025, 10, 10, 9, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc), 101 },
-                    { 202, new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 10, 11, 0, 0, 0, DateTimeKind.Utc), 102 }
+                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), "active", 101 },
+                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), "active", 102 }
                 });
 
             migrationBuilder.InsertData(

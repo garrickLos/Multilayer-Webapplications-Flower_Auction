@@ -269,7 +269,7 @@ export function useLivePagedList<T>(args: {
     refreshMs?: number;
     revalidateOnFocus?: boolean;
 }): { data: ReadonlyArray<T>; loading: boolean; error: unknown; lastCount: number } {
-    const { path, params, page, pageSize, paramsKey, init, refreshMs, revalidateOnFocus } = args;
+    const { path, params, page, pageSize, init, refreshMs, revalidateOnFocus } = args;
     const { data, error } = useLiveData<ReadonlyArray<T>>(path, {
         params: { ...(params || {}), page, pageSize },
         init,

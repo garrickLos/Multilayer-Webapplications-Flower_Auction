@@ -1,18 +1,40 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 
 namespace mvc_api.Controllers;
 
-[ApiController, Route("api/[controller]"), Produces("application/json")]
-public class VeilingController(AppDbContext db) : ControllerBase
+[ApiController]
+[Route("api/[controller]")]
+[Produces("application/json")]
+public class VeilingController : ControllerBase
 {
+    private readonly AppDbContext _db;
+
+    public VeilingController(AppDbContext db)
+    {
+        _db = db;
+    }
+
     // Response DTO's
     public sealed record VProd(int VeilingProductNr, string Naam, decimal Startprijs, int Voorraad);
-    public sealed record VList(int VeilingNr, DateTime? Begintijd, DateTime? Eindtijd, VProd? Product);
-    public sealed record VDetail(int VeilingNr, DateTime? Begintijd, DateTime? Eindtijd, VProd? Product);
+
+    public sealed record VList(
+        int VeilingNr,
+        DateTime? Begintijd,
+        DateTime? Eindtijd,
+        string Status,
+        VProd? Product
+    );
+
+    public sealed record VDetail(
+        int VeilingNr,
+        DateTime? Begintijd,
+        DateTime? Eindtijd,
+        string Status,
+        VProd? Product
+    );
 
     // GET: api/Veiling?veilingProduct=101&from=2025-10-29T09:00:00&to=2025-10-29T11:00:00&page=1&pageSize=50
     [HttpGet]
@@ -27,7 +49,7 @@ public class VeilingController(AppDbContext db) : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var query = db.Veilingen.AsNoTracking().AsQueryable();
+        var query = _db.Veilingen.AsNoTracking().AsQueryable();
 
         if (veilingProduct is not null)
             query = query.Where(v => v.VeilingProductNr == veilingProduct);
@@ -48,7 +70,9 @@ public class VeilingController(AppDbContext db) : ControllerBase
                 v.VeilingNr,
                 v.Begintijd,
                 v.Eindtijd,
-                v.Veilingproduct == null ? null
+                v.Status,
+                v.Veilingproduct == null
+                    ? null
                     : new VProd(
                         v.Veilingproduct.VeilingProductNr,
                         v.Veilingproduct.Naam,
@@ -69,14 +93,16 @@ public class VeilingController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<VDetail>> GetById(int id, CancellationToken ct = default)
     {
-        var dto = await db.Veilingen
+        var dto = await _db.Veilingen
             .AsNoTracking()
             .Where(x => x.VeilingNr == id)
             .Select(x => new VDetail(
                 x.VeilingNr,
                 x.Begintijd,
                 x.Eindtijd,
-                x.Veilingproduct == null ? null
+                x.Status,
+                x.Veilingproduct == null
+                    ? null
                     : new VProd(
                         x.Veilingproduct.VeilingProductNr,
                         x.Veilingproduct.Naam,
@@ -95,18 +121,35 @@ public class VeilingController(AppDbContext db) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<VDetail>> Create([FromBody] VeilingCreateDto dto, CancellationToken ct = default)
     {
+        var status = NormalizeStatus(dto.Status, fallback: "inactive");
+
+        // Alleen als de nieuw aangemaakte veiling 'active' wordt,
+        // zetten we andere actieve veilingen voor hetzelfde product op 'inactive'.
+        if (status == "active")
+        {
+            var otherActive = await _db.Veilingen
+                .Where(v => v.VeilingProductNr == dto.VeilingProductNr && v.Status == "active")
+                .ToListAsync(ct);
+
+            foreach (var v in otherActive)
+            {
+                v.Status = "inactive";
+            }
+        }
+
         var e = new Veiling
         {
-            Begintijd = dto.Begintijd,
-            Eindtijd  = dto.Eindtijd,
-            VeilingProductNr = dto.VeilingProductNr
+            Begintijd        = dto.Begintijd,
+            Eindtijd         = dto.Eindtijd,
+            VeilingProductNr = dto.VeilingProductNr,
+            Status           = status
         };
 
-        db.Veilingen.Add(e);
+        _db.Veilingen.Add(e);
 
         try
         {
-            await db.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(ct);
         }
         catch (DbUpdateException)
         {
@@ -114,13 +157,15 @@ public class VeilingController(AppDbContext db) : ControllerBase
             return BadRequest(Problem("Ongeldige referentie", "VeilingProductNr bestaat niet.", 400));
         }
 
-        var r = await db.Veilingen.AsNoTracking()
+        var r = await _db.Veilingen.AsNoTracking()
             .Where(x => x.VeilingNr == e.VeilingNr)
             .Select(x => new VDetail(
                 x.VeilingNr,
                 x.Begintijd,
                 x.Eindtijd,
-                x.Veilingproduct == null ? null
+                x.Status,
+                x.Veilingproduct == null
+                    ? null
                     : new VProd(
                         x.Veilingproduct.VeilingProductNr,
                         x.Veilingproduct.Naam,
@@ -137,29 +182,56 @@ public class VeilingController(AppDbContext db) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<VDetail>> Update(int id, [FromBody] VeilingUpdateDto dto, CancellationToken ct = default)
     {
-        var e = await db.Veilingen.FindAsync(new object[] { id }, ct);
+        var e = await _db.Veilingen.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
-        e.Begintijd = dto.Begintijd;
-        e.Eindtijd  = dto.Eindtijd;
+        e.Begintijd        = dto.Begintijd;
+        e.Eindtijd         = dto.Eindtijd;
         e.VeilingProductNr = dto.VeilingProductNr;
+
+        var hasStatus = !string.IsNullOrWhiteSpace(dto.Status);
+        string? newStatus = hasStatus ? NormalizeStatus(dto.Status) : null;
+
+        if (newStatus is not null)
+        {
+            // Als we deze veiling 'active' zetten, alle andere actieve voor dit product 'inactive'
+            if (newStatus == "active")
+            {
+                var otherActive = await _db.Veilingen
+                    .Where(v =>
+                        v.VeilingProductNr == e.VeilingProductNr &&
+                        v.VeilingNr != e.VeilingNr &&
+                        v.Status == "active")
+                    .ToListAsync(ct);
+
+                foreach (var v in otherActive)
+                {
+                    v.Status = "inactive";
+                }
+            }
+
+            // En uiteindelijk status van deze veiling updaten
+            e.Status = newStatus;
+        }
 
         try
         {
-            await db.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(ct);
         }
         catch (DbUpdateException)
         {
             return BadRequest(Problem("Ongeldige referentie", "VeilingProductNr bestaat niet.", 400));
         }
 
-        var r = await db.Veilingen.AsNoTracking()
+        var r = await _db.Veilingen.AsNoTracking()
             .Where(x => x.VeilingNr == id)
             .Select(x => new VDetail(
                 x.VeilingNr,
                 x.Begintijd,
                 x.Eindtijd,
-                x.Veilingproduct == null ? null
+                x.Status,
+                x.Veilingproduct == null
+                    ? null
                     : new VProd(
                         x.Veilingproduct.VeilingProductNr,
                         x.Veilingproduct.Naam,
@@ -176,14 +248,38 @@ public class VeilingController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await db.Veilingen.FindAsync(new object[] { id }, ct);
+        var e = await _db.Veilingen.FindAsync(new object[] { id }, ct);
         if (e is null) return NotFound(Problem("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
-        db.Veilingen.Remove(e);
-        await db.SaveChangesAsync(ct);
+        _db.Veilingen.Remove(e);
+        await _db.SaveChangesAsync(ct);
         return NoContent();
     }
 
+    // ---------------------------
+    // Helpers
+    // ---------------------------
+    private static string NormalizeStatus(string? status, string fallback = "inactive")
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return fallback;
+
+        var s = status.Trim().ToLowerInvariant();
+        return s switch
+        {
+            "active"   => "active",
+            "inactive" => "inactive",
+            "sold"     => "sold",
+            _          => fallback
+        };
+    }
+
     private ProblemDetails Problem(string title, string? detail = null, int statusCode = 400) =>
-        new() { Title = title, Detail = detail, Status = statusCode, Instance = HttpContext?.Request?.Path };
+        new()
+        {
+            Title = title,
+            Detail = detail,
+            Status = statusCode,
+            Instance = HttpContext?.Request?.Path
+        };
 }

@@ -1,16 +1,13 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import Modal from './Modal';
 import DataTable, { type Column, type RowBase } from './DataTable';
 import { useLiveData } from '../data/live';
 import { Empty, Loading } from './components';
 
 /*
- * Improved VeilingModalLive component
+ * VeilingModalLive
  *
- * This version extracts data fetching and row mapping into a custom hook,
- * reducing the size of the component. It also memoises the columns and
- * uses descriptive variable names for clarity. Functionality remains
- * equivalent to the original implementation.
+ * Shows live veilingen for a product in a table with a details pane.
  */
 
 // Formatting helpers for dates and euro values using Dutch locale
@@ -29,7 +26,7 @@ type ApiVeiling = {
     product?: { naam?: string; startprijs?: number; voorraad?: number };
 };
 
-// Row shape used by the DataTable component.  Includes parsed timestamps
+// Row shape used by the DataTable component. Includes parsed timestamps
 // for numeric sorting.
 type VeilingRow = RowBase & {
     veilingNr: number | '';
@@ -41,8 +38,17 @@ type VeilingRow = RowBase & {
     product: string;
 };
 
+// Helper: normalise error into a displayable string
+const toErrorMessage = (err: unknown, fallback: string): string | null => {
+    if (!err) return null;
+    if (err instanceof Error) return err.message;
+    if (typeof err === 'string') return err;
+    return fallback;
+};
+
 // Status badge component for display in the details pane
-const StatusBadge: React.FC<{ status?: string | null }> = ({ status }) => {
+type StatusBadgeProps = { status?: string | null };
+const StatusBadge = ({ status }: StatusBadgeProps) => {
     if (!status) return null;
     const s = status.toLowerCase();
     const cls = s.includes('actief')
@@ -63,6 +69,7 @@ function useVeilingRows(productId: number) {
         refreshMs: 1_000,
         revalidateOnFocus: true,
     });
+
     const rows: VeilingRow[] = useMemo(() => {
         return (auctions ?? []).map(v => {
             const bt = v.begintijd ? Date.parse(v.begintijd) : NaN;
@@ -78,24 +85,27 @@ function useVeilingRows(productId: number) {
             };
         });
     }, [auctions]);
+
     const loading = !auctions && !error;
-    return { rows, auctions, error, loading };
+    const errorMessage = toErrorMessage(error, 'Kon veilingen niet ophalen.');
+
+    return { rows, auctions, loading, errorMessage };
 }
 
 /**
- * Modal that displays the list of auctions for a given product.  Uses the
- * live data hook to fetch auctions and automatically revalidate when the
- * underlying data changes.  Shows a table of auctions on the left and
- * details of the selected auction on the right.
+ * Modal that displays the list of auctions for a given product.
  */
 export default function VeilingModalLive({ productId, onClose }: { productId: number; onClose: () => void }) {
-    const { rows, auctions, error, loading } = useVeilingRows(productId);
+    const { rows, auctions, loading, errorMessage } = useVeilingRows(productId);
+
     // Currently selected auction (raw api object)
     const [selected, setSelected] = useState<ApiVeiling | null>(null);
+
     // When the list of auctions updates, select the first one by default
     useEffect(() => {
         setSelected(auctions && auctions.length ? auctions[0] : null);
     }, [auctions]);
+
     // Column definitions are static; memoise once
     const columns = useMemo<ReadonlyArray<Column<VeilingRow>>>(
         () => [
@@ -120,6 +130,7 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
         ],
         [],
     );
+
     // Row click handler: find the matching ApiVeiling object and set it as selected
     const handleRowClick = useCallback(
         (r: VeilingRow) => {
@@ -128,6 +139,7 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
         },
         [auctions],
     );
+
     return (
         <Modal
             title={
@@ -142,12 +154,14 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
         >
             {/* Loading state */}
             {loading && <Loading />}
+
             {/* Error state */}
-            {error && (
+            {errorMessage && (
                 <div className="alert alert-danger" role="alert">
-                    {(error as any)?.message || 'Kon veilingen niet ophalen.'}
+                    {errorMessage}
                 </div>
             )}
+
             {/* Content when data is loaded */}
             {auctions && (
                 <div className="row g-3">
@@ -187,11 +201,7 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
                                     <StatusBadge status={selected?.status} />
                                 </h5>
                                 <div className="text-muted mb-3">
-                                    {selected ? (
-                                        <>Veiling #{selected.veilingNr}</>
-                                    ) : (
-                                        'Selecteer een veiling in de tabel.'
-                                    )}
+                                    {selected ? <>Veiling #{selected.veilingNr}</> : 'Selecteer een veiling in de tabel.'}
                                 </div>
                                 {selected && (
                                     <ul className="list-group list-group-flush">
@@ -221,6 +231,3 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
         </Modal>
     );
 }
-
-// Alias for compatibility
-export { DataTable as ArrayTable };
