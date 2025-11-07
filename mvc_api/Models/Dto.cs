@@ -18,7 +18,8 @@ namespace mvc_api.Models
         DateTime? GeplaatstDatum,
         [Range(1, int.MaxValue)] int Fust,
         [Range(0, int.MaxValue)] int Voorraad,
-        [Range(0, 999_999_999)] decimal Startprijs,
+        // decimal-range met typeof(decimal) i.p.v. double
+        [Range(typeof(decimal), "0", "999999999")] decimal Startprijs,
         [Range(1, int.MaxValue)] int CategorieNr
     );
 
@@ -27,20 +28,20 @@ namespace mvc_api.Models
         DateTime? GeplaatstDatum,
         [Range(1, int.MaxValue)] int Fust,
         [Range(0, int.MaxValue)] int Voorraad,
-        [Range(0, 999_999_999)] decimal Startprijs,
+        [Range(typeof(decimal), "0", "999999999")] decimal Startprijs,
         [Range(1, int.MaxValue)] int CategorieNr
     );
 
     // Bieding CRUD
     public record BiedingCreateDto(
-        [Range(0, 999_999_999)] decimal BedragPerFust,
+        [Range(typeof(decimal), "0", "999999999")] decimal BedragPerFust,
         [Range(1, int.MaxValue)] int AantalStuks,
         [Range(1, int.MaxValue)] int GebruikerNr,
         [Range(1, int.MaxValue)] int VeilingNr
     );
 
     public record BiedingUpdateDto(
-        [Range(0, 999_999_999)] decimal BedragPerFust,
+        [Range(typeof(decimal), "0", "999999999")] decimal BedragPerFust,
         [Range(1, int.MaxValue)] int AantalStuks
     );
 
@@ -71,18 +72,17 @@ namespace mvc_api.Models
 
     // Veiling CRUD
     public record VeilingCreateDto(
-        DateTime? Begintijd,
-        DateTime? Eindtijd,
+        [Required] DateTime Begintijd,
+        [Required] DateTime Eindtijd,
         [Range(1, int.MaxValue)] int VeilingProductNr,
         // Optioneel: "active", "inactive", "sold"
         [MaxLength(20)] string? Status
     );
 
     public record VeilingUpdateDto(
-        DateTime? Begintijd,
-        DateTime? Eindtijd,
+        [Required] DateTime Begintijd,
+        [Required] DateTime Eindtijd,
         [Range(1, int.MaxValue)] int VeilingProductNr,
-        // Optioneel: "active", "inactive", "sold"
         [MaxLength(20)] string? Status
     );
 }

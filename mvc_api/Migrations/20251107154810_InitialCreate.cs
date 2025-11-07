@@ -78,8 +78,8 @@ namespace mvc_api.Migrations
                 {
                     VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Begintijd = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Eindtijd = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Begintijd = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Eindtijd = table.Column<DateTime>(type: "TEXT", nullable: false),
                     VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false),
                     Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
                 },

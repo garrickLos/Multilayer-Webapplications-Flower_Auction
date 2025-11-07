@@ -183,10 +183,10 @@ namespace mvc_api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("Begintijd")
+                    b.Property<DateTime>("Begintijd")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("Eindtijd")
+                    b.Property<DateTime>("Eindtijd")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")

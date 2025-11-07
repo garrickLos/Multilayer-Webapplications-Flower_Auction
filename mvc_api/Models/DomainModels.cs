@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,7 @@ namespace mvc_api.Models
         [Required, MaxLength(200), EmailAddress]
         public string Email { get; set; } = string.Empty;
 
+        // Let op: in een echte app zou je hier een gehashte password-waarde gebruiken
         [Required, MaxLength(200)]
         public string Wachtwoord { get; set; } = string.Empty;
 
@@ -40,6 +42,7 @@ namespace mvc_api.Models
         public string? PersoneelsNr { get; set; }
 
         public ICollection<Bieding> Biedingen { get; set; } = new List<Bieding>();
+        // of korter: = new();
     }
 
     // Bieding
@@ -48,8 +51,8 @@ namespace mvc_api.Models
         [Key]
         public int BiedNr { get; set; }
 
-        [Range(0, 999_999_999)]
         [Precision(18, 2)]
+        [Range(typeof(decimal), "0", "999999999")]
         public decimal BedragPerFust { get; set; }
 
         [Range(1, int.MaxValue)]
@@ -74,7 +77,7 @@ namespace mvc_api.Models
         [Required, MaxLength(200)]
         public string Naam { get; set; } = string.Empty;
 
-        // Default in C#; DB default kun je optioneel ook in OnModelCreating zetten
+        // C#-default; voor een echte DB-default kun je dit ook in OnModelCreating configureren
         public DateTime GeplaatstDatum { get; set; } = DateTime.UtcNow;
 
         [Range(1, int.MaxValue)]
@@ -83,8 +86,8 @@ namespace mvc_api.Models
         [Range(0, int.MaxValue)]
         public int Voorraad { get; set; }
 
-        [Range(0, 999_999_999)]
         [Precision(18, 2)]
+        [Range(typeof(decimal), "0", "999999999")]
         public decimal Startprijs { get; set; }
 
         [ForeignKey(nameof(Categorie))]
@@ -112,8 +115,8 @@ namespace mvc_api.Models
         [Key]
         public int VeilingNr { get; set; }
 
-        public DateTime? Begintijd { get; set; }
-        public DateTime? Eindtijd { get; set; }
+        public DateTime Begintijd { get; set; }
+        public DateTime Eindtijd  { get; set; }
 
         [ForeignKey(nameof(Veilingproduct))]
         public int VeilingProductNr { get; set; }
