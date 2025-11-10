@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export default function Wpfw() {
-    const names = ['Bayram', 'Github', 'Wpfw']
+    const names = ['veiling', 'Github', 'Wpfw']
     const [name, setName] = useState(0)
 
     return (

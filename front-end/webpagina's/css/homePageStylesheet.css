@@ -1,8 +1,53 @@
+:root{
+      /* Achtergrondkleuren */
+      --bg:#f6f7f5;
+      --surface:#ffffff;
+      --card:#ffffff;
+      --section-bg:#eaf2eb;
+
+      /* Hoofdkleuren (brand) */
+      --brand:#2e4a41;
+      --brand-light:#3e6157;
+      --brand-2:#cfe5d2;
+      --brand-gradient:linear-gradient(90deg,#2e4a41 0%,#3e6157 100%);
+
+      /* Accentkleuren */
+      --accent:#25a18e;
+      --accent-light:#42b9a6;
+      --accent-muted:#a0e0d5;
+
+      /* Tekstkleuren */
+      --ink:#0f172a;
+      --ink-light:#334155;
+      --muted:#6b7280;
+      --inverse-text:#ffffff;
+
+      /* Status */
+      --error:#dc2626;
+      --error-bg:#fee2e2;
+      --success:#16a34a;
+      --success-bg:#dcfce7;
+
+      /* UI */
+      --border:#d1d5db;
+      --border-focus:#25a18e;
+      --radius:12px;
+
+      /* Buttons */
+      --btn-primary-bg:var(--accent);
+      --btn-primary-hover:var(--accent-light);
+      --btn-primary-text:var(--inverse-text);
+
+      --btn-secondary-bg:var(--brand);
+      --btn-secondary-hover:var(--brand-light);
+      --btn-secondary-text:var(--inverse-text);
+    }
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #fff;
-    color: #333;
+    background-color: var(--bg);
+    color: var(--ink);
 }
 
 main {
@@ -11,9 +56,13 @@ main {
 
 /* banner */
 .banner {
-    background-color: #388547;
-    color: #fff;
-    height: 23vh;
+    display: inline-block;
+    background-color: var(--accent);
+    color: var(--inverse-text);
+
+    min-height: 25vh;
+    height: auto;
+    
     display: flex;
     justify-content: center;
     align-items: center;
@@ -99,22 +148,25 @@ section h2 {
 
     flex: 0 0 250px;
     
-    background-color: #fff;
-    border: 1px solid #ccc;
+    background-color: var(--brand-gradient);
+    border: 1px solid var(--brand-light);
     scroll-snap-align: start;
     text-align: center;
     padding: 10px;
 }
 
 .card img {
-    min-width: 300px;
+    display: inline-block;
+
+    min-width: 50%;
     width: auto;
     max-width: 75%;
 
-    min-width: 200px;
+    min-height: 50%;
     height: auto;
     max-height: 50%;
-    background-color: #ddd;
+
+    object-fit: contain;
 }
 .card h3 {
     font-size: 14px;
@@ -122,14 +174,25 @@ section h2 {
 }
 .card p {
     font-size: 12px;
-    color: #666;
+    color: var(--ink-light);
 }
+
+.text-container {
+    display: inline-block;
+
+    min-height: 10%;
+    height: 35%;
+    max-height: 50%;
+
+    overflow-y: hidden;
+}
+
 .arrow {
     background-color: transparent;
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #333;
+    color: var(--ink);
 }
 
 .slider {
@@ -147,27 +210,22 @@ section h2 {
     display: none; 
 }
 
-.deal-item {
-    flex: 1 0 250px; 
-    
-    height: auto;
-    max-height: 300px;
-
-    background-color: #b7dcf9;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    scroll-snap-align: start;
-}
-
-.deal-item button {
+.slider-container button {
     margin: 10px;
     padding: 8px 16px;
-    background-color: black;
-    color: white;
     border: none;
     cursor: pointer;
+}
+
+.auctionButton {
+    background-color: var(--accent);
+    color: var(--inverse-text);
+
+    border-radius: 50px;
+}
+
+.auctionButton:hover {
+    background-color: var(--accent-light);
 }
 
 .cookie_overlay {
