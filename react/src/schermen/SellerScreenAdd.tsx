@@ -35,17 +35,6 @@ export default function SellerScreenAdd() {
     return (
         <main className="SellerScreenAdd">
             <div className="BODY">
-                <div className="banner-content">
-                    <div className="registratie-knoppen">
-                        <button type="button" className="knop-inloggen" aria-label="knop voor het inloggen">
-                            inloggen &#10095;
-                        </button>
-                        <button type="button" className="knop-registreren" aria-label="knop voor registreren van een account">
-                            registreren &#10095;
-                        </button>
-                    </div>
-                </div>
-
                 <div className="Mainschermen">
                     <h2>Artificial Citroen boom in deco pot</h2>
                     <div className="ArtikelNummer">
