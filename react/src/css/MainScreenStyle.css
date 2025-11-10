@@ -43,24 +43,23 @@
       --btn-secondary-text:var(--inverse-text);
 }
 
-* {
+.MainScreen * {
   scrollbar-width: thin;
   scrollbar-color: var(--brand) rgba(255, 255, 255, 0);
 }
 
-body {
+.MainScreen {
     margin: 0;
     font-family: Arial, sans-serif;
     background-color: var(--bg);
     color: var(--ink);
 }
 
-main {
+.MainScreen main {
     margin: 0 0 50px 0;
 }
 
-/* banner */
-.banner {
+.MainScreen .banner {
     display: inline-block;
     background-color: var(--accent);
     color: var(--inverse-text);
@@ -75,7 +74,7 @@ main {
     border-radius: 0 0 1% 1%;
 }
 
-.banner-content {
+.MainScreen .banner-content {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -83,19 +82,19 @@ main {
 }
 
 /* Banner heading style */
-.banner h1 {
+.MainScreen .banner h1 {
     font-size: 25px;
     margin: 0;
 }
 
-.banner .registratie-knoppen {
+.MainScreen .banner .registratie-knoppen {
     display: inline-flex;
     justify-content: center;
     gap: 40px;
     margin-top: 10px;
 }
 
-.registratie-knoppen button {
+.MainScreen .registratie-knoppen button {
     background-color: transparent;
     color: white;
     border-style: unset;
@@ -103,26 +102,26 @@ main {
     font-weight: 500;
 }
 
-.registratie-knoppen button:hover {
+.MainScreen .registratie-knoppen button:hover {
     text-decoration: underline;
     cursor: pointer;
 }
 
 /* SECTION TITLES */
-section {
+.MainScreen section {
     display: block;
     padding: 30px 40px;
 
     height: 500px;
 }
 
-section h2 {
+.MainScreen section h2 {
     font-size: 20px;
     margin-bottom: 15px;
 }
 
 /* SLIDER */
-.slider-container {
+.MainScreen .slider-container {
     position: relative;
     display: flex;
     align-items: center;
@@ -132,7 +131,7 @@ section h2 {
     height: 100%;
 }
 
-.slider {
+.MainScreen .slider {
     display: flex;
     overflow-x: auto;
     scroll-behavior: smooth;
@@ -144,11 +143,11 @@ section h2 {
     height: auto;
 }
 
-.slider::-webkit-scrollbar {
+.MainScreen .slider::-webkit-scrollbar {
     display: none;
 }
 
-.card {
+.MainScreen .card {
     width: 25%;
 
     flex: 0 0 250px;
@@ -160,7 +159,7 @@ section h2 {
     padding: 10px;
 }
 
-.card img {
+.MainScreen .card img {
     display: inline-block;
 
     min-width: 50%;
@@ -176,20 +175,20 @@ section h2 {
     align-self: center;
 }
 
-.card .ImageErrorMsg {
+.MainScreen .card .ImageErrorMsg {
     margin: 0;
 }
 
-.card h3 {
+.MainScreen .card h3 {
     font-size: 14px;
     margin: 10px 0;
 }
-.card p {
+.MainScreen .card p {
     font-size: 12px;
     color: var(--ink-light);
 }
 
-.text-container {
+.MainScreen .text-container {
     display: inline-block;
 
     min-height: 10%;
@@ -199,7 +198,7 @@ section h2 {
     overflow-y: hidden;
 }
 
-.arrow {
+.MainScreen .arrow {
     background-color: transparent;
     border: none;
     font-size: 24px;
@@ -207,7 +206,7 @@ section h2 {
     color: var(--ink);
 }
 
-.slider {
+.MainScreen .slider {
     width: 100%;
 
     display: flex; 
@@ -218,29 +217,29 @@ section h2 {
     padding: 10px 0;
 }
 
-.slider::-webkit-scrollbar {
+.MainScreen .slider::-webkit-scrollbar {
     display: none; 
 }
 
-.slider-container button {
+.MainScreen .slider-container button {
     margin: 10px;
     padding: 8px 16px;
     border: none;
     cursor: pointer;
 }
 
-.auctionButton {
+.MainScreen .auctionButton {
     background-color: var(--accent);
     color: var(--inverse-text);
 
     border-radius: 50px;
 }
 
-.auctionButton:hover {
+.MainScreen .auctionButton:hover {
     background-color: var(--accent-light);
 }
 
-.ImageErrorMsg {
+.MainScreen .ImageErrorMsg {
     position: absolute;
 
     left: 25%;

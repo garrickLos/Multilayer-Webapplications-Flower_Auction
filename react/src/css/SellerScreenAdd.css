@@ -1,70 +1,39 @@
-.BODY {
+/* Scope everything to the SellerScreenAdd root to avoid global leakage */
+.SellerScreenAdd .BODY {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     margin: 0;
 }
 
+/* Keep large commented blocks for reference */
 
-
-/*.HoofschermContainer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px;
-}*/
-
-/*.logoTitel, .mijnVeilingenBekijken, .klantGegevens {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.floraLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
-    width: 50px;
-    height: auto;
-    display: block;
-    border: 1px solid white;
-    outline: 1px solid white;
-}*/
-
-h1 {
+/* Scoped headings */
+.SellerScreenAdd h1 {
     font-size: 18px;
     color: green;
     margin: 0;
 }
 
-/*nav ul {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-    margin: 0;
-    padding: 0;
-    color: green;
-}*/
-
-/*nav li {
-    cursor: pointer;
-}*/
-
-h2 {
+.SellerScreenAdd h2 {
     font-size: 20px;
     color: saddlebrown;
 }
 
-h3 {
+.SellerScreenAdd h3 {
     display: inline-block;
     background-color: saddlebrown;
     font-size: 12px;
     color: white;
 }
 
-h2, h3, .Container {
+.SellerScreenAdd h2,
+.SellerScreenAdd h3,
+.SellerScreenAdd .Container {
     display: inline-block;
 }
 
-
-.Container {
+.SellerScreenAdd .Container {
     display: flex;
     gap: 35px;
     align-items: stretch;
@@ -74,75 +43,81 @@ h2, h3, .Container {
     padding-right: 10px;
 }
 
-.Container section {
+.SellerScreenAdd .Container section {
     flex: 1;
     box-sizing: border-box;
 }
 
-.scherm2Container, .scherm3Container {
+.SellerScreenAdd .scherm2Container,
+.SellerScreenAdd .scherm3Container {
     outline: 1px solid saddlebrown;
     outline-offset: 15px;
     padding: 10px;
     margin-top: 15px;
 }
 
-.fotoContainer {
+.SellerScreenAdd .fotoContainer {
     max-width: 250px;
     margin: 0 auto;
 }
 
-.grote-foto {
+.SellerScreenAdd .grote-foto {
     width: 100%;
     border: 1px solid saddlebrown;
 }
 
-.kleine-fotos {
+.SellerScreenAdd .kleine-fotos {
     display: flex;
     justify-content: flex-start;
     gap: 15px;
 }
 
-.kleine-foto {
+.SellerScreenAdd .kleine-foto {
     width: calc((100% / 3) - 11px);
     height: auto;
     display: block;
     border: 1px solid saddlebrown;
 }
 
-.ordenen {
+.SellerScreenAdd .ordenen {
     display: flex;
     justify-content: flex-start;
     border: 1px solid lightgray;
     margin-bottom: 5px;
 }
 
-label, input {
+.SellerScreenAdd label,
+.SellerScreenAdd input {
     display: block;
 }
 
-input {
+.SellerScreenAdd input {
     border: none;
 }
 
-.kopje {
+.SellerScreenAdd .kopje {
     font-size: 12px;
     color: saddlebrown;
 }
 
-.name, .category, .amount, .place, .minimumPrice {
+.SellerScreenAdd .name,
+.SellerScreenAdd .category,
+.SellerScreenAdd .amount,
+.SellerScreenAdd .place,
+.SellerScreenAdd .minimumPrice {
     font-size: 8px;
     color: black;
 }
 
-.scherm3Container input {
+.SellerScreenAdd .scherm3Container input {
     border: 1px solid lightgray;
 }
 
-.scherm3Ordenen {
+.SellerScreenAdd .scherm3Ordenen {
     display: block;
 }
 
-.placeProduct {
+.SellerScreenAdd .placeProduct {
     color: white;
     background-color: blue;
     display: block;
@@ -150,7 +125,7 @@ input {
     padding: 5px 50px;
 }
 
-section{
+.SellerScreenAdd section{
     padding: 10px 0;
 }
 

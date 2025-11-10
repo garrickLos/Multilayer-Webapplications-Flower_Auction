@@ -11,7 +11,7 @@ export default function MainScreen() {
     const url = "src/resources/json/HoofdschermMock.json"; 
 
     return (
-        <main>
+        <main className='MainScreen'>
 
             <div className="banner">
                 <div className="banner-content">

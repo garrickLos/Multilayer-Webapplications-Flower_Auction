@@ -33,7 +33,7 @@ export default function SellerScreenAdd() {
     };
 
     return (
-        <main>
+        <main className="SellerScreenAdd">
             <div className="BODY">
                 <div className="banner-content">
                     <div className="registratie-knoppen">
