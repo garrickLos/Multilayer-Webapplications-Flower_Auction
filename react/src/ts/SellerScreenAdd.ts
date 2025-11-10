@@ -1,20 +1,35 @@
-const [name, setName] = useState<string>("");
-const [category, setCategory] = useState<string>("");
-const [amount, setAmount] = useState<number | "">("");
-const [place, setPlace] = useState<string>("");
-const [minimumPrice, setMinimumPrice] = useState<number | "">("");
-const [startPrice, setStartPrice] = useState<number | "">("");
-const [startDate, setStartDate] = useState<string>("");
-const [endDate, setEndDate] = useState<string>("");
+document.querySelector(".placeProduct").addEventListener("click", async () => {
+    const product = {
+        name: document.getElementById : string("username").value,
+        category: document.getElementById("productcategory").value,
+        amount: document.getElementById("productamount").value,
+        place: document.getElementById("productplace").value,
+        minimumPrice: document.getElementById("minimumPriceProduct").value,
+        startPrice: document.getElementById("startPrice").value,
+        startDate: document.getElementById("startDate").value,
+        endDate: document.getElementById("endDate").value
+    };
 
-const handleSubmit = () => {
-    const verplichteVelden = [name, category, amount, place, minimumPrice, startPrice, startDate, endDate];
-    if (!validateProduct(verplichteVelden)) {
-        alert("Een of meer velden zijn leeg!");
+    const verplichteVelden =
+        [
+            product.name, product.category, product.amount, product.place, product.minimumPrice, product.startPrice, product.startDate, product.endDate
+        ]
+
+    let isVeldLeeg = false;
+
+    verplichteVelden.forEach(element => {
+        if(!element || element.trim() == "") {
+            isVeldLeeg = true;
+        }
+    });
+
+    if(isVeldLeeg) {
+        alert("Een of meer velden zijn leeg!")
     } else {
-        alert("Product is succesvol opgeslagen");
+        alert("Product is succesvol opgeslagen")
+        verplichteVelden.forEach(element => {
+            console.log(element);
+        })
     }
-};
-export function validateProduct(fields: string[]): boolean {
-    return !fields.some(field => !field || field.trim() === "");
-}
+})
+
