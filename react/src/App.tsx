@@ -22,7 +22,7 @@ export default function App() {
                 <Route path="/veilingBekijken" element={""} />
                 <Route path="/klantGegevens" element={""} />
                 <Route path="/privacyBeleid" element={<PrivacyScherm />} />
-                <Route path="/Registration" element={<Registration />} />
+                <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
 
             </Routes>
