@@ -11,7 +11,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251009105734_InitialCreate")]
+    [Migration("20251030093419_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -54,7 +54,7 @@ namespace mvc_api.Migrations
                             AantalStuks = 5,
                             BedragPerFust = 13.50m,
                             GebruikerNr = 2,
-                            VeilingNr = 101
+                            VeilingNr = 201
                         },
                         new
                         {
@@ -62,7 +62,7 @@ namespace mvc_api.Migrations
                             AantalStuks = 3,
                             BedragPerFust = 21.00m,
                             GebruikerNr = 2,
-                            VeilingNr = 102
+                            VeilingNr = 202
                         });
                 });
 
@@ -74,7 +74,7 @@ namespace mvc_api.Migrations
 
                     b.Property<string>("Naam")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("CategorieNr");
@@ -100,7 +100,7 @@ namespace mvc_api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Assortiment")
+                    b.Property<int?>("Assortiment")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
@@ -109,7 +109,6 @@ namespace mvc_api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Kvk")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
@@ -122,12 +121,10 @@ namespace mvc_api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PersoneelsNr")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Postcode")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
@@ -137,7 +134,6 @@ namespace mvc_api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StraatAdres")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
@@ -190,18 +186,18 @@ namespace mvc_api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<long?>("Begintijd")
-                        .HasColumnType("INTEGER");
+                    b.Property<DateTime?>("Begintijd")
+                        .HasColumnType("TEXT");
 
-                    b.Property<long?>("Eindtijd")
-                        .HasColumnType("INTEGER");
+                    b.Property<DateTime?>("Eindtijd")
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("VeilingProduct")
+                    b.Property<int>("VeilingProductNr")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("VeilingNr");
 
-                    b.HasIndex("VeilingProduct");
+                    b.HasIndex("VeilingProductNr");
 
                     b.ToTable("Veiling", (string)null);
 
@@ -209,22 +205,22 @@ namespace mvc_api.Migrations
                         new
                         {
                             VeilingNr = 201,
-                            Begintijd = 324000000000L,
-                            Eindtijd = 360000000000L,
-                            VeilingProduct = 101
+                            Begintijd = new DateTime(2025, 10, 10, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Eindtijd = new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            VeilingProductNr = 101
                         },
                         new
                         {
                             VeilingNr = 202,
-                            Begintijd = 360000000000L,
-                            Eindtijd = 396000000000L,
-                            VeilingProduct = 102
+                            Begintijd = new DateTime(2025, 10, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Eindtijd = new DateTime(2025, 10, 10, 11, 0, 0, 0, DateTimeKind.Utc),
+                            VeilingProductNr = 102
                         });
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
                 {
-                    b.Property<int>("VeilingNr")
+                    b.Property<int>("VeilingProductNr")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -249,7 +245,7 @@ namespace mvc_api.Migrations
                     b.Property<int>("Voorraad")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("VeilingNr");
+                    b.HasKey("VeilingProductNr");
 
                     b.HasIndex("CategorieNr", "Naam");
 
@@ -258,7 +254,7 @@ namespace mvc_api.Migrations
                     b.HasData(
                         new
                         {
-                            VeilingNr = 101,
+                            VeilingProductNr = 101,
                             CategorieNr = 1,
                             Fust = 10,
                             GeplaatstDatum = new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -268,7 +264,7 @@ namespace mvc_api.Migrations
                         },
                         new
                         {
-                            VeilingNr = 102,
+                            VeilingProductNr = 102,
                             CategorieNr = 2,
                             Fust = 10,
                             GeplaatstDatum = new DateTime(2025, 10, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -286,7 +282,7 @@ namespace mvc_api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("mvc_api.Models.Veilingproduct", "Veilingproduct")
+                    b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Biedingen")
                         .HasForeignKey("VeilingNr")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -294,14 +290,14 @@ namespace mvc_api.Migrations
 
                     b.Navigation("Gebruiker");
 
-                    b.Navigation("Veilingproduct");
+                    b.Navigation("Veiling");
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>
                 {
                     b.HasOne("mvc_api.Models.Veilingproduct", "Veilingproduct")
                         .WithMany("Veilingen")
-                        .HasForeignKey("VeilingProduct")
+                        .HasForeignKey("VeilingProductNr")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -329,10 +325,13 @@ namespace mvc_api.Migrations
                     b.Navigation("Biedingen");
                 });
 
-            modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
+            modelBuilder.Entity("mvc_api.Models.Veiling", b =>
                 {
                     b.Navigation("Biedingen");
+                });
 
+            modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
+                {
                     b.Navigation("Veilingen");
                 });
 #pragma warning restore 612, 618

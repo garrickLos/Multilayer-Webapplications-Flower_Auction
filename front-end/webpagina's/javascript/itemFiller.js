@@ -24,8 +24,11 @@ async function genereerDataItem(containerId, divClass, jsonItem, url) {
 
             itemcontainer.innerHTML = `
                 <img src="${ImagePath}" alt=${altText}>
-                <h3>${headerText}</h3>
-                <p>${paragraafTekst}</p>
+                <div class="text-container">
+                    <h3>${headerText}</h3>
+                    <p>${paragraafTekst}</p>
+                </div>
+                <button class="auctionButton">go to auction</button>
             `;
 
         container.appendChild(itemcontainer);
