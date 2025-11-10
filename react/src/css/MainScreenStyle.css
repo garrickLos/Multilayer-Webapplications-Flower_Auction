@@ -1,51 +1,51 @@
 :root{
-      /* Achtergrondkleuren */
-      --bg:#f6f7f5;
-      --surface:#ffffff;
-      --card:#ffffff;
-      --section-bg:#eaf2eb;
+    /* Achtergrondkleuren */
+    --bg:#f6f7f5;
+    --surface:#ffffff;
+    --card:#ffffff;
+    --section-bg:#eaf2eb;
 
-      /* Hoofdkleuren (brand) */
-      --brand:#2e4a41;
-      --brand-light:#3e6157;
-      --brand-2:#cfe5d2;
-      --brand-gradient:linear-gradient(90deg,#2e4a41 0%,#3e6157 100%);
+    /* Hoofdkleuren (brand) */
+    --brand:#2e4a41;
+    --brand-light:#3e6157;
+    --brand-2:#cfe5d2;
+    --brand-gradient:linear-gradient(90deg,#2e4a41 0%,#3e6157 100%);
 
-      /* Accentkleuren */
-      --accent:#25a18e;
-      --accent-light:#42b9a6;
-      --accent-muted:#a0e0d5;
+    /* Accentkleuren */
+    --accent:#25a18e;
+    --accent-light:#42b9a6;
+    --accent-muted:#a0e0d5;
 
-      /* Tekstkleuren */
-      --ink:#0f172a;
-      --ink-light:#334155;
-      --muted:#6b7280;
-      --inverse-text:#ffffff;
+    /* Tekstkleuren */
+    --ink:#0f172a;
+    --ink-light:#334155;
+    --muted:#6b7280;
+    --inverse-text:#ffffff;
 
-      /* Status */
-      --error:#dc2626;
-      --error-bg:#fee2e2;
-      --success:#16a34a;
-      --success-bg:#dcfce7;
+    /* Status */
+    --error:#dc2626;
+    --error-bg:#fee2e2;
+    --success:#16a34a;
+    --success-bg:#dcfce7;
 
-      /* UI */
-      --border:#d1d5db;
-      --border-focus:#25a18e;
-      --radius:12px;
+    /* UI */
+    --border:#d1d5db;
+    --border-focus:#25a18e;
+    --radius:12px;
 
-      /* Buttons */
-      --btn-primary-bg:var(--accent);
-      --btn-primary-hover:var(--accent-light);
-      --btn-primary-text:var(--inverse-text);
+    /* Buttons */
+    --btn-primary-bg:var(--accent);
+    --btn-primary-hover:var(--accent-light);
+    --btn-primary-text:var(--inverse-text);
 
-      --btn-secondary-bg:var(--brand);
-      --btn-secondary-hover:var(--brand-light);
-      --btn-secondary-text:var(--inverse-text);
+    --btn-secondary-bg:var(--brand);
+    --btn-secondary-hover:var(--brand-light);
+    --btn-secondary-text:var(--inverse-text);
 }
 
 .MainScreen * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--brand) rgba(255, 255, 255, 0);
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand) rgba(255, 255, 255, 0);
 }
 
 .MainScreen {
@@ -66,7 +66,7 @@
 
     min-height: 25vh;
     height: auto;
-    
+
     display: flex;
     justify-content: center;
     align-items: center;
@@ -151,7 +151,7 @@
     width: 25%;
 
     flex: 0 0 250px;
-    
+
     background-color: var(--brand-gradient);
     border: 1px solid var(--brand-light);
     scroll-snap-align: start;
@@ -209,8 +209,8 @@
 .MainScreen .slider {
     width: 100%;
 
-    display: flex; 
-    overflow-x: auto; 
+    display: flex;
+    overflow-x: auto;
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     gap: 20px;
@@ -218,7 +218,7 @@
 }
 
 .MainScreen .slider::-webkit-scrollbar {
-    display: none; 
+    display: none;
 }
 
 .MainScreen .slider-container button {

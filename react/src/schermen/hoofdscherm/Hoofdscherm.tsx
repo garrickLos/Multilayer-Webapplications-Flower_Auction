@@ -8,7 +8,7 @@ import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
 import { useFetchDatajson } from '../../typeScript/jsonOphalen.tsx';
 
 export default function MainScreen() {
-    const url = "src/resources/json/HoofdschermMock.json"; 
+    const url = "src/resources/json/HoofdschermMock.json";
 
     return (
         <main className='MainScreen'>
@@ -94,9 +94,9 @@ export interface AuctionItems {
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
 const AuctionCard: React.FC<CardItems> = ({ imagePath, altText, headerText, paragraafText }) => {
-    
+
     const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);
-    
+
     const [hasError, setHasError] = useState(false);
 
     const handleError = () => {
@@ -113,14 +113,14 @@ const AuctionCard: React.FC<CardItems> = ({ imagePath, altText, headerText, para
 
     return (
         <div className='card'>
-            <img 
-                src={currentSrc} 
+            <img
+                src={currentSrc}
                 alt={altText}
                 onError={handleError}
             />
             <div className='text-container'>
                 {imageError(hasError)}
-                
+
                 <h3>{headerText}</h3>
                 <p>{paragraafText}</p>
             </div>
@@ -133,9 +133,9 @@ const renderContent = (item_key: string, url: string) => {
     let { data, isLoading, error } = useFetchDatajson<AuctionItems>(item_key , url, );
 
     if (isLoading) {
-        return <div key="loading">Laden van items...</div>; 
+        return <div key="loading">Laden van items...</div>;
     }
-    
+
     if (error) {
         return <div key="error">Fout: {error}</div>;
     }
@@ -151,10 +151,10 @@ const renderContent = (item_key: string, url: string) => {
         const paragraafTekst = item.paragraph || "Geen beschrijving beschikbaar.";
 
         return (
-            <AuctionCard key={index} 
-                         imagePath={ImagePath} 
-                         altText={altText} 
-                         headerText={headerText} 
+            <AuctionCard key={index}
+                         imagePath={ImagePath}
+                         altText={altText}
+                         headerText={headerText}
                          paragraafText={paragraafTekst}
             />
         );
