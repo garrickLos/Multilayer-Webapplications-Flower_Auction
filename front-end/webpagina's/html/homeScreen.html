@@ -14,7 +14,7 @@
     <header>
         <div class="HoofschermContainer">
             <div class="logoTitel">
-                <img src="/front-end/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
+                <a href=""><img src="/front-end/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo"></a>
                 <h1>Flora Royal Holland</h1>
             </div>
 
@@ -55,14 +55,6 @@
             <div class="slider-container">
                 <button class="arrow" onclick="scrollSlider('lastChance', -1)">&#10094;</button>
                 <div class="slider" id="lastChance">
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
                 </div>
                 <button class="arrow" onclick="scrollSlider('lastChance', 1)">&#10095;</button>
             </div>
@@ -73,14 +65,6 @@
             <div class="slider-container">
                 <button class="arrow" onclick="scrollSlider('upcoming', -1)">&#10094;</button>
                 <div class="slider" id="upcoming">
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
-                    <div class="card"><img><h3>Artificial Citroen boom in deco pot</h3><p>Lorem ipsum dolor sit amet.</p></div>
                 </div>
                 <button class="arrow" onclick="scrollSlider('upcoming', 1)">&#10095;</button>
             </div>
@@ -91,18 +75,26 @@
             <div class="slider-container alle_deals ">
                 <button class="arrow" onclick="scrollSlider('alleDeals', -1)">&#10094;</button>
                 <div class="slider" id="alleDeals">
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
-                    <div class="deal-item"><button>Button</button></div>
                 </div>
                 <button class="arrow" onclick="scrollSlider('alleDeals', 1)">&#10095;</button>
             </div>
         </section>
+
+        <aside class="cookie_overlay" id="cookie_popup">
+            <div class="cookie_container">
+                <h4>Cookie beleid</h4>
+                <p>GEEF ONS JE DATA!!</p>
+
+                <label class="switch">
+                    <p>Specifieke data opslaan</p>
+                    <input type="checkbox">
+                    <span class="slider round"></span>
+                </label>
+                
+                <button id="close_cookie_button">X Sluiten</button> 
+                
+            </div>
+        </aside>
     </main>
 
     <footer>
@@ -121,5 +113,23 @@
     </footer>
 
     <script src="/front-end/webpagina's/javascript/slidersCommand.js"></script>
+    <script src='../javascript/itemFiller.js'></script>
+    <script src="../javascript/headers.js"></script>
+    
+    <!-- voor het ophalen en genereren van specifieke items op het scherm -->
+    <script>
+        genereerDataItem(containerId='lastChance', divClass='card', jsonItem='alleDeals', url='/front-end/dummydata/HoofdschermMock.json');
+        genereerDataItem(containerId='upcoming', divClass='card', jsonItem='AankomendeVeilingen' , url='/front-end/dummydata/HoofdschermMock.json')
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='alleDeals' , url='/front-end/dummydata/HoofdschermMock.json');
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='AankomendeVeilingen' , url='/front-end/dummydata/HoofdschermMock.json');
+    </script>
+
+    <!-- voor het linken van de ene scherm naar de andere scherm -->
+    <script>headerItems(".knop-registreren", '../html/Registration.html')</script>
+    <script>headerItems(".knop-inloggen", "../html/Login.html")</script>
+    <script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
+    <script>headerItems(".mijnVeilingenBekijken", "../html/sellerScreenInfo.html")</script>
+    <script>headerItems(".veilingPLaatsen", "../html/sellerScreenAdd.html")</script>
+    
 </body>
 </html>

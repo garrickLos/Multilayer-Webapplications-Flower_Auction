@@ -9,18 +9,18 @@
 <body>
 <div class="HoofschermContainer">
     <div class="logoTitel">
-        <img src="/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
+        <img src="/front-end/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
         <h1>Flora Royal Holland</h1>
     </div>
 
     <nav>
         <ul>
-            <div class="mijnVeilingenBekijken">
-                <img src="/resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
-                <li>Mijn veilingen bekijken</li>
+            <div class="veilingPLaatsen">
+                <img src="/front-end/resources/pictures/webp/veilingPlaatsen.webp" alt="houten hamer (gavel)" class="veilingPlaatsenLogo">
+                Veiling plaatsen
             </div>
             <div class="klantGegevens">
-                <img src="/resources/pictures/webp/klantGegevens.webp" alt="foto van een persoon" class="klantGegevensLogo">
+                <img src="/front-end/resources/pictures/webp/klantGegevens.webp" alt="foto van een persoon" class="klantGegevensLogo">
                 <li>Gegevens</li>
             </div>
         </ul>
@@ -41,7 +41,7 @@
 <main>
     <div class="rij">
         <div class="kolomLinks">
-            <img src="/resources/pictures/webp/download.webp" alt="daBaby" class="fotoProduct">
+            <img src="/front-end/resources/pictures/webp/download.webp" alt="daBaby" class="fotoProduct">
         </div>
         <div class="kolomRechts">
             <div class="linkerHelft">
@@ -52,12 +52,12 @@
                 <div class="hoeveelheid">Amount:</div>
                 <div class="plaats">Place:</div>
             </div>
-            <button class="winst">Show revenue</button>
+            <div class="winst">Revenue:</div>
         </div>
     </div>
     <div class="rij">
         <div class="kolomLinks">
-            <img src="/resources/pictures/webp/download.webp" alt="daBaby" class="fotoProduct">
+            <img src="/front-end/resources/pictures/webp/download.webp" alt="daBaby" class="fotoProduct">
         </div>
         <div class="kolomRechts">
             <div class="linkerHelft">
@@ -68,12 +68,12 @@
                 <div class="hoeveelheid">Amount:</div>
                 <div class="plaats">Place:</div>
             </div>
-            <button class="winst">Show revenue</button>
+            <div class="winst">Revenue:</div>
         </div>
     </div>
     <div class="rij">
         <div class="kolomLinks">
-            <img src="/resources/pictures/webp/download.webp" alt="daBaby" class="fotoProduct">
+            <img src="/front-end/resources/pictures/webp/download.webp" alt="daBaby" class="fotoProduct">
         </div>
         <div class="kolomRechts">
             <div class="linkerHelft">
@@ -84,7 +84,7 @@
                 <div class="hoeveelheid">Amount:</div>
                 <div class="plaats">Place:</div>
             </div>
-            <button class="winst">Show revenue</button>
+            <div class="winst">Revenue:</div>
         </div>
     </div>
 </main>
@@ -92,4 +92,8 @@
     footer item
     <div class="overlayBlock"></div>
 </footer>
+<script src="../javascript/sellerScreenInfo.js"></script>
+<script src="../javascript/headers.js"></script>
+<script>headerItems(".veilingPLaatsen", "../html/sellerScreenAdd.html")</script>
+<script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
 </html>

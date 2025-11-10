@@ -1,0 +1,15 @@
+{
+    "algemene gegevens": {
+        "paragraph1": "we verzamelen je gegevens voor redenen",
+        "paragraph2": "andere paragraaph"
+    },
+
+    "persoonlijke gegevens": {
+        "paragraph1": "we willen dit:",
+        "List": [{
+            "item1": "verzamelen van de cookie",
+            "item2": "verzamelen van je email",
+            "item3": "verzamelen van je naam"            
+        }]
+    }
+}

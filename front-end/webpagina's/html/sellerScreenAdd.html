@@ -12,22 +12,18 @@
 <header>
     <div class="HoofschermContainer">
         <div class="logoTitel">
-            <img src="/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
+            <img src="/front-end/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
             <h1>Flora Royal Holland</h1>
         </div>
 
         <nav>
             <ul>
-                <li class="veilingPLaatsen">
-                    <img src="/resources/pictures/webp/veilingPlaatsen.webp" alt="houten hamer (gavel)" class="veilingPlaatsenLogo">
-                    Veiling plaatsen
-                </li>
-                <li class="mijnVeilingenBekijken">
-                    <img src="/resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
+                <li class="mijnVeilingenBekijken">   
+                    <img src="/front-end/resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
                     Mijn veilingen bekijken
                 </li>
                 <li class="klantGegevens">
-                    <img src="/resources/pictures/webp/klantGegevens.webp" alt="foto van een persoon" class="klantGegevensLogo">
+                    <img src="/front-end/resources/pictures/webp/klantGegevens.webp" alt="foto van een persoon" class="klantGegevensLogo">
                     Gegevens
                 </li>
             </ul>
@@ -48,13 +44,13 @@
         <!-- Schermdeel 1 fotos van producten (nu staan ze vast later moeten ze toegevoegd worden) -->
         <section class="schermDeel1">
             <div class="fotoContainer">
-                <img src="/resources/pictures/webp/download.webp" alt="dababy" class="grote-foto">
+                <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="grote-foto">
                 <div class="kleine-fotos">
-                    <img src="/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
-                    <img src="/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
-                    <img src="/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
+                    <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
+                    <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
+                    <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
                 </div>
-            </div>
+            </div> 
         </section>
 
         <!-- Schermdeel 2 product informatie toevoegen -->
@@ -111,4 +107,8 @@
     <div class="overlayBlock"></div>
 </footer>
 </body>
+<script src="../javascript/sellerScreenAdd.js"></script>
+<script src="../javascript/headers.js"></script>
+<script>headerItems(".mijnVeilingenBekijken", "../html/sellerScreenInfo.html")</script>
+<script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
 </html>
