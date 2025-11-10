@@ -49,30 +49,6 @@ namespace mvc_api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Veilingproduct",
-                columns: table => new
-                {
-                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Naam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    GeplaatstDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Fust = table.Column<int>(type: "INTEGER", nullable: false),
-                    Voorraad = table.Column<int>(type: "INTEGER", nullable: false),
-                    Startprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    CategorieNr = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Veilingproduct", x => x.VeilingProductNr);
-                    table.ForeignKey(
-                        name: "FK_Veilingproduct_Categorie_CategorieNr",
-                        column: x => x.CategorieNr,
-                        principalTable: "Categorie",
-                        principalColumn: "CategorieNr",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Veiling",
                 columns: table => new
                 {
@@ -80,18 +56,12 @@ namespace mvc_api.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Begintijd = table.Column<DateTime>(type: "TEXT", nullable: false),
                     Eindtijd = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
+                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Minimumprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Veiling", x => x.VeilingNr);
-                    table.ForeignKey(
-                        name: "FK_Veiling_Veilingproduct_VeilingProductNr",
-                        column: x => x.VeilingProductNr,
-                        principalTable: "Veilingproduct",
-                        principalColumn: "VeilingProductNr",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -122,6 +92,37 @@ namespace mvc_api.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Veilingproduct",
+                columns: table => new
+                {
+                    VeilingProductNr = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Naam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    GeplaatstDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Fust = table.Column<int>(type: "INTEGER", nullable: false),
+                    Voorraad = table.Column<int>(type: "INTEGER", nullable: false),
+                    Startprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    CategorieNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Veilingproduct", x => x.VeilingProductNr);
+                    table.ForeignKey(
+                        name: "FK_Veilingproduct_Categorie_CategorieNr",
+                        column: x => x.CategorieNr,
+                        principalTable: "Categorie",
+                        principalColumn: "CategorieNr",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Veilingproduct_Veiling_VeilingNr",
+                        column: x => x.VeilingNr,
+                        principalTable: "Veiling",
+                        principalColumn: "VeilingNr",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Categorie",
                 columns: new[] { "CategorieNr", "Naam" },
@@ -141,21 +142,12 @@ namespace mvc_api.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Veilingproduct",
-                columns: new[] { "VeilingProductNr", "CategorieNr", "Fust", "GeplaatstDatum", "Naam", "Startprijs", "Voorraad" },
-                values: new object[,]
-                {
-                    { 101, 1, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Tulp Mix", 12m, 500 },
-                    { 102, 2, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Rode Roos", 20m, 300 }
-                });
-
-            migrationBuilder.InsertData(
                 table: "Veiling",
-                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "Status", "VeilingProductNr" },
+                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "Minimumprijs", "Status" },
                 values: new object[,]
                 {
-                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), "active", 101 },
-                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), "active", 102 }
+                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), 10m, "active" },
+                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), 15m, "active" }
                 });
 
             migrationBuilder.InsertData(
@@ -165,6 +157,15 @@ namespace mvc_api.Migrations
                 {
                     { 1001, 5, 13.50m, 2, 201 },
                     { 1002, 3, 21.00m, 2, 202 }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Veilingproduct",
+                columns: new[] { "VeilingProductNr", "CategorieNr", "Fust", "GeplaatstDatum", "Naam", "Startprijs", "VeilingNr", "Voorraad" },
+                values: new object[,]
+                {
+                    { 101, 1, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Tulp Mix", 12m, 201, 500 },
+                    { 102, 2, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Rode Roos", 20m, 202, 300 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -184,14 +185,14 @@ namespace mvc_api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Veiling_VeilingProductNr",
-                table: "Veiling",
-                column: "VeilingProductNr");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Veilingproduct_CategorieNr_Naam",
                 table: "Veilingproduct",
                 columns: new[] { "CategorieNr", "Naam" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Veilingproduct_VeilingNr",
+                table: "Veilingproduct",
+                column: "VeilingNr");
         }
 
         /// <inheritdoc />
@@ -201,16 +202,16 @@ namespace mvc_api.Migrations
                 name: "Bieding");
 
             migrationBuilder.DropTable(
-                name: "Gebruiker");
-
-            migrationBuilder.DropTable(
-                name: "Veiling");
-
-            migrationBuilder.DropTable(
                 name: "Veilingproduct");
 
             migrationBuilder.DropTable(
+                name: "Gebruiker");
+
+            migrationBuilder.DropTable(
                 name: "Categorie");
+
+            migrationBuilder.DropTable(
+                name: "Veiling");
         }
     }
 }

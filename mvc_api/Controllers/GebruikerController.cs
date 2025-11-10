@@ -6,16 +6,30 @@ using mvc_api.Models;
 
 namespace mvc_api.Controllers;
 
-[ApiController, Route("api/[controller]"), Produces("application/json")]
-public class GebruikerController(AppDbContext db) : ControllerBase
+[ApiController]
+[Route("api/[controller]")]
+[Produces("application/json")]
+public class GebruikerController : ControllerBase
 {
+    private readonly AppDbContext _db;
+    public GebruikerController(AppDbContext db) => _db = db;
+
     // Response DTO's
     public sealed record GList(int GebruikerNr, string Naam, string Email, string Soort);
     public sealed record GBid(int BiedNr, decimal BedragPerFust, int AantalStuks, int VeilingNr);
     public sealed record GDetail(
-        int GebruikerNr, string Naam, string Email, string Soort,
-        DateTime? LaatstIngelogd, string? Kvk, string? StraatAdres, string? Postcode,
-        int? Assortiment, string? PersoneelsNr, IEnumerable<GBid> Biedingen);
+        int GebruikerNr,
+        string Naam,
+        string Email,
+        string Soort,
+        DateTime? LaatstIngelogd,
+        string? Kvk,
+        string? StraatAdres,
+        string? Postcode,
+        int? Assortiment,
+        string? PersoneelsNr,
+        IEnumerable<GBid> Biedingen
+    );
 
     // GET: api/Gebruiker?q=jan&page=1&pageSize=50
     [HttpGet]
@@ -25,15 +39,17 @@ public class GebruikerController(AppDbContext db) : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page = Math.Max(1, page);
+        page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var query = db.Gebruikers.AsNoTracking().AsQueryable();
+        var query = _db.Gebruikers.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(q))
         {
             var term = q.Trim();
-            query = query.Where(g => g.Naam.Contains(term) || g.Email.Contains(term));
+            query = query.Where(g =>
+                g.Naam.Contains(term) ||
+                g.Email.Contains(term));
         }
 
         var total = await query.CountAsync(ct);
@@ -46,8 +62,8 @@ public class GebruikerController(AppDbContext db) : ControllerBase
             .ToListAsync(ct);
 
         Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"] = page.ToString();
-        Response.Headers["X-Page-Size"] = pageSize.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
 
         return Ok(items);
     }
@@ -56,53 +72,42 @@ public class GebruikerController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<GDetail>> GetById(int id, CancellationToken ct = default)
     {
-        var gebruiker = await db.Gebruikers
-            .AsNoTracking()
-            .Where(x => x.GebruikerNr == id)
-            .Select(g => new GDetail(
-                g.GebruikerNr, g.Naam, g.Email, g.Soort,
-                g.LaatstIngelogd, g.Kvk, g.StraatAdres, g.Postcode,
-                g.Assortiment, g.PersoneelsNr,
-                g.Biedingen
-                    .OrderByDescending(b => b.BiedNr)
-                    .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))
-            ))
+        var dto = await ProjectToDetail(
+                _db.Gebruikers.AsNoTracking().Where(x => x.GebruikerNr == id))
             .FirstOrDefaultAsync(ct);
 
-        return gebruiker is null
-            ? NotFound(Problem("Niet gevonden", $"Geen gebruiker met ID {id}.", 404))
-            : Ok(gebruiker);
+        return dto is null
+            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404))
+            : Ok(dto);
     }
 
     // POST: api/Gebruiker
     [HttpPost]
-    public async Task<ActionResult<GDetail>> Create([FromBody] GebruikerCreateDto dto, CancellationToken ct = default)
+    public async Task<ActionResult<GDetail>> Create(
+        [FromBody] GebruikerCreateDto dto,
+        CancellationToken ct = default)
     {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
         var e = new Gebruiker
         {
-            Naam = dto.Naam,
-            Email = dto.Email,
-            Wachtwoord = dto.Wachtwoord,   // verplicht veld in model
-            Soort = dto.Soort,
-            Kvk = dto.Kvk,                 // laat null als null
-            StraatAdres = dto.StraatAdres, // laat null als null
-            Postcode = dto.Postcode,       // laat null als null
-            Assortiment = dto.Assortiment, // laat null als null
-            PersoneelsNr = dto.PersoneelsNr// laat null als null
+            Naam         = dto.Naam.Trim(),
+            Email        = dto.Email.Trim(),
+            Wachtwoord   = dto.Wachtwoord,
+            Soort        = dto.Soort,
+            Kvk          = dto.Kvk,
+            StraatAdres  = dto.StraatAdres,
+            Postcode     = dto.Postcode,
+            Assortiment  = dto.Assortiment,
+            PersoneelsNr = dto.PersoneelsNr
         };
 
-        db.Gebruikers.Add(e);
-        await db.SaveChangesAsync(ct);
+        _db.Gebruikers.Add(e);
+        await _db.SaveChangesAsync(ct);
 
-        // Return detail zodat clients meteen alle velden hebben
-        var r = await db.Gebruikers.AsNoTracking()
-            .Where(x => x.GebruikerNr == e.GebruikerNr)
-            .Select(g => new GDetail(
-                g.GebruikerNr, g.Naam, g.Email, g.Soort,
-                g.LaatstIngelogd, g.Kvk, g.StraatAdres, g.Postcode,
-                g.Assortiment, g.PersoneelsNr,
-                Enumerable.Empty<GBid>() // nieuw → geen biedingen
-            ))
+        var r = await ProjectToDetail(
+                _db.Gebruikers.AsNoTracking().Where(x => x.GebruikerNr == e.GebruikerNr))
             .FirstAsync(ct);
 
         return CreatedAtAction(nameof(GetById), new { id = e.GebruikerNr }, r);
@@ -110,31 +115,31 @@ public class GebruikerController(AppDbContext db) : ControllerBase
 
     // PUT: api/Gebruiker/{id}
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<GDetail>> Update(int id, [FromBody] GebruikerUpdateDto dto, CancellationToken ct = default)
+    public async Task<ActionResult<GDetail>> Update(
+        int id,
+        [FromBody] GebruikerUpdateDto dto,
+        CancellationToken ct = default)
     {
-        var e = await db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (e is null) return NotFound(Problem("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
 
-        e.Naam = dto.Naam;
-        e.Email = dto.Email;
-        e.Soort = dto.Soort;
-        e.Kvk = dto.Kvk;
-        e.StraatAdres = dto.StraatAdres;
-        e.Postcode = dto.Postcode;
-        e.Assortiment = dto.Assortiment;
+        var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (e is null)
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+
+        e.Naam         = dto.Naam.Trim();
+        e.Email        = dto.Email.Trim();
+        e.Soort        = dto.Soort;
+        e.Kvk          = dto.Kvk;
+        e.StraatAdres  = dto.StraatAdres;
+        e.Postcode     = dto.Postcode;
+        e.Assortiment  = dto.Assortiment;
         e.PersoneelsNr = dto.PersoneelsNr;
 
-        await db.SaveChangesAsync(ct);
+        await _db.SaveChangesAsync(ct);
 
-        var r = await db.Gebruikers.AsNoTracking()
-            .Where(x => x.GebruikerNr == id)
-            .Select(g => new GDetail(
-                g.GebruikerNr, g.Naam, g.Email, g.Soort,
-                g.LaatstIngelogd, g.Kvk, g.StraatAdres, g.Postcode,
-                g.Assortiment, g.PersoneelsNr,
-                g.Biedingen.OrderByDescending(b => b.BiedNr)
-                    .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))
-            ))
+        var r = await ProjectToDetail(
+                _db.Gebruikers.AsNoTracking().Where(x => x.GebruikerNr == id))
             .FirstAsync(ct);
 
         return Ok(r);
@@ -144,14 +149,40 @@ public class GebruikerController(AppDbContext db) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (e is null) return NotFound(Problem("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+        var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (e is null)
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        db.Gebruikers.Remove(e);
-        await db.SaveChangesAsync(ct);
+        _db.Gebruikers.Remove(e);
+        await _db.SaveChangesAsync(ct);
         return NoContent();
     }
 
-    private ProblemDetails Problem(string title, string? detail = null, int statusCode = 400) =>
-        new() { Title = title, Detail = detail, Status = statusCode, Instance = HttpContext?.Request?.Path };
+    // Helpers
+
+    private static IQueryable<GDetail> ProjectToDetail(IQueryable<Gebruiker> query) =>
+        query.Select(g => new GDetail(
+            g.GebruikerNr,
+            g.Naam,
+            g.Email,
+            g.Soort,
+            g.LaatstIngelogd,
+            g.Kvk,
+            g.StraatAdres,
+            g.Postcode,
+            g.Assortiment,
+            g.PersoneelsNr,
+            g.Biedingen
+                .OrderByDescending(b => b.BiedNr)
+                .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))
+        ));
+
+    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
+        new()
+        {
+            Title    = title,
+            Detail   = detail,
+            Status   = statusCode,
+            Instance = HttpContext?.Request?.Path
+        };
 }

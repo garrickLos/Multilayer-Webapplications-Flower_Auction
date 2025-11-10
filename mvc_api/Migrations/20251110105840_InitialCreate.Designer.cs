@@ -11,7 +11,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251107154810_InitialCreate")]
+    [Migration("20251110105840_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -45,7 +45,7 @@ namespace mvc_api.Migrations
 
                     b.HasIndex("VeilingNr");
 
-                    b.ToTable("Bieding", (string)null);
+                    b.ToTable("Bieding");
 
                     b.HasData(
                         new
@@ -79,7 +79,7 @@ namespace mvc_api.Migrations
 
                     b.HasKey("CategorieNr");
 
-                    b.ToTable("Categorie", (string)null);
+                    b.ToTable("Categorie");
 
                     b.HasData(
                         new
@@ -147,7 +147,7 @@ namespace mvc_api.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Gebruiker", (string)null);
+                    b.ToTable("Gebruiker");
 
                     b.HasData(
                         new
@@ -192,19 +192,18 @@ namespace mvc_api.Migrations
                     b.Property<DateTime>("Eindtijd")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("Minimumprijs")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("VeilingProductNr")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("VeilingNr");
 
-                    b.HasIndex("VeilingProductNr");
-
-                    b.ToTable("Veiling", (string)null);
+                    b.ToTable("Veiling");
 
                     b.HasData(
                         new
@@ -212,16 +211,16 @@ namespace mvc_api.Migrations
                             VeilingNr = 201,
                             Begintijd = new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc),
                             Eindtijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "active",
-                            VeilingProductNr = 101
+                            Minimumprijs = 10m,
+                            Status = "active"
                         },
                         new
                         {
                             VeilingNr = 202,
                             Begintijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
                             Eindtijd = new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "active",
-                            VeilingProductNr = 102
+                            Minimumprijs = 15m,
+                            Status = "active"
                         });
                 });
 
@@ -249,14 +248,19 @@ namespace mvc_api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("VeilingNr")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Voorraad")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("VeilingProductNr");
 
+                    b.HasIndex("VeilingNr");
+
                     b.HasIndex("CategorieNr", "Naam");
 
-                    b.ToTable("Veilingproduct", (string)null);
+                    b.ToTable("Veilingproduct");
 
                     b.HasData(
                         new
@@ -267,6 +271,7 @@ namespace mvc_api.Migrations
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             Naam = "Tulp Mix",
                             Startprijs = 12m,
+                            VeilingNr = 201,
                             Voorraad = 500
                         },
                         new
@@ -277,6 +282,7 @@ namespace mvc_api.Migrations
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             Naam = "Rode Roos",
                             Startprijs = 20m,
+                            VeilingNr = 202,
                             Voorraad = 300
                         });
                 });
@@ -300,17 +306,6 @@ namespace mvc_api.Migrations
                     b.Navigation("Veiling");
                 });
 
-            modelBuilder.Entity("mvc_api.Models.Veiling", b =>
-                {
-                    b.HasOne("mvc_api.Models.Veilingproduct", "Veilingproduct")
-                        .WithMany("Veilingen")
-                        .HasForeignKey("VeilingProductNr")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Veilingproduct");
-                });
-
             modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
                 {
                     b.HasOne("mvc_api.Models.Categorie", "Categorie")
@@ -319,7 +314,15 @@ namespace mvc_api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("mvc_api.Models.Veiling", "Veiling")
+                        .WithMany("Veilingproducten")
+                        .HasForeignKey("VeilingNr")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Categorie");
+
+                    b.Navigation("Veiling");
                 });
 
             modelBuilder.Entity("mvc_api.Models.Categorie", b =>
@@ -335,11 +338,8 @@ namespace mvc_api.Migrations
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>
                 {
                     b.Navigation("Biedingen");
-                });
 
-            modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
-                {
-                    b.Navigation("Veilingen");
+                    b.Navigation("Veilingproducten");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -17,16 +12,11 @@ public class BiedingController : ControllerBase
 {
     private readonly AppDbContext _db;
 
-    // Status-constants, afgestemd op VeilingController
+    // afgestemd op VeilingController
     private const string StatusActive = "active";
-    private const string StatusSold   = "sold";
 
-    public BiedingController(AppDbContext db)
-    {
-        _db = db;
-    }
+    public BiedingController(AppDbContext db) => _db = db;
 
-    // Korte DTO's
     public sealed record BList(
         int BiedNr,
         decimal BedragPerFust,
@@ -55,13 +45,13 @@ public class BiedingController : ControllerBase
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var query = _db.Biedingen.AsNoTracking();
+        var query = _db.Biedingen.AsNoTracking().AsQueryable();
 
-        if (gebruikerNr is not null)
-            query = query.Where(b => b.GebruikerNr == gebruikerNr);
+        if (gebruikerNr is int gNr)
+            query = query.Where(b => b.GebruikerNr == gNr);
 
-        if (veilingNr is not null)
-            query = query.Where(b => b.VeilingNr == veilingNr);
+        if (veilingNr is int vNr)
+            query = query.Where(b => b.VeilingNr == vNr);
 
         var total = await query.CountAsync(ct);
 
@@ -89,8 +79,7 @@ public class BiedingController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<BDetail>> GetById(int id, CancellationToken ct = default)
     {
-        var b = await _db.Biedingen
-            .AsNoTracking()
+        var dto = await _db.Biedingen.AsNoTracking()
             .Where(x => x.BiedNr == id)
             .Select(x => new BDetail(
                 x.BiedNr,
@@ -101,9 +90,9 @@ public class BiedingController : ControllerBase
             ))
             .FirstOrDefaultAsync(ct);
 
-        return b is null
+        return dto is null
             ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
-            : Ok(b);
+            : Ok(dto);
     }
 
     // POST: api/Bieding
@@ -112,9 +101,10 @@ public class BiedingController : ControllerBase
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
     {
-        // [ApiController] doet al ModelState-validatie
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
 
-        // Check: gebruiker moet bestaan
+        // Gebruiker moet bestaan
         var gebruikerBestaat = await _db.Gebruikers
             .AsNoTracking()
             .AnyAsync(g => g.GebruikerNr == dto.GebruikerNr, ct);
@@ -122,7 +112,7 @@ public class BiedingController : ControllerBase
         if (!gebruikerBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
 
-        // Haal de veiling als *tracked* entity op (dus geen AsNoTracking)
+        // Veiling als tracked entity
         var veiling = await _db.Veilingen
             .FirstOrDefaultAsync(v => v.VeilingNr == dto.VeilingNr, ct);
 
@@ -131,7 +121,10 @@ public class BiedingController : ControllerBase
 
         // Alleen bieden op actieve veilingen
         if (!string.Equals(veiling.Status, StatusActive, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(CreateProblemDetails("Ongeldige status", "Er kan alleen geboden worden op een actieve veiling.", 400));
+            return BadRequest(CreateProblemDetails(
+                "Ongeldige status",
+                "Er kan alleen geboden worden op een actieve veiling.",
+                400));
 
         var entity = new Bieding
         {
@@ -143,23 +136,14 @@ public class BiedingController : ControllerBase
 
         _db.Biedingen.Add(entity);
 
-        // Transaction: bieding + status-verandering in één keer
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+        // EF wrapt SaveChanges zelf in een transaction
         try
         {
-            // 1) Bieding opslaan
+            // eventueel: veiling.Status = StatusSold; als je bij een eerste bod meteen 'sold' wilt
             await _db.SaveChangesAsync(ct);
-
-            // 2) Veiling op 'sold' zetten zodra er een bieding is
-            veiling.Status = StatusSold;
-
-            await _db.SaveChangesAsync(ct);
-
-            await tx.CommitAsync(ct);
         }
         catch (DbUpdateException)
         {
-            await tx.RollbackAsync(ct);
             return StatusCode(500, CreateProblemDetails(
                 "Opslagfout",
                 "Er is een fout opgetreden bij het opslaan van de bieding.",
@@ -184,6 +168,9 @@ public class BiedingController : ControllerBase
         [FromBody] BiedingUpdateDto dto,
         CancellationToken ct = default)
     {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
         var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
         if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
