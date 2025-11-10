@@ -4,38 +4,23 @@ import DataTable, { type Column, type RowBase } from './DataTable';
 import { useLiveData } from '../data/live';
 import { Empty, Loading } from './components';
 
-/* VeilingModalLive
- * Toont live veilingen voor een product in een tabel met detailpaneel.
- */
+/* Helpers: datum & euro in NL-formaat */
 
-// Helpers om datums en eurobedragen in NL-formaat weer te geven
-const dateFormatter = new Intl.DateTimeFormat('nl-NL', { dateStyle: 'short', timeStyle: 'short' });
-const currencyFormatter = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' });
+const dateFormatter = new Intl.DateTimeFormat('nl-NL', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+});
+const currencyFormatter = new Intl.NumberFormat('nl-NL', {
+    style: 'currency',
+    currency: 'EUR',
+});
+
 const fmtDate = (d?: string | null) => (d ? dateFormatter.format(new Date(d)) : '');
-const fmtEur = (n?: number | null) => (n == null || Number.isNaN(+n) ? '' : currencyFormatter.format(+n));
-
-// Structuur van één veiling in de API
-type ApiVeiling = {
-    veilingNr?: number;
-    begintijd?: string;
-    eindtijd?: string;
-    status?: string;
-    afbeelding?: string;
-    product?: { naam?: string; startprijs?: number; voorraad?: number };
+const fmtEur = (n?: number | string | null) => {
+    const value = typeof n === 'string' ? Number(n) : n;
+    return value != null && !Number.isNaN(value) ? currencyFormatter.format(value) : '';
 };
 
-// Rijvorm voor de DataTable (incl. timestamps voor sorteren)
-type VeilingRow = RowBase & {
-    veilingNr: number | '';
-    begintijd: string;
-    eindtijd: string;
-    begintijdTs: number;
-    eindtijdTs: number;
-    status: string;
-    product: string;
-};
-
-// Zet een fout om naar een leesbare tekst
 const toErrorMessage = (err: unknown, fallback: string): string | null => {
     if (!err) return null;
     if (err instanceof Error) return err.message;
@@ -43,103 +28,154 @@ const toErrorMessage = (err: unknown, fallback: string): string | null => {
     return fallback;
 };
 
-// Badge voor de status in het detailpaneel
+/* API-shape van /api/Veiling/{id} (VeilingDto) */
+
+type ApiProduct = {
+    veilingProductNr?: number;
+    naam?: string;
+    startprijs?: number;
+    voorraad?: number;
+};
+
+type ApiVeiling = {
+    veilingNr?: number;
+    begintijd?: string;
+    eindtijd?: string;
+    status?: string;
+    minimumprijs?: number;
+    producten?: ApiProduct[];
+};
+
+/* Rij voor DataTable */
+
+type ProductRow = RowBase & {
+    veilingProductNr: number | '';
+    naam: string;
+    startprijs: string;
+    startprijsValue: number;
+    voorraad: number | '';
+};
+
+/* Status badge in detailpaneel */
+
 type StatusBadgeProps = { status?: string | null };
+
 const StatusBadge = ({ status }: StatusBadgeProps) => {
     if (!status) return null;
     const s = status.toLowerCase();
-    const cls = s.includes('actief')
+    const cls = s.includes('active')
         ? 'bg-success-subtle text-success'
-        : s.includes('afgesloten')
+        : s.includes('sold')
             ? 'bg-secondary-subtle text-secondary'
-            : s.includes('gepland')
-                ? 'bg-info-subtle text-info'
+            : s.includes('inactive')
+                ? 'bg-warning-subtle text-warning'
                 : 'bg-light text-body';
+
     return <span className={`badge ${cls}`}>{status}</span>;
 };
 
-// Haalt veilingen voor een product op en mapped deze naar tabelrijen
-function useVeilingRows(productId: number) {
-    const { data: auctions, error } = useLiveData<ReadonlyArray<ApiVeiling>>('/api/Veiling', {
-        params: { veilingProduct: productId, page: 1, pageSize: 100 },
-        // Elke seconde verversen zodat de lijst live blijft
-        refreshMs: 1_000,
+/* Haal veiling + producten op en map naar tabelrijen */
+
+function useVeilingProducts(veilingId: number) {
+    const { data: veiling, error } = useLiveData<ApiVeiling>(`/api/Veiling/${veilingId}`, {
+        refreshMs: 5_000,
         revalidateOnFocus: true,
     });
 
-    const rows: VeilingRow[] = useMemo(() => {
-        return (auctions ?? []).map(v => {
-            const bt = v.begintijd ? Date.parse(v.begintijd) : NaN;
-            const et = v.eindtijd ? Date.parse(v.eindtijd) : NaN;
+    const rows: ProductRow[] = useMemo(() => {
+        const producten = Array.isArray(veiling?.producten) ? veiling!.producten! : [];
+        return producten.map(p => {
+            const raw = p.startprijs;
+            const numeric = typeof raw === 'number' ? raw : Number(raw ?? 0);
             return {
-                veilingNr: v.veilingNr ?? '',
-                begintijd: v.begintijd ? fmtDate(v.begintijd) : '',
-                eindtijd: v.eindtijd ? fmtDate(v.eindtijd) : '',
-                begintijdTs: Number.isNaN(bt) ? Number.NEGATIVE_INFINITY : bt,
-                eindtijdTs: Number.isNaN(et) ? Number.NEGATIVE_INFINITY : et,
-                status: v.status ?? '',
-                product: v.product?.naam ?? '',
+                veilingProductNr: p.veilingProductNr ?? '',
+                naam: p.naam?.trim() ?? '',
+                startprijs: fmtEur(numeric),
+                startprijsValue: Number.isFinite(numeric) ? numeric : 0,
+                voorraad: p.voorraad ?? '',
             };
         });
-    }, [auctions]);
+    }, [veiling]);
 
-    const loading = !auctions && !error;
-    const errorMessage = toErrorMessage(error, 'Kon veilingen niet ophalen.');
+    const loading = !veiling && !error;
+    const errorMessage = toErrorMessage(error, 'Kon veiling niet ophalen.');
 
-    return { rows, auctions, loading, errorMessage };
+    return { veiling, rows, loading, errorMessage };
 }
 
-/** Modal met de lijst van veilingen voor een product. */
-export default function VeilingModalLive({ productId, onClose }: { productId: number; onClose: () => void }) {
-    const { rows, auctions, loading, errorMessage } = useVeilingRows(productId);
+/** Modal met producten van één veiling. */
+export default function VeilingModal({
+                                         veilingId,
+                                         onClose,
+                                     }: {
+    veilingId: number;
+    onClose: () => void;
+}) {
+    const { veiling, rows, loading, errorMessage } = useVeilingProducts(veilingId);
 
-    // Geselecteerde veiling (ruwe API-data)
-    const [selected, setSelected] = useState<ApiVeiling | null>(null);
+    // Geselecteerde product (ruwe API-data)
+    const [selectedProduct, setSelectedProduct] = useState<ApiProduct | null>(null);
 
-    // Bij nieuwe data standaard de eerste veiling selecteren
+    // Bij nieuwe veiling standaard het eerste product selecteren
     useEffect(() => {
-        setSelected(auctions && auctions.length ? auctions[0] : null);
-    }, [auctions]);
+        const first = veiling?.producten && veiling.producten.length ? veiling.producten[0] : null;
+        setSelectedProduct(first ?? null);
+    }, [veiling]);
 
-    // Kolomdefinities voor de tabel
-    const columns = useMemo<ReadonlyArray<Column<VeilingRow>>>(
+    // Kolommen voor producten-tabel
+    const columns = useMemo<ReadonlyArray<Column<ProductRow>>>(
         () => [
-            { key: 'veilingNr', header: '#', width: 96, className: 'text-nowrap', sortable: true },
             {
-                key: 'begintijd',
-                header: 'Begintijd',
+                key: 'veilingProductNr',
+                header: '#',
+                width: 96,
                 className: 'text-nowrap',
                 sortable: true,
-                comparator: (a, b, dir) => (dir === 'asc' ? a.begintijdTs - b.begintijdTs : b.begintijdTs - a.begintijdTs),
             },
             {
-                key: 'eindtijd',
-                header: 'Eindtijd',
+                key: 'naam',
+                header: 'Product',
                 className: 'text-nowrap',
                 sortable: true,
-                hideSm: true,
-                comparator: (a, b, dir) => (dir === 'asc' ? a.eindtijdTs - b.eindtijdTs : b.eindtijdTs - a.eindtijdTs),
             },
-            { key: 'status', header: 'Status', className: 'text-nowrap', sortable: true, hideSm: true },
-            { key: 'product', header: 'Product', className: 'text-nowrap', sortable: true },
+            {
+                key: 'startprijs',
+                header: 'Startprijs',
+                className: 'text-nowrap text-end',
+                sortable: true,
+                comparator: (a, b, dir) =>
+                    dir === 'asc'
+                        ? a.startprijsValue - b.startprijsValue
+                        : b.startprijsValue - a.startprijsValue,
+            },
+            {
+                key: 'voorraad',
+                header: 'Voorraad',
+                className: 'text-nowrap text-end',
+                sortable: true,
+            },
         ],
         [],
     );
 
-    // Klik op een rij: bijbehorende ApiVeiling opzoeken en selecteren
+    // Klik op een rij → bijbehorend product selecteren
     const handleRowClick = useCallback(
-        (r: VeilingRow) => {
-            const found = auctions?.find(v => (v.veilingNr ?? '') === r.veilingNr) ?? null;
-            setSelected(found);
+        (r: ProductRow) => {
+            const product = veiling?.producten?.find(
+                p => (p.veilingProductNr ?? '') === r.veilingProductNr,
+            );
+            setSelectedProduct(product ?? null);
         },
-        [auctions],
+        [veiling],
     );
+
+    const titelVeilingNr = veiling?.veilingNr ?? veilingId;
 
     return (
         <Modal
             title={
                 <span>
-                    Veilingen <span className="text-muted">#{productId}</span>
+                    Veiling <span className="text-muted">#{titelVeilingNr}</span>
                 </span>
             }
             onClose={onClose}
@@ -158,66 +194,70 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
             )}
 
             {/* Inhoud zodra data beschikbaar is */}
-            {auctions && (
+            {veiling && (
                 <div className="row g-3">
+                    {/* Producten-tabel */}
                     <div className="col-lg-8 col-md-7">
                         {rows.length ? (
-                            <DataTable<VeilingRow>
+                            <DataTable<ProductRow>
                                 rows={rows}
                                 columns={columns}
-                                caption="Klik een rij voor details"
+                                caption="Klik een product voor details"
                                 onRowClick={handleRowClick}
-                                getRowKey={r => r.veilingNr || `${r.product}-${r.begintijdTs}`}
-                                defaultSortKey="begintijd"
+                                getRowKey={r =>
+                                    r.veilingProductNr || `${r.naam}-${r.startprijsValue}`
+                                }
+                                defaultSortKey="naam"
                                 defaultSortDir="asc"
                             />
                         ) : (
                             <Empty />
                         )}
                     </div>
+
+                    {/* Detailpaneel */}
                     <div className="col-lg-4 col-md-5">
                         <article className="card shadow-sm border-0 border border-success-subtle">
-                            {/* Productafbeelding */}
-                            {selected?.afbeelding && (
-                                <div className="ratio ratio-16x9">
-                                    <img
-                                        src={selected.afbeelding}
-                                        alt={selected.product?.naam || 'product'}
-                                        className="w-100 h-100 object-fit-cover rounded-top"
-                                        loading="lazy"
-                                        decoding="async"
-                                        sizes="(max-width: 768px) 100vw, 50vw"
-                                    />
-                                </div>
-                            )}
                             <div className="card-body">
-                                <h5 className="card-title d-flex align-items-center gap-2 mb-1 text-success">
-                                    {selected?.product?.naam || <span className="text-muted">Geen naam</span>}
-                                    <StatusBadge status={selected?.status} />
+                                <h5 className="card-title d-flex flex-wrap align-items-center gap-2 mb-1 text-success">
+                                    {selectedProduct?.naam || (
+                                        <span className="text-muted">Geen product geselecteerd</span>
+                                    )}
+                                    <StatusBadge status={veiling.status} />
                                 </h5>
+
                                 <div className="text-muted mb-3">
-                                    {selected ? <>Veiling #{selected.veilingNr}</> : 'Selecteer een veiling in de tabel.'}
+                                    Veiling #{titelVeilingNr}
+                                    {veiling.minimumprijs != null && (
+                                        <>
+                                            {' · min. '}
+                                            {fmtEur(veiling.minimumprijs)}
+                                        </>
+                                    )}
                                 </div>
-                                {selected && (
-                                    <ul className="list-group list-group-flush">
-                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-                                            <span className="text-muted">Startprijs</span>
-                                            <strong>{fmtEur(selected.product?.startprijs)}</strong>
-                                        </li>
-                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-                                            <span className="text-muted">Voorraad</span>
-                                            <span>{selected.product?.voorraad ?? ''}</span>
-                                        </li>
-                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-                                            <span className="text-muted">Begintijd</span>
-                                            <span>{fmtDate(selected.begintijd)}</span>
-                                        </li>
-                                        <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-                                            <span className="text-muted">Eindtijd</span>
-                                            <span>{fmtDate(selected.eindtijd)}</span>
-                                        </li>
-                                    </ul>
-                                )}
+
+                                <ul className="list-group list-group-flush">
+                                    <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <span className="text-muted">Begintijd</span>
+                                        <span>{fmtDate(veiling.begintijd)}</span>
+                                    </li>
+                                    <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <span className="text-muted">Eindtijd</span>
+                                        <span>{fmtDate(veiling.eindtijd)}</span>
+                                    </li>
+                                    {selectedProduct && (
+                                        <>
+                                            <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                <span className="text-muted">Startprijs</span>
+                                                <strong>{fmtEur(selectedProduct.startprijs)}</strong>
+                                            </li>
+                                            <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                <span className="text-muted">Voorraad</span>
+                                                <span>{selectedProduct.voorraad ?? ''}</span>
+                                            </li>
+                                        </>
+                                    )}
+                                </ul>
                             </div>
                         </article>
                     </div>
