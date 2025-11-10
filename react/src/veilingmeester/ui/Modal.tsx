@@ -1,55 +1,34 @@
 import React, { memo, useEffect, useId, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 
-/**
- * Props for the Modal component.  The modal renders its content in a portal
- * to the document body (or the current portal root).  It locks scrolling on
- * the body while open and restores focus to the previously active element
- * when closed.
+/* Modal-component
+ * Toont een Bootstrap-modale popup in een portal naar <body>.
+ * Beheert focus, sluiting (Esc, klik, knop) en vergrendelt scrollen.
  */
+
 export type ModalProps = {
-    /** Title displayed in the modal header */
     title: React.ReactNode;
-    /** Called when the user dismisses the modal via the close button, Escape key or backdrop click */
     onClose: () => void;
-    /** Content to render within the modal body */
     children: React.ReactNode;
-    /** Bootstrap size modifier */
     size?: 'sm' | 'lg' | 'xl';
-    /** Breakpoint up to which the modal is fullscreen (e.g. 'md' => fullscreen until medium screens) */
     fullscreenUntil?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
-    /** Maximum width in pixels when not fullscreen */
     maxWidthPx?: number;
-    /** CSS selector for the element to autofocus when the modal opens */
     autoFocusSelector?: string;
 };
 
-// Detect whether we're running in a browser environment
+// Controleer of de code in een browser draait
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
-/**
- * A Bootstrap‑styled modal that portals its contents to the document body.
- * It handles focus management, keyboard dismissal and optional responsive
- * sizing.  The component is memoised to avoid unnecessary re-renders.
- */
-const Modal: React.FC<ModalProps> = memo(
-    ({
-         title,
-         onClose,
-         children,
-         size,
-         fullscreenUntil = 'sm',
-         maxWidthPx,
-         autoFocusSelector = 'button.btn-close',
+/* Bootstrap-modal met focusbeheer, sluitgedrag en portal-rendering. */
+const Modal: React.FC<ModalProps> = memo(({title, onClose, children, size, fullscreenUntil = 'sm', maxWidthPx, autoFocusSelector = 'button.btn-close',
      }) => {
-        // Determine where to render the modal.  In browsers we use document.body;
-        // otherwise we render inline (e.g. during SSR tests).
+        // Locatie voor portal (document.body)
         const portalRoot = isBrowser ? document.body : null;
         const titleId = `${useId()}-title`;
         const prevFocus = useRef<HTMLElement | null>(null);
         const containerRef = useRef<HTMLDivElement | null>(null);
 
-        // Compute CSS classes for the dialog element based on props
+        // Bepaal klassen op basis van props
         const dialogClass = useMemo(() => {
             return [
                 'modal-dialog',
@@ -61,7 +40,8 @@ const Modal: React.FC<ModalProps> = memo(
                 .filter(Boolean)
                 .join(' ');
         }, [size, fullscreenUntil]);
-        // Inline styles for the dialog when not fullscreen and a max width is provided
+
+        // Stijl bij vaste maximale breedte
         const dialogStyle = useMemo(() => {
             return fullscreenUntil
                 ? undefined
@@ -70,40 +50,37 @@ const Modal: React.FC<ModalProps> = memo(
                     : undefined;
         }, [fullscreenUntil, maxWidthPx]);
 
-        // Handle Escape key dismissal and focus trapping/restoration
+        // Focusbeheer, ESC-afhandeling en scroll lock
         useEffect(() => {
             if (!isBrowser) return;
-            // Save previously focused element to restore later
             prevFocus.current = document.activeElement as HTMLElement | null;
-            // Prevent body scrolling while modal is open
             const prevOverflow = document.body.style.overflow;
             document.body.style.overflow = 'hidden';
-            // Escape key handler
+
             const handleKeyDown = (e: KeyboardEvent) => {
                 if (e.key === 'Escape') onClose();
             };
             window.addEventListener('keydown', handleKeyDown);
-            // Focus the first element matching the selector (or the close button) on next frame
+
             const focusId = requestAnimationFrame(() => {
                 const el = containerRef.current?.querySelector<HTMLElement>(autoFocusSelector);
                 el?.focus?.();
             });
+
             return () => {
                 cancelAnimationFrame(focusId);
                 window.removeEventListener('keydown', handleKeyDown);
-                // Restore body overflow
                 document.body.style.overflow = prevOverflow;
-                // Restore focus
                 prevFocus.current?.focus?.();
             };
         }, [onClose, autoFocusSelector]);
 
-        // Backdrop click handler: close the modal when clicking the backdrop
+        // Sluit modal bij klik op achtergrond
         const handleBackdropClick = useCallback(() => {
             onClose();
         }, [onClose]);
 
-        // Assemble the modal and backdrop nodes
+        // Inhoud van de modal
         const modalNode = (
             <div
                 className="modal show d-block"
@@ -127,6 +104,8 @@ const Modal: React.FC<ModalProps> = memo(
                 </div>
             </div>
         );
+
+        // Achtergrond (backdrop)
         const backdropNode = (
             <div
                 className="modal-backdrop show"
@@ -135,7 +114,8 @@ const Modal: React.FC<ModalProps> = memo(
                 onMouseDown={handleBackdropClick}
             />
         );
-        // Render via portal when in a browser environment
+
+        // Render modal + backdrop via portal
         return portalRoot ? (
             <>
                 {createPortal(backdropNode, portalRoot)}
@@ -146,6 +126,6 @@ const Modal: React.FC<ModalProps> = memo(
         );
     },
 );
-Modal.displayName = 'Modal';
 
+Modal.displayName = 'Modal';
 export default Modal;

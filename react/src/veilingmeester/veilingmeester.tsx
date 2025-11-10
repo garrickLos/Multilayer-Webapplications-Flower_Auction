@@ -16,9 +16,10 @@ import {
 import { useDebounced, useLivePagedList } from './data/live';
 import { useLiveNameCache } from './data/liveNameCache';
 
-/* --------------------------------------------------------------------
- * Utility functions
- */
+
+/* Helpers
+ * Datum- en valutaformatting + generieke hulpfuncties.
+*/
 
 const dateFormatter = new Intl.DateTimeFormat('nl-NL', {
     dateStyle: 'short',
@@ -50,10 +51,12 @@ const TAB_IDS = {
     producten: { tab: 'tab-producten', panel: 'panel-producten' },
 } as const;
 
-/* --------------------------------------------------------------------
- * Custom hooks
- */
 
+/* Custom hooks
+ * Ophalen en voorbereiden van data voor de UI.
+*/
+
+// Haalt categorieën op en bouwt een map {id -> naam}
 function useCategories() {
     const [catsMap, setCatsMap] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(false);
@@ -89,6 +92,7 @@ function useCategories() {
     return { catsMap, loading, error };
 }
 
+// Haalt biedingen op, verrijkt met namen en filtert op zoekterm
 function useBidRows(page: number, pageSize: number, query: string) {
     const dQuery = useDebounced(query, 250);
 
@@ -116,6 +120,7 @@ function useBidRows(page: number, pageSize: number, query: string) {
         [data],
     );
 
+    // Voor alle rijen bijbehorende gebruikers/veilingen ophalen
     useEffect(() => {
         const gIds = [...new Set(rowsAsObjects.map(r => r['gebruikerNr']).filter((n): n is number => typeof n === 'number'))];
         const vIds = [...new Set(rowsAsObjects.map(r => r['veilingNr']).filter((n): n is number => typeof n === 'number'))];
@@ -123,6 +128,7 @@ function useBidRows(page: number, pageSize: number, query: string) {
         if (vIds.length) fetchVeilingen(vIds);
     }, [rowsAsObjects, fetchGebruikers, fetchVeilingen]);
 
+    // Rijen zoals getoond in de tabel
     const bidRows = useMemo(
         () =>
             rowsAsObjects.map(r => {
@@ -139,6 +145,7 @@ function useBidRows(page: number, pageSize: number, query: string) {
         [rowsAsObjects, gebruikersMap, veilingenMap],
     );
 
+    // Client-side filtering op zoekterm
     const filteredRows = useMemo(() => {
         const tokens = splitTokens(dQuery);
         if (!tokens.length) return bidRows;
@@ -149,6 +156,7 @@ function useBidRows(page: number, pageSize: number, query: string) {
     return { rows: filteredRows, loading, error, hasNext };
 }
 
+// Haalt veilingproducten op (met server-side zoek/filters)
 function useProductRows(
     page: number,
     pageSize: number,
@@ -180,6 +188,7 @@ function useProductRows(
 
     const error = toErrorString(rawError, 'Kon producten niet laden');
 
+    // Rijen zoals getoond in de producten-tabel
     const productRows = useMemo(
         () =>
             (Array.isArray(data) ? data : []).map(p => {
@@ -213,9 +222,10 @@ function useProductRows(
     return { rows: productRows, loading, error, hasNext };
 }
 
-/* --------------------------------------------------------------------
- * Child components
- */
+
+/* Subcomponent: Biedingen-tab
+ * Tabel met biedingen + zoek- en paginering.
+*/
 
 type BidsSectionProps = {
     hidden: boolean;
@@ -277,6 +287,11 @@ function BidsSection({ hidden }: BidsSectionProps) {
     );
 }
 
+
+/* Subcomponent: Producten-tab
+ * Tabel met veilingproducten, filters en modal met veilingen per product.
+*/
+
 type ProductsSectionProps = {
     hidden: boolean;
 };
@@ -306,6 +321,7 @@ function ProductsSection({ hidden }: ProductsSectionProps) {
             className="card border-0 shadow-sm rounded-4"
         >
             <div className="card-body">
+                {/* Filters boven de tabel */}
                 <div className="row g-2 align-items-end mb-2">
                     <div className="col-md-5">
                         <SearchInput
@@ -372,6 +388,7 @@ function ProductsSection({ hidden }: ProductsSectionProps) {
                     </div>
                 </div>
 
+                {/* Actieve filters als chips */}
                 <div className="d-flex flex-wrap gap-2 mb-2">
                     {trimmedSearch && <FilterChip onClear={() => setSearch('')}>Zoek: “{trimmedSearch}”</FilterChip>}
                     {categorieNr !== '' && typeof categorieNr === 'number' && (
@@ -381,6 +398,7 @@ function ProductsSection({ hidden }: ProductsSectionProps) {
                     )}
                 </div>
 
+                {/* Tabel met producten */}
                 {error && <div className="alert alert-danger">{error}</div>}
                 {!error &&
                     (loading ? (
@@ -401,9 +419,10 @@ function ProductsSection({ hidden }: ProductsSectionProps) {
     );
 }
 
-/* --------------------------------------------------------------------
- * Main page component
- */
+
+/* Hoofdcomponent: Veilingmeester
+ * Pagina met twee tabbladen: Biedingen en Producten.
+*/
 
 export default function Veilingmeester() {
     const [tab, setTab] = useState<'biedingen' | 'producten'>('producten');

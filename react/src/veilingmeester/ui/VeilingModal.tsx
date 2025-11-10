@@ -4,19 +4,17 @@ import DataTable, { type Column, type RowBase } from './DataTable';
 import { useLiveData } from '../data/live';
 import { Empty, Loading } from './components';
 
-/*
- * VeilingModalLive
- *
- * Shows live veilingen for a product in a table with a details pane.
+/* VeilingModalLive
+ * Toont live veilingen voor een product in een tabel met detailpaneel.
  */
 
-// Formatting helpers for dates and euro values using Dutch locale
+// Helpers om datums en eurobedragen in NL-formaat weer te geven
 const dateFormatter = new Intl.DateTimeFormat('nl-NL', { dateStyle: 'short', timeStyle: 'short' });
 const currencyFormatter = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' });
 const fmtDate = (d?: string | null) => (d ? dateFormatter.format(new Date(d)) : '');
 const fmtEur = (n?: number | null) => (n == null || Number.isNaN(+n) ? '' : currencyFormatter.format(+n));
 
-// Raw API data shape for a single auction entry
+// Structuur van één veiling in de API
 type ApiVeiling = {
     veilingNr?: number;
     begintijd?: string;
@@ -26,8 +24,7 @@ type ApiVeiling = {
     product?: { naam?: string; startprijs?: number; voorraad?: number };
 };
 
-// Row shape used by the DataTable component. Includes parsed timestamps
-// for numeric sorting.
+// Rijvorm voor de DataTable (incl. timestamps voor sorteren)
 type VeilingRow = RowBase & {
     veilingNr: number | '';
     begintijd: string;
@@ -38,7 +35,7 @@ type VeilingRow = RowBase & {
     product: string;
 };
 
-// Helper: normalise error into a displayable string
+// Zet een fout om naar een leesbare tekst
 const toErrorMessage = (err: unknown, fallback: string): string | null => {
     if (!err) return null;
     if (err instanceof Error) return err.message;
@@ -46,7 +43,7 @@ const toErrorMessage = (err: unknown, fallback: string): string | null => {
     return fallback;
 };
 
-// Status badge component for display in the details pane
+// Badge voor de status in het detailpaneel
 type StatusBadgeProps = { status?: string | null };
 const StatusBadge = ({ status }: StatusBadgeProps) => {
     if (!status) return null;
@@ -61,11 +58,11 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
     return <span className={`badge ${cls}`}>{status}</span>;
 };
 
-// Custom hook to fetch auctions for a product and map them into table rows
+// Haalt veilingen voor een product op en mapped deze naar tabelrijen
 function useVeilingRows(productId: number) {
     const { data: auctions, error } = useLiveData<ReadonlyArray<ApiVeiling>>('/api/Veiling', {
         params: { veilingProduct: productId, page: 1, pageSize: 100 },
-        // Refresh every 1 seconds to keep the list synced with the backend
+        // Elke seconde verversen zodat de lijst live blijft
         refreshMs: 1_000,
         revalidateOnFocus: true,
     });
@@ -92,21 +89,19 @@ function useVeilingRows(productId: number) {
     return { rows, auctions, loading, errorMessage };
 }
 
-/**
- * Modal that displays the list of auctions for a given product.
- */
+/** Modal met de lijst van veilingen voor een product. */
 export default function VeilingModalLive({ productId, onClose }: { productId: number; onClose: () => void }) {
     const { rows, auctions, loading, errorMessage } = useVeilingRows(productId);
 
-    // Currently selected auction (raw api object)
+    // Geselecteerde veiling (ruwe API-data)
     const [selected, setSelected] = useState<ApiVeiling | null>(null);
 
-    // When the list of auctions updates, select the first one by default
+    // Bij nieuwe data standaard de eerste veiling selecteren
     useEffect(() => {
         setSelected(auctions && auctions.length ? auctions[0] : null);
     }, [auctions]);
 
-    // Column definitions are static; memoise once
+    // Kolomdefinities voor de tabel
     const columns = useMemo<ReadonlyArray<Column<VeilingRow>>>(
         () => [
             { key: 'veilingNr', header: '#', width: 96, className: 'text-nowrap', sortable: true },
@@ -131,7 +126,7 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
         [],
     );
 
-    // Row click handler: find the matching ApiVeiling object and set it as selected
+    // Klik op een rij: bijbehorende ApiVeiling opzoeken en selecteren
     const handleRowClick = useCallback(
         (r: VeilingRow) => {
             const found = auctions?.find(v => (v.veilingNr ?? '') === r.veilingNr) ?? null;
@@ -152,17 +147,17 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
             fullscreenUntil="lg"
             maxWidthPx={1400}
         >
-            {/* Loading state */}
+            {/* Laden */}
             {loading && <Loading />}
 
-            {/* Error state */}
+            {/* Foutmelding */}
             {errorMessage && (
                 <div className="alert alert-danger" role="alert">
                     {errorMessage}
                 </div>
             )}
 
-            {/* Content when data is loaded */}
+            {/* Inhoud zodra data beschikbaar is */}
             {auctions && (
                 <div className="row g-3">
                     <div className="col-lg-8 col-md-7">
@@ -182,7 +177,7 @@ export default function VeilingModalLive({ productId, onClose }: { productId: nu
                     </div>
                     <div className="col-lg-4 col-md-5">
                         <article className="card shadow-sm border-0 border border-success-subtle">
-                            {/* Product image */}
+                            {/* Productafbeelding */}
                             {selected?.afbeelding && (
                                 <div className="ratio ratio-16x9">
                                     <img
