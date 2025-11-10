@@ -1,0 +1,135 @@
+<!DOCTYPE html> 
+
+<html lang="nl">
+    <meta charset="utf-8"> 
+    <title>Royal flora home</title> 
+    
+    <link rel="icon" href="/front-end/resources/pictures/ico/RoyalFlora_Logo2.ico"> 
+    
+    <link rel="stylesheet" href="/front-end/webpagina's/css/homePageStylesheet.css"> 
+    <link rel="stylesheet" href="/front-end/webpagina's/css/header_footer.css"> 
+</head> 
+
+<body> 
+    <header>
+        <div class="HoofschermContainer">
+            <div class="logoTitel">
+                <a href=""><img src="/front-end/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo"></a>
+                <h1>Flora Royal Holland</h1>
+            </div>
+
+            <nav>
+                <ul>
+                    <div class="veilingPLaatsen">
+                        <img src="/front-end/resources/pictures/webp/veilingPlaatsen.webp" alt="houten hamer (gavel)" class="veilingPlaatsenLogo">
+                        <li>Veiling plaatsen</li>
+                    </div>
+                    <div class="mijnVeilingenBekijken">
+                        <img src="/front-end/resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
+                        <li>Mijn veilingen bekijken</li>
+                    </div>
+                    <div class="klantGegevens">
+                        <img src="/front-end/resources/pictures/webp/klantGegevens.webp" alt="foto van een persoon" class="klantGegevensLogo">
+                        <li>klantGegevens</li>
+                    </div>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+
+        <div class="banner">
+            <div class="banner-content">
+                <h1>Royal Flora Holland - Veiling</h1>
+                <h2>Verkoop wereldwijd met Royal FloraHolland</h2>
+                <div class="registratie-knoppen">
+                    <button type="button" class="knop-inloggen" aria-label="knop voor het inloggen">inloggen ></button>
+                    <button type="button" class="knop-registreren" aria-label="knop voor registreren van een account">registreren ></button>
+                </div>
+            </div>
+        </div>
+
+        <section>
+            <h2>Laatste kans!</h2>
+            <div class="slider-container">
+                <button class="arrow" onclick="scrollSlider('lastChance', -1)">&#10094;</button>
+                <div class="slider" id="lastChance">
+                </div>
+                <button class="arrow" onclick="scrollSlider('lastChance', 1)">&#10095;</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>Aankomende veilingen!</h2>
+            <div class="slider-container">
+                <button class="arrow" onclick="scrollSlider('upcoming', -1)">&#10094;</button>
+                <div class="slider" id="upcoming">
+                </div>
+                <button class="arrow" onclick="scrollSlider('upcoming', 1)">&#10095;</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>All deals</h2>
+            <div class="slider-container alle_deals ">
+                <button class="arrow" onclick="scrollSlider('alleDeals', -1)">&#10094;</button>
+                <div class="slider" id="alleDeals">
+                </div>
+                <button class="arrow" onclick="scrollSlider('alleDeals', 1)">&#10095;</button>
+            </div>
+        </section>
+
+        <aside class="cookie_overlay" id="cookie_popup">
+            <div class="cookie_container">
+                <h4>Cookie beleid</h4>
+                <p>GEEF ONS JE DATA!!</p>
+
+                <label class="switch">
+                    <p>Specifieke data opslaan</p>
+                    <input type="checkbox">
+                    <span class="slider round"></span>
+                </label>
+                
+                <button id="close_cookie_button">X Sluiten</button> 
+                
+            </div>
+        </aside>
+    </main>
+
+    <footer>
+        <div class="overlayBlock">
+            <div class="footerText">
+                <div class="footer-image">
+                    <img src="/front-end/resources/pictures/ico/Screenshot_2025-10-27_114430-removebg-preview.ico" alt="">
+                </div>
+                <div class="text-column_one">
+                    <p>Intranet Royal FloraHolland</p>
+                </div>
+                <div class="text-column_two">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/front-end/webpagina's/javascript/slidersCommand.js"></script>
+    <script src='../javascript/itemFiller.js'></script>
+    <script src="../javascript/headers.js"></script>
+    
+    <!-- voor het ophalen en genereren van specifieke items op het scherm -->
+    <script>
+        genereerDataItem(containerId='lastChance', divClass='card', jsonItem='alleDeals', url='/front-end/dummydata/HoofdschermMock.json');
+        genereerDataItem(containerId='upcoming', divClass='card', jsonItem='AankomendeVeilingen' , url='/front-end/dummydata/HoofdschermMock.json')
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='alleDeals' , url='/front-end/dummydata/HoofdschermMock.json');
+        genereerDataItem(containerId='alleDeals', divClass='card', jsonItem='AankomendeVeilingen' , url='/front-end/dummydata/HoofdschermMock.json');
+    </script>
+
+    <!-- voor het linken van de ene scherm naar de andere scherm -->
+    <script>headerItems(".knop-registreren", '../html/Registration.html')</script>
+    <script>headerItems(".knop-inloggen", "../html/Login.html")</script>
+    <script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
+    <script>headerItems(".mijnVeilingenBekijken", "../html/sellerScreenInfo.html")</script>
+    <script>headerItems(".veilingPLaatsen", "../html/sellerScreenAdd.html")</script>
+    
+</body>
+</html>
