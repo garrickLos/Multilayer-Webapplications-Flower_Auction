@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { liveGet } from './live';
 
-type Watcher = {
+type Watcher<T = any> = {
     start: () => Promise<void>;
     stop: () => void;
     refresh: () => Promise<void>;
-    subscribe: (fn: (value: any) => void) => () => void;
+    subscribe: (fn: (value: T) => void) => () => void;
 };
 
-type WatchEntry = {
-    watcher: Watcher;
+type WatchEntry<T = any> = {
+    watcher: Watcher<T>;
     unsubscribe: () => void;
 };
 
@@ -19,31 +20,48 @@ type WatchEntry = {
  * - /api/Veiling/{id}   → "veilingNr – eerste productnaam (+N)"
  */
 export function useLiveNameCache() {
-    const [gebruikersMap, setGebruikersMap] = useState<Record<number, string>>({});
+    const [gebruikersMap, setGebruikersMap] = useState<Record<number, string>>(
+        {},
+    );
     const [veilingenMap, setVeilingenMap] = useState<Record<number, string>>({});
 
-    const userWatchers = useRef(new Map<number, WatchEntry>());
-    const auctionWatchers = useRef(new Map<number, WatchEntry>());
+    const userWatchers = useRef(
+        new Map<number, WatchEntry<{ gebruikerNr?: number; naam?: unknown }>>(),
+    );
+    const auctionWatchers = useRef(
+        new Map<
+            number,
+            WatchEntry<{ veilingNr?: number; producten?: { naam?: unknown }[] }>
+        >(),
+    );
 
     // --- helpers -------------------------------------------------------------
 
     const safeSet = (
-        setter: React.Dispatch<React.SetStateAction<Record<number, string>>>,
+        setter: Dispatch<SetStateAction<Record<number, string>>>,
         id: number,
         display: string,
     ) => {
-        setter(prev => (prev[id] === display ? prev : { ...prev, [id]: display }));
+        setter(prev =>
+            prev[id] === display ? prev : { ...prev, [id]: display },
+        );
     };
 
     // Gebruiker-watcher
-    const startUserWatcher = (id: number): WatchEntry => {
-        const watcher = liveGet<{ gebruikerNr?: number; naam?: unknown }>(`/api/Gebruiker/${id}`, {
-            refreshMs: 60_000,
-            revalidateOnFocus: true,
-        }) as unknown as Watcher;
+    const startUserWatcher = (
+        id: number,
+    ): WatchEntry<{ gebruikerNr?: number; naam?: unknown }> => {
+        const watcher = liveGet<{ gebruikerNr?: number; naam?: unknown }>(
+            `/api/Gebruiker/${id}`,
+            {
+                refreshMs: 60_000,
+                revalidateOnFocus: true,
+            },
+        ) as unknown as Watcher<{ gebruikerNr?: number; naam?: unknown }>;
 
-        const unsubscribe = watcher.subscribe((v: any) => {
-            const naam = typeof v?.naam === 'string' ? v.naam.trim() : '';
+        const unsubscribe = watcher.subscribe(v => {
+            const naam =
+                typeof v?.naam === 'string' ? v.naam.trim() : '';
             const display = naam || `Gebruiker ${id}`;
             safeSet(setGebruikersMap, id, display);
         });
@@ -53,18 +71,28 @@ export function useLiveNameCache() {
     };
 
     // Veiling-watcher: gebruikt producten uit VeilingDto
-    const startAuctionWatcher = (id: number): WatchEntry => {
+    const startAuctionWatcher = (
+        id: number,
+    ): WatchEntry<{
+        veilingNr?: number;
+        producten?: { naam?: unknown }[];
+    }> => {
         const watcher = liveGet<{
             veilingNr?: number;
             producten?: { naam?: unknown }[];
         }>(`/api/Veiling/${id}`, {
             refreshMs: 60_000,
             revalidateOnFocus: true,
-        }) as unknown as Watcher;
+        }) as unknown as Watcher<{
+            veilingNr?: number;
+            producten?: { naam?: unknown }[];
+        }>;
 
-        const unsubscribe = watcher.subscribe((v: any) => {
+        const unsubscribe = watcher.subscribe(v => {
             const veilingNr = v?.veilingNr ?? id;
-            const producten = Array.isArray(v?.producten) ? v.producten : [];
+            const producten = Array.isArray(v?.producten)
+                ? v.producten
+                : [];
             const first = producten[0];
 
             const firstName =
@@ -74,7 +102,10 @@ export function useLiveNameCache() {
 
             let display: string;
             if (firstName) {
-                const extra = producten.length > 1 ? ` (+${producten.length - 1})` : '';
+                const extra =
+                    producten.length > 1
+                        ? ` (+${producten.length - 1})`
+                        : '';
                 display = `${veilingNr} – ${firstName}${extra}`;
             } else {
                 display = `Veiling ${veilingNr}`;

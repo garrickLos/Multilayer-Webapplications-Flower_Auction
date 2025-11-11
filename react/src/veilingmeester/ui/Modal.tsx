@@ -18,126 +18,163 @@ export type ModalProps = {
     autoFocusSelector?: string;
 };
 
-const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+const isBrowser =
+    typeof window !== 'undefined' && typeof document !== 'undefined';
 
-const Modal: React.FC<ModalProps> = memo(
-    ({
-         title,
-         onClose,
-         children,
-         size,
-         fullscreenUntil = 'sm',
-         maxWidthPx,
-         autoFocusSelector = 'button.btn-close',
-     }) => {
-        const portalRoot = isBrowser ? document.body : null;
-        const titleId = `${useId()}-title`;
-        const prevFocus = useRef<HTMLElement | null>(null);
-        const containerRef = useRef<HTMLDivElement | null>(null);
+const ModalComponent: React.FC<ModalProps> = ({
+                                                  title,
+                                                  onClose,
+                                                  children,
+                                                  size,
+                                                  fullscreenUntil = 'sm',
+                                                  maxWidthPx,
+                                                  autoFocusSelector = 'button.btn-close',
+                                              }) => {
+    const id = useId();
+    const titleId = `${id}-title`;
 
-        // Bepaal dialog-klasse (Bootstrap)
-        const dialogClass = useMemo(() => {
-            return [
-                'modal-dialog',
-                'modal-dialog-centered',
-                'modal-dialog-scrollable',
-                fullscreenUntil && `modal-fullscreen-${fullscreenUntil}-down`,
-                size && `modal-${size}`,
-            ]
-                .filter(Boolean)
-                .join(' ');
-        }, [size, fullscreenUntil]);
+    const portalRoot = isBrowser ? document.body : null;
+    const prevFocus = useRef<HTMLElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
-        // Max-breedte (ook als fullscreenUntil is ingesteld; full-screen geldt alleen
-        // "tot en met" een breakpoint, daarboven mag maxWidth gewoon gelden).
-        const dialogStyle = useMemo<React.CSSProperties | undefined>(
-            () =>
-                maxWidthPx
-                    ? { maxWidth: `min(98vw, ${maxWidthPx}px)` }
-                    : undefined,
-            [maxWidthPx],
-        );
+    // Bepaal dialog-klasse (Bootstrap) – type-safe, zonder filter(Boolean)-hack
+    const dialogClass = useMemo(() => {
+        const classes: string[] = [
+            'modal-dialog',
+            'modal-dialog-centered',
+            'modal-dialog-scrollable',
+        ];
+        if (fullscreenUntil) {
+            classes.push(`modal-fullscreen-${fullscreenUntil}-down`);
+        }
+        if (size) {
+            classes.push(`modal-${size}`);
+        }
+        return classes.join(' ');
+    }, [size, fullscreenUntil]);
 
-        // Focusbeheer, ESC, scroll lock
-        useEffect(() => {
-            if (!isBrowser) return;
+    // Max-breedte (ook bij fullscreenUntil: dat geldt alleen tot breakpoint)
+    const dialogStyle = useMemo<React.CSSProperties | undefined>(
+        () =>
+            maxWidthPx
+                ? { maxWidth: `min(98vw, ${maxWidthPx}px)` }
+                : undefined,
+        [maxWidthPx],
+    );
 
-            prevFocus.current = document.activeElement as HTMLElement | null;
-            const prevOverflow = document.body.style.overflow;
-            document.body.style.overflow = 'hidden';
+    // Focusbeheer, ESC, scroll lock
+    useEffect(() => {
+        if (!isBrowser) return;
 
-            const handleKeyDown = (e: KeyboardEvent) => {
-                if (e.key === 'Escape') onClose();
-            };
+        // Vorige focus onthouden
+        prevFocus.current = document.activeElement as HTMLElement | null;
 
-            window.addEventListener('keydown', handleKeyDown);
+        // Scroll lock
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
 
-            const focusId = requestAnimationFrame(() => {
-                const el = containerRef.current?.querySelector<HTMLElement>(autoFocusSelector);
-                el?.focus?.();
-            });
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                onClose();
+            }
+        };
 
-            return () => {
-                cancelAnimationFrame(focusId);
-                window.removeEventListener('keydown', handleKeyDown);
-                document.body.style.overflow = prevOverflow;
-                prevFocus.current?.focus?.();
-            };
-        }, [onClose, autoFocusSelector]);
+        window.addEventListener('keydown', handleKeyDown);
 
-        const handleBackdropClick = useCallback(() => {
-            onClose();
-        }, [onClose]);
+        // Na render focus zetten
+        const focusId = window.requestAnimationFrame(() => {
+            const root = containerRef.current;
+            if (!root) return;
 
-        const modalNode = (
-            <div
-                className="modal show d-block"
-                style={{ zIndex: 1055 }}
-                tabIndex={-1}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={titleId}
-                ref={containerRef}
-            >
-                <div className={dialogClass} role="document" style={dialogStyle}>
-                    <div className="modal-content shadow border-0">
-                        <div className="modal-header bg-success-subtle">
-                            <h5 id={titleId} className="modal-title m-0 text-success">
-                                {title}
-                            </h5>
-                            <button
-                                type="button"
-                                className="btn-close"
-                                aria-label="Sluiten"
-                                onClick={onClose}
-                            />
-                        </div>
-                        <div className="modal-body p-3">{children}</div>
+            const el =
+                autoFocusSelector &&
+                root.querySelector<HTMLElement>(autoFocusSelector);
+
+            if (el && typeof el.focus === 'function') {
+                el.focus();
+            } else if (typeof root.focus === 'function') {
+                root.focus();
+            }
+        });
+
+        return () => {
+            window.cancelAnimationFrame(focusId);
+            window.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = prevOverflow;
+            prevFocus.current?.focus?.();
+        };
+    }, [onClose, autoFocusSelector]);
+
+    // Klik op overlay (donkere achtergrond) sluit modal;
+    // klik binnen de dialog niet.
+    const handleOverlayMouseDown = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            // Alleen sluiten als er echt op de overlay (niet op inhoud) wordt geklikt
+            if (e.target === e.currentTarget) {
+                onClose();
+            }
+        },
+        [onClose],
+    );
+
+    const modalNode = (
+        <div
+            className="modal show d-block"
+            style={{ zIndex: 1055 }}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            ref={containerRef}
+            onMouseDown={handleOverlayMouseDown}
+        >
+            <div className={dialogClass} role="document" style={dialogStyle}>
+                <div className="modal-content shadow border-0">
+                    <div className="modal-header bg-success-subtle">
+                        <h5 id={titleId} className="modal-title m-0 text-success">
+                            {title}
+                        </h5>
+                        <button
+                            type="button"
+                            className="btn-close"
+                            aria-label="Sluiten"
+                            onClick={onClose}
+                        />
                     </div>
+                    <div className="modal-body p-3">{children}</div>
                 </div>
             </div>
-        );
+        </div>
+    );
 
-        const backdropNode = (
-            <div
-                className="modal-backdrop show"
-                style={{ zIndex: 1050 }}
-                aria-hidden="true"
-                onMouseDown={handleBackdropClick}
-            />
-        );
+    const backdropNode = (
+        <div
+            className="modal-backdrop show"
+            style={{ zIndex: 1050 }}
+            aria-hidden="true"
+        />
+    );
 
-        return portalRoot ? (
+    // SSR-safe: als er geen document/body is, gewoon inline renderen
+    if (!portalRoot) {
+        return (
             <>
-                {createPortal(backdropNode, portalRoot)}
-                {createPortal(modalNode, portalRoot)}
+                {backdropNode}
+                {modalNode}
             </>
-        ) : (
-            <>{modalNode}</>
         );
-    },
-);
+    }
 
+    return (
+        <>
+            {createPortal(backdropNode, portalRoot)}
+            {createPortal(modalNode, portalRoot)}
+        </>
+    );
+};
+
+const Modal = memo(ModalComponent);
 Modal.displayName = 'Modal';
 
 export default Modal;

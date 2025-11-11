@@ -8,7 +8,8 @@ export type Bieding = Partial<{
     aantalStuks: number;
     gebruikerNr: number;
     veilingNr: number;
-}> & Record<string, unknown>;
+}> &
+    Record<string, unknown>;
 
 // Komt overeen met de API voor /api/Veilingproduct
 export type Veilingproduct = Partial<{
@@ -21,7 +22,8 @@ export type Veilingproduct = Partial<{
     categorieNr: number;
     veilingNr: number;
     categorieNaam: string;
-}> & Record<string, unknown>;
+}> &
+    Record<string, unknown>;
 
 // Product in VeilingDto.Producten (vereenvoudigd)
 export type VeilingProductItem = Partial<{
@@ -29,7 +31,8 @@ export type VeilingProductItem = Partial<{
     naam: string;
     startprijs: number;
     voorraad: number;
-}> & Record<string, unknown>;
+}> &
+    Record<string, unknown>;
 
 // Komt overeen met VeilingDto uit de API
 export type Veiling = Partial<{
@@ -39,14 +42,16 @@ export type Veiling = Partial<{
     status: string;
     minimumprijs: number;
     producten: VeilingProductItem[];
-}> & Record<string, unknown>;
+}> &
+    Record<string, unknown>;
 
 export type Categorie = Partial<{
     categorieNr: number;
     naam: string;
     id: number;
     name: string;
-}> & Record<string, unknown>;
+}> &
+    Record<string, unknown>;
 
 /** Exhaustive type-check helper voor switch-statements. */
 export const assertNever = (x: never, msg = 'Unexpected variant'): never => {
@@ -62,7 +67,11 @@ export const isNonEmpty = <T>(v: T | '' | null | undefined): v is T =>
 
 export const isAbort = (e: unknown): e is DOMException | Error => {
     const a = e as { name?: unknown; code?: unknown };
-    return a?.name === 'AbortError' || a?.name === 'TimeoutError' || a?.code === 20;
+    return (
+        a?.name === 'AbortError' ||
+        a?.name === 'TimeoutError' ||
+        a?.code === 20
+    );
 };
 
 export const toIntOrUndef = (v: MaybeNumber): number | undefined => {
@@ -89,9 +98,11 @@ export const getCategorieNaam = (c: Categorie) =>
             : '';
 
 export const normalizeForSearch = (s: string) =>
-    s
+    (s || '')
         .normalize('NFKD')
+        // diacritics weg
         .replace(/\p{M}/gu, '')
+        // control chars naar spatie
         .replace(/\p{Cc}+/gu, ' ')
         .replace(/\s+/g, ' ')
         .trim()
@@ -115,9 +126,14 @@ export function rowToSearchString(
         }
         const t = typeof v;
 
-        if (t === 'string' || t === 'number' || t === 'boolean' || t === 'bigint') {
+        if (
+            t === 'string' ||
+            t === 'number' ||
+            t === 'boolean' ||
+            t === 'bigint'
+        ) {
             out.push(String(v));
-        } else if (v instanceof Date && !isNaN(v.getTime())) {
+        } else if (v instanceof Date && !Number.isNaN(v.getTime())) {
             out.push(v.toISOString());
         } else if (Array.isArray(v)) {
             stack.push(...v);
@@ -208,19 +224,33 @@ const makeApiError = (res: Response, bodyText?: string): ApiErrorLike => {
     return err;
 };
 
-export const mergeSignals = (...signals: (AbortSignal | undefined)[]) => {
-    const active = signals.filter(Boolean) as AbortSignal[];
+export const mergeSignals = (
+    ...signals: (AbortSignal | undefined)[]
+): AbortSignal | undefined => {
+    const active = signals.filter(
+        (s): s is AbortSignal => Boolean(s),
+    ) as AbortSignal[];
     if (!active.length) return undefined;
-    if (active.some(s => s.aborted)) return AbortSignal.abort();
+
+    // Als er al een geaborteerde signal bij zit → direct een nieuw geaborteerd signaal.
+    if (active.some(s => s.aborted)) {
+        const ctrl = new AbortController();
+        ctrl.abort();
+        return ctrl.signal;
+    }
 
     const ctrl = new AbortController();
     const onAbort = () => ctrl.abort();
 
-    for (const s of active) s.addEventListener('abort', onAbort, { once: true });
+    for (const s of active) {
+        s.addEventListener('abort', onAbort, { once: true });
+    }
 
     ctrl.signal.addEventListener(
         'abort',
-        () => active.forEach(s => s.removeEventListener('abort', onAbort)),
+        () => {
+            active.forEach(s => s.removeEventListener('abort', onAbort));
+        },
         { once: true },
     );
 
@@ -228,12 +258,21 @@ export const mergeSignals = (...signals: (AbortSignal | undefined)[]) => {
 };
 
 export const timeoutSignal = (ms: number): AbortSignal => {
-    const AS = AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal };
+    const AS = AbortSignal as unknown as {
+        timeout?: (ms: number) => AbortSignal;
+    };
+
+    // Moderne browsers / Node >= 18
     if (typeof AS.timeout === 'function') return AS.timeout(ms);
 
+    // Fallback
     const ctrl = new AbortController();
     const id = setTimeout(() => ctrl.abort(), ms);
-    ctrl.signal.addEventListener('abort', () => clearTimeout(id), { once: true });
+    ctrl.signal.addEventListener(
+        'abort',
+        () => clearTimeout(id),
+        { once: true },
+    );
     return ctrl.signal;
 };
 
@@ -247,7 +286,7 @@ export type GetOptions = {
     acceptNotModified?: boolean;
 };
 
-const isRetryable = (e: unknown) =>
+const isRetryable = (e: unknown): boolean =>
     !isAbort(e) &&
     (e instanceof TypeError ||
         ((e as Partial<ApiErrorLike>)?.name === 'ApiError' &&
@@ -255,27 +294,45 @@ const isRetryable = (e: unknown) =>
             (e as ApiErrorLike).status >= 500 &&
             (e as ApiErrorLike).status < 600));
 
-async function doFetch<T>(url: string, opts: {
-    signal?: AbortSignal;
-    timeoutMs?: number;
-    init?: RequestInit;
-    acceptNotModified?: boolean;
-}): Promise<{ data: T; headers: Headers; notModified: boolean }> {
+async function doFetch<T>(
+    url: string,
+    opts: {
+        signal?: AbortSignal;
+        timeoutMs?: number;
+        init?: RequestInit;
+        acceptNotModified?: boolean;
+    },
+): Promise<{ data: T; headers: Headers; notModified: boolean }> {
     const signal = mergeSignals(
         opts.signal,
         opts.timeoutMs ? timeoutSignal(opts.timeoutMs) : undefined,
     );
 
-    const res = await fetch(url, { credentials: 'same-origin', ...opts.init, signal });
+    const res = await fetch(url, {
+        credentials: 'same-origin',
+        ...opts.init,
+        signal,
+    });
 
     if (res.status === 304 && opts.acceptNotModified) {
-        return { data: ([] as unknown as T), headers: res.headers, notModified: true };
+        // Data wordt in dit geval genegeerd; caller gebruikt notModified-flag
+        return {
+            data: ([] as unknown as T),
+            headers: res.headers,
+            notModified: true,
+        };
     }
+
     if (!res.ok) {
         throw makeApiError(res, await res.text().catch(() => undefined));
     }
+
     if (res.status === 204) {
-        return { data: (undefined as unknown as T), headers: res.headers, notModified: false };
+        return {
+            data: undefined as unknown as T,
+            headers: res.headers,
+            notModified: false,
+        };
     }
 
     const ct = (res.headers.get('content-type') || '').toLowerCase();
@@ -287,11 +344,23 @@ async function doFetch<T>(url: string, opts: {
     return { data, headers: res.headers, notModified: false };
 }
 
+/* Overloads voor nette types: meta=false → T, meta=true → meta-object */
+
+async function getWithRetry<T>(
+    path: string,
+    opt?: GetOptions,
+    meta?: false,
+): Promise<T>;
+async function getWithRetry<T>(
+    path: string,
+    opt: GetOptions | undefined,
+    meta: true,
+): Promise<{ data: T; headers: Headers; notModified: boolean }>;
 async function getWithRetry<T>(
     path: string,
     opt: GetOptions = {},
     meta = false,
-): Promise<any> {
+): Promise<T | { data: T; headers: Headers; notModified: boolean }> {
     const {
         params = {},
         signal,
@@ -325,8 +394,10 @@ async function getWithRetry<T>(
     }
 }
 
-export const apiGet = async <T>(path: string, opt: GetOptions = {}): Promise<T> =>
-    getWithRetry<T>(path, opt, false);
+export const apiGet = async <T>(
+    path: string,
+    opt: GetOptions = {},
+): Promise<T> => getWithRetry<T>(path, opt, false);
 
 export const apiGetWithMeta = async <T>(
     path: string,

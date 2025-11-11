@@ -1,5 +1,10 @@
-import React, { memo, useCallback } from 'react';
-import type { Dispatch, SetStateAction, ReactNode } from 'react';
+import React, {
+    memo,
+    useCallback,
+    type Dispatch,
+    type SetStateAction,
+    type ReactNode,
+} from 'react';
 
 /* Beschikbare paginagroottes voor lijsten. */
 export const SIZES = [10, 25, 50, 100] as const;
@@ -29,6 +34,7 @@ export const SearchInput: React.FC<SearchInputProps> = memo(
                 placeholder={placeholder}
                 inputMode="search"
                 aria-label={label}
+                autoComplete="off"
             />
         </div>
     ),
@@ -105,7 +111,10 @@ export const Pager: React.FC<PagerProps> = memo(
             () => setPage(p => Math.max(1, p - 1)),
             [setPage],
         );
-        const goNext = useCallback(() => setPage(p => p + 1), [setPage]);
+        const goNext = useCallback(
+            () => setPage(p => p + 1),
+            [setPage],
+        );
 
         return (
             <div
@@ -182,7 +191,9 @@ export const FilterChip: React.FC<FilterChipProps> = memo(
                 type="button"
                 className="btn btn-sm btn-link text-success py-0 pe-2"
                 onClick={onClear}
-                aria-label={title ? `Verwijder filter: ${title}` : 'Verwijder filter'}
+                aria-label={
+                    title ? `Verwijder filter: ${title}` : 'Verwijder filter'
+                }
             >
                 ×
             </button>

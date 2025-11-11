@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useId, useMemo, useState } from 'react';
+import React, { memo, useId, useMemo, useState } from 'react';
 
 /*  DataTable-component
  * Tabel met sorteer- en zoekfunctionaliteit (client-side).
@@ -7,8 +7,8 @@ import React, { memo, useCallback, useId, useMemo, useState } from 'react';
 /*  Hulpfuncties  */
 
 // Combineert CSS-klassen en slaat lege waarden over.
-const cx = (...classes: Array<string | false | null | undefined>) =>
-    classes.filter(Boolean).join(' ');
+const cx = (...classes: Array<string | false | null | undefined>): string =>
+    classes.filter((c): c is string => Boolean(c)).join(' ');
 
 // Zet waarden veilig om naar tekst (ook voor datums en objecten).
 const asText = (v: unknown): string => {
@@ -103,8 +103,11 @@ function useSorting<T extends RowBase>(
         return (a: T, b: T) => {
             const av = getVal(a);
             const bv = getVal(b);
-            const na = typeof av === 'number' ? av : Number(av);
-            const nb = typeof bv === 'number' ? bv : Number(bv);
+
+            const na =
+                typeof av === 'number' ? av : Number((av as unknown) as number);
+            const nb =
+                typeof bv === 'number' ? bv : Number((bv as unknown) as number);
 
             const base =
                 Number.isFinite(na) && Number.isFinite(nb)
@@ -115,15 +118,12 @@ function useSorting<T extends RowBase>(
         };
     }, [cols, sortKey, sortDir]);
 
-    const toggleSort = useCallback(
-        (key: keyof T & string) => {
-            setSortDir(prev =>
-                sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc',
-            );
-            setSortKey(key);
-        },
-        [sortKey],
-    );
+    const toggleSort = (key: keyof T & string) => {
+        setSortDir(prev =>
+            sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc',
+        );
+        setSortKey(key);
+    };
 
     return { sortKey, sortDir, comparator, toggleSort };
 }
@@ -140,7 +140,9 @@ function useFiltering<T extends RowBase>(
         if (!dq) return rows;
         return rows.filter(r =>
             cols.some(c =>
-                asText(c.accessor ? c.accessor(r) : r[c.key as keyof T])
+                asText(
+                    c.accessor ? c.accessor(r) : r[c.key as keyof T],
+                )
                     .toLowerCase()
                     .includes(dq),
             ),
@@ -253,11 +255,12 @@ function DataTableInner<T extends RowBase>({
                             <tr>
                                 {cols.map(c => {
                                     const active = sortKey === c.key;
-                                    const ariaSort = active
-                                        ? sortDir === 'asc'
-                                            ? 'ascending'
-                                            : 'descending'
-                                        : 'none';
+                                    const ariaSort: React.AriaAttributes['aria-sort'] =
+                                        active
+                                            ? sortDir === 'asc'
+                                                ? 'ascending'
+                                                : 'descending'
+                                            : 'none';
                                     return (
                                         <th
                                             key={c.key}

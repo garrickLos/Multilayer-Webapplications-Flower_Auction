@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import DataTable, { type RowBase } from './ui/DataTable';
 import VeilingModal from './ui/VeilingModal';
-import { SearchInput, SelectSm, Loading, Pager, Empty, FilterChip } from './ui/components';
+import {
+    SearchInput,
+    SelectSm,
+    Loading,
+    Pager,
+    Empty,
+    FilterChip,
+} from './ui/components';
 import { type Bieding, type Veiling, rowToSearchString } from './data/utils';
 import { useDebounced, useLivePagedList } from './data/live';
 import { useLiveNameCache } from './data/liveNameCache';
@@ -12,15 +19,28 @@ const dateFormatter = new Intl.DateTimeFormat('nl-NL', {
     dateStyle: 'short',
     timeStyle: 'short',
 });
+
 const currencyFormatter = new Intl.NumberFormat('nl-NL', {
     style: 'currency',
     currency: 'EUR',
 });
 
-const fmtDate = (d?: string | null) => (d ? dateFormatter.format(new Date(d)) : '');
+const fmtDate = (d?: string | null) => {
+    if (!d) return '';
+    const date = new Date(d);
+    if (Number.isNaN(date.getTime())) return '';
+    return dateFormatter.format(date);
+};
+
 const fmtEur = (n?: number | string | null) => {
-    const value = typeof n === 'string' ? Number(n) : n;
-    return value != null && !Number.isNaN(value) ? currencyFormatter.format(value) : '';
+    if (n == null || n === '') return '';
+    const raw =
+        typeof n === 'string'
+            // haal duizendtallen weg en vervang komma door punt
+            ? n.replace(/\./g, '').replace(',', '.')
+            : n;
+    const value = Number(raw);
+    return Number.isFinite(value) ? currencyFormatter.format(value) : '';
 };
 
 const splitTokens = (q: string) =>
@@ -42,9 +62,10 @@ const TAB_IDS = {
     veilingen: { tab: 'tab-veilingen', panel: 'panel-veilingen' },
 } as const;
 
-/* Types voor tabel-rijen */
+/* Types voor tabel-rijen
+   Laat ze RowBase extenden zodat DataTable type-safe is. */
 
-type BidRow = {
+type BidRow = RowBase & {
     biedNr: number | string;
     gebruiker: string | number;
     veiling: string | number;
@@ -52,7 +73,7 @@ type BidRow = {
     aantalStuks: number | string;
 };
 
-type VeilingRow = {
+type VeilingRow = RowBase & {
     veilingNr: number | undefined;
     begintijd: string;
     eindtijd: string;
@@ -86,29 +107,41 @@ function useBidRows(page: number, pageSize: number, query: string) {
 
     const error = toErrorString(rawError, 'Kon biedingen niet laden');
 
-    const { gebruikersMap, veilingenMap, fetchGebruikers, fetchVeilingen } = useLiveNameCache();
+    const {
+        gebruikersMap,
+        veilingenMap,
+        fetchGebruikers,
+        fetchVeilingen,
+    } = useLiveNameCache();
 
     const rowsAsObjects = useMemo(
-        () => (Array.isArray(data) ? (data as ReadonlyArray<Record<string, unknown>>) : []),
+        () =>
+            Array.isArray(data)
+                ? (data as readonly Bieding[])
+                : ([] as readonly Bieding[]),
         [data],
     );
 
     // Voor alle rijen bijbehorende gebruikers/veilingen ophalen
     useEffect(() => {
+        if (!rowsAsObjects.length) return;
+
         const gIds = [
             ...new Set(
                 rowsAsObjects
-                    .map(r => r['gebruikerNr'])
+                    .map(r => r.gebruikerNr)
                     .filter((n): n is number => typeof n === 'number'),
             ),
         ];
+
         const vIds = [
             ...new Set(
                 rowsAsObjects
-                    .map(r => r['veilingNr'])
+                    .map(r => r.veilingNr)
                     .filter((n): n is number => typeof n === 'number'),
             ),
         ];
+
         if (gIds.length) fetchGebruikers(gIds);
         if (vIds.length) fetchVeilingen(vIds);
     }, [rowsAsObjects, fetchGebruikers, fetchVeilingen]);
@@ -116,15 +149,17 @@ function useBidRows(page: number, pageSize: number, query: string) {
     // Rijen zoals getoond in de tabel
     const bidRows: BidRow[] = useMemo(
         () =>
-            rowsAsObjects.map(r => {
-                const g = r['gebruikerNr'] as number | undefined;
-                const v = r['veilingNr'] as number | undefined;
+            rowsAsObjects.map((r, index): BidRow => {
+                const g = r.gebruikerNr;
+                const v = r.veilingNr;
                 return {
-                    biedNr: (r['biedNr'] as number | string | undefined) ?? '',
+                    // RowBase key/id fallback
+                    id: r.biedNr ?? index,
+                    biedNr: r.biedNr ?? '',
                     gebruiker: g != null ? gebruikersMap[g] ?? g : '',
                     veiling: v != null ? veilingenMap[v] ?? v : '',
-                    bedragPerFust: (r['bedragPerFust'] as number | string | undefined) ?? '',
-                    aantalStuks: (r['aantalStuks'] as number | string | undefined) ?? '',
+                    bedragPerFust: r.bedragPerFust ?? '',
+                    aantalStuks: r.aantalStuks ?? '',
                 };
             }),
         [rowsAsObjects, gebruikersMap, veilingenMap],
@@ -134,12 +169,15 @@ function useBidRows(page: number, pageSize: number, query: string) {
     const filteredRows = useMemo(() => {
         const tokens = splitTokens(dQuery);
         if (!tokens.length) return bidRows;
-        return bidRows.filter(row =>
-            tokens.every(t => rowToSearchString(row as Record<string, unknown>).includes(t)),
-        );
+        return bidRows.filter(row => {
+            const s = rowToSearchString(
+                row as unknown as Record<string, unknown>,
+            ).toLowerCase();
+            return tokens.every(t => s.includes(t));
+        });
     }, [bidRows, dQuery]);
 
-    const hasNext = lastCount >= pageSize;
+    const hasNext = (lastCount ?? 0) >= pageSize;
     return { rows: filteredRows, loading, error, hasNext };
 }
 
@@ -166,13 +204,17 @@ function useVeilingRows(page: number, pageSize: number, query: string) {
 
     const rows: VeilingRow[] = useMemo(
         () =>
-            (Array.isArray(data) ? data : []).map(v => ({
+            (Array.isArray(data) ? data : []).map((v, index): VeilingRow => ({
+                // RowBase key/id fallback
+                id: v.veilingNr ?? index,
                 veilingNr: v.veilingNr,
                 begintijd: fmtDate(v.begintijd),
                 eindtijd: fmtDate(v.eindtijd),
                 status: v.status,
                 minimumprijs: fmtEur(v.minimumprijs),
-                aantalProducten: Array.isArray(v.producten) ? v.producten.length : 0,
+                aantalProducten: Array.isArray(v.producten)
+                    ? v.producten.length
+                    : 0,
             })),
         [data],
     );
@@ -180,12 +222,15 @@ function useVeilingRows(page: number, pageSize: number, query: string) {
     const filteredRows = useMemo(() => {
         const tokens = splitTokens(dQuery);
         if (!tokens.length) return rows;
-        return rows.filter(row =>
-            tokens.every(t => rowToSearchString(row as Record<string, unknown>).includes(t)),
-        );
+        return rows.filter(row => {
+            const s = rowToSearchString(
+                row as unknown as Record<string, unknown>,
+            ).toLowerCase();
+            return tokens.every(t => s.includes(t));
+        });
     }, [rows, dQuery]);
 
-    const hasNext = lastCount >= pageSize;
+    const hasNext = (lastCount ?? 0) >= pageSize;
     return { rows: filteredRows, loading, error, hasNext };
 }
 
@@ -199,8 +244,8 @@ function BidsSection({ hidden }: BidsSectionProps) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
     const [query, setQuery] = useState('');
-    const { rows, loading, error, hasNext } = useBidRows(page, pageSize, query);
 
+    const { rows, loading, error, hasNext } = useBidRows(page, pageSize, query);
     const trimmedQuery = query.trim();
 
     return (
@@ -230,7 +275,7 @@ function BidsSection({ hidden }: BidsSectionProps) {
                             id="bid-page-size"
                             label="Per pagina"
                             value={pageSize}
-                            onChange={n => {
+                            onChange={(n: number) => {
                                 setPageSize(n);
                                 setPage(1);
                             }}
@@ -239,21 +284,37 @@ function BidsSection({ hidden }: BidsSectionProps) {
                 </div>
 
                 {error && <div className="alert alert-danger">{error}</div>}
-                {!error && (loading ? <Loading /> : rows.length ? <DataTable rows={rows} /> : <Empty />)}
+
+                {!error &&
+                    (loading ? (
+                        <Loading />
+                    ) : rows.length ? (
+                        <DataTable<BidRow> rows={rows} />
+                    ) : (
+                        <Empty />
+                    ))}
 
                 <div className="d-flex flex-wrap gap-2 mt-3">
-                    {trimmedQuery && <FilterChip onClear={() => setQuery('')}>Zoek: “{trimmedQuery}”</FilterChip>}
+                    {trimmedQuery && (
+                        <FilterChip onClear={() => setQuery('')}>
+                            Zoek: “{trimmedQuery}”
+                        </FilterChip>
+                    )}
                 </div>
 
-                <Pager page={page} setPage={setPage} hasNext={hasNext} loading={loading} total={rows.length} />
+                <Pager
+                    page={page}
+                    setPage={setPage}
+                    hasNext={hasNext}
+                    loading={loading}
+                    total={rows.length}
+                />
             </div>
         </section>
     );
 }
 
-/* Subcomponent: Veilingen-tab
- * Tabel met veilingen, filters en modal met producten per veiling.
-*/
+/* Subcomponent: Veilingen-tab */
 
 type VeilingenSectionProps = {
     hidden: boolean;
@@ -263,15 +324,26 @@ function VeilingenSection({ hidden }: VeilingenSectionProps) {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
-    const [selectedVeilingId, setSelectedVeilingId] = useState<number | null>(null);
+    const [selectedVeilingId, setSelectedVeilingId] = useState<number | null>(
+        null,
+    );
 
-    const { rows, loading, error, hasNext } = useVeilingRows(page, pageSize, search);
+    const { rows, loading, error, hasNext } = useVeilingRows(
+        page,
+        pageSize,
+        search,
+    );
 
     const trimmedSearch = search.trim();
 
-    const handleRowClick = useCallback((row: RowBase & { veilingNr?: number }) => {
-        if (row.veilingNr) setSelectedVeilingId(row.veilingNr);
-    }, []);
+    const handleRowClick = useCallback(
+        (row: VeilingRow & RowBase) => {
+            if (row.veilingNr != null) {
+                setSelectedVeilingId(row.veilingNr);
+            }
+        },
+        [setSelectedVeilingId],
+    );
 
     return (
         <section
@@ -301,7 +373,7 @@ function VeilingenSection({ hidden }: VeilingenSectionProps) {
                             id="veiling-page-size"
                             label="Per pagina"
                             value={pageSize}
-                            onChange={n => {
+                            onChange={(n: number) => {
                                 setPageSize(n);
                                 setPage(1);
                             }}
@@ -327,34 +399,48 @@ function VeilingenSection({ hidden }: VeilingenSectionProps) {
                 {/* Actieve filters als chips */}
                 <div className="d-flex flex-wrap gap-2 mb-2">
                     {trimmedSearch && (
-                        <FilterChip onClear={() => setSearch('')}>Zoek: “{trimmedSearch}”</FilterChip>
+                        <FilterChip onClear={() => setSearch('')}>
+                            Zoek: “{trimmedSearch}”
+                        </FilterChip>
                     )}
                 </div>
 
                 {/* Tabel met veilingen */}
                 {error && <div className="alert alert-danger">{error}</div>}
+
                 {!error &&
                     (loading ? (
                         <Loading />
                     ) : rows.length ? (
-                        <DataTable rows={rows} onRowClick={handleRowClick} caption="Klik een veiling voor producten" />
+                        <DataTable<VeilingRow>
+                            rows={rows}
+                            onRowClick={handleRowClick}
+                            caption="Klik een veiling voor producten"
+                        />
                     ) : (
                         <Empty />
                     ))}
 
-                <Pager page={page} setPage={setPage} hasNext={hasNext} loading={loading} total={rows.length} />
+                <Pager
+                    page={page}
+                    setPage={setPage}
+                    hasNext={hasNext}
+                    loading={loading}
+                    total={rows.length}
+                />
             </div>
 
             {selectedVeilingId != null && (
-                <VeilingModal veilingId={selectedVeilingId} onClose={() => setSelectedVeilingId(null)} />
+                <VeilingModal
+                    veilingId={selectedVeilingId}
+                    onClose={() => setSelectedVeilingId(null)}
+                />
             )}
         </section>
     );
 }
 
-/* Hoofdcomponent: Veilingmeester
- * Pagina met twee tabbladen: Biedingen en Veilingen.
-*/
+/* Hoofdcomponent: Veilingmeester */
 
 export default function Veilingmeester() {
     const [tab, setTab] = useState<'biedingen' | 'veilingen'>('veilingen');
@@ -363,10 +449,16 @@ export default function Veilingmeester() {
         <div className="container py-4">
             <section className="mb-4 rounded-4 p-4 p-md-5 shadow-sm bg-light">
                 <h2 className="mb-1">Veilingmeester</h2>
-                <p className="text-muted mb-0">Zoek, filter en bekijk biedingen en veilingen.</p>
+                <p className="text-muted mb-0">
+                    Zoek, filter en bekijk biedingen en veilingen.
+                </p>
             </section>
 
-            <ul className="nav nav-pills mb-3 rounded-3 bg-light p-2 gap-2" role="tablist" aria-label="Hoofdtabbladen">
+            <ul
+                className="nav nav-pills mb-3 rounded-3 bg-light p-2 gap-2"
+                role="tablist"
+                aria-label="Hoofdtabbladen"
+            >
                 {(['biedingen', 'veilingen'] as const).map(t => (
                     <li key={t} className="nav-item" role="presentation">
                         <button
