@@ -1,0 +1,12 @@
+import type { TabKey } from './types';
+
+type TabIds = Record<TabKey, { tab: string; panel: string }>;
+
+export const TAB_IDS: TabIds = {
+    biedingen: { tab: 'tab-biedingen', panel: 'panel-biedingen' },
+    veilingen: { tab: 'tab-veilingen', panel: 'panel-veilingen' },
+};
+
+export const DEFAULT_PAGE_SIZE = 25;
+
+export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;

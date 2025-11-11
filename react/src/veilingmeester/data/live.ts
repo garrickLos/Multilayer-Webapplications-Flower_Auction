@@ -2,7 +2,8 @@
 // SWR-achtige live cache en React hooks met ETag/Last-Modified, retries en refresh.
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { apiGetWithMeta, isNonEmpty, stableStringify, type Query, isAbort } from './utils';
+import { apiGetWithMeta, isNonEmpty, stableStringify, isAbort } from './utils';
+import type { Query } from '../types';
 
 /* -------------------------------------------------------------------------- */
 /* Core live cache                                                            */
