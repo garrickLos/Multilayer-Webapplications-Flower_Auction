@@ -18,7 +18,7 @@ export default function App() {
 
             {/* ROUTES */}
             <Routes>
-                <Route path="/" element={<Navigate to="/404" />} />
+                <Route path="/" element={<Navigate to="/home" />} />
 
                 <Route path="/home" element={<Hoofdscherm />} />
                 <Route path="/veilingmeester" element={<Veilingmeester />} />
@@ -26,15 +26,11 @@ export default function App() {
                 <Route path="/veilingPlaatsen" element={<SellerScreenAdd />} />
                 <Route path="/veilingBekijken" element={""} />
                 <Route path="/klantGegevens" element={""} />
-<<<<<<< Updated upstream
-                <Route path="/privacyBeleid" element={<PrivacyScherm />} />
                 <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
+                <Route path="/privacyBeleid" element={<PrivacyScherm />} />
 
-=======
-                <Route path="/privacyBeleid" element={<PrivacyScherm />} />      
                 <Route path='/404' element={<ErrorPage />} />          
->>>>>>> Stashed changes
             </Routes>
 
             <Footer />
