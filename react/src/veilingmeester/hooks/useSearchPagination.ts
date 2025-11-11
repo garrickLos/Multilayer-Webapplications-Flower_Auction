@@ -1,9 +1,22 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 
-export function useSearchPagination(initialPageSize = 25) {
+export type SearchPaginationState = {
+    page: number;
+    setPage: Dispatch<SetStateAction<number>>;
+    pageSize: number;
+    setPageSize: (value: number) => void;
+    search: string;
+    setSearch: (value: string) => void;
+    reset: () => void;
+};
+
+export function useSearchPagination(
+    initialPageSize = 25,
+    initialSearch = '',
+): SearchPaginationState {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(initialPageSize);
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState(initialSearch);
 
     const updateSearch = useCallback((value: string) => {
         setPage(1);
@@ -18,8 +31,8 @@ export function useSearchPagination(initialPageSize = 25) {
     const reset = useCallback(() => {
         setPage(1);
         setPageSize(initialPageSize);
-        setSearch('');
-    }, [initialPageSize]);
+        setSearch(initialSearch);
+    }, [initialPageSize, initialSearch]);
 
     return {
         page,
