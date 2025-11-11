@@ -1,13 +1,12 @@
 // src/veilingmeester/data/live.ts
-// SWR-achtige live cache en React hooks met ETag/Last-Modified, retries en refresh.
+// SWR-achtige live cache + hooks met ETag/Last-Modified, retries en refresh.
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { apiGetWithMeta, isNonEmpty, stableStringify, isAbort } from './utils';
 import type { Query } from '../types/types.ts';
 
-/* -------------------------------------------------------------------------- */
-/* Core live cache                                                            */
-/* -------------------------------------------------------------------------- */
+
+/* Core live cache */
 
 type Listener<T> = (value: T) => void;
 
@@ -23,7 +22,8 @@ type LiveState<T> = {
 
 const store = new Map<string, LiveState<unknown>>();
 
-/** Stable key op basis van pad + query-params. */
+
+/* Stabiele key op basis van path + query-params. */
 const keyOf = (path: string, params?: Query) => {
     if (!params || !Object.keys(params).length) return path;
     const search = new URLSearchParams();
@@ -48,9 +48,10 @@ export type LiveOptions = {
     revalidateOnFocus?: boolean;
 };
 
-/**
- * Eén fetch + cache-update (ETag/Last-Modified). Abort vorige inflight, sla
- * nieuwe waarde/error op en notify listeners.
+
+/*
+ * Eén fetch + cache-update (ETag/Last-Modified).
+ * Aborteert vorige inflight, slaat waarde/error op en notificeert listeners.
  */
 async function revalidate<T>(path: string, opt: LiveOptions, st: LiveState<T>) {
     if (st.inflight) return st.inflight;
@@ -85,7 +86,11 @@ async function revalidate<T>(path: string, opt: LiveOptions, st: LiveState<T>) {
                 st.listeners.forEach(fn => fn(st.value as T));
             }
         } catch (e) {
-            if (!isAbort(e)) st.error = e;
+            if (!isAbort(e)) {
+                st.error = e;
+                // Forceer re-render ook bij fout (waarde kan hetzelfde blijven).
+                st.listeners.forEach(fn => fn(st.value as T));
+            }
         } finally {
             st.inflight = undefined;
         }
@@ -94,9 +99,10 @@ async function revalidate<T>(path: string, opt: LiveOptions, st: LiveState<T>) {
     return st.inflight;
 }
 
-/**
- * Haal of maak een live entry voor path+params. Geeft getters en helpers terug
- * om te starten/stoppen, te subscriben, te refreshen en lokaal te muteren.
+
+/*
+ * Haal of maak een live entry voor path+params.
+ * Geeft helpers terug om te starten/stoppen, te subscriben, te refreshen en te muteren.
  */
 export function liveGet<T>(path: string, options: LiveOptions = {}) {
     const key = keyOf(path, options.params);
@@ -178,12 +184,11 @@ export function liveGet<T>(path: string, options: LiveOptions = {}) {
     };
 }
 
-/* -------------------------------------------------------------------------- */
+
 /* React hook wrapper                                                         */
-/* -------------------------------------------------------------------------- */
 
 export function useLiveData<T>(path: string, options: LiveOptions = {}) {
-    // Stable key alleen op params, rest zit expliciet in de dependency array
+    // Stable key alleen op params, rest zit expliciet in de deps.
     const paramsKey = useMemo(
         () => stableStringify(options.params ?? {}),
         [options.params],
@@ -199,7 +204,7 @@ export function useLiveData<T>(path: string, options: LiveOptions = {}) {
             options.timeoutMs,
             options.retry,
             options.retryBackoffMs,
-            // init is meestal stabiel, maar voor de zekerheid
+            // init is meestal stabiel, maar voor de zekerheid:
             stableStringify(options.init ?? {}),
         ],
     );
@@ -218,13 +223,10 @@ export function useLiveData<T>(path: string, options: LiveOptions = {}) {
     return { data, error: res.error, refresh: res.refresh, mutate: res.mutate };
 }
 
-/* -------------------------------------------------------------------------- */
-/* Paginatie helpers                                                           */
-/* -------------------------------------------------------------------------- */
 
-/**
- * Eénmalige paginated fetcher (zonder live cache).
- */
+/* Paginatie helpers */
+
+/** Eénmalige paginated fetcher (zonder live cache). */
 export function usePagedList<T>(args: {
     path: string;
     params?: Query;
@@ -284,14 +286,22 @@ export function usePagedList<T>(args: {
         })();
 
         return () => ctl.abort();
-    }, [path, page, pageSize, paramsKey, timeoutMs, retry, retryBackoffMs]);
+    }, [
+        path,
+        page,
+        pageSize,
+        paramsKey,
+        timeoutMs,
+        retry,
+        retryBackoffMs,
+        // init en params via key + extra veiligheid:
+        stableStringify(init ?? {}),
+    ]);
 
     return { data, loading, error, lastCount };
 }
 
-/**
- * Live variant voor paginated lijsten, op basis van `useLiveData`.
- */
+/* Live variant voor paginated lijsten, op basis van `useLiveData`. */
 export function useLivePagedList<T>(args: {
     path: string;
     params?: Query;

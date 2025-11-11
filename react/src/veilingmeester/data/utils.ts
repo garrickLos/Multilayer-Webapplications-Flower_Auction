@@ -1,14 +1,15 @@
 // src/veilingmeester/data/utils.ts
 
-import type { Categorie, MaybeNumber, Query } from '../types/types.ts';
+import type { Query } from '../types/types.ts';
 
-/* -------------------------------------------------------------------------- */
-/* Kleine helpers                                                             */
-/* -------------------------------------------------------------------------- */
 
+/* Kleine helpers */
+
+// Controleert of waarde niet null/undefined/lege string is.
 export const isNonEmpty = <T>(v: T | '' | null | undefined): v is T =>
     v !== undefined && v !== null && v !== '';
 
+// Herken afgebroken of verlopen requests.
 export const isAbort = (e: unknown): e is DOMException | Error => {
     const a = e as { name?: unknown; code?: unknown };
     return (
@@ -20,37 +21,32 @@ export const isAbort = (e: unknown): e is DOMException | Error => {
 
 export { normalizeForSearch, rowToSearchString } from '../utils/search';
 
-/* -------------------------------------------------------------------------- */
-/* Stable JSON                                                                */
-/* -------------------------------------------------------------------------- */
 
+/* Stable JSON */
+
+// JSON.stringify met vaste sleutelvolgorde, Date→ISO en circular-detectie.
 export const stableStringify = (input: unknown): string => {
     const seen = new WeakSet<object>();
-
     const walk = (v: unknown): unknown => {
         if (v instanceof Date) return { d: v.toISOString() };
         if (v === null || typeof v !== 'object') return v;
         if (seen.has(v as object)) return '[Circular]';
-
         seen.add(v as object);
-
         if (Array.isArray(v)) return v.map(walk);
-
         const o = v as Record<string, unknown>;
         return Object.fromEntries(
             Object.keys(o)
                 .sort()
-                .map(key => [key, walk(o[key])]),
+                .map(k => [k, walk(o[k])]),
         );
     };
-
     return JSON.stringify(walk(input));
 };
 
-/* -------------------------------------------------------------------------- */
-/* Fetch helpers                                                              */
-/* -------------------------------------------------------------------------- */
 
+/* Fetch helpers */
+
+// Bouw querystring op, negeert lege waarden.
 const qs = (params: Query): string => {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -66,6 +62,7 @@ const qs = (params: Query): string => {
     return search.toString();
 };
 
+// Standaardvorm API-fouten.
 export type ApiErrorLike = Error & {
     name: 'ApiError';
     status: number;
@@ -86,55 +83,38 @@ const makeApiError = (res: Response, bodyText?: string): ApiErrorLike => {
     return err;
 };
 
+// Combineer meerdere AbortSignals tot één.
 export const mergeSignals = (
     ...signals: (AbortSignal | undefined)[]
 ): AbortSignal | undefined => {
-    const active = signals.filter(
-        (s): s is AbortSignal => Boolean(s),
-    ) as AbortSignal[];
+    const active = signals.filter((s): s is AbortSignal => Boolean(s));
     if (!active.length) return undefined;
 
-    // Als er al een geaborteerde signal bij zit → direct een nieuw geaborteerd signaal.
     if (active.some(s => s.aborted)) {
-        const ctrl = new AbortController();
-        ctrl.abort();
-        return ctrl.signal;
+        const c = new AbortController();
+        c.abort();
+        return c.signal;
     }
 
     const ctrl = new AbortController();
     const onAbort = () => ctrl.abort();
 
-    for (const s of active) {
-        s.addEventListener('abort', onAbort, { once: true });
-    }
-
+    for (const s of active) s.addEventListener('abort', onAbort, { once: true });
     ctrl.signal.addEventListener(
         'abort',
-        () => {
-            active.forEach(s => s.removeEventListener('abort', onAbort));
-        },
+        () => active.forEach(s => s.removeEventListener('abort', onAbort)),
         { once: true },
     );
-
     return ctrl.signal;
 };
 
+// AbortSignal dat vanzelf abort na x ms (fallback voor oudere omgevingen).
 export const timeoutSignal = (ms: number): AbortSignal => {
-    const AS = AbortSignal as unknown as {
-        timeout?: (ms: number) => AbortSignal;
-    };
-
-    // Moderne browsers / Node >= 18
+    const AS = AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal };
     if (typeof AS.timeout === 'function') return AS.timeout(ms);
-
-    // Fallback
     const ctrl = new AbortController();
     const id = setTimeout(() => ctrl.abort(), ms);
-    ctrl.signal.addEventListener(
-        'abort',
-        () => clearTimeout(id),
-        { once: true },
-    );
+    ctrl.signal.addEventListener('abort', () => clearTimeout(id), { once: true });
     return ctrl.signal;
 };
 
@@ -148,14 +128,15 @@ export type GetOptions = {
     acceptNotModified?: boolean;
 };
 
+// Retrybare fouten: netwerk of 5xx.
 const isRetryable = (e: unknown): boolean =>
     !isAbort(e) &&
     (e instanceof TypeError ||
-        ((e as Partial<ApiErrorLike>)?.name === 'ApiError' &&
-            typeof (e as Partial<ApiErrorLike>)?.status === 'number' &&
+        ((e as ApiErrorLike).name === 'ApiError' &&
             (e as ApiErrorLike).status >= 500 &&
             (e as ApiErrorLike).status < 600));
 
+// Basis fetch met timeout, signal merge, en JSON/text parse.
 async function doFetch<T>(
     url: string,
     opts: {
@@ -176,26 +157,14 @@ async function doFetch<T>(
         signal,
     });
 
-    if (res.status === 304 && opts.acceptNotModified) {
-        // Data wordt in dit geval genegeerd; caller gebruikt notModified-flag
-        return {
-            data: ([] as unknown as T),
-            headers: res.headers,
-            notModified: true,
-        };
-    }
+    if (res.status === 304 && opts.acceptNotModified)
+        return { data: [] as unknown as T, headers: res.headers, notModified: true };
 
-    if (!res.ok) {
+    if (!res.ok)
         throw makeApiError(res, await res.text().catch(() => undefined));
-    }
 
-    if (res.status === 204) {
-        return {
-            data: undefined as unknown as T,
-            headers: res.headers,
-            notModified: false,
-        };
-    }
+    if (res.status === 204)
+        return { data: undefined as unknown as T, headers: res.headers, notModified: false };
 
     const ct = (res.headers.get('content-type') || '').toLowerCase();
     const data =
@@ -206,8 +175,7 @@ async function doFetch<T>(
     return { data, headers: res.headers, notModified: false };
 }
 
-/* Overloads voor nette types: meta=false → T, meta=true → meta-object */
-
+/* Overloads voor nette types */
 async function getWithRetry<T>(
     path: string,
     opt?: GetOptions,
@@ -218,6 +186,8 @@ async function getWithRetry<T>(
     opt: GetOptions | undefined,
     meta: true,
 ): Promise<{ data: T; headers: Headers; notModified: boolean }>;
+
+// GET met retry en optionele meta.
 async function getWithRetry<T>(
     path: string,
     opt: GetOptions = {},
@@ -251,11 +221,12 @@ async function getWithRetry<T>(
                 retryBackoffMs * 2 ** attempt * (0.5 + Math.random()),
                 cap,
             );
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise(r => setTimeout(r, delay));
         }
     }
 }
 
+// Publieke variant met meta-info (headers, notModified).
 export const apiGetWithMeta = async <T>(
     path: string,
     opt: GetOptions = {},
