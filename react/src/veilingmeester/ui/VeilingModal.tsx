@@ -1,157 +1,71 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Modal from './Modal';
 import DataTable, { type Column } from './DataTable';
-import { useLiveData } from '../data/live';
 import { Empty, Loading } from './components';
 import { formatCurrency, formatDateTime, parseLocaleNumber } from '../utils/format';
-import { toErrorMessage } from '../utils/errors';
-import type { RowBase } from '../types';
+import { useVeilingProducts, type VeilingDetail, type VeilingProductRow } from '../hooks/useVeilingProducts';
+import type { VeilingProductItem } from '../types';
 
-/* Types */
-
-type ApiProduct = {
-    veilingProductNr: number;
-    naam: string | null;
-    startprijs: number | string;
-    voorraad: number | null;
-    afbeeldingUrl?: string | null;
+type VeilingModalProps = {
+    veilingId: number;
+    onClose: () => void;
 };
-
-type ApiVeiling = {
-    veilingNr: number;
-    begintijd: string; // ISO datetime
-    eindtijd: string; // ISO datetime
-    status?: string | null;
-    minimumprijs: number | string;
-    producten?: ApiProduct[] | null;
-};
-
-type ProductRow = RowBase & {
-    id: number | string;
-    veilingProductNr: number | '';
-    naam: string;
-    startprijs: string; // geformatteerd
-    startprijsValue: number; // numeriek
-    voorraad: number | '';
-    afbeeldingUrl?: string;
-    imageOrClock?: null;
-};
-
-/* Status badge */
 
 const StatusBadge = ({ status }: { status?: string | null }) => {
     if (!status) return null;
-    const s = status.toLowerCase();
-    let cls = 'bg-light text-body';
-    if (s.includes('active')) cls = 'bg-success-subtle text-success';
-    else if (s.includes('sold')) cls = 'bg-secondary-subtle text-secondary';
-    else if (s.includes('inactive')) cls = 'bg-warning-subtle text-warning';
-    return <span className={`badge ${cls}`}>{status}</span>;
+    const normalized = status.toLowerCase();
+
+    const badgeClass = normalized.includes('active')
+        ? 'bg-success-subtle text-success'
+        : normalized.includes('sold')
+          ? 'bg-secondary-subtle text-secondary'
+          : normalized.includes('inactive')
+              ? 'bg-warning-subtle text-warning'
+              : 'bg-light text-body';
+
+    return <span className={`badge ${badgeClass}`}>{status}</span>;
 };
 
-/* Data ophalen */
+const computeCurrentPrice = (row: VeilingProductRow, veiling: VeilingDetail, nowMs: number) => {
+    const base = row.startprijsValue;
+    const minimum = parseLocaleNumber(veiling.minimumprijs ?? 0);
 
-function useVeilingProducts(veilingId: number) {
-    const { data: veiling, error } = useLiveData<ApiVeiling>(
-        `/api/Veiling/${veilingId}`,
-        { refreshMs: 5000, revalidateOnFocus: true },
-    );
+    if (base <= minimum) return minimum;
 
-    const rows: ProductRow[] = useMemo(
-        () =>
-            veiling?.producten?.map((p, index): ProductRow => {
-                const startprijsValue = parseLocaleNumber(p.startprijs);
-                const naam = (p.naam ?? '').trim();
-                return {
-                    id: p.veilingProductNr ?? index,
-                    veilingProductNr: p.veilingProductNr ?? '',
-                    naam,
-                    startprijs: formatCurrency(startprijsValue),
-                    startprijsValue,
-                    voorraad: p.voorraad ?? '',
-                    afbeeldingUrl: p.afbeeldingUrl ?? undefined,
-                    imageOrClock: null,
-                };
-            }) ?? [],
-        [veiling],
-    );
+    const startTs = Date.parse(veiling.begintijd ?? '');
+    const endTs = Date.parse(veiling.eindtijd ?? '');
 
-    return {
-        veiling,
-        rows,
-        loading: !veiling && !error,
-        errorMessage: toErrorMessage(error, 'Kon veiling niet ophalen.'),
-    };
-}
-
-/* Lineaire prijs: startprijs bij begintijd, minprijs bij eindtijd */
-
-function computeCurrentPrice(
-    row: ProductRow,
-    veiling: ApiVeiling,
-    nowMs: number,
-): number {
-    const base = row.startprijsValue; // startprijs = max
-    const min = parseLocaleNumber(veiling.minimumprijs); // minimumprijs = bodem
-
-    if (base <= min) return min;
-
-    const startTs = Date.parse(veiling.begintijd);
-    const endTs = Date.parse(veiling.eindtijd);
-
-    // Als tijden ongeldig zijn of eind <= begin → fallback
     if (!Number.isFinite(startTs) || !Number.isFinite(endTs) || endTs <= startTs) {
-        return Math.max(min, base);
+        return Math.max(minimum, base);
     }
 
-    if (nowMs <= startTs) return base; // vóór begintijd: startprijs
-    if (nowMs >= endTs) return min; // na eindtijd: minimumprijs
+    if (nowMs <= startTs) return base;
+    if (nowMs >= endTs) return minimum;
 
-    // Tussen begin en eind → lineair dalend
-    const progress = (nowMs - startTs) / (endTs - startTs); // 0–1
-    const span = base - min;
+    const progress = (nowMs - startTs) / (endTs - startTs);
+    const span = base - minimum;
     const raw = base - span * progress;
-    const price = Number(raw.toFixed(2));
+    return Math.min(base, Math.max(minimum, Number(raw.toFixed(2))));
+};
 
-    return Math.min(base, Math.max(min, price)); // clamp
-}
-
-/* Status: inactief na eindtijd of status "inactive" */
-
-function isVeilingInactive(
-    veiling: ApiVeiling | null | undefined,
-    nowMs: number,
-): boolean {
+const isVeilingInactive = (veiling: VeilingDetail | null | undefined, nowMs: number) => {
     if (!veiling) return false;
-    const s = (veiling.status ?? '').toLowerCase();
-    if (s.includes('inactive')) return true;
-    const endTs = Date.parse(veiling.eindtijd);
+    const status = (veiling.status ?? '').toLowerCase();
+    if (status.includes('inactive')) return true;
+    const endTs = Date.parse(veiling.eindtijd ?? '');
     return Number.isFinite(endTs) && nowMs >= endTs;
-}
+};
 
-/* Hoofdcomponent */
-
-export default function VeilingModal({
-                                         veilingId,
-                                         onClose,
-                                     }: {
-    veilingId: number;
-    onClose: () => void;
-}) {
+export default function VeilingModal({ veilingId, onClose }: VeilingModalProps) {
     const { veiling, rows, loading, errorMessage } = useVeilingProducts(veilingId);
 
-    // Centrale klok: elke seconde nieuwe "nu"-tijd → triggert re-render
     const [nowMs, setNowMs] = useState(() => Date.now());
     useEffect(() => {
-        const id = window.setInterval(() => {
-            setNowMs(Date.now());
-        }, 1000);
-        return () => window.clearInterval(id);
+        const timer = window.setInterval(() => setNowMs(Date.now()), 1_000);
+        return () => window.clearInterval(timer);
     }, []);
 
-    const [selectedProduct, setSelectedProduct] = useState<ApiProduct | null>(null);
-
-    // Eerste product standaard selecteren
+    const [selectedProduct, setSelectedProduct] = useState<VeilingProductItem | null>(null);
     useEffect(() => {
         setSelectedProduct(veiling?.producten?.[0] ?? null);
     }, [veiling]);
@@ -159,27 +73,20 @@ export default function VeilingModal({
     const selectedRow = useMemo(
         () =>
             selectedProduct
-                ? rows.find(
-                    r => r.veilingProductNr === (selectedProduct.veilingProductNr ?? ''),
-                )
+                ? rows.find(row => row.veilingProductNr === (selectedProduct.veilingProductNr ?? ''))
                 : undefined,
         [rows, selectedProduct],
     );
 
-    const titelVeilingNr = veiling?.veilingNr ?? veilingId;
-
     const getCurrentPrice = useCallback(
-        (row: ProductRow) =>
+        (row: VeilingProductRow) =>
             veiling ? computeCurrentPrice(row, veiling, nowMs) : row.startprijsValue,
         [veiling, nowMs],
     );
 
-    const inactive = useMemo(
-        () => (veiling ? isVeilingInactive(veiling, nowMs) : false),
-        [veiling, nowMs],
-    );
+    const inactive = useMemo(() => isVeilingInactive(veiling, nowMs), [veiling, nowMs]);
 
-    const columns = useMemo<ReadonlyArray<Column<ProductRow>>>(
+    const columns = useMemo<ReadonlyArray<Column<VeilingProductRow>>>(
         () => [
             {
                 key: 'veilingProductNr',
@@ -194,7 +101,7 @@ export default function VeilingModal({
                 width: 160,
                 className: 'text-center align-middle',
                 sortable: false,
-                render: (_val, row) =>
+                render: (_value, row) =>
                     row.afbeeldingUrl ? (
                         <img
                             src={row.afbeeldingUrl}
@@ -204,16 +111,13 @@ export default function VeilingModal({
                         />
                     ) : (
                         <div className="d-flex flex-column align-items-center small">
-                            <span className="fw-semibold">
-                                {formatCurrency(getCurrentPrice(row))}
-                            </span>
+                            <span className="fw-semibold">{formatCurrency(getCurrentPrice(row))}</span>
                             <span
-                                className={
-                                    'badge rounded-pill mt-1 ' +
-                                    (inactive
+                                className={`badge rounded-pill mt-1 ${
+                                    inactive
                                         ? 'bg-secondary-subtle text-secondary'
-                                        : 'bg-success-subtle text-success')
-                                }
+                                        : 'bg-success-subtle text-success'
+                                }`}
                             >
                                 {inactive ? 'Inactief' : 'Dalende klok'}
                             </span>
@@ -231,8 +135,8 @@ export default function VeilingModal({
                 header: 'Startprijs',
                 className: 'text-nowrap text-end',
                 sortable: true,
-                comparator: (a, b, dir) =>
-                    dir === 'asc'
+                comparator: (a, b, direction) =>
+                    direction === 'asc'
                         ? a.startprijsValue - b.startprijsValue
                         : b.startprijsValue - a.startprijsValue,
             },
@@ -247,25 +151,30 @@ export default function VeilingModal({
     );
 
     const handleRowClick = useCallback(
-        (r: ProductRow) => {
+        (row: VeilingProductRow) => {
             const product = veiling?.producten?.find(
-                p => (p.veilingProductNr ?? '') === r.veilingProductNr,
+                item => (item.veilingProductNr ?? '') === row.veilingProductNr,
             );
             setSelectedProduct(product ?? null);
         },
         [veiling],
     );
 
-    const effectieveStatus =
-        inactive && veiling?.status && !veiling.status.toLowerCase().includes('inactive')
-            ? 'Inactief'
-            : veiling?.status ?? undefined;
+    const effectiveStatus = useMemo(() => {
+        if (!veiling?.status) return undefined;
+        if (inactive && !veiling.status.toLowerCase().includes('inactive')) {
+            return 'Inactief';
+        }
+        return veiling.status ?? undefined;
+    }, [inactive, veiling?.status]);
+
+    const veilingNumber = veiling?.veilingNr ?? veilingId;
 
     return (
         <Modal
             title={
                 <span>
-                    Veiling <span className="text-muted">#{titelVeilingNr}</span>
+                    Veiling <span className="text-muted">#{veilingNumber}</span>
                 </span>
             }
             onClose={onClose}
@@ -283,17 +192,14 @@ export default function VeilingModal({
 
             {veiling && (
                 <div className="row g-3">
-                    {/* Tabel */}
                     <div className="col-md">
                         {rows.length ? (
-                            <DataTable<ProductRow>
+                            <DataTable<VeilingProductRow>
                                 rows={rows}
                                 columns={columns}
                                 caption="Klik een product voor details"
                                 onRowClick={handleRowClick}
-                                getRowKey={r =>
-                                    r.veilingProductNr || `${r.naam}-${r.startprijsValue}`
-                                }
+                                getRowKey={row => row.veilingProductNr || `${row.naam}-${row.startprijsValue}`}
                                 defaultSortKey="naam"
                                 defaultSortDir="asc"
                             />
@@ -302,21 +208,18 @@ export default function VeilingModal({
                         )}
                     </div>
 
-                    {/* Detailpaneel */}
                     <div className="col-md-5">
                         <article className="card shadow-sm border-0 border border-success-subtle">
                             <div className="card-body">
                                 <h5 className="card-title d-flex flex-wrap align-items-center gap-2 mb-1 text-success">
                                     {selectedProduct?.naam || (
-                                        <span className="text-muted">
-                                            Geen product geselecteerd
-                                        </span>
+                                        <span className="text-muted">Geen product geselecteerd</span>
                                     )}
-                                    <StatusBadge status={effectieveStatus} />
+                                    <StatusBadge status={effectiveStatus} />
                                 </h5>
 
                                 <div className="text-muted mb-3">
-                                    Veiling #{titelVeilingNr}
+                                    Veiling #{veilingNumber}
                                     {veiling.minimumprijs != null && (
                                         <> · min. {formatCurrency(veiling.minimumprijs)}</>
                                     )}
@@ -346,20 +249,12 @@ export default function VeilingModal({
                                         <>
                                             <li className="list-group-item d-flex justify-content-between align-items-center px-0">
                                                 <span className="text-muted">Startprijs</span>
-                                                <strong>
-                                                    {formatCurrency(selectedProduct.startprijs)}
-                                                </strong>
+                                                <strong>{formatCurrency(selectedProduct.startprijs ?? '')}</strong>
                                             </li>
                                             {selectedRow && (
                                                 <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-                                                    <span className="text-muted">
-                                                        Huidige klokprijs
-                                                    </span>
-                                                    <strong>
-                                                        {formatCurrency(
-                                                            getCurrentPrice(selectedRow),
-                                                        )}
-                                                    </strong>
+                                                    <span className="text-muted">Huidige klokprijs</span>
+                                                    <strong>{formatCurrency(getCurrentPrice(selectedRow))}</strong>
                                                 </li>
                                             )}
                                             <li className="list-group-item d-flex justify-content-between align-items-center px-0">

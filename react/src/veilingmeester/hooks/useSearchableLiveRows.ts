@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useLivePagedList } from '../data/live';
-import type { Query } from '../data/utils';
-import type { RowBase } from '../types';
+import type { Query, RowBase } from '../types';
 import { useDebouncedValue } from './useDebouncedValue';
 import { splitSearchTokens, rowToSearchString, matchesSearchTokens } from '../utils/search';
 import { toErrorMessage } from '../utils/errors';

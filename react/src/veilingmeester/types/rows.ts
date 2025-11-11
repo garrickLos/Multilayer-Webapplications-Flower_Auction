@@ -18,5 +18,3 @@ export type VeilingRow = RowBase & {
     minimumprijs: string;
     aantalProducten: number;
 };
-
-export type TabKey = 'biedingen' | 'veilingen';

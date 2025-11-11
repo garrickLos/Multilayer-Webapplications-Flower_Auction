@@ -1,55 +1,56 @@
-import React, { memo, useId, useMemo, useState } from 'react';
+import {
+    memo,
+    useId,
+    useMemo,
+    useState,
+    type KeyboardEventHandler,
+} from 'react';
+import type {
+    AriaAttributes,
+    CSSProperties,
+    Key,
+    ReactElement,
+    ReactNode,
+} from 'react';
 import type { RowBase } from '../types';
-export type { RowBase } from '../types';
 
-/*  DataTable-component
- * Tabel met sorteer- en zoekfunctionaliteit (client-side).
- */
+const classNames = (...classes: Array<string | false | null | undefined>) =>
+    classes.filter(Boolean).join(' ');
 
-/*  Hulpfuncties  */
-
-// Combineert CSS-klassen en slaat lege waarden over.
-const cx = (...classes: Array<string | false | null | undefined>): string =>
-    classes.filter((c): c is string => Boolean(c)).join(' ');
-
-// Zet waarden veilig om naar tekst (ook voor datums en objecten).
-const asText = (v: unknown): string => {
-    if (v == null) return '';
-    if (v instanceof Date) return v.toISOString();
-    if (typeof v === 'object') {
+const stringifyValue = (value: unknown): string => {
+    if (value == null) return '';
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'object') {
         try {
-            return JSON.stringify(v);
+            return JSON.stringify(value);
         } catch {
             return '';
         }
     }
-    return String(v);
+    return String(value);
 };
 
-// Vergelijkt tekst op Nederlandse manier, ongevoelig voor hoofdletters.
-const cmpText = (a: string, b: string) =>
-    a.localeCompare(b, 'nl-NL', { numeric: true, sensitivity: 'base' });
+const compareText = (left: string, right: string) =>
+    left.localeCompare(right, 'nl-NL', { numeric: true, sensitivity: 'base' });
 
-// Stabiele sorteerfunctie (behoudt volgorde bij gelijke waarden).
-const stableSort = <T,>(arr: readonly T[], cmp: (x: T, y: T) => number): T[] =>
-    arr
-        .map((el, idx) => [el, idx] as const)
-        .sort((a, b) => cmp(a[0], b[0]) || a[1] - b[1])
-        .map(([el]) => el);
+const stableSort = <T,>(values: readonly T[], comparator: (a: T, b: T) => number) =>
+    values
+        .map((item, index) => [item, index] as const)
+        .sort((a, b) => comparator(a[0], b[0]) || a[1] - b[1])
+        .map(([item]) => item);
 
-/*  Types  */
+export type SortDirection = 'asc' | 'desc';
 
-export type SortDir = 'asc' | 'desc';
 export type Column<T extends RowBase> = {
     key: keyof T & string;
-    header?: React.ReactNode;
+    header?: ReactNode;
     accessor?: (row: T) => unknown;
-    render?: (val: unknown, row: T) => React.ReactNode;
+    render?: (value: unknown, row: T) => ReactNode;
     className?: string;
-    width?: React.CSSProperties['width'];
+    width?: CSSProperties['width'];
     sortable?: boolean;
     hideSm?: boolean;
-    comparator?: (a: T, b: T, dir: SortDir) => number;
+    comparator?: (left: T, right: T, direction: SortDirection) => number;
 };
 
 export type DataTableProps<T extends RowBase> = {
@@ -57,127 +58,101 @@ export type DataTableProps<T extends RowBase> = {
     columns?: ReadonlyArray<Column<T>>;
     caption?: string;
     onRowClick?: (row: T) => void;
-    getRowKey?: (row: T, index: number) => React.Key;
+    getRowKey?: (row: T, index: number) => Key;
     defaultSortKey?: keyof T & string;
-    defaultSortDir?: SortDir;
+    defaultSortDir?: SortDirection;
     filterPlaceholder?: string;
 };
 
-/*  Hooks  */
-
-// Maakt automatisch kolommen aan op basis van data.
-const autoColumns = <T extends RowBase>(
-    rows: readonly T[],
-    max = 8,
-): ReadonlyArray<Column<T>> => {
-    const keys = Array.from(new Set(rows.flatMap(r => Object.keys(r)))).slice(
-        0,
-        max,
-    );
-    return keys.map(k => ({ key: k as keyof T & string, sortable: true }));
+const autoColumns = <T extends RowBase>(rows: readonly T[], max = 8): ReadonlyArray<Column<T>> => {
+    const keys = Array.from(new Set(rows.flatMap(row => Object.keys(row)))).slice(0, max);
+    return keys.map(key => ({ key: key as keyof T & string, sortable: true }));
 };
 
-// Beheert sorteerlogica en geeft comparator + toggle terug.
-function useSorting<T extends RowBase>(
-    cols: ReadonlyArray<Column<T>>,
+const useSorting = <T extends RowBase>(
+    columns: ReadonlyArray<Column<T>>,
     defaultKey?: keyof T & string,
-    defaultDir: SortDir = 'asc',
-) {
-    const [sortKey, setSortKey] = useState<keyof T & string | undefined>(
-        defaultKey,
-    );
-    const [sortDir, setSortDir] = useState<SortDir>(defaultDir);
+    defaultDirection: SortDirection = 'asc',
+) => {
+    const [sortKey, setSortKey] = useState<keyof T & string | undefined>(defaultKey);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(defaultDirection);
 
     const comparator = useMemo(() => {
         if (!sortKey) return null;
-        const col = cols.find(c => c.key === sortKey);
-        if (!col) return null;
+        const column = columns.find(col => col.key === sortKey);
+        if (!column) return null;
 
-        if (col.comparator) {
-            return (a: T, b: T) => col.comparator!(a, b, sortDir);
+        if (column.comparator) {
+            return (left: T, right: T) => column.comparator!(left, right, sortDirection);
         }
 
-        const getVal = (r: T) =>
-            col.accessor ? col.accessor(r) : (r[sortKey] as unknown);
+        const getValue = (row: T) => (column.accessor ? column.accessor(row) : (row[sortKey] as unknown));
 
-        return (a: T, b: T) => {
-            const av = getVal(a);
-            const bv = getVal(b);
+        return (left: T, right: T) => {
+            const leftValue = getValue(left);
+            const rightValue = getValue(right);
 
-            const na =
-                typeof av === 'number' ? av : Number((av as unknown) as number);
-            const nb =
-                typeof bv === 'number' ? bv : Number((bv as unknown) as number);
+            const leftNumber = typeof leftValue === 'number' ? leftValue : Number(leftValue as number);
+            const rightNumber = typeof rightValue === 'number' ? rightValue : Number(rightValue as number);
 
             const base =
-                Number.isFinite(na) && Number.isFinite(nb)
-                    ? na - nb
-                    : cmpText(asText(av), asText(bv));
+                Number.isFinite(leftNumber) && Number.isFinite(rightNumber)
+                    ? leftNumber - rightNumber
+                    : compareText(stringifyValue(leftValue), stringifyValue(rightValue));
 
-            return sortDir === 'asc' ? base : -base;
+            return sortDirection === 'asc' ? base : -base;
         };
-    }, [cols, sortKey, sortDir]);
+    }, [columns, sortKey, sortDirection]);
 
     const toggleSort = (key: keyof T & string) => {
-        setSortDir(prev =>
-            sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc',
-        );
+        setSortDirection(previous => (sortKey === key ? (previous === 'asc' ? 'desc' : 'asc') : 'asc'));
         setSortKey(key);
     };
 
-    return { sortKey, sortDir, comparator, toggleSort };
-}
+    return { sortKey, sortDirection, comparator, toggleSort };
+};
 
-// Filtert rijen op basis van zoekterm.
-function useFiltering<T extends RowBase>(
-    rows: readonly T[],
-    query: string,
-    cols: ReadonlyArray<Column<T>>,
-) {
-    const dq = query.trim().toLowerCase();
+const useFiltering = <T extends RowBase>(rows: readonly T[], query: string, columns: ReadonlyArray<Column<T>>) => {
+    const normalizedQuery = query.trim().toLowerCase();
 
     return useMemo(() => {
-        if (!dq) return rows;
-        return rows.filter(r =>
-            cols.some(c =>
-                asText(
-                    c.accessor ? c.accessor(r) : r[c.key as keyof T],
-                )
+        if (!normalizedQuery) return rows;
+        return rows.filter(row =>
+            columns.some(column =>
+                stringifyValue(column.accessor ? column.accessor(row) : row[column.key as keyof T])
                     .toLowerCase()
-                    .includes(dq),
+                    .includes(normalizedQuery),
             ),
         );
-    }, [rows, dq, cols]);
-}
-
-/*  Hoofdcomponent  */
+    }, [rows, normalizedQuery, columns]);
+};
 
 function DataTableInner<T extends RowBase>({
-                                               rows,
-                                               columns,
-                                               caption,
-                                               onRowClick,
-                                               getRowKey,
-                                               defaultSortKey,
-                                               defaultSortDir = 'asc',
-                                               filterPlaceholder = 'zoeken…',
-                                           }: DataTableProps<T>) {
-    const cols = useMemo(
+    rows,
+    columns,
+    caption,
+    onRowClick,
+    getRowKey,
+    defaultSortKey,
+    defaultSortDir = 'asc',
+    filterPlaceholder = 'zoeken…',
+}: DataTableProps<T>): ReactElement {
+    const resolvedColumns = useMemo(
         () => (columns?.length ? columns : autoColumns(rows)),
         [columns, rows],
     );
 
-    const { sortKey, sortDir, comparator, toggleSort } = useSorting(
-        cols,
+    const { sortKey, sortDirection, comparator, toggleSort } = useSorting(
+        resolvedColumns,
         defaultSortKey,
         defaultSortDir,
     );
 
     const [query, setQuery] = useState('');
-    const filtered = useFiltering(rows, query, cols);
+    const filteredRows = useFiltering(rows, query, resolvedColumns);
     const data = useMemo(
-        () => (comparator ? stableSort(filtered, comparator) : filtered),
-        [filtered, comparator],
+        () => (comparator ? stableSort(filteredRows, comparator) : filteredRows),
+        [filteredRows, comparator],
     );
 
     const tableId = useId();
@@ -195,34 +170,24 @@ function DataTableInner<T extends RowBase>({
             <div className="card shadow-sm border-0 border border-success-subtle">
                 {caption && (
                     <div className="card-header bg-success-subtle border-0 py-2">
-                        <div
-                            id={`${tableId}-caption`}
-                            className="small text-success"
-                        >
+                        <div id={`${tableId}-caption`} className="small text-success">
                             {caption}
                         </div>
                     </div>
                 )}
                 <div className="card-body pt-2">
-                    {/* Zoekveld en teller */}
                     <div className="d-flex align-items-center justify-content-between mb-2">
-                        <span
-                            className="badge bg-success-subtle text-success"
-                            aria-live="polite"
-                        >
+                        <span className="badge bg-success-subtle text-success" aria-live="polite">
                             {data.length.toLocaleString('nl-NL')} resultaten
                         </span>
-                        <div
-                            className="input-group input-group-sm"
-                            style={{ maxWidth: 320 }}
-                        >
+                        <div className="input-group input-group-sm" style={{ maxWidth: 320 }}>
                             <span className="input-group-text bg-success-subtle text-success border-success-subtle">
                                 Zoek
                             </span>
                             <input
                                 className="form-control"
                                 value={query}
-                                onChange={e => setQuery(e.currentTarget.value)}
+                                onChange={event => setQuery(event.currentTarget.value)}
                                 placeholder={filterPlaceholder}
                                 aria-label="Filter resultaten"
                                 inputMode="search"
@@ -240,141 +205,99 @@ function DataTableInner<T extends RowBase>({
                         </div>
                     </div>
 
-                    {/* Tabel */}
                     <div className="table-responsive rounded-3 border bg-body">
                         <table
                             className="table table-sm table-striped table-hover align-middle caption-top"
-                            aria-describedby={
-                                caption ? `${tableId}-caption` : undefined
-                            }
+                            aria-describedby={caption ? `${tableId}-caption` : undefined}
                         >
-                            <thead
-                                className="position-sticky top-0 bg-success-subtle"
-                                style={{ zIndex: 1 }}
-                            >
-                            <tr>
-                                {cols.map(c => {
-                                    const active = sortKey === c.key;
-                                    const ariaSort: React.AriaAttributes['aria-sort'] =
-                                        active
-                                            ? sortDir === 'asc'
+                            <thead className="position-sticky top-0 bg-success-subtle" style={{ zIndex: 1 }}>
+                                <tr>
+                                    {resolvedColumns.map(column => {
+                                        const active = sortKey === column.key;
+                                        const ariaSort: AriaAttributes['aria-sort'] = active
+                                            ? sortDirection === 'asc'
                                                 ? 'ascending'
                                                 : 'descending'
                                             : 'none';
-                                    return (
-                                        <th
-                                            key={c.key}
-                                            scope="col"
-                                            aria-sort={ariaSort}
-                                            className={cx(
-                                                'text-nowrap text-success',
-                                                c.className,
-                                                c.hideSm &&
-                                                'd-none d-md-table-cell',
-                                                c.sortable &&
-                                                'user-select-none',
-                                            )}
-                                            style={
-                                                c.width
-                                                    ? { width: c.width }
-                                                    : undefined
-                                            }
-                                            title={
-                                                c.sortable
-                                                    ? 'Klik om te sorteren'
-                                                    : undefined
-                                            }
-                                        >
-                                            {c.sortable ? (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-link p-0 text-success text-decoration-none d-inline-flex align-items-center gap-1"
-                                                    onClick={() =>
-                                                        toggleSort(c.key)
-                                                    }
-                                                    aria-label={`Sorteer op ${String(
-                                                        c.header ?? c.key,
-                                                    )}`}
-                                                >
-                                                    {c.header ?? c.key}
-                                                    {active && (
-                                                        <span
-                                                            className="small"
-                                                            aria-hidden="true"
-                                                        >
-                                                                {sortDir ===
-                                                                'asc'
-                                                                    ? '▲'
-                                                                    : '▼'}
+
+                                        return (
+                                            <th
+                                                key={column.key}
+                                                scope="col"
+                                                aria-sort={ariaSort}
+                                                className={classNames(
+                                                    'text-nowrap text-success',
+                                                    column.className,
+                                                    column.hideSm && 'd-none d-md-table-cell',
+                                                    column.sortable && 'user-select-none',
+                                                )}
+                                                style={column.width ? { width: column.width } : undefined}
+                                                title={column.sortable ? 'Klik om te sorteren' : undefined}
+                                            >
+                                                {column.sortable ? (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-link p-0 text-success text-decoration-none d-inline-flex align-items-center gap-1"
+                                                        onClick={() => toggleSort(column.key)}
+                                                        aria-label={`Sorteer op ${String(column.header ?? column.key)}`}
+                                                    >
+                                                        {column.header ?? column.key}
+                                                        {active && (
+                                                            <span className="small" aria-hidden="true">
+                                                                {sortDirection === 'asc' ? '▲' : '▼'}
                                                             </span>
-                                                    )}
-                                                </button>
-                                            ) : (
-                                                <span className="d-inline-flex align-items-center gap-1">
-                                                        {c.header ?? c.key}
+                                                        )}
+                                                    </button>
+                                                ) : (
+                                                    <span className="d-inline-flex align-items-center gap-1">
+                                                        {column.header ?? column.key}
                                                     </span>
-                                            )}
-                                        </th>
-                                    );
-                                })}
-                            </tr>
+                                                )}
+                                            </th>
+                                        );
+                                    })}
+                                </tr>
                             </thead>
                             <tbody>
-                            {data.map((row, i) => {
-                                const key = getRowKey?.(row, i) ?? i;
-                                const handleClick = () =>
-                                    onRowClick?.(row);
+                                {data.map((row, index) => {
+                                    const key = getRowKey?.(row, index) ?? index;
+                                    const handleClick = () => onRowClick?.(row);
 
-                                const handleKeyDown: React.KeyboardEventHandler<HTMLTableRowElement> =
-                                    e => {
+                                    const handleKeyDown: KeyboardEventHandler<HTMLTableRowElement> = event => {
                                         if (!onRowClick) return;
-                                        if (
-                                            e.key === 'Enter' ||
-                                            e.key === ' '
-                                        ) {
-                                            e.preventDefault();
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
                                             onRowClick(row);
                                         }
                                     };
 
-                                return (
-                                    <tr
-                                        key={key}
-                                        onClick={handleClick}
-                                        tabIndex={
-                                            onRowClick ? 0 : undefined
-                                        }
-                                        role={
-                                            onRowClick ? 'button' : undefined
-                                        }
-                                        onKeyDown={handleKeyDown}
-                                    >
-                                        {cols.map(c => {
-                                            const val = c.accessor
-                                                ? c.accessor(row)
-                                                : (row[
-                                                    c.key
-                                                    ] as unknown);
-                                            return (
-                                                <td
-                                                    key={c.key}
-                                                    className={cx(
-                                                        'text-truncate',
-                                                        c.className,
-                                                        c.hideSm &&
-                                                        'd-none d-md-table-cell',
-                                                    )}
-                                                    style={{ maxWidth: 0 }}
-                                                >
-                                                    {c.render
-                                                        ? c.render(val, row)
-                                                        : asText(val)}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                );
-                            })}
+                                    return (
+                                        <tr
+                                            key={key}
+                                            onClick={handleClick}
+                                            tabIndex={onRowClick ? 0 : undefined}
+                                            role={onRowClick ? 'button' : undefined}
+                                            onKeyDown={handleKeyDown}
+                                        >
+                                            {resolvedColumns.map(column => {
+                                                const value = column.accessor ? column.accessor(row) : (row[column.key] as unknown);
+                                                return (
+                                                    <td
+                                                        key={column.key}
+                                                        className={classNames(
+                                                            'text-truncate',
+                                                            column.className,
+                                                            column.hideSm && 'd-none d-md-table-cell',
+                                                        )}
+                                                        style={{ maxWidth: 0 }}
+                                                    >
+                                                        {column.render ? column.render(value, row) : stringifyValue(value)}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -384,9 +307,8 @@ function DataTableInner<T extends RowBase>({
     );
 }
 
-// Exporteert de geoptimaliseerde DataTable mét generics.
 export const DataTable = memo(
     DataTableInner,
-) as <T extends RowBase>(props: DataTableProps<T>) => React.ReactElement;
+) as <T extends RowBase>(props: DataTableProps<T>) => ReactElement;
 
 export default DataTable;
