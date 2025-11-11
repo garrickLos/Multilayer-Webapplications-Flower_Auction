@@ -82,32 +82,32 @@ export default function PrivacyScherm() {
     );
 }
 
-interface ContentBlock {
-    type: 'paragraph' | 'list';
-    content: string | string[]; // Content is een string OF een array van strings
-}
+// interface ContentBlock {
+//     type: 'paragraph' | 'list';
+//     content: string | string[]; // Content is een string OF een array van strings
+// }
 
 interface PrivacyItemProps {
     paragraph?: string;
     list?: string[];
 }
 
-// Component om te renderen
-const PrivacyItems: React.FC<PrivacyItemProps> = ({ paragraph, list }) => {
-    if (paragraph) {
-        return <div><p>{paragraph}</p></div>;
-    }
-    if (list) {
-        return (
-            <div>
-                <ul>
-                    {list.map((item, index) => <li key={index}>{item}</li>)}
-                </ul>
-            </div>
-        );
-    }
-    return null;
-};
+// // Component om te renderen
+// const PrivacyItems: React.FC<PrivacyItemProps> = ({ paragraph, list }) => {
+//     if (paragraph) {
+//         return <div><p>{paragraph}</p></div>;
+//     }
+//     if (list) {
+//         return (
+//             <div>
+//                 <ul>
+//                     {list.map((item, index) => <li key={index}>{item}</li>)}
+//                 </ul>
+//             </div>
+//         );
+//     }
+//     return null;
+// };
 //
 // // De render-functie (verwacht de "Ideale" structuur)
 // const renderContent = (items: ContentBlock[]) => {
