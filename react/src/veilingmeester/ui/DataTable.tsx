@@ -1,4 +1,6 @@
 import React, { memo, useId, useMemo, useState } from 'react';
+import type { RowBase } from '../types';
+export type { RowBase } from '../types';
 
 /*  DataTable-component
  * Tabel met sorteer- en zoekfunctionaliteit (client-side).
@@ -38,8 +40,6 @@ const stableSort = <T,>(arr: readonly T[], cmp: (x: T, y: T) => number): T[] =>
 /*  Types  */
 
 export type SortDir = 'asc' | 'desc';
-export type RowBase = Record<string, unknown>;
-
 export type Column<T extends RowBase> = {
     key: keyof T & string;
     header?: React.ReactNode;
