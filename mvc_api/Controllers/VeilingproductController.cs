@@ -16,14 +16,14 @@ public class VeilingproductController : ControllerBase
 
     // Response DTO's
     public sealed record VpList(
-        int VeilingProductNr,
+        int? VeilingProductNr,
         string Naam,
         DateTime GeplaatstDatum,
-        int Fust,
+        int? Fust,
         int Voorraad,
         decimal Startprijs,
         string? Categorie,
-        int VeilingNr
+        int? VeilingNr
     );
 
     public sealed record VBList(int BiedNr, decimal BedragPerFust, int AantalStuks, int GebruikerNr);

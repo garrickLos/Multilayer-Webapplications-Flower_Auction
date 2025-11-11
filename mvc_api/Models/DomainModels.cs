@@ -100,6 +100,22 @@ public class Veilingproduct
     public virtual Veiling? Veiling { get; set; }
 }
 
+//tijdelijk
+[Table("Tijdelijk")]
+public class TijdelijkProduct
+{
+    [Key]
+    public string? Naam { get; set; }
+    public string? Categorie { get; set; }
+    public int? Voorraad { get; set; }
+    public string? Plaats { get; set; }
+    public decimal? MinimalePrijs { get; set; }
+    public decimal? StartPrijs { get; set; }
+    public DateOnly? StartDatum { get; set; }
+    public DateOnly? EindDatum { get; set; }
+}
+
+
 // Categorie
 [Table("Categorie")]
 public class Categorie
