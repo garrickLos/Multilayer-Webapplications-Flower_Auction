@@ -1,4 +1,4 @@
-import type { TabKey } from './types';
+import type { TabKey } from './types/types.ts';
 
 type TabIds = Record<TabKey, { tab: string; panel: string }>;
 

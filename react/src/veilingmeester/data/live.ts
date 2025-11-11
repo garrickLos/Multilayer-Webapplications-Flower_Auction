@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { apiGetWithMeta, isNonEmpty, stableStringify, isAbort } from './utils';
-import type { Query } from '../types';
+import type { Query } from '../types/types.ts';
 
 /* -------------------------------------------------------------------------- */
 /* Core live cache                                                            */

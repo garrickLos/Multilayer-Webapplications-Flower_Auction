@@ -1,4 +1,4 @@
-import type { RowBase } from '../types';
+import type { RowBase } from '../types/types.ts';
 import { useSearchPagination, type SearchPaginationState } from './useSearchPagination';
 import {
     useSearchableLiveRows,

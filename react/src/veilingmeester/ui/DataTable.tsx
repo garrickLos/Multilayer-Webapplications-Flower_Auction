@@ -12,7 +12,7 @@ import type {
     ReactElement,
     ReactNode,
 } from 'react';
-import type { RowBase } from '../types';
+import type { RowBase } from '../types/types.ts';
 
 const classNames = (...classes: Array<string | false | null | undefined>) =>
     classes.filter(Boolean).join(' ');

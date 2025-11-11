@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { DEFAULT_PAGE_SIZE } from '../config';
 import { useSearchTableSection } from './useSearchTableSection';
 import { formatCurrency, formatDateTime } from '../utils/format';
-import type { Veiling, VeilingRow } from '../types';
+import type { Veiling, VeilingRow } from '../types/types.ts';
 
 export function useVeilingRows() {
     const mapRow = useCallback(

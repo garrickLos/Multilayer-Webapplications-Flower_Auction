@@ -1,11 +1,6 @@
 // src/veilingmeester/data/utils.ts
 
-import type { Categorie, MaybeNumber, Query } from '../types';
-
-/** Exhaustive type-check helper voor switch-statements. */
-export const assertNever = (x: never, msg = 'Unexpected variant'): never => {
-    throw new Error(`${msg}: ${String(x)}`);
-};
+import type { Categorie, MaybeNumber, Query } from '../types/types.ts';
 
 /* -------------------------------------------------------------------------- */
 /* Kleine helpers                                                             */
@@ -22,29 +17,6 @@ export const isAbort = (e: unknown): e is DOMException | Error => {
         a?.code === 20
     );
 };
-
-export const toIntOrUndef = (v: MaybeNumber): number | undefined => {
-    if (!isNonEmpty(v)) return;
-    const num =
-        typeof v === 'number'
-            ? v
-            : Number(String(v).trim().replace(/,([0-9]+)/, '.$1'));
-    return Number.isFinite(num) ? num : undefined;
-};
-
-export const getCategorieId = (c: Categorie) =>
-    typeof c.categorieNr === 'number'
-        ? c.categorieNr
-        : typeof c.id === 'number'
-            ? c.id
-            : undefined;
-
-export const getCategorieNaam = (c: Categorie) =>
-    typeof c.naam === 'string'
-        ? c.naam
-        : typeof c.name === 'string'
-            ? c.name
-            : '';
 
 export { normalizeForSearch, rowToSearchString } from '../utils/search';
 
@@ -283,11 +255,6 @@ async function getWithRetry<T>(
         }
     }
 }
-
-export const apiGet = async <T>(
-    path: string,
-    opt: GetOptions = {},
-): Promise<T> => getWithRetry<T>(path, opt, false);
 
 export const apiGetWithMeta = async <T>(
     path: string,

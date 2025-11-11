@@ -4,7 +4,7 @@ import DataTable, { type Column } from './DataTable';
 import { Empty, Loading } from './components';
 import { formatCurrency, formatDateTime, parseLocaleNumber } from '../utils/format';
 import { useVeilingProducts, type VeilingDetail, type VeilingProductRow } from '../hooks/useVeilingProducts';
-import type { VeilingProductItem } from '../types';
+import type { VeilingProductItem } from '../types/types.ts';
 
 type VeilingModalProps = {
     veilingId: number;

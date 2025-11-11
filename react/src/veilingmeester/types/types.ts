@@ -1,3 +1,4 @@
+// api
 export type MaybeNumber = number | '' | null | undefined;
 
 export type Bieding = Partial<{
@@ -48,3 +49,49 @@ export type Categorie = Partial<{
     name: string;
 }> &
     Record<string, unknown>;
+
+
+// http
+
+export type QueryValue =
+    | string
+    | number
+    | boolean
+    | Date
+    | readonly (string | number | boolean | Date)[]
+    | undefined;
+
+export type Query = Readonly<Record<string, QueryValue>>;
+
+// rows
+
+export type RowBase = Record<string, unknown>;
+
+export type BidRow = RowBase & {
+    id: number | string;
+    biedNr: number | string;
+    gebruiker: string | number;
+    veiling: string | number;
+    bedragPerFust: number | string;
+    aantalStuks: number | string;
+};
+
+export type VeilingRow = RowBase & {
+    id: number | string;
+    veilingNr: number | undefined;
+    begintijd: string;
+    eindtijd: string;
+    status: string | undefined;
+    minimumprijs: string;
+    aantalProducten: number;
+};
+
+
+// tabs
+
+export type TabKey = 'biedingen' | 'veilingen';
+
+export type TabDefinition = {
+    key: TabKey;
+    label: string;
+};

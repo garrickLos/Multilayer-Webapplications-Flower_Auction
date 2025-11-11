@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { DEFAULT_PAGE_SIZE } from '../config';
 import { useLiveNameCache } from './useLiveNameCache';
 import { useSearchTableSection } from './useSearchTableSection';
-import type { BidRow, Bieding } from '../types';
+import type { BidRow, Bieding } from '../types/types.ts';
 
 export function useBidRows() {
     const { gebruikersMap, veilingenMap, fetchGebruikers, fetchVeilingen } =

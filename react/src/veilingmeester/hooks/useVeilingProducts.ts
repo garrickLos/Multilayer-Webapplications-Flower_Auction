@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLiveData } from '../data/live';
 import { formatCurrency, parseLocaleNumber } from '../utils/format';
 import { toErrorMessage } from '../utils/errors';
-import type { RowBase, Veiling, VeilingProductItem } from '../types';
+import type { RowBase, Veiling, VeilingProductItem } from '../types/types.ts';
 
 export type VeilingProductRow = RowBase & {
     id: number | string;

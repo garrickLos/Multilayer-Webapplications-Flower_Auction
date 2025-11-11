@@ -1,7 +1,7 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import DataTable, { type DataTableProps } from './DataTable';
 import { SearchInput, SelectSm, Loading, Empty, Pager } from './components';
-import type { RowBase } from '../types';
+import type { RowBase } from '../types/types.ts';
 
 export type SearchFieldProps = {
     id: string;
