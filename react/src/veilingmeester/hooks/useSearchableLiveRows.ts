@@ -6,6 +6,14 @@ import { useDebouncedValue } from './useDebouncedValue';
 import { splitSearchTokens, rowToSearchString, matchesSearchTokens } from '../utils/search';
 import { toErrorMessage } from '../utils/errors';
 
+export type SearchableLiveRowsResult<TSource, TRow extends RowBase> = {
+    rows: readonly TRow[];
+    loading: boolean;
+    error: string | null;
+    hasNext: boolean;
+    sourceRows: readonly TSource[];
+};
+
 export type UseSearchableLiveRowsOptions<TSource, TRow extends RowBase> = {
     page: number;
     pageSize: number;
@@ -31,7 +39,7 @@ export type UseSearchableLiveRowsOptions<TSource, TRow extends RowBase> = {
 
 export function useSearchableLiveRows<TSource, TRow extends RowBase>(
     options: UseSearchableLiveRowsOptions<TSource, TRow>,
-) {
+): SearchableLiveRowsResult<TSource, TRow> {
     const {
         page,
         pageSize,

@@ -1,87 +1,35 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type FC } from 'react';
 import SearchTableSection from './ui/SearchTableSection';
 import { FilterChip } from './ui/components';
 import VeilingModal from './ui/VeilingModal';
-import { useSearchPagination } from './hooks/useSearchPagination';
-import { useSearchableLiveRows } from './hooks/useSearchableLiveRows';
-import { useLiveNameCache } from './hooks/useLiveNameCache';
-import { DEFAULT_PAGE_SIZE, TAB_IDS } from './constants';
-import { formatCurrency, formatDateTime } from './utils/format';
+import { TAB_IDS } from './constants';
 import type { BidRow, TabKey, VeilingRow } from './types';
-import type { Bieding, Veiling } from './data/utils';
+import { useBidRows } from './hooks/useBidRows';
+import { useVeilingRows } from './hooks/useVeilingRows';
+
+type SectionConfig = {
+    key: TabKey;
+    label: string;
+    Component: FC<SectionProps>;
+};
 
 type SectionProps = {
     hidden: boolean;
 };
 
 function BidsSection({ hidden }: SectionProps) {
-    const { page, setPage, pageSize, setPageSize, search, setSearch } =
-        useSearchPagination(DEFAULT_PAGE_SIZE);
-
-    const { gebruikersMap, veilingenMap, fetchGebruikers, fetchVeilingen } =
-        useLiveNameCache();
-
-    const handleSourceChange = useCallback(
-        (rows: readonly Bieding[]) => {
-            if (!rows.length) return;
-            const gebruikerIds = new Set<number>();
-            const veilingIds = new Set<number>();
-
-            rows.forEach(row => {
-                if (typeof row.gebruikerNr === 'number') {
-                    gebruikerIds.add(row.gebruikerNr);
-                }
-                if (typeof row.veilingNr === 'number') {
-                    veilingIds.add(row.veilingNr);
-                }
-            });
-
-            if (gebruikerIds.size) fetchGebruikers([...gebruikerIds]);
-            if (veilingIds.size) fetchVeilingen([...veilingIds]);
-        },
-        [fetchGebruikers, fetchVeilingen],
-    );
-
-    const mapRow = useCallback(
-        (row: Bieding, index: number): BidRow => {
-            const gebruikerNr = row.gebruikerNr;
-            const veilingNr = row.veilingNr;
-
-            return {
-                id: row.biedNr ?? index,
-                biedNr: row.biedNr ?? '',
-                gebruiker:
-                    gebruikerNr != null
-                        ? gebruikersMap[gebruikerNr] ?? gebruikerNr
-                        : '',
-                veiling:
-                    veilingNr != null
-                        ? veilingenMap[veilingNr] ?? veilingNr
-                        : '',
-                bedragPerFust: row.bedragPerFust ?? '',
-                aantalStuks: row.aantalStuks ?? '',
-            };
-        },
-        [gebruikersMap, veilingenMap],
-    );
-
-    const { rows, loading, error, hasNext } = useSearchableLiveRows<
-        Bieding,
-        BidRow
-    >({
+    const {
+        rows,
+        loading,
+        error,
+        hasNext,
         page,
+        setPage,
         pageSize,
-        query: search,
-        fetch: {
-            path: '/api/Bieding',
-            paramsKey: 'bids|all',
-            refreshMs: 1_000,
-            revalidateOnFocus: true,
-        },
-        mapRow,
-        errorMessage: 'Kon biedingen niet laden',
-        onSourceChange: handleSourceChange,
-    });
+        setPageSize,
+        search,
+        setSearch,
+    } = useBidRows();
 
     const trimmedQuery = search.trim();
 
@@ -127,6 +75,10 @@ function BidsSection({ hidden }: SectionProps) {
 
 function VeilingenSection({ hidden }: SectionProps) {
     const {
+        rows,
+        loading,
+        error,
+        hasNext,
         page,
         setPage,
         pageSize,
@@ -134,42 +86,10 @@ function VeilingenSection({ hidden }: SectionProps) {
         search,
         setSearch,
         reset,
-    } = useSearchPagination(DEFAULT_PAGE_SIZE);
+    } = useVeilingRows();
     const [selectedVeilingId, setSelectedVeilingId] = useState<number | null>(
         null,
     );
-
-    const mapRow = useCallback(
-        (row: Veiling, index: number): VeilingRow => ({
-            id: row.veilingNr ?? index,
-            veilingNr: row.veilingNr,
-            begintijd: formatDateTime(row.begintijd),
-            eindtijd: formatDateTime(row.eindtijd),
-            status: row.status ?? undefined,
-            minimumprijs: formatCurrency(row.minimumprijs),
-            aantalProducten: Array.isArray(row.producten)
-                ? row.producten.length
-                : 0,
-        }),
-        [],
-    );
-
-    const { rows, loading, error, hasNext } = useSearchableLiveRows<
-        Veiling,
-        VeilingRow
-    >({
-        page,
-        pageSize,
-        query: search,
-        fetch: {
-            path: '/api/Veiling',
-            paramsKey: 'auctions|all',
-            refreshMs: 5_000,
-            revalidateOnFocus: true,
-        },
-        mapRow,
-        errorMessage: 'Kon veilingen niet laden',
-    });
 
     const trimmedSearch = search.trim();
 
@@ -250,6 +170,11 @@ function VeilingenSection({ hidden }: SectionProps) {
     );
 }
 
+const SECTION_CONFIGS: SectionConfig[] = [
+    { key: 'biedingen', label: 'Biedingen', Component: BidsSection },
+    { key: 'veilingen', label: 'Veilingen', Component: VeilingenSection },
+];
+
 export default function Veilingmeester() {
     const [tab, setTab] = useState<TabKey>('veilingen');
 
@@ -267,7 +192,7 @@ export default function Veilingmeester() {
                 role="tablist"
                 aria-label="Hoofdtabbladen"
             >
-                {(['biedingen', 'veilingen'] as const).map(key => (
+                {SECTION_CONFIGS.map(({ key, label }) => (
                     <li key={key} className="nav-item" role="presentation">
                         <button
                             id={TAB_IDS[key].tab}
@@ -277,14 +202,15 @@ export default function Veilingmeester() {
                             aria-selected={tab === key}
                             aria-controls={TAB_IDS[key].panel}
                         >
-                            {key[0].toUpperCase() + key.slice(1)}
+                            {label}
                         </button>
                     </li>
                 ))}
             </ul>
 
-            <BidsSection hidden={tab !== 'biedingen'} />
-            <VeilingenSection hidden={tab !== 'veilingen'} />
+            {SECTION_CONFIGS.map(({ key, Component }) => (
+                <Component key={key} hidden={tab !== key} />
+            ))}
         </div>
     );
 }
