@@ -218,17 +218,8 @@ export function useLiveData<T>(path: string, options: LiveOptions = {}) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Debounce + paginated helpers                                               */
+/* Paginatie helpers                                                           */
 /* -------------------------------------------------------------------------- */
-
-export function useDebounced<T>(value: T, ms = 250) {
-    const [v, setV] = useState(value);
-    useEffect(() => {
-        const id = setTimeout(() => setV(value), ms);
-        return () => clearTimeout(id);
-    }, [value, ms]);
-    return v;
-}
 
 /**
  * Eénmalige paginated fetcher (zonder live cache).

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { liveGet } from './live';
+import { liveGet } from '../data/live';
 
 type Watcher<T = any> = {
     start: () => Promise<void>;

@@ -1,55 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Modal from './Modal';
-import DataTable, { type Column, type RowBase } from './DataTable';
+import DataTable, { type Column } from './DataTable';
 import { useLiveData } from '../data/live';
 import { Empty, Loading } from './components';
-
-/* Helpers */
-
-const dateFormatter = new Intl.DateTimeFormat('nl-NL', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-});
-
-const currencyFormatter = new Intl.NumberFormat('nl-NL', {
-    style: 'currency',
-    currency: 'EUR',
-});
-
-const fmtDate = (d?: string | null) => {
-    if (!d) return '';
-    const date = new Date(d);
-    if (Number.isNaN(date.getTime())) return '';
-    return dateFormatter.format(date);
-};
-
-const fmtEur = (n?: number | string | null) => {
-    if (n == null || n === '') return '';
-    const raw =
-        typeof n === 'string'
-            // duizendtallen eruit, komma naar punt
-            ? n.replace(/\./g, '').replace(',', '.')
-            : n;
-    const value = Number(raw);
-    if (!Number.isFinite(value)) return '';
-    return currencyFormatter.format(value);
-};
-
-const normalizeNumber = (value: number | string | null | undefined): number => {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string') {
-        const n = Number(value.replace(/\./g, '').replace(',', '.'));
-        return Number.isFinite(n) ? n : 0;
-    }
-    return 0;
-};
-
-const toErrorMessage = (err: unknown, fallback: string): string | null => {
-    if (!err) return null;
-    if (err instanceof Error) return err.message;
-    if (typeof err === 'string') return err;
-    return fallback;
-};
+import { formatCurrency, formatDateTime, parseLocaleNumber } from '../utils/format';
+import { toErrorMessage } from '../utils/errors';
+import type { RowBase } from '../types';
 
 /* Types */
 
@@ -104,13 +60,13 @@ function useVeilingProducts(veilingId: number) {
     const rows: ProductRow[] = useMemo(
         () =>
             veiling?.producten?.map((p, index): ProductRow => {
-                const startprijsValue = normalizeNumber(p.startprijs);
+                const startprijsValue = parseLocaleNumber(p.startprijs);
                 const naam = (p.naam ?? '').trim();
                 return {
                     id: p.veilingProductNr ?? index,
                     veilingProductNr: p.veilingProductNr ?? '',
                     naam,
-                    startprijs: fmtEur(startprijsValue),
+                    startprijs: formatCurrency(startprijsValue),
                     startprijsValue,
                     voorraad: p.voorraad ?? '',
                     afbeeldingUrl: p.afbeeldingUrl ?? undefined,
@@ -136,7 +92,7 @@ function computeCurrentPrice(
     nowMs: number,
 ): number {
     const base = row.startprijsValue; // startprijs = max
-    const min = normalizeNumber(veiling.minimumprijs); // minimumprijs = bodem
+    const min = parseLocaleNumber(veiling.minimumprijs); // minimumprijs = bodem
 
     if (base <= min) return min;
 
@@ -249,7 +205,7 @@ export default function VeilingModal({
                     ) : (
                         <div className="d-flex flex-column align-items-center small">
                             <span className="fw-semibold">
-                                {fmtEur(getCurrentPrice(row))}
+                                {formatCurrency(getCurrentPrice(row))}
                             </span>
                             <span
                                 className={
@@ -362,7 +318,7 @@ export default function VeilingModal({
                                 <div className="text-muted mb-3">
                                     Veiling #{titelVeilingNr}
                                     {veiling.minimumprijs != null && (
-                                        <> · min. {fmtEur(veiling.minimumprijs)}</>
+                                        <> · min. {formatCurrency(veiling.minimumprijs)}</>
                                     )}
                                 </div>
 
@@ -380,17 +336,19 @@ export default function VeilingModal({
                                 <ul className="list-group list-group-flush">
                                     <li className="list-group-item d-flex justify-content-between align-items-center px-0">
                                         <span className="text-muted">Begintijd</span>
-                                        <span>{fmtDate(veiling.begintijd)}</span>
+                                        <span>{formatDateTime(veiling.begintijd)}</span>
                                     </li>
                                     <li className="list-group-item d-flex justify-content-between align-items-center px-0">
                                         <span className="text-muted">Eindtijd</span>
-                                        <span>{fmtDate(veiling.eindtijd)}</span>
+                                        <span>{formatDateTime(veiling.eindtijd)}</span>
                                     </li>
                                     {selectedProduct && (
                                         <>
                                             <li className="list-group-item d-flex justify-content-between align-items-center px-0">
                                                 <span className="text-muted">Startprijs</span>
-                                                <strong>{fmtEur(selectedProduct.startprijs)}</strong>
+                                                <strong>
+                                                    {formatCurrency(selectedProduct.startprijs)}
+                                                </strong>
                                             </li>
                                             {selectedRow && (
                                                 <li className="list-group-item d-flex justify-content-between align-items-center px-0">
@@ -398,7 +356,9 @@ export default function VeilingModal({
                                                         Huidige klokprijs
                                                     </span>
                                                     <strong>
-                                                        {fmtEur(getCurrentPrice(selectedRow))}
+                                                        {formatCurrency(
+                                                            getCurrentPrice(selectedRow),
+                                                        )}
                                                     </strong>
                                                 </li>
                                             )}

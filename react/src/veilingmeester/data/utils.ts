@@ -97,56 +97,7 @@ export const getCategorieNaam = (c: Categorie) =>
             ? c.name
             : '';
 
-export const normalizeForSearch = (s: string) =>
-    (s || '')
-        .normalize('NFKD')
-        // diacritics weg
-        .replace(/\p{M}/gu, '')
-        // control chars naar spatie
-        .replace(/\p{Cc}+/gu, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
-
-export function rowToSearchString(
-    row: Record<string, unknown>,
-    maxNodes = 5_000,
-    maxLen = 100_000,
-): string {
-    const out: string[] = [];
-    const stack: unknown[] = [row];
-    const seen = new WeakSet<object>();
-    let nodes = 0;
-
-    while (stack.length && nodes < maxNodes) {
-        const v = stack.pop();
-        if (v == null) {
-            nodes++;
-            continue;
-        }
-        const t = typeof v;
-
-        if (
-            t === 'string' ||
-            t === 'number' ||
-            t === 'boolean' ||
-            t === 'bigint'
-        ) {
-            out.push(String(v));
-        } else if (v instanceof Date && !Number.isNaN(v.getTime())) {
-            out.push(v.toISOString());
-        } else if (Array.isArray(v)) {
-            stack.push(...v);
-        } else if (t === 'object' && !seen.has(v as object)) {
-            seen.add(v as object);
-            stack.push(...Object.values(v as Record<string, unknown>));
-        }
-        nodes++;
-    }
-
-    const result = normalizeForSearch(out.join(' '));
-    return result.length > maxLen ? result.slice(0, maxLen) : result;
-}
+export { normalizeForSearch, rowToSearchString } from '../utils/search';
 
 /* -------------------------------------------------------------------------- */
 /* Stable JSON                                                                */
