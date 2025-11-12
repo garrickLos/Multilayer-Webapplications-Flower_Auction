@@ -82,55 +82,55 @@ export default function PrivacyScherm() {
     );
 }
 
-// interface ContentBlock {
-//     type: 'paragraph' | 'list';
-//     content: string | string[]; // Content is een string OF een array van strings
-// }
+interface ContentBlock {
+    type: 'paragraph' | 'list';
+    content: string | string[]; // Content is een string OF een array van strings
+}
 
 interface PrivacyItemProps {
     paragraph?: string;
     list?: string[];
 }
 
-// // Component om te renderen
-// const PrivacyItems: React.FC<PrivacyItemProps> = ({ paragraph, list }) => {
-//     if (paragraph) {
-//         return <div><p>{paragraph}</p></div>;
-//     }
-//     if (list) {
-//         return (
-//             <div>
-//                 <ul>
-//                     {list.map((item, index) => <li key={index}>{item}</li>)}
-//                 </ul>
-//             </div>
-//         );
-//     }
-//     return null;
-// };
-//
-// // De render-functie (verwacht de "Ideale" structuur)
-// const renderContent = (items: ContentBlock[]) => {
-//     if (!items || items.length === 0) return <div>Geen items gevonden.</div>;
-//
-//     return items.map((item, index) => {
-//         switch (item.type) {
-//             case 'paragraph':
-//                 return (
-//                     <PrivacyItems
-//                         key={index}
-//                         paragraph={item.content as string}
-//                     />
-//                 );
-//             case 'list':
-//                 return (
-//                     <PrivacyItems
-//                         key={index}
-//                         list={item.content as string[]}
-//                     />
-//                 );
-//             default:
-//                 return null;
-//         }
-//     });
-// };
+// Component om te renderen
+const PrivacyItems: React.FC<PrivacyItemProps> = ({ paragraph, list }) => {
+    if (paragraph) {
+        return <div><p>{paragraph}</p></div>;
+    }
+    if (list) {
+        return (
+            <div>
+                <ul>
+                    {list.map((item, index) => <li key={index}>{item}</li>)}
+                </ul>
+            </div>
+        );
+    }
+    return null;
+};
+
+// De render-functie (verwacht de "Ideale" structuur)
+const renderContent = (items: ContentBlock[]) => {
+    if (!items || items.length === 0) return <div>Geen items gevonden.</div>;
+
+    return items.map((item, index) => {
+        switch (item.type) {
+            case 'paragraph':
+                return (
+                    <PrivacyItems
+                        key={index}
+                        paragraph={item.content as string}
+                    />
+                );
+            case 'list':
+                return (
+                    <PrivacyItems
+                        key={index}
+                        list={item.content as string[]}
+                    />
+                );
+            default:
+                return null;
+        }
+    });
+};

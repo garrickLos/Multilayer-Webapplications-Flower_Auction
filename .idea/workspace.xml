@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="232f1e32-7561-44ba-a34a-9f4a74239908" name="Changes" comment="" />
+    <list default="true" id="232f1e32-7561-44ba-a34a-9f4a74239908" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/mvc_api/obj/Debug/net9.0/mvc_api.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/obj/Debug/net9.0/mvc_api.AssemblyInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/obj/Debug/net9.0/mvc_api.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/obj/Debug/net9.0/mvc_api.AssemblyInfoInputs.cache" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,7 +31,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "bayramm",
+    "git-widget-placeholder": "nieuw-bayram",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -63,7 +66,11 @@
       <updated>1761734499517</updated>
       <workItem from="1761734502207" duration="4000" />
       <workItem from="1761816972213" duration="24000" />
+      <workItem from="1762941657253" duration="619000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
 </project>
