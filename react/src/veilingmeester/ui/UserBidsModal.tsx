@@ -1,44 +1,46 @@
-import { useMemo } from 'react';
-import Modal from './Modal';
-import DataTable, { type Column } from './DataTable';
-import { Empty, Loading, Pager, SearchInput, SelectSm } from './components';
-import { useUserBids } from '../hooks';
-import { formatCurrency } from '../utils/format';
-import type { UserBidRow } from '../types/types.ts';
+import { useMemo, useId, type ReactElement } from "react";
+import Modal from "./Modal";
+import DataTable, { type Column } from "./DataTable";
+import { Empty, Loading, Pager, SearchInput, SelectSm, SelectStatusSm } from "./components";
+import { useUserBids } from "../hooks";
+import { formatCurrency } from "../utils/format";
+import type { UserBidRow } from "../types/types.ts";
+
+/* Kolommenconfiguratie */
+const COLUMNS: ReadonlyArray<Column<UserBidRow>> = [
+    { key: "biedNr", header: "#", width: 90, className: "text-nowrap", sortable: true },
+    { key: "veiling", header: "Veiling", sortable: true },
+    {
+        key: "bedragPerFust",
+        header: "Bedrag per fust",
+        className: "text-end text-nowrap",
+        sortable: true,
+        render: (value) => formatCurrency(value as number | string),
+    },
+    {
+        key: "aantalStuks",
+        header: "Aantal",
+        className: "text-end text-nowrap",
+        sortable: true,
+    },
+    { key: "status", header: "Status bod", sortable: true },
+    { key: "datum", header: "Datum", sortable: true },
+];
 
 type UserBidsModalProps = {
     userId: string | number;
     onClose: () => void;
 };
 
-const formatStatusLabel = (value: string) => {
-    if (!value) return '';
-    const trimmed = value.trim();
-    if (!trimmed) return '';
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-};
+export default function UserBidsModal({ userId, onClose }: UserBidsModalProps): ReactElement {
+    const ids = {
+        search: useId(),
+        status: useId(),
+        from: useId(),
+        to: useId(),
+        error: useId(),
+    };
 
-const COLUMNS: ReadonlyArray<Column<UserBidRow>> = [
-    { key: 'biedNr', header: '#', width: 90, className: 'text-nowrap', sortable: true },
-    { key: 'veiling', header: 'Veiling', sortable: true },
-    {
-        key: 'bedragPerFust',
-        header: 'Bedrag per fust',
-        className: 'text-end text-nowrap',
-        sortable: true,
-        render: value => formatCurrency(value as number | string),
-    },
-    {
-        key: 'aantalStuks',
-        header: 'Aantal',
-        className: 'text-end text-nowrap',
-        sortable: true,
-    },
-    { key: 'status', header: 'Status bod', sortable: true },
-    { key: 'datum', header: 'Datum', sortable: true },
-];
-
-export default function UserBidsModal({ userId, onClose }: UserBidsModalProps) {
     const {
         rows,
         loading,
@@ -56,106 +58,99 @@ export default function UserBidsModal({ userId, onClose }: UserBidsModalProps) {
         setFrom,
         to,
         setTo,
-        statusOptions,
         reset,
     } = useUserBids(userId);
 
-    const statusOptionItems = useMemo(
-        () =>
-            statusOptions.map(option => ({
-                value: option,
-                label: option === 'alle' ? 'Alle' : formatStatusLabel(option),
-            })),
-        [statusOptions],
+    // Datumvalidatie
+    const dateError = useMemo(() => (from && to && from > to ? "De einddatum valt vóór de startdatum." : null), [from, to]);
+
+    const fromAttrs = useMemo(
+        () => ({ id: ids.from, type: "date" as const, max: to || undefined, value: from || "" }),
+        [ids.from, to, from]
+    );
+    const toAttrs = useMemo(
+        () => ({ id: ids.to, type: "date" as const, min: from || undefined, value: to || "" }),
+        [ids.to, from, to]
     );
 
     return (
         <Modal
             title={
                 <span>
-                    Biedingen gebruiker <span className="text-muted">#{userId}</span>
-                </span>
+          Biedingen gebruiker <span className="text-muted">#{userId}</span>
+        </span>
             }
             onClose={onClose}
             size="xl"
             fullscreenUntil="lg"
             maxWidthPx={1200}
+            ariaDescription={dateError ?? undefined}
         >
-            <div className="row g-2 align-items-end mb-2">
+            {/* Filters */}
+            <div className="row g-2 align-items-end mb-2" aria-live="polite">
                 <div className="col-12 col-xl-4">
                     <SearchInput
-                        id="user-bids-search"
+                        id={ids.search}
                         label="Zoek in biedingen"
                         value={search}
                         onChange={setSearch}
                         placeholder="bijv. veiling, bedrag, status…"
                     />
                 </div>
+
                 <div className="col-12 col-sm-6 col-xl-2">
-                    <label htmlFor="user-bid-status" className="form-label mb-1">
-                        Status bod
-                    </label>
-                    <select
-                        id="user-bid-status"
-                        className="form-select form-select-sm"
-                        value={status}
-                        onChange={event => setStatus(event.currentTarget.value)}
-                        aria-label="Status bod"
-                    >
-                        {statusOptionItems.map(option => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
+                    <SelectStatusSm
+                        id={ids.status}
+                        label="Status bod"
+                        value={status as "alle" | "actief" | "inactief"}
+                        onChange={(v) => setStatus(v)}
+                    />
                 </div>
+
                 <div className="col-12 col-sm-6 col-xl-2">
-                    <label htmlFor="user-bid-from" className="form-label mb-1">
+                    <label htmlFor={ids.from} className="form-label mb-1">
                         Datum van
                     </label>
                     <input
-                        id="user-bid-from"
-                        type="date"
+                        {...fromAttrs}
                         className="form-control form-control-sm"
-                        value={from}
-                        onChange={event => setFrom(event.currentTarget.value)}
-                        aria-label="Datum van"
+                        onChange={(e) => setFrom(e.currentTarget.value)}
+                        aria-invalid={dateError ? true : undefined}
+                        aria-describedby={dateError ? ids.error : undefined}
                     />
                 </div>
+
                 <div className="col-12 col-sm-6 col-xl-2">
-                    <label htmlFor="user-bid-to" className="form-label mb-1">
+                    <label htmlFor={ids.to} className="form-label mb-1">
                         Datum tot
                     </label>
                     <input
-                        id="user-bid-to"
-                        type="date"
+                        {...toAttrs}
                         className="form-control form-control-sm"
-                        value={to}
-                        onChange={event => setTo(event.currentTarget.value)}
-                        aria-label="Datum tot"
+                        onChange={(e) => setTo(e.currentTarget.value)}
+                        aria-invalid={dateError ? true : undefined}
+                        aria-describedby={dateError ? ids.error : undefined}
                     />
                 </div>
+
                 <div className="col-12 col-sm-6 col-xl-2">
-                    <SelectSm
-                        id="user-bid-page-size"
-                        label="Per pagina"
-                        value={pageSize}
-                        onChange={setPageSize}
-                    />
+                    <SelectSm id="user-bid-page-size" label="Per pagina" value={pageSize} onChange={setPageSize} />
                 </div>
             </div>
 
-            <div className="d-flex justify-content-end mb-3">
-                <button
-                    type="button"
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={reset}
-                    disabled={loading}
-                >
+            {/* Reset en foutmeldingen */}
+            <div className="d-flex justify-content-end mb-3 gap-2">
+                {dateError && (
+                    <div id={ids.error} className="alert alert-warning py-1 px-2 m-0 small" role="alert">
+                        {dateError}
+                    </div>
+                )}
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={reset} disabled={loading}>
                     Reset
                 </button>
             </div>
 
+            {/* Content */}
             {error && (
                 <div className="alert alert-danger" role="alert">
                     {error}
@@ -168,20 +163,15 @@ export default function UserBidsModal({ userId, onClose }: UserBidsModalProps) {
                 <DataTable<UserBidRow>
                     rows={rows}
                     columns={COLUMNS}
-                    getRowKey={row => row.id}
+                    getRowKey={(r) => r.id}
                     caption="Overzicht van biedingen"
                 />
             ) : (
-                <Empty />
+                <Empty label="Geen biedingen gevonden." />
             )}
 
-            <Pager
-                page={page}
-                setPage={setPage}
-                hasNext={hasNext}
-                loading={loading}
-                total={rows.length}
-            />
+            {/* Paginering */}
+            <Pager page={page} setPage={setPage} hasNext={hasNext} loading={loading} total={rows.length} />
         </Modal>
     );
 }

@@ -1,5 +1,5 @@
-import { useCallback, useState, type FC } from 'react';
-import { TAB_IDS } from './config';
+import { useCallback, useMemo, useState, memo, type ReactElement } from "react";
+import { TAB_IDS } from "./config";
 import {
     FilterChip,
     SearchTableSection,
@@ -7,35 +7,43 @@ import {
     SelectStatusSm,
     UserBidsModal,
     type Column,
-} from './ui/ui.ts';
-import { useUserRows, useVeilingRows } from './hooks';
-import type { TabKey, VeilingRow, UserRow } from './types/types.ts';
+} from "./ui/ui.ts";
+import { useUserRows, useVeilingRows } from "./hooks";
+import type { TabKey, VeilingRow, UserRow } from "./types/types.ts";
 
-type SectionProps = {
-    hidden: boolean;
-};
+/* utils */
+const cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(" ");
 
+/* ---------------- kolommen / labels ---------------- */
+
+const USER_COLUMNS: ReadonlyArray<Column<UserRow>> = [
+    { key: "gebruikerNr", header: "#", width: 80, className: "text-nowrap", sortable: true },
+    { key: "naam", header: "Naam", sortable: true },
+    { key: "email", header: "E-mail", className: "text-nowrap", sortable: true },
+    { key: "status", header: "Status", className: "text-nowrap", sortable: true },
+    { key: "rol", header: "Rol(len)", sortable: true },
+];
+
+const STATUS_LABELS = {
+    alle: "Alle",
+    actief: "Actief",
+    inactief: "Inactief",
+} as const;
+
+/* ---------------- types ---------------- */
+
+type SectionProps = { hidden: boolean };
+
+/** Belangrijk: ComponentType accepteert ook memo/forwardRef en mag ReactElement | null retourneren. */
 type SectionConfig = {
     key: TabKey;
     label: string;
-    Component: FC<SectionProps>;
+    Component: React.ComponentType<SectionProps>;
 };
 
-const USER_COLUMNS: ReadonlyArray<Column<UserRow>> = [
-    { key: 'gebruikerNr', header: '#', width: 80, className: 'text-nowrap', sortable: true },
-    { key: 'naam', header: 'Naam', sortable: true },
-    { key: 'email', header: 'E-mail', className: 'text-nowrap', sortable: true },
-    { key: 'status', header: 'Status', className: 'text-nowrap', sortable: true },
-    { key: 'rol', header: 'Rol(len)', sortable: true },
-];
+/* ---------------- Users ---------------- */
 
-const STATUS_LABELS: Record<'alle' | 'actief' | 'inactief', string> = {
-    alle: 'Alle',
-    actief: 'Actief',
-    inactief: 'Inactief',
-};
-
-const UsersSection: FC<SectionProps> = ({ hidden }) => {
+const UsersSectionInner = ({ hidden }: SectionProps): ReactElement => {
     const {
         rows,
         loading,
@@ -50,20 +58,26 @@ const UsersSection: FC<SectionProps> = ({ hidden }) => {
     } = useUserRows();
 
     const [selectedUserId, setSelectedUserId] = useState<number | string | null>(null);
-
     const trimmedQuery = search.trim();
 
-    const handleRowClick = useCallback(
-        (row: UserRow) => {
-            const identifier = row.gebruikerNr !== '' ? row.gebruikerNr : row.id;
-            if (identifier !== '' && identifier !== null && identifier !== undefined) {
-                setSelectedUserId(identifier);
-            }
-        },
-        [],
-    );
+    const handleRowClick = useCallback((row: UserRow) => {
+        const identifier = row.gebruikerNr !== "" ? row.gebruikerNr : row.id;
+        if (identifier !== "" && identifier != null) {
+            setSelectedUserId(identifier);
+        }
+    }, []);
 
     const closeModal = useCallback(() => setSelectedUserId(null), []);
+
+    const chip = useMemo(
+        () =>
+            trimmedQuery ? (
+                <FilterChip onClear={() => setSearch("")} title="Zoekfilter">
+                    Zoek: “{trimmedQuery}”
+                </FilterChip>
+            ) : undefined,
+        [setSearch, trimmedQuery]
+    );
 
     return (
         <SearchTableSection<UserRow>
@@ -72,19 +86,19 @@ const UsersSection: FC<SectionProps> = ({ hidden }) => {
             hidden={hidden}
             className="mb-4"
             search={{
-                id: 'user-search',
-                label: 'Zoek in users',
+                id: "user-search",
+                label: "Zoek in users",
                 value: search,
                 onChange: setSearch,
-                placeholder: 'bijv. naam, e-mail, rol…',
-                columnClassName: 'col-12 col-md-6',
+                placeholder: "bijv. naam, e-mail, rol…",
+                columnClassName: "col-12 col-md-6",
             }}
             pageSize={{
-                id: 'user-page-size',
-                label: 'Per pagina',
+                id: "user-page-size",
+                label: "Per pagina",
                 value: pageSize,
                 onChange: setPageSize,
-                columnClassName: 'col-12 col-md-3',
+                columnClassName: "col-12 col-md-3",
             }}
             rows={rows}
             loading={loading}
@@ -96,28 +110,24 @@ const UsersSection: FC<SectionProps> = ({ hidden }) => {
                 loading,
                 total: rows.length,
             }}
-            filterChips={
-                trimmedQuery ? (
-                    <FilterChip onClear={() => setSearch('')} title="Zoekfilter">
-                        Zoek: “{trimmedQuery}”
-                    </FilterChip>
-                ) : undefined
-            }
+            filterChips={chip}
             tableProps={{
                 onRowClick: handleRowClick,
-                getRowKey: row => row.id,
-                caption: 'Klik een gebruiker voor biedingen',
+                getRowKey: (row) => row.id,
+                caption: "Klik een gebruiker voor biedingen",
                 columns: USER_COLUMNS,
             }}
         >
-            {selectedUserId != null && (
-                <UserBidsModal userId={selectedUserId} onClose={closeModal} />
-            )}
+            {selectedUserId != null && <UserBidsModal userId={selectedUserId} onClose={closeModal} />}
         </SearchTableSection>
     );
 };
 
-const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
+const UsersSection = memo(UsersSectionInner);
+
+/* ---------------- Veilingen ---------------- */
+
+const VeilingenSectionInner = ({ hidden }: SectionProps): ReactElement => {
     const {
         rows,
         loading,
@@ -137,30 +147,27 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
     const [selectedVeilingId, setSelectedVeilingId] = useState<number | null>(null);
     const trimmedSearch = search.trim();
 
-    const handleRowClick = useCallback(
-        (row: VeilingRow) => {
-            if (row.veilingNr != null) {
-                setSelectedVeilingId(row.veilingNr);
-            }
-        },
-        [],
-    );
+    const handleRowClick = useCallback((row: VeilingRow) => {
+        if (row.veilingNr != null) setSelectedVeilingId(row.veilingNr);
+    }, []);
 
-    const filterChips =
-        trimmedSearch || status !== 'alle' ? (
+    const filterChips = useMemo(() => {
+        if (!trimmedSearch && status === "alle") return undefined;
+        return (
             <>
                 {trimmedSearch && (
-                    <FilterChip onClear={() => setSearch('')} title="Zoekfilter">
+                    <FilterChip onClear={() => setSearch("")} title="Zoekfilter">
                         Zoek: “{trimmedSearch}”
                     </FilterChip>
                 )}
-                {status !== 'alle' && (
-                    <FilterChip onClear={() => setStatus('alle')} title="Statusfilter">
+                {status !== "alle" && (
+                    <FilterChip onClear={() => setStatus("alle")} title="Statusfilter">
                         Status: {STATUS_LABELS[status]}
                     </FilterChip>
                 )}
             </>
-        ) : undefined;
+        );
+    }, [trimmedSearch, status, setSearch, setStatus]);
 
     return (
         <SearchTableSection<VeilingRow>
@@ -168,19 +175,19 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
             tabId={TAB_IDS.veilingen.tab}
             hidden={hidden}
             search={{
-                id: 'veiling-search',
-                label: 'Zoek in veilingen',
+                id: "veiling-search",
+                label: "Zoek in veilingen",
                 value: search,
                 onChange: setSearch,
-                placeholder: 'bijv. status, nummer, bedrag…',
-                columnClassName: 'col-12 col-md-6',
+                placeholder: "bijv. status, nummer, bedrag…",
+                columnClassName: "col-12 col-md-6",
             }}
             pageSize={{
-                id: 'veiling-page-size',
-                label: 'Per pagina',
+                id: "veiling-page-size",
+                label: "Per pagina",
                 value: pageSize,
                 onChange: setPageSize,
-                columnClassName: 'col-12 col-md-3',
+                columnClassName: "col-12 col-md-3",
             }}
             extraFilterColumns={
                 <>
@@ -195,7 +202,7 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
                         <button
                             type="button"
                             className="btn btn-outline-secondary btn-sm"
-                            onClick={() => reset()}
+                            onClick={reset}
                             disabled={loading}
                             aria-label="Reset"
                         >
@@ -217,26 +224,29 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
             filterChips={filterChips}
             tableProps={{
                 onRowClick: handleRowClick,
-                caption: 'Klik een veiling voor producten',
+                caption: "Klik een veiling voor producten",
             }}
         >
             {selectedVeilingId != null && (
-                <VeilingModal
-                    veilingId={selectedVeilingId}
-                    onClose={() => setSelectedVeilingId(null)}
-                />
+                <VeilingModal veilingId={selectedVeilingId} onClose={() => setSelectedVeilingId(null)} />
             )}
         </SearchTableSection>
     );
 };
 
-const SECTIONS: SectionConfig[] = [
-    { key: 'users', label: 'Users', Component: UsersSection },
-    { key: 'veilingen', label: 'Veilingen', Component: VeilingenSection },
+const VeilingenSection = memo(VeilingenSectionInner);
+
+/* ---------------- configuratie ---------------- */
+
+const SECTIONS: ReadonlyArray<SectionConfig> = [
+    { key: "users", label: "Users", Component: UsersSection },
+    { key: "veilingen", label: "Veilingen", Component: VeilingenSection },
 ];
 
-export default function Veilingmeester() {
-    const [tab, setTab] = useState<TabKey>('veilingen');
+/* ---------------- root ---------------- */
+
+export default function Veilingmeester(): ReactElement {
+    const [tab, setTab] = useState<TabKey>("veilingen");
 
     return (
         <div className="container py-4">
@@ -250,7 +260,7 @@ export default function Veilingmeester() {
                     <li key={key} className="nav-item" role="presentation">
                         <button
                             id={TAB_IDS[key].tab}
-                            className={`nav-link ${tab === key ? 'active' : ''}`}
+                            className={cx("nav-link", tab === key && "active")}
                             onClick={() => setTab(key)}
                             role="tab"
                             aria-selected={tab === key}

@@ -1,144 +1,146 @@
-import { memo, useId, useMemo, useState, type KeyboardEventHandler } from 'react';
-import type {
-    AriaAttributes,
-    CSSProperties,
-    Key,
-    ReactElement,
-    ReactNode,
-} from 'react';
-import type { RowBase } from '../types/types.ts';
+import {
+    memo,
+    useId,
+    useMemo,
+    useState,
+    useCallback,
+    type KeyboardEventHandler,
+    type ReactElement,
+    type ReactNode,
+} from "react";
+import type { AriaAttributes, CSSProperties, Key } from "react";
+import type { RowBase } from "../types/types.ts";
 
-const classNames = (...classes: Array<string | false | null | undefined>) =>
-    classes.filter(Boolean).join(' ');
-
-const stringifyValue = (value: unknown): string => {
-    if (value == null) return '';
-    if (value instanceof Date) return value.toISOString();
-    if (typeof value === 'object') {
-        try {
-            return JSON.stringify(value);
-        } catch {
-            return '';
-        }
-    }
-    return String(value);
+/* utils */
+const cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(" ");
+const stringify = (v: unknown): string => {
+    if (v == null) return "";
+    if (v instanceof Date) return v.toISOString();
+    if (typeof v === "object") try { return JSON.stringify(v); } catch { return ""; }
+    return String(v);
 };
+const collator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
+const compareText = (l: string, r: string) => collator.compare(l, r);
+const stableSort = <T,>(arr: readonly T[], cmp: (a: T, b: T) => number) =>
+    arr.map((v, i) => [v, i] as const).sort((a, b) => cmp(a[0], b[0]) || a[1] - b[1]).map(([v]) => v);
 
-const compareText = (left: string, right: string) =>
-    left.localeCompare(right, 'nl-NL', { numeric: true, sensitivity: 'base' });
+export type SortDirection = "asc" | "desc";
 
-const stableSort = <T,>(values: readonly T[], comparator: (a: T, b: T) => number) =>
-    values
-        .map((item, index) => [item, index] as const)
-        .sort((a, b) => comparator(a[0], b[0]) || a[1] - b[1])
-        .map(([item]) => item);
-
-export type SortDirection = 'asc' | 'desc';
-
-export type Column<T extends RowBase> = {
+/** Kolomdefinitie (V is het accessortype). */
+export type Column<T extends RowBase, V = unknown> = {
     key: keyof T & string;
     header?: ReactNode;
-    accessor?: (row: T) => unknown;
-    render?: (value: unknown, row: T) => ReactNode;
+    accessor?: (row: T) => V;
+    render?: (value: V, row: T) => ReactNode;
     className?: string;
-    width?: CSSProperties['width'];
+    width?: CSSProperties["width"];
+    align?: "start" | "center" | "end";
     sortable?: boolean;
     hideSm?: boolean;
     comparator?: (left: T, right: T, direction: SortDirection) => number;
 };
 
+type ColumnsOf<T extends RowBase> = ReadonlyArray<Column<T, unknown>>;
+
 export type DataTableProps<T extends RowBase> = {
     rows: readonly T[];
-    columns?: ReadonlyArray<Column<T>>;
-    caption?: string;
+    columns?: ColumnsOf<T>;
+    caption?: string | ReactNode;
+    empty?: ReactNode;
     onRowClick?: (row: T) => void;
     getRowKey?: (row: T, index: number) => Key;
     defaultSortKey?: keyof T & string;
     defaultSortDir?: SortDirection;
+    /** Gecontroleerde sortering (optioneel). */
+    sortKey?: keyof T & string;
+    sortDirection?: SortDirection;
+    onSortChange?: (key: keyof T & string, dir: SortDirection) => void;
 };
 
-const autoColumns = <T extends RowBase>(rows: readonly T[], max = 8): ReadonlyArray<Column<T>> => {
-    const keys = Array.from(new Set(rows.flatMap(row => Object.keys(row)))).slice(0, max);
-    return keys.map(key => ({ key: key as keyof T & string, sortable: true }));
+const autoColumns = <T extends RowBase>(rows: readonly T[], max = 8): ColumnsOf<T> => {
+    const keys = Array.from(new Set(rows.flatMap((r) => Object.keys(r)))).slice(0, max);
+    return keys.map((key) => ({ key: key as keyof T & string, sortable: true }));
 };
 
-const useSorting = <T extends RowBase>(
-    columns: ReadonlyArray<Column<T>>,
-    defaultKey?: keyof T & string,
-    defaultDirection: SortDirection = 'asc',
+const buildComparator = <T extends RowBase>(
+    columns: ColumnsOf<T>,
+    sortKey: keyof T & string | undefined,
+    sortDirection: SortDirection
 ) => {
-    const [sortKey, setSortKey] = useState<keyof T & string | undefined>(defaultKey);
-    const [sortDirection, setSortDirection] = useState<SortDirection>(defaultDirection);
+    if (!sortKey) return null;
+    const col = columns.find((c) => c.key === sortKey);
+    if (!col) return null;
 
-    const comparator = useMemo(() => {
-        if (!sortKey) return null;
-        const column = columns.find(col => col.key === sortKey);
-        if (!column) return null;
+    if (col.comparator) {
+        return (l: T, r: T) => col.comparator!(l, r, sortDirection);
+    }
 
-        if (column.comparator) {
-            return (left: T, right: T) => column.comparator!(left, right, sortDirection);
-        }
-
-        const getValue = (row: T) => (column.accessor ? column.accessor(row) : (row[sortKey] as unknown));
-
-        return (left: T, right: T) => {
-            const leftValue = getValue(left);
-            const rightValue = getValue(right);
-
-            const leftNumber = typeof leftValue === 'number' ? leftValue : Number(leftValue as number);
-            const rightNumber = typeof rightValue === 'number' ? rightValue : Number(rightValue as number);
-
-            const base =
-                Number.isFinite(leftNumber) && Number.isFinite(rightNumber)
-                    ? leftNumber - rightNumber
-                    : compareText(stringifyValue(leftValue), stringifyValue(rightValue));
-
-            return sortDirection === 'asc' ? base : -base;
-        };
-    }, [columns, sortKey, sortDirection]);
-
-    const toggleSort = (key: keyof T & string) => {
-        setSortDirection(previous => (sortKey === key ? (previous === 'asc' ? 'desc' : 'asc') : 'asc'));
-        setSortKey(key);
+    const get = (row: T): unknown => (col.accessor ? col.accessor(row) : (row[sortKey] as unknown));
+    return (l: T, r: T) => {
+        const lv = get(l), rv = get(r);
+        const ln = typeof lv === "number" ? lv : Number(lv as number);
+        const rn = typeof rv === "number" ? rv : Number(rv as number);
+        const base =
+            Number.isFinite(ln) && Number.isFinite(rn)
+                ? ln - rn
+                : compareText(stringify(lv), stringify(rv));
+        return sortDirection === "asc" ? base : -base;
     };
-
-    return { sortKey, sortDirection, comparator, toggleSort };
 };
 
 function DataTableInner<T extends RowBase>({
-    rows,
-    columns,
-    caption,
-    onRowClick,
-    getRowKey,
-    defaultSortKey,
-    defaultSortDir = 'asc',
-}: DataTableProps<T>): ReactElement {
-    const resolvedColumns = useMemo(
-        () => (columns?.length ? columns : autoColumns(rows)),
-        [columns, rows],
+                                               rows,
+                                               columns,
+                                               caption,
+                                               empty,
+                                               onRowClick,
+                                               getRowKey,
+                                               defaultSortKey,
+                                               defaultSortDir = "asc",
+                                               sortKey: controlledKey,
+                                               sortDirection: controlledDir,
+                                               onSortChange,
+                                           }: DataTableProps<T>): ReactElement {
+    const cols = useMemo(() => (columns?.length ? columns : autoColumns(rows)), [columns, rows]);
+
+    // uncontrolled → controlled hybride
+    const [localKey, setLocalKey] = useState<keyof T & string | undefined>(defaultSortKey);
+    const [localDir, setLocalDir] = useState<SortDirection>(defaultSortDir);
+
+    const sortKey = controlledKey ?? localKey;
+    const sortDirection = controlledDir ?? localDir;
+
+    const comparator = useMemo(
+        () => buildComparator(cols, sortKey, sortDirection),
+        [cols, sortKey, sortDirection]
     );
 
-    const { sortKey, sortDirection, comparator, toggleSort } = useSorting(
-        resolvedColumns,
-        defaultSortKey,
-        defaultSortDir,
-    );
-
-    const data = useMemo(
-        () => (comparator ? stableSort(rows, comparator) : rows),
-        [rows, comparator],
-    );
+    const data = useMemo(() => (comparator ? stableSort(rows, comparator) : rows), [rows, comparator]);
 
     const tableId = useId();
 
+    const toggleSort = useCallback(
+        (key: keyof T & string) => {
+            const nextDir: SortDirection = sortKey === key ? (sortDirection === "asc" ? "desc" : "asc") : "asc";
+            if (onSortChange) {
+                onSortChange(key, nextDir);
+            } else {
+                setLocalKey(key);
+                setLocalDir(nextDir);
+            }
+        },
+        [onSortChange, sortKey, sortDirection]
+    );
+
     if (!rows?.length) {
         return (
-            <div className="text-center text-muted py-5">
-                Geen resultaten.
+            <div className="text-center text-muted py-5" role="status" aria-live="polite" aria-label="geen resultaten">
+                {empty ?? "Geen resultaten."}
             </div>
         );
     }
+
+    const colCount = cols.length;
 
     return (
         <section className="p-2" aria-label="tabel">
@@ -150,106 +152,113 @@ function DataTableInner<T extends RowBase>({
                         </div>
                     </div>
                 )}
+
                 <div className="card-body pt-2">
                     <div className="mb-2">
-                        <span className="badge bg-success-subtle text-success" aria-live="polite">
-                            {data.length.toLocaleString('nl-NL')} resultaten
-                        </span>
+            <span className="badge bg-success-subtle text-success" aria-live="polite">
+              {data.length.toLocaleString("nl-NL")} resultaten
+            </span>
                     </div>
 
                     <div className="table-responsive rounded-3 border bg-body">
                         <table
                             className="table table-sm table-striped table-hover align-middle caption-top"
                             aria-describedby={caption ? `${tableId}-caption` : undefined}
+                            aria-rowcount={data.length}
+                            aria-colcount={colCount}
                         >
                             <thead className="position-sticky top-0 bg-success-subtle" style={{ zIndex: 1 }}>
-                                <tr>
-                                    {resolvedColumns.map(column => {
-                                        const active = sortKey === column.key;
-                                        const ariaSort: AriaAttributes['aria-sort'] = active
-                                            ? sortDirection === 'asc'
-                                                ? 'ascending'
-                                                : 'descending'
-                                            : 'none';
+                            <tr>
+                                {cols.map((col) => {
+                                    const active = sortKey === col.key;
+                                    const ariaSort: AriaAttributes["aria-sort"] = active
+                                        ? sortDirection === "asc"
+                                            ? "ascending"
+                                            : "descending"
+                                        : "none";
 
-                                        return (
-                                            <th
-                                                key={column.key}
-                                                scope="col"
-                                                aria-sort={ariaSort}
-                                                className={classNames(
-                                                    'text-nowrap text-success',
-                                                    column.className,
-                                                    column.hideSm && 'd-none d-md-table-cell',
-                                                    column.sortable && 'user-select-none',
-                                                )}
-                                                style={column.width ? { width: column.width } : undefined}
-                                                title={column.sortable ? 'Klik om te sorteren' : undefined}
-                                            >
-                                                {column.sortable ? (
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-link p-0 text-success text-decoration-none d-inline-flex align-items-center gap-1"
-                                                        onClick={() => toggleSort(column.key)}
-                                                        aria-label={`Sorteer op ${String(column.header ?? column.key)}`}
-                                                    >
-                                                        {column.header ?? column.key}
-                                                        {active && (
-                                                            <span className="small" aria-hidden="true">
-                                                                {sortDirection === 'asc' ? '▲' : '▼'}
-                                                            </span>
-                                                        )}
-                                                    </button>
-                                                ) : (
-                                                    <span className="d-inline-flex align-items-center gap-1">
-                                                        {column.header ?? column.key}
-                                                    </span>
-                                                )}
-                                            </th>
-                                        );
-                                    })}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.map((row, index) => {
-                                    const key = getRowKey?.(row, index) ?? index;
-                                    const handleClick = () => onRowClick?.(row);
-
-                                    const handleKeyDown: KeyboardEventHandler<HTMLTableRowElement> = event => {
-                                        if (!onRowClick) return;
-                                        if (event.key === 'Enter' || event.key === ' ') {
-                                            event.preventDefault();
-                                            onRowClick(row);
-                                        }
-                                    };
+                                    const thClasses = cx(
+                                        "text-nowrap text-success",
+                                        col.className,
+                                        col.hideSm && "d-none d-md-table-cell",
+                                        col.sortable && "user-select-none",
+                                        col.align === "center" && "text-center",
+                                        col.align === "end" && "text-end"
+                                    );
 
                                     return (
-                                        <tr
-                                            key={key}
-                                            onClick={handleClick}
-                                            tabIndex={onRowClick ? 0 : undefined}
-                                            role={onRowClick ? 'button' : undefined}
-                                            onKeyDown={handleKeyDown}
+                                        <th
+                                            key={col.key}
+                                            scope="col"
+                                            aria-sort={ariaSort}
+                                            className={thClasses}
+                                            style={col.width ? { width: col.width } : undefined}
+                                            title={col.sortable ? "Klik om te sorteren" : undefined}
                                         >
-                                            {resolvedColumns.map(column => {
-                                                const value = column.accessor ? column.accessor(row) : (row[column.key] as unknown);
-                                                return (
-                                                    <td
-                                                        key={column.key}
-                                                        className={classNames(
-                                                            'text-truncate',
-                                                            column.className,
-                                                            column.hideSm && 'd-none d-md-table-cell',
-                                                        )}
-                                                        style={{ maxWidth: 0 }}
-                                                    >
-                                                        {column.render ? column.render(value, row) : stringifyValue(value)}
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
+                                            {col.sortable ? (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-link p-0 text-success text-decoration-none d-inline-flex align-items-center gap-1"
+                                                    onClick={() => toggleSort(col.key)}
+                                                    aria-label={`Sorteer op ${String(col.header ?? col.key)}`}
+                                                >
+                                                    {col.header ?? col.key}
+                                                    {active && (
+                                                        <span className="small" aria-hidden="true">
+                                {sortDirection === "asc" ? "▲" : "▼"}
+                              </span>
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <span className="d-inline-flex align-items-center gap-1">
+                            {col.header ?? col.key}
+                          </span>
+                                            )}
+                                        </th>
                                     );
                                 })}
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            {data.map((row, index) => {
+                                const key = getRowKey?.(row, index) ?? index;
+
+                                const handleClick = onRowClick ? () => onRowClick(row) : undefined;
+                                const handleKeyDown: KeyboardEventHandler<HTMLTableRowElement> = (e) => {
+                                    if (!onRowClick) return;
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        onRowClick(row);
+                                    }
+                                };
+
+                                return (
+                                    <tr
+                                        key={key}
+                                        onClick={handleClick}
+                                        tabIndex={onRowClick ? 0 : undefined}
+                                        role={onRowClick ? "button" : undefined}
+                                        onKeyDown={handleKeyDown}
+                                    >
+                                        {cols.map((col) => {
+                                            const raw = col.accessor ? col.accessor(row) : (row[col.key] as unknown);
+                                            const tdClasses = cx(
+                                                "text-truncate",
+                                                col.className,
+                                                col.hideSm && "d-none d-md-table-cell",
+                                                col.align === "center" && "text-center",
+                                                col.align === "end" && "text-end"
+                                            );
+                                            return (
+                                                <td key={col.key} className={tdClasses} style={{ maxWidth: 0 }}>
+                                                    {col.render ? col.render(raw, row) : stringify(raw)}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                );
+                            })}
                             </tbody>
                         </table>
                     </div>
@@ -259,8 +268,8 @@ function DataTableInner<T extends RowBase>({
     );
 }
 
-export const DataTable = memo(
-    DataTableInner,
-) as <T extends RowBase>(props: DataTableProps<T>) => ReactElement;
+export const DataTable = memo(DataTableInner) as <T extends RowBase>(
+    props: DataTableProps<T>
+) => ReactElement;
 
 export default DataTable;
