@@ -98,6 +98,7 @@ public class Veilingproduct
 
     public virtual Categorie? Categorie { get; set; }
     public virtual Veiling? Veiling { get; set; }
+    
 }
 
 //tijdelijk
