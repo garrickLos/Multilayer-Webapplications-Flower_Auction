@@ -7,6 +7,7 @@ import type {
     VeilingDto,
     VeilingproductDto,
 } from "./types";
+import { appConfig } from "./config";
 
 export type ApiError = { status: number; message: string };
 
@@ -14,8 +15,8 @@ type FetchInit = RequestInit & { signal?: AbortSignal };
 
 type ListResult<T> = { data: readonly T[]; headers: Headers };
 
-const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
-const REQUEST_TIMEOUT = 10000;
+const BASE_URL = appConfig.api.baseUrl;
+const REQUEST_TIMEOUT = appConfig.api.requestTimeoutMs;
 
 export async function fetchJson<T>(path: string, init?: FetchInit): Promise<T> {
     const { data } = await fetchJsonWithMeta<T>(path, init);

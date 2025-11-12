@@ -1,13 +1,13 @@
-import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { useEffect, useId, useRef } from "react";
-import { cx } from "./components";
+import { cx } from "./utils/classNames";
 
 type ModalProps = {
-    title: ReactNode;
-    children: ReactNode;
-    onClose: () => void;
-    footer?: ReactNode;
-    size?: "sm" | "lg" | "xl";
+    readonly title: ReactNode;
+    readonly children: ReactNode;
+    readonly onClose: () => void;
+    readonly footer?: ReactNode;
+    readonly size?: "sm" | "lg" | "xl";
 };
 
 const focusableSelectors = [
@@ -19,13 +19,20 @@ const focusableSelectors = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-export function Modal({ title, children, onClose, footer, size = "lg" }: ModalProps): ReactElement {
+/**
+ * Accessible modal dialog with focus management and Bootstrap styling.
+ *
+ * @param props - Modal properties including content, heading en afsluit-actie.
+ */
+export function Modal({ title, children, onClose, footer, size = "lg" }: ModalProps): JSX.Element {
     const dialogRef = useRef<HTMLDivElement | null>(null);
     const previouslyFocused = useRef<HTMLElement | null>(null);
     const headingId = useId();
 
     useEffect(() => {
-        if (typeof document === "undefined") return;
+        if (typeof document === "undefined") {
+            return undefined;
+        }
         previouslyFocused.current = document.activeElement as HTMLElement | null;
         const node = dialogRef.current;
         const query = () =>
@@ -43,7 +50,9 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
                 onClose();
                 return;
             }
-            if (event.key !== "Tab") return;
+            if (event.key !== "Tab") {
+                return;
+            }
             const list = query();
             if (list.length === 0) {
                 event.preventDefault();
@@ -86,18 +95,14 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
             <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby={headingId} onMouseDown={handleBackdropClick}>
                 <div className={dialogClass}>
                     <div className="modal-content border-0 rounded-4 shadow-lg" ref={dialogRef} tabIndex={-1}>
-                        <div className="modal-header bg-white sticky-top" style={{ top: 0, zIndex: 5 }}>
+                        <div className="modal-header bg-white position-sticky top-0 z-3">
                             <h2 className="modal-title h5 mb-0" id={headingId}>
                                 {title}
                             </h2>
                             <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
                         </div>
                         <div className="modal-body py-3">{children}</div>
-                        {footer && (
-                            <div className="modal-footer bg-white d-flex justify-content-end" style={{ position: "sticky", bottom: 0, zIndex: 5 }}>
-                                {footer}
-                            </div>
-                        )}
+                        {footer && <div className="modal-footer bg-white position-sticky bottom-0 z-3 d-flex justify-content-end">{footer}</div>}
                     </div>
                 </div>
             </div>

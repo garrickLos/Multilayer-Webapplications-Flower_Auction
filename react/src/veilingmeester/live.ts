@@ -1,11 +1,12 @@
 import { getAuctionDetail } from "./api";
+import { appConfig } from "./config";
 import { adaptAuction, type VeilingDetailDto, type VeilingRow } from "./types";
 
 type PatchHandler = (update: Partial<VeilingRow>) => void;
 
 type Cleanup = () => void;
 
-const POLL_STEPS = [2000, 4000, 8000, 15000] as const;
+const POLL_STEPS = appConfig.realtime.pollStepsMs;
 
 function shouldStop(row: VeilingRow): boolean {
     if (row.status !== "active") return true;
