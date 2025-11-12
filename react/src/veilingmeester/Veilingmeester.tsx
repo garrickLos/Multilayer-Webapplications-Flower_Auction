@@ -1,15 +1,43 @@
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Empty, Loading, Pager, SearchInput, SelectSm, SelectStatusSm, StatusBadge, cx } from "./components";
+import {
+    Alert,
+    Empty,
+    Loading,
+    Pager,
+    SearchInput,
+    SelectSm,
+    SelectStatusSm,
+    StatusBadge,
+    cx,
+} from "./components";
 import { DataTable } from "./DataTable";
 import { Modal } from "./Modal";
 import { getAuctionDetail } from "./api";
 import { useUserBids, useUserRows, useVeilingProductsByGrower, useVeilingRows } from "./hooks";
 import { subscribeAuction } from "./live";
-import { adaptAuction, splitProducts, statusBadgeVariant, statusLabel, type UserRow, type VeilingDetailDto, type VeilingProductRow, type VeilingRow } from "./types";
+import {
+    adaptAuction,
+    splitProducts,
+    statusBadgeVariant,
+    statusLabel,
+    type UserRow,
+    type VeilingDetailDto,
+    type VeilingProductRow,
+    type VeilingRow,
+} from "./types";
 
 const currency = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 const dateTimeFormatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" });
+
+type TabKey = "users" | "auctions";
+
+const soortBadgeClass: Record<UserRow["soort"], string> = {
+    koper: "text-bg-primary",
+    kweker: "text-bg-success",
+    veilingmeester: "text-bg-secondary",
+    onbekend: "text-bg-secondary",
+};
 
 function formatCurrency(value: number): string {
     return currency.format(Number.isFinite(value) ? value : 0);
@@ -21,18 +49,30 @@ function formatDateTime(value: string | undefined): string {
     return Number.isNaN(date.getTime()) ? "—" : dateTimeFormatter.format(date);
 }
 
-function exportCsv(filename: string, rows: Array<Record<string, unknown>>): void {
-    if (!rows.length) return;
-    const headers = Object.keys(rows[0]);
-    const escape = (value: unknown) => `"${String(value ?? "").replace(/"/gu, '""')}"`;
-    const csv = [headers.join(","), ...rows.map((row) => headers.map((header) => escape(row[header])).join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+function parseIsoMs(value: string | undefined): number | undefined {
+    if (!value) return undefined;
+    const ms = Date.parse(value);
+    return Number.isNaN(ms) ? undefined : ms;
+}
+
+function isInvalidRange(from?: string, to?: string): boolean {
+    const fromMs = parseIsoMs(from);
+    const toMs = parseIsoMs(to);
+    if (fromMs == null || toMs == null) return false;
+    return toMs < fromMs;
+}
+
+function readInitialTab(): TabKey {
+    if (typeof window === "undefined") return "users";
+    const value = new URLSearchParams(window.location.search).get("vm_tab");
+    return value === "veilingen" ? "auctions" : "users";
+}
+
+function updateTabUrl(tab: TabKey): void {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("vm_tab", tab === "auctions" ? "veilingen" : "gebruikers");
+    window.history.replaceState({}, "", url.toString());
 }
 
 function useOffline(): boolean {
@@ -48,38 +88,6 @@ function useOffline(): boolean {
         };
     }, []);
     return offline;
-}
-
-const soortBadgeClass: Record<string, string> = {
-    koper: "text-bg-primary",
-    kweker: "text-bg-success",
-    veilingmeester: "text-bg-dark",
-    onbekend: "text-bg-secondary",
-};
-
-type TabKey = "users" | "auctions";
-
-function readInitialTab(): TabKey {
-    if (typeof window === "undefined") return "users";
-    const value = new URLSearchParams(window.location.search).get("vm_tab");
-    return value === "veilingen" ? "auctions" : "users";
-}
-
-function updateTabUrl(tab: TabKey): void {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("vm_tab", tab === "auctions" ? "veilingen" : "gebruikers");
-    window.history.replaceState({}, "", url.toString());
-}
-
-function computeClockPrice(nowMs: number, startMs: number, endMs: number, max: number, min: number): number {
-    if (max <= min) return min;
-    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return max;
-    if (nowMs <= startMs) return max;
-    if (nowMs >= endMs) return min;
-    const progress = (nowMs - startMs) / (endMs - startMs);
-    const current = max - (max - min) * progress;
-    return Math.min(max, Math.max(min, Number(current.toFixed(2))));
 }
 
 export function Veilingmeester(): ReactElement {
@@ -124,10 +132,7 @@ export function Veilingmeester(): ReactElement {
         updateTabUrl(activeTab);
     }, [activeTab]);
 
-    const perPageOptions = useMemo(
-        () => [10, 25, 50].map((size) => ({ value: size, label: `${size}` })),
-        [],
-    );
+    const perPageOptions = useMemo(() => [10, 25, 50].map((size) => ({ value: size, label: `${size}` })), []);
 
     const handleUserRowClick = useCallback(
         (row: UserRow) => {
@@ -135,8 +140,6 @@ export function Veilingmeester(): ReactElement {
                 setSelectedBidUser(row);
             } else if (row.soort === "kweker") {
                 setSelectedGrower(row);
-            } else {
-                setSelectedBidUser(row);
             }
         },
         [],
@@ -146,88 +149,77 @@ export function Veilingmeester(): ReactElement {
         setSelectedAuction(row);
     }, []);
 
-    const exportUsers = useCallback(() => {
-        exportCsv(
-            "gebruikers.csv",
-            userRows.map((row) => ({
-                Nummer: row.id,
-                Naam: row.naam,
-                Email: row.email,
-                KVK: row.kvk ?? "",
-                Soort: row.soort,
-                Status: statusLabel(row.status),
-            })),
-        );
-    }, [userRows]);
+    const isUserInteractive = useCallback((row: UserRow) => row.soort === "koper" || row.soort === "kweker", []);
 
-    const exportAuctions = useCallback(() => {
-        exportCsv(
-            "veilingen.csv",
-            auctionRows.map((row) => ({
-                Nummer: row.veilingNr ?? row.id,
-                Titel: row.titel,
-                Start: formatDateTime(row.startIso),
-                Einde: formatDateTime(row.endIso),
-                Status: statusLabel(row.status),
-                "Min. prijs": formatCurrency(row.minPrice),
-                "Max. prijs": formatCurrency(row.maxPrice),
-                Producten: row.productCount,
-            })),
-        );
-    }, [auctionRows]);
+    const auctionsRangeInvalid = isInvalidRange(auctionsFrom, auctionsTo);
 
     return (
         <div className="container-fluid py-4">
             <header className="mb-4">
-                <h1 className="display-5 mb-1">Veilingmeester</h1>
-                <p className="text-muted">Beheer gebruikers, veilingen en live klokken vanuit één scherm.</p>
+                <h1 className="h2 fw-semibold mb-1">Veiling</h1>
+                <p className="text-muted mb-0 small">Beheer gebruikers, veilingen en klokken.</p>
             </header>
-            {offline && <Alert variant="warning">Je bent offline. Veranderingen worden geladen zodra je weer online bent.</Alert>}
-            <nav className="mb-3" role="tablist">
-                <ul className="nav nav-tabs">
-                    <li className="nav-item" role="presentation">
-                        <button
-                            type="button"
-                            className={cx("nav-link", activeTab === "users" && "active")}
-                            role="tab"
-                            aria-selected={activeTab === "users"}
-                            aria-controls="tab-gebruikers"
-                            onClick={() => setActiveTab("users")}
-                        >
-                            Gebruikers
-                        </button>
-                    </li>
-                    <li className="nav-item" role="presentation">
-                        <button
-                            type="button"
-                            className={cx("nav-link", activeTab === "auctions" && "active")}
-                            role="tab"
-                            aria-selected={activeTab === "auctions"}
-                            aria-controls="tab-veilingen"
-                            onClick={() => setActiveTab("auctions")}
-                        >
-                            Veilingen
-                        </button>
-                    </li>
-                </ul>
-            </nav>
-            <section hidden={activeTab !== "users"} id="tab-gebruikers" role="tabpanel">
-                <div className="d-flex flex-wrap gap-3 align-items-end mb-3">
-                    <SearchInput label="Zoek op naam of e-mail" value={userSearch ?? ""} onChange={(value) => setUserSearch?.(value)} />
-                    <SelectSm<number>
-                        label="Per pagina"
-                        value={usersPageSize}
-                        onChange={setUsersPageSize}
-                        options={perPageOptions}
-                        parse={(raw) => Number(raw)}
-                    />
-                    <button type="button" className="btn btn-outline-secondary btn-sm ms-auto" onClick={exportUsers}>
-                        Exporteren als CSV
+            {offline && (
+                <div className="mb-3">
+                    <Alert variant="warning">Je bent offline. Gegevens verversen zodra de verbinding terug is.</Alert>
+                </div>
+            )}
+            <nav className="mb-3" role="tablist" aria-label="Veiling tabs">
+                <div className="nav nav-tabs rounded-3">
+                    <button
+                        type="button"
+                        className={cx("nav-link", activeTab === "users" && "active")}
+                        role="tab"
+                        aria-selected={activeTab === "users"}
+                        aria-controls="tab-gebruikers"
+                        id="tab-gebruikers-tab"
+                        onClick={() => setActiveTab("users")}
+                    >
+                        Gebruikers
+                    </button>
+                    <button
+                        type="button"
+                        className={cx("nav-link", activeTab === "auctions" && "active")}
+                        role="tab"
+                        aria-selected={activeTab === "auctions"}
+                        aria-controls="tab-veilingen"
+                        id="tab-veilingen-tab"
+                        onClick={() => setActiveTab("auctions")}
+                    >
+                        Veilingen
                     </button>
                 </div>
-            {usersError && <Alert>{usersError}</Alert>}
-            {usersLoading && !userRows.length ? (
+            </nav>
+            <section
+                id="tab-gebruikers"
+                role="tabpanel"
+                aria-labelledby="tab-gebruikers-tab"
+                hidden={activeTab !== "users"}
+                className="d-flex flex-column gap-3"
+            >
+                <div className="card border-0 shadow-sm rounded-4">
+                    <div className="card-body">
+                        <div className="row g-3 align-items-end">
+                            <div className="col-12 col-md-6 col-lg-4">
+                                <SearchInput label="Zoeken" value={userSearch ?? ""} onChange={(value) => setUserSearch?.(value)} />
+                            </div>
+                            <div className="col-6 col-md-3 col-lg-2">
+                                <SelectSm<number>
+                                    label="Per pagina"
+                                    value={usersPageSize}
+                                    onChange={setUsersPageSize}
+                                    options={perPageOptions}
+                                    parse={(raw) => Number(raw)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {usersError && <Alert>{usersError}</Alert>}
+                {usersLoading && !userRows.length ? (
                     <Loading />
+                ) : userRows.length === 0 ? (
+                    <Empty message="Geen gebruikers gevonden." />
                 ) : (
                     <DataTable
                         columns={[
@@ -239,7 +231,7 @@ export function Veilingmeester(): ReactElement {
                                 render: (row) => (
                                     <div>
                                         <div className="fw-semibold">{row.naam}</div>
-                                        <div className="text-muted small">{row.email || "Geen e-mail"}</div>
+                                        <div className="text-muted small">#{row.id}</div>
                                     </div>
                                 ),
                                 getValue: (row) => row.naam,
@@ -248,8 +240,8 @@ export function Veilingmeester(): ReactElement {
                                 key: "email",
                                 header: "E-mail",
                                 sortable: true,
-                                render: (row) => <span>{row.email || "—"}</span>,
-                                getValue: (row) => row.email,
+                                render: (row) => (row.email ? <span className="text-truncate d-inline-block" style={{ maxWidth: 220 }}>{row.email}</span> : <span className="text-muted">—</span>),
+                                getValue: (row) => row.email ?? "",
                             },
                             {
                                 key: "kvk",
@@ -267,7 +259,7 @@ export function Veilingmeester(): ReactElement {
                                 header: "Soort",
                                 sortable: true,
                                 render: (row) => (
-                                    <span className={cx("badge", soortBadgeClass[row.soort] ?? "text-bg-secondary")}>{row.soort}</span>
+                                    <span className={cx("badge", "rounded-pill", soortBadgeClass[row.soort] ?? "text-bg-secondary")}>{row.soort}</span>
                                 ),
                                 getValue: (row) => row.soort,
                             },
@@ -280,72 +272,89 @@ export function Veilingmeester(): ReactElement {
                             },
                         ]}
                         rows={userRows}
+                        totalResults={usersTotal}
                         empty={<Empty message="Geen gebruikers gevonden." />}
                         getRowKey={(row) => String(row.id)}
                         onRowClick={handleUserRowClick}
-                        totalResults={usersTotal}
+                        isRowInteractive={isUserInteractive}
                     />
                 )}
-                <div className="mt-3">
-                    <Pager
-                        page={usersPage}
-                        pageSize={usersPageSize}
-                        hasNext={usersHasNext}
-                        onPrevious={() => setUsersPage((prev) => Math.max(1, prev - 1))}
-                        onNext={() => setUsersPage((prev) => prev + 1)}
-                        totalResults={usersTotal}
-                    />
-                </div>
+                <Pager
+                    page={usersPage}
+                    pageSize={usersPageSize}
+                    hasNext={usersHasNext}
+                    onPrevious={() => setUsersPage((prev) => Math.max(1, prev - 1))}
+                    onNext={() => setUsersPage((prev) => prev + 1)}
+                    totalResults={usersTotal}
+                />
             </section>
-            <section hidden={activeTab !== "auctions"} id="tab-veilingen" role="tabpanel">
-                <div className="row g-3 align-items-end mb-3">
-                    <div className="col-12 col-md-3">
-                        <SelectSm<number>
-                            label="Per pagina"
-                            value={auctionsPageSize}
-                            onChange={setAuctionsPageSize}
-                            options={perPageOptions}
-                            parse={(raw) => Number(raw)}
-                        />
-                    </div>
-                    <div className="col-12 col-md-3">
-                        <SelectStatusSm label="Status" value={auctionsStatus ?? "alle"} onChange={(value) => setAuctionsStatus?.(value)} />
-                    </div>
-                    <div className="col-6 col-md-3">
-                        <label htmlFor="filter-from" className="form-label small text-uppercase text-muted mb-1">
-                            Vanaf
-                        </label>
-                        <input
-                            id="filter-from"
-                            type="date"
-                            className="form-control form-control-sm"
-                            value={auctionsFrom ?? ""}
-                            onChange={(event) => setAuctionsFrom?.(event.target.value)}
-                            title="jjjj-mm-dd"
-                        />
-                    </div>
-                    <div className="col-6 col-md-3">
-                        <label htmlFor="filter-to" className="form-label small text-uppercase text-muted mb-1">
-                            Tot en met
-                        </label>
-                        <input
-                            id="filter-to"
-                            type="date"
-                            className="form-control form-control-sm"
-                            value={auctionsTo ?? ""}
-                            onChange={(event) => setAuctionsTo?.(event.target.value)}
-                            title="jjjj-mm-dd"
-                        />
-                    </div>
-                    <div className="col-12 d-flex justify-content-end">
-                        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={exportAuctions}>
-                            Exporteren als CSV
-                        </button>
+            <section
+                id="tab-veilingen"
+                role="tabpanel"
+                aria-labelledby="tab-veilingen-tab"
+                hidden={activeTab !== "auctions"}
+                className="d-flex flex-column gap-3"
+            >
+                <div className="card border-0 shadow-sm rounded-4">
+                    <div className="card-body">
+                        <div className="row g-3 align-items-end">
+                            <div className="col-6 col-lg-2">
+                                <SelectSm<number>
+                                    label="Per pagina"
+                                    value={auctionsPageSize}
+                                    onChange={setAuctionsPageSize}
+                                    options={perPageOptions}
+                                    parse={(raw) => Number(raw)}
+                                />
+                            </div>
+                            <div className="col-6 col-lg-2">
+                                <SelectStatusSm
+                                    label="Status"
+                                    value={auctionsStatus ?? "alle"}
+                                    onChange={(value) => setAuctionsStatus?.(value)}
+                                />
+                            </div>
+                            <div className="col-6 col-lg-2">
+                                <label htmlFor="filter-from" className="form-label small text-uppercase text-muted mb-1">
+                                    Vanaf
+                                </label>
+                                <input
+                                    id="filter-from"
+                                    type="date"
+                                    className="form-control form-control-sm"
+                                    value={auctionsFrom ?? ""}
+                                    onChange={(event) => setAuctionsFrom?.(event.target.value)}
+                                    title="jjjj-mm-dd"
+                                    aria-invalid={auctionsRangeInvalid}
+                                />
+                            </div>
+                            <div className="col-6 col-lg-2">
+                                <label htmlFor="filter-to" className="form-label small text-uppercase text-muted mb-1">
+                                    Tot en met
+                                </label>
+                                <input
+                                    id="filter-to"
+                                    type="date"
+                                    className="form-control form-control-sm"
+                                    value={auctionsTo ?? ""}
+                                    onChange={(event) => setAuctionsTo?.(event.target.value)}
+                                    title="jjjj-mm-dd"
+                                    aria-invalid={auctionsRangeInvalid}
+                                />
+                            </div>
+                            {auctionsRangeInvalid && (
+                                <div className="col-12">
+                                    <div className="text-danger small">Einddatum moet na begindatum liggen.</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 {auctionsError && <Alert>{auctionsError}</Alert>}
                 {auctionsLoading && !auctionRows.length ? (
                     <Loading />
+                ) : auctionRows.length === 0 ? (
+                    <Empty message="Geen veilingen gevonden." />
                 ) : (
                     <DataTable
                         columns={[
@@ -357,9 +366,7 @@ export function Veilingmeester(): ReactElement {
                                 render: (row) => (
                                     <div>
                                         <div className="fw-semibold">{row.titel}</div>
-                                        <div className="text-muted small">
-                                            {formatDateTime(row.startIso)} • {formatDateTime(row.endIso)}
-                                        </div>
+                                        <div className="text-muted small">{formatDateTime(row.startIso)} • {formatDateTime(row.endIso)}</div>
                                     </div>
                                 ),
                                 getValue: (row) => row.titel,
@@ -394,32 +401,24 @@ export function Veilingmeester(): ReactElement {
                             },
                         ]}
                         rows={auctionRows}
+                        totalResults={auctionsTotal}
                         empty={<Empty message="Geen veilingen gevonden." />}
                         getRowKey={(row) => String(row.id)}
                         onRowClick={handleAuctionClick}
-                        totalResults={auctionsTotal}
                     />
                 )}
-                <div className="mt-3">
-                    <Pager
-                        page={auctionsPage}
-                        pageSize={auctionsPageSize}
-                        hasNext={auctionsHasNext}
-                        onPrevious={() => setAuctionsPage((prev) => Math.max(1, prev - 1))}
-                        onNext={() => setAuctionsPage((prev) => prev + 1)}
-                        totalResults={auctionsTotal}
-                    />
-                </div>
+                <Pager
+                    page={auctionsPage}
+                    pageSize={auctionsPageSize}
+                    hasNext={auctionsHasNext}
+                    onPrevious={() => setAuctionsPage((prev) => Math.max(1, prev - 1))}
+                    onNext={() => setAuctionsPage((prev) => prev + 1)}
+                    totalResults={auctionsTotal}
+                />
             </section>
-            {selectedBidUser && (
-                <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />
-            )}
-            {selectedGrower && (
-                <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />
-            )}
-            {selectedAuction && (
-                <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />
-            )}
+            {selectedBidUser && <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />}
+            {selectedGrower && <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />}
+            {selectedAuction && <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />}
         </div>
     );
 }
@@ -430,26 +429,26 @@ function BidsModal({ user, onClose }: BidsModalProps): ReactElement {
     const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, from, setFrom, to, setTo } = useUserBids(
         user.id,
     );
-    const invalidRange = Boolean(from && to && to < from);
-
-    const exportBids = useCallback(() => {
-        exportCsv(
-            `biedingen-${user.id}.csv`,
-            rows.map((row) => ({
-                Nummer: row.biedNr ?? row.id,
-                "Veiling nr": row.veilingNr ?? "",
-                "Prijs per fust": formatCurrency(row.bedragPerFust),
-                "Aantal stuks": row.aantalStuks,
-                Datum: formatDateTime(row.datumIso),
-                Status: statusLabel(row.status),
-            })),
-        );
-    }, [rows, user.id]);
+    const invalidRange = isInvalidRange(from, to);
 
     return (
-        <Modal title={`Biedingen gebruiker ${user.id}`} onClose={onClose}>
+        <Modal
+            title={
+                <div>
+                    <div className="fw-semibold">Biedingen koper {user.naam}</div>
+                    <div className="text-muted small">#{user.id}</div>
+                </div>
+            }
+            onClose={onClose}
+            size="lg"
+            footer={
+                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                    Sluiten
+                </button>
+            }
+        >
             <div className="row g-3 align-items-end mb-3">
-                <div className="col-6 col-md-3">
+                <div className="col-6 col-lg-3">
                     <label htmlFor="bids-from" className="form-label small text-uppercase text-muted mb-1">
                         Vanaf
                     </label>
@@ -460,9 +459,10 @@ function BidsModal({ user, onClose }: BidsModalProps): ReactElement {
                         value={from ?? ""}
                         onChange={(event) => setFrom?.(event.target.value)}
                         title="jjjj-mm-dd"
+                        aria-invalid={invalidRange}
                     />
                 </div>
-                <div className="col-6 col-md-3">
+                <div className="col-6 col-lg-3">
                     <label htmlFor="bids-to" className="form-label small text-uppercase text-muted mb-1">
                         Tot en met
                     </label>
@@ -477,7 +477,7 @@ function BidsModal({ user, onClose }: BidsModalProps): ReactElement {
                     />
                     {invalidRange && <div className="text-danger small mt-1">Einddatum moet na begindatum liggen.</div>}
                 </div>
-                <div className="col-12 col-md-3">
+                <div className="col-6 col-lg-2">
                     <SelectSm<number>
                         label="Per pagina"
                         value={pageSize}
@@ -485,11 +485,6 @@ function BidsModal({ user, onClose }: BidsModalProps): ReactElement {
                         options={[10, 25, 50].map((size) => ({ value: size, label: `${size}` }))}
                         parse={(raw) => Number(raw)}
                     />
-                </div>
-                <div className="col-12 col-md-3 d-flex justify-content-end">
-                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={exportBids}>
-                        Exporteren als CSV
-                    </button>
                 </div>
             </div>
             {error && <Alert>{error}</Alert>}
@@ -531,20 +526,19 @@ function BidsModal({ user, onClose }: BidsModalProps): ReactElement {
                         },
                     ]}
                     rows={rows}
-                    getRowKey={(row) => String(row.id)}
                     totalResults={totalResults}
+                    empty={<Empty message="Geen biedingen gevonden." />}
+                    getRowKey={(row) => String(row.id)}
                 />
             )}
-            <div className="mt-3">
-                <Pager
-                    page={page}
-                    pageSize={pageSize}
-                    hasNext={hasNext}
-                    onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
-                    onNext={() => setPage((prev) => prev + 1)}
-                    totalResults={totalResults}
-                />
-            </div>
+            <Pager
+                page={page}
+                pageSize={pageSize}
+                hasNext={hasNext}
+                onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+                onNext={() => setPage((prev) => prev + 1)}
+                totalResults={totalResults}
+            />
         </Modal>
     );
 }
@@ -556,31 +550,32 @@ function ProductsModal({ user, onClose }: ProductsModalProps): ReactElement {
         user.id,
     );
 
-    const exportProducts = useCallback(() => {
-        exportCsv(
-            `producten-${user.id}.csv`,
-            rows.map((row) => ({
-                Nummer: row.veilingProductNr ?? row.id,
-                Product: row.naam,
-                Voorraad: row.voorraad ?? "",
-                Fust: row.fust ?? "",
-                "Stuks/bundel": row.piecesPerBundle ?? "",
-                "Min. prijs": formatCurrency(row.minPrice),
-                Status: statusLabel(row.status),
-            })),
-        );
-    }, [rows, user.id]);
-
     return (
-        <Modal title={`Producten van kweker ${user.id}`} onClose={onClose}>
-            <div className="d-flex justify-content-end mb-3">
-                <SelectSm<number>
-                    label="Per pagina"
-                    value={pageSize}
-                    onChange={setPageSize}
-                    options={[10, 25, 50].map((size) => ({ value: size, label: `${size}` }))}
-                    parse={(raw) => Number(raw)}
-                />
+        <Modal
+            title={
+                <div>
+                    <div className="fw-semibold">Producten kweker {user.naam}</div>
+                    <div className="text-muted small">#{user.id}</div>
+                </div>
+            }
+            onClose={onClose}
+            size="xl"
+            footer={
+                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                    Sluiten
+                </button>
+            }
+        >
+            <div className="row g-3 align-items-end mb-3">
+                <div className="col-6 col-lg-2">
+                    <SelectSm<number>
+                        label="Per pagina"
+                        value={pageSize}
+                        onChange={setPageSize}
+                        options={[10, 25, 50].map((size) => ({ value: size, label: `${size}` }))}
+                        parse={(raw) => Number(raw)}
+                    />
+                </div>
             </div>
             {error && <Alert>{error}</Alert>}
             {loading && !rows.length ? (
@@ -596,18 +591,22 @@ function ProductsModal({ user, onClose }: ProductsModalProps): ReactElement {
                             header: "Product",
                             sortable: true,
                             render: (row) => (
-                                <div className="d-flex gap-2 align-items-center">
-                                    {row.image && (
+                                <div className="d-flex align-items-center gap-2">
+                                    {row.image ? (
                                         <img
                                             src={row.image}
-                                            alt={row.naam}
-                                            className="img-fluid rounded border"
-                                            style={{ maxWidth: 56 }}
+                                            alt=""
+                                            width={40}
+                                            height={40}
+                                            className="rounded-3 border"
+                                            style={{ objectFit: "cover" }}
                                         />
+                                    ) : (
+                                        <span className="badge text-bg-light">Geen afbeelding</span>
                                     )}
                                     <div>
                                         <div className="fw-semibold">{row.naam}</div>
-                                        <div className="text-muted small">{row.categorie || "Geen categorie"}</div>
+                                        <div className="text-muted small">{row.categorie || "Categorie onbekend"}</div>
                                     </div>
                                 </div>
                             ),
@@ -617,22 +616,22 @@ function ProductsModal({ user, onClose }: ProductsModalProps): ReactElement {
                             key: "voorraad",
                             header: "Voorraad (bloemen)",
                             sortable: true,
-                            render: (row) => row.voorraad ?? "—",
-                            getValue: (row) => row.voorraad ?? 0,
+                            render: (row) => (row.voorraad != null ? row.voorraad : "—"),
+                            getValue: (row) => row.voorraad ?? "",
                         },
                         {
                             key: "fust",
                             header: "Fust",
                             sortable: true,
-                            render: (row) => row.fust ?? "—",
-                            getValue: (row) => row.fust ?? 0,
+                            render: (row) => (row.fust != null ? row.fust : "—"),
+                            getValue: (row) => row.fust ?? "",
                         },
                         {
                             key: "piecesPerBundle",
                             header: "Stuks/bundel",
                             sortable: true,
-                            render: (row) => row.piecesPerBundle ?? "—",
-                            getValue: (row) => row.piecesPerBundle ?? 0,
+                            render: (row) => (row.piecesPerBundle != null ? row.piecesPerBundle : "—"),
+                            getValue: (row) => row.piecesPerBundle ?? "",
                         },
                         {
                             key: "minPrice",
@@ -650,23 +649,19 @@ function ProductsModal({ user, onClose }: ProductsModalProps): ReactElement {
                         },
                     ]}
                     rows={rows}
-                    getRowKey={(row) => String(row.id)}
                     totalResults={totalResults}
+                    empty={<Empty message="Geen producten gevonden." />}
+                    getRowKey={(row) => String(row.id)}
                 />
             )}
-            <div className="mt-3 d-flex justify-content-between align-items-center">
-                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={exportProducts}>
-                    Exporteren als CSV
-                </button>
-                <Pager
-                    page={page}
-                    pageSize={pageSize}
-                    hasNext={hasNext}
-                    onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
-                    onNext={() => setPage((prev) => prev + 1)}
-                    totalResults={totalResults}
-                />
-            </div>
+            <Pager
+                page={page}
+                pageSize={pageSize}
+                hasNext={hasNext}
+                onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+                onNext={() => setPage((prev) => prev + 1)}
+                totalResults={totalResults}
+            />
         </Modal>
     );
 }
@@ -684,6 +679,7 @@ function AuctionModal({ row, onClose }: AuctionModalProps): ReactElement {
     useEffect(() => {
         setDetail(null);
         setCurrentRow(row);
+        setCurrentPrice(row.maxPrice);
     }, [row]);
 
     const detailId = row.veilingNr ?? row.id;
@@ -707,9 +703,7 @@ function AuctionModal({ row, onClose }: AuctionModalProps): ReactElement {
         return () => controller.abort();
     }, [detailId]);
 
-    useEffect(() => {
-        return fetchDetail();
-    }, [fetchDetail]);
+    useEffect(() => fetchDetail(), [fetchDetail]);
 
     useEffect(() => {
         subscriptionRef.current?.();
@@ -724,147 +718,175 @@ function AuctionModal({ row, onClose }: AuctionModalProps): ReactElement {
 
     useEffect(() => {
         const updatePrice = () => {
-            const startMs = currentRow.startIso ? Date.parse(currentRow.startIso) : Number.NaN;
-            const endMs = currentRow.endIso ? Date.parse(currentRow.endIso) : Number.NaN;
-            const price = computeClockPrice(Date.now(), startMs, endMs, currentRow.maxPrice, currentRow.minPrice);
-            setCurrentPrice(price);
+            if (currentRow.status !== "active") {
+                setCurrentPrice(currentRow.minPrice);
+                return;
+            }
+            const startMs = parseIsoMs(currentRow.startIso) ?? Date.now();
+            const endMs = parseIsoMs(currentRow.endIso) ?? Date.now();
+            if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+                setCurrentPrice(currentRow.maxPrice);
+                return;
+            }
+            const now = Date.now();
+            if (now <= startMs) {
+                setCurrentPrice(currentRow.maxPrice);
+                return;
+            }
+            if (now >= endMs) {
+                setCurrentPrice(currentRow.minPrice);
+                return;
+            }
+            const progress = (now - startMs) / (endMs - startMs);
+            const diff = currentRow.maxPrice - currentRow.minPrice;
+            const price = currentRow.maxPrice - diff * progress;
+            setCurrentPrice(Number(price.toFixed(2)));
         };
         updatePrice();
-        const timer = setInterval(updatePrice, 1000);
-        return () => clearInterval(timer);
-    }, [currentRow.startIso, currentRow.endIso, currentRow.maxPrice, currentRow.minPrice]);
+        const timer = window.setInterval(updatePrice, 1000);
+        return () => window.clearInterval(timer);
+    }, [currentRow.endIso, currentRow.maxPrice, currentRow.minPrice, currentRow.startIso, currentRow.status]);
 
-    const { active, inactive } = useMemo(() => (detail ? splitProducts(detail) : { active: [], inactive: [] }), [detail]);
-
-    const fileId = detailId;
-
-    const exportProducts = useCallback(
-        (products: readonly VeilingProductRow[], label: string) => {
-            exportCsv(
-                `veiling-${fileId}-${label}.csv`,
-                products.map((product) => ({
-                    Nummer: product.veilingProductNr ?? product.id,
-                    Product: product.naam,
-                    Voorraad: product.voorraad ?? "",
-                    Fust: product.fust ?? "",
-                    "Stuks/bundel": product.piecesPerBundle ?? "",
-                    "Min. prijs": formatCurrency(product.minPrice),
-                    Status: statusLabel(product.status),
-                })),
-            );
-        },
-        [fileId],
+    const { active, inactive } = useMemo(
+        () => (detail ? splitProducts(detail) : { active: [] as readonly VeilingProductRow[], inactive: [] as readonly VeilingProductRow[] }),
+        [detail],
     );
 
-    const progress = useMemo(() => {
+    const progressPercent = useMemo(() => {
         if (currentRow.maxPrice <= currentRow.minPrice) return 0;
         const ratio = (currentPrice - currentRow.minPrice) / (currentRow.maxPrice - currentRow.minPrice);
         return Math.max(0, Math.min(100, Math.round(ratio * 100)));
     }, [currentPrice, currentRow.maxPrice, currentRow.minPrice]);
 
-    const isClockStatic = currentRow.maxPrice === currentRow.minPrice;
+    const clockStatic = currentRow.maxPrice === currentRow.minPrice;
 
     return (
-        <Modal title={`Veiling ${currentRow.veilingNr ?? row.id}`} onClose={onClose} size="xl">
+        <Modal
+            title={`Veiling ${currentRow.veilingNr ?? row.id}`}
+            onClose={onClose}
+            size="xl"
+            footer={
+                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                    Sluiten
+                </button>
+            }
+        >
             {error && <Alert>{error}</Alert>}
             {loading && !detail ? (
                 <Loading />
             ) : (
                 <div className="d-flex flex-column gap-3">
-                    <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex flex-column flex-lg-row gap-3 align-items-lg-start justify-content-between">
                         <div>
-                            <h3 className="h4 mb-1">{currentRow.titel}</h3>
-                            <p className="text-muted mb-0">
+                            <h3 className="h4 fw-semibold mb-1">{currentRow.titel}</h3>
+                            <p className="text-muted mb-0 small">
                                 {formatDateTime(currentRow.startIso)} • {formatDateTime(currentRow.endIso)}
                             </p>
                         </div>
-                        <span className={cx("badge", statusBadgeVariant(currentRow.status))}>{statusLabel(currentRow.status)}</span>
+                        <span className={cx("badge", "rounded-pill", statusBadgeVariant(currentRow.status))}>{statusLabel(currentRow.status)}</span>
                     </div>
-                    <div className="card shadow-sm rounded-4 border-0">
+                    <div className="card border-0 shadow-sm rounded-4">
                         <div className="card-body">
-                            <p className="text-muted mb-1">Huidige klokprijs</p>
-                            <div className="display-4 fw-bold" aria-live="polite">
+                            <p className="text-muted text-uppercase small mb-1">Klokprijs</p>
+                            <div className="display-5 fw-semibold" aria-live="polite">
                                 {formatCurrency(currentPrice)}
                             </div>
-                            <div className="text-muted">Van {formatCurrency(currentRow.maxPrice)} naar {formatCurrency(currentRow.minPrice)}</div>
-                            {isClockStatic ? (
-                                <div className="small text-muted mt-2">Klok staat stil</div>
+                            <p className="text-muted mb-2">Van {formatCurrency(currentRow.maxPrice)} naar {formatCurrency(currentRow.minPrice)}</p>
+                            {clockStatic ? (
+                                <div className="text-muted small">Klok staat stil</div>
                             ) : (
-                                <div className="progress mt-3" aria-hidden="true">
-                                    <div className="progress-bar" style={{ width: `${progress}%` }} />
+                                <div className="progress" style={{ height: 8 }} aria-hidden="true">
+                                    <div className="progress-bar" style={{ width: `${progressPercent}%` }} />
                                 </div>
                             )}
                         </div>
                     </div>
-                    <div className="d-flex gap-2 justify-content-end">
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => exportProducts(active, "actief")}
-                            disabled={!active.length}
-                        >
-                            Actieve producten exporteren
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => exportProducts(inactive, "inactief")}
-                            disabled={!inactive.length}
-                        >
-                            Inactieve producten exporteren
-                        </button>
-                    </div>
-                    <ProductSection title="Actieve producten" products={active} emptyMessage="Geen actieve producten." />
-                    <ProductSection title="Inactieve producten" products={inactive} emptyMessage="Geen inactieve producten." />
+                    <section className="d-flex flex-column gap-2">
+                        <h4 className="h6 text-uppercase text-muted mb-0">Actieve producten</h4>
+                        {active.length === 0 ? (
+                            <Empty message="Geen actieve producten." />
+                        ) : (
+                            <DataTable
+                                columns={productColumns}
+                                rows={active}
+                                getRowKey={(item) => String(item.id)}
+                                totalResults={active.length}
+                            />
+                        )}
+                    </section>
+                    <section className="d-flex flex-column gap-2">
+                        <h4 className="h6 text-uppercase text-muted mb-0">Inactief of geannuleerd</h4>
+                        {inactive.length === 0 ? (
+                            <Empty message="Geen inactieve producten." />
+                        ) : (
+                            <DataTable
+                                columns={productColumns}
+                                rows={inactive}
+                                getRowKey={(item) => `inactive-${item.id}`}
+                                totalResults={inactive.length}
+                            />
+                        )}
+                    </section>
                 </div>
             )}
         </Modal>
     );
 }
 
-type ProductSectionProps = {
-    title: string;
-    products: readonly VeilingProductRow[];
-    emptyMessage: string;
-};
-
-function ProductSection({ title, products, emptyMessage }: ProductSectionProps): ReactElement {
-    return (
-        <div className="card shadow-sm rounded-4 border-0">
-            <div className="card-header bg-white border-bottom">
-                <h4 className="h6 mb-0">{title}</h4>
-            </div>
-            <div className="card-body p-0">
-                {products.length === 0 ? (
-                    <div className="text-muted text-center py-4">{emptyMessage}</div>
+const productColumns = [
+    { key: "id", header: "#", width: "5rem" },
+    {
+        key: "naam",
+        header: "Product",
+        sortable: true,
+        render: (row: VeilingProductRow) => (
+            <div className="d-flex align-items-center gap-2">
+                {row.image ? (
+                    <img src={row.image} alt="" width={40} height={40} className="rounded-3 border" style={{ objectFit: "cover" }} />
                 ) : (
-                    <ul className="list-group list-group-flush">
-                        {products.map((product) => (
-                            <li key={product.id} className="list-group-item d-flex gap-3 align-items-center">
-                                {product.image && (
-                                    <img
-                                        src={product.image}
-                                        alt={product.naam}
-                                        className="img-fluid rounded border"
-                                        style={{ maxWidth: 56 }}
-                                    />
-                                )}
-                                <div className="flex-grow-1">
-                                    <div className="fw-semibold">{product.naam}</div>
-                                    <div className="text-muted small">
-                                        Voorraad {product.voorraad ?? "—"} • Fust {product.fust ?? "—"}
-                                    </div>
-                                    <div className="text-muted small">
-                                        Stuks/bundel {product.piecesPerBundle ?? "—"} • Min. prijs {formatCurrency(product.minPrice)}
-                                    </div>
-                                </div>
-                                <span className={cx("badge", statusBadgeVariant(product.status))}>{statusLabel(product.status)}</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <span className="badge text-bg-light">Geen afbeelding</span>
                 )}
+                <div>
+                    <div className="fw-semibold">{row.naam}</div>
+                    <div className="text-muted small">{row.categorie || "Categorie onbekend"}</div>
+                </div>
             </div>
-        </div>
-    );
-}
-
+        ),
+        getValue: (row: VeilingProductRow) => row.naam,
+    },
+    {
+        key: "voorraad",
+        header: "Voorraad (bloemen)",
+        sortable: true,
+        render: (row: VeilingProductRow) => (row.voorraad != null ? row.voorraad : "—"),
+        getValue: (row: VeilingProductRow) => row.voorraad ?? "",
+    },
+    {
+        key: "fust",
+        header: "Fust",
+        sortable: true,
+        render: (row: VeilingProductRow) => (row.fust != null ? row.fust : "—"),
+        getValue: (row: VeilingProductRow) => row.fust ?? "",
+    },
+    {
+        key: "piecesPerBundle",
+        header: "Stuks/bundel",
+        sortable: true,
+        render: (row: VeilingProductRow) => (row.piecesPerBundle != null ? row.piecesPerBundle : "—"),
+        getValue: (row: VeilingProductRow) => row.piecesPerBundle ?? "",
+    },
+    {
+        key: "minPrice",
+        header: "Min. prijs",
+        sortable: true,
+        render: (row: VeilingProductRow) => formatCurrency(row.minPrice),
+        getValue: (row: VeilingProductRow) => row.minPrice,
+    },
+    {
+        key: "status",
+        header: "Status",
+        sortable: true,
+        render: (row: VeilingProductRow) => <StatusBadge status={row.status} />,
+        getValue: (row: VeilingProductRow) => row.status,
+    },
+] as const;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiError } from "./api";
 import { getAuctions, getBids, getProductsByGrower, getUsers } from "./api";
 import {
@@ -18,13 +18,8 @@ const AUCTIONS_STORAGE_KEY = "vm_veilingen_filters";
 const BIDS_STORAGE_KEY = "vm_bids_filters";
 const PRODUCTS_STORAGE_KEY = "vm_products_filters";
 
-const RETRY_DELAYS = [500, 1000, 2000] as const;
-
-type CacheEntry<T> = {
-    rows: readonly T[];
-    hasNext: boolean;
-    totalResults?: number;
-};
+const POLL_INTERVAL = 5000;
+const BACKOFF_DELAYS = [1000, 2000, 4000] as const;
 
 type UsersState = { page: number; pageSize: number; search: string };
 type AuctionsState = {
@@ -36,16 +31,6 @@ type AuctionsState = {
 };
 type BidsState = { page: number; pageSize: number; from: string; to: string };
 type ProductsState = { page: number; pageSize: number };
-
-const cache = new Map<string, CacheEntry<unknown>>();
-
-function readCache<T>(key: string): CacheEntry<T> | undefined {
-    return cache.get(key) as CacheEntry<T> | undefined;
-}
-
-function writeCache<T>(key: string, entry: CacheEntry<T>): void {
-    cache.set(key, entry);
-}
 
 function useRefState<T>(factory: () => T): T {
     const ref = useRef<T>();
@@ -60,64 +45,49 @@ function readUsersState(): UsersState {
     if (typeof window === "undefined") return defaults;
     const params = new URLSearchParams(window.location.search);
     const stored = readStorage<Partial<UsersState>>(USERS_STORAGE_KEY);
-    const merged: UsersState = {
-        ...defaults,
-        ...(stored ?? {}),
-    };
-    const pageParam = parseNumber(params.get("vm_users_page"));
-    const sizeParam = parseNumber(params.get("vm_users_pageSize"));
-    const searchParam = params.get("vm_users_q");
-    return {
-        page: pageParam ?? merged.page,
-        pageSize: sizeParam ?? merged.pageSize,
-        search: searchParam ?? merged.search,
-    };
+    const page = parsePositive(params.get("vm_users_page")) ?? stored?.page ?? defaults.page;
+    const pageSize = parsePositive(params.get("vm_users_pageSize")) ?? stored?.pageSize ?? defaults.pageSize;
+    const search = params.get("vm_users_q") ?? stored?.search ?? defaults.search;
+    return { page, pageSize, search };
 }
 
 function readAuctionsState(): AuctionsState {
     const defaults: AuctionsState = { page: 1, pageSize: 25, status: "alle", from: "", to: "" };
     if (typeof window === "undefined") return defaults;
     const params = new URLSearchParams(window.location.search);
-    const stored = readStorage<Partial<AuctionsState>>(AUCTIONS_STORAGE_KEY);
-    const merged: AuctionsState = {
-        ...defaults,
-        ...(stored ?? {}),
-    };
+    const stored = readStorage<Partial<AuctionsState>>(AUCTIONS_STORAGE_KEY) ?? {};
+    const status =
+        normaliseStatusFilter(params.get("vm_veilingen_status")) ??
+        normaliseStatusFilter(stored.status) ??
+        defaults.status;
     return {
-        page: parseNumber(params.get("vm_veilingen_page")) ?? merged.page,
-        pageSize: parseNumber(params.get("vm_veilingen_pageSize")) ?? merged.pageSize,
-        status:
-            normaliseStatusFilter(params.get("vm_veilingen_status")) ??
-            normaliseStatusFilter(merged.status) ??
-            "alle",
-        from: params.get("vm_veilingen_from") ?? merged.from,
-        to: params.get("vm_veilingen_to") ?? merged.to,
+        page: parsePositive(params.get("vm_veilingen_page")) ?? stored.page ?? defaults.page,
+        pageSize: parsePositive(params.get("vm_veilingen_pageSize")) ?? stored.pageSize ?? defaults.pageSize,
+        status,
+        from: params.get("vm_veilingen_from") ?? stored.from ?? defaults.from,
+        to: params.get("vm_veilingen_to") ?? stored.to ?? defaults.to,
     };
 }
 
 function readBidsState(): BidsState {
     const defaults: BidsState = { page: 1, pageSize: 10, from: "", to: "" };
-    if (typeof window === "undefined") return defaults;
     const stored = readStorage<Partial<BidsState>>(BIDS_STORAGE_KEY);
     return { ...defaults, ...(stored ?? {}) };
 }
 
 function readProductsState(): ProductsState {
     const defaults: ProductsState = { page: 1, pageSize: 10 };
-    if (typeof window === "undefined") return defaults;
     const stored = readStorage<Partial<ProductsState>>(PRODUCTS_STORAGE_KEY);
     return { ...defaults, ...(stored ?? {}) };
 }
 
-function parseNumber(value: string | null): number | undefined {
+function parsePositive(value: string | null): number | undefined {
     if (!value) return undefined;
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function normaliseStatusFilter(
-    value: string | null | undefined,
-): "alle" | "actief" | "inactief" | undefined {
+function normaliseStatusFilter(value: string | null | undefined): "alle" | "actief" | "inactief" | undefined {
     const raw = (value ?? "").toLowerCase();
     if (raw === "actief") return "actief";
     if (raw === "inactief") return "inactief";
@@ -140,7 +110,7 @@ function writeStorage<T>(key: string, value: T): void {
     try {
         window.localStorage.setItem(key, JSON.stringify(value));
     } catch {
-        // stille failure
+        // negeer storage-fouten
     }
 }
 
@@ -160,40 +130,14 @@ function updateUrlParams(entries: Record<string, string | null>): void {
 function useDebounced(value: string, delay: number): string {
     const [debounced, setDebounced] = useState(value);
     useEffect(() => {
-        const timer: ReturnType<typeof setTimeout> = setTimeout(() => setDebounced(value), delay);
+        const timer = setTimeout(() => setDebounced(value), delay);
         return () => clearTimeout(timer);
     }, [value, delay]);
     return debounced;
 }
 
-function isAbort(error: unknown): boolean {
+function isAbortError(error: unknown): boolean {
     return Boolean((error as { name?: string })?.name === "AbortError");
-}
-
-async function fetchWithRetry<T>(loader: () => Promise<T>, signal: AbortSignal): Promise<T> {
-    let attempt = 0;
-    for (;;) {
-        try {
-            return await loader();
-        } catch (error) {
-            if (isAbort(error) || signal.aborted) {
-                throw error;
-            }
-            const status = (error as ApiError | undefined)?.status;
-            if (status == null || status < 500 || status >= 600 || attempt >= RETRY_DELAYS.length) {
-                throw error;
-            }
-            const delay = RETRY_DELAYS[attempt];
-            attempt += 1;
-            await new Promise((resolve) => {
-                const timeout = window.setTimeout(resolve, delay);
-                signal.addEventListener("abort", () => {
-                    window.clearTimeout(timeout);
-                    resolve(undefined);
-                });
-            });
-        }
-    }
 }
 
 function errorMessage(error: unknown): string {
@@ -202,28 +146,45 @@ function errorMessage(error: unknown): string {
     if ((error as ApiError | undefined)?.message) {
         return (error as ApiError).message;
     }
-    return "Er ging iets mis. Probeer het opnieuw.";
+    return "Er ging iets mis. Probeer het later opnieuw.";
 }
 
 function freezeRows<T>(rows: readonly T[]): readonly T[] {
     return Object.freeze([...rows]);
 }
 
+function isInvalidDateRange(from: string | undefined, to: string | undefined): boolean {
+    if (!from || !to) return false;
+    const fromMs = Date.parse(from);
+    const toMs = Date.parse(to);
+    return Number.isFinite(fromMs) && Number.isFinite(toMs) && toMs < fromMs;
+}
+
+function clearTimer(timer: ReturnType<typeof setTimeout> | undefined): void {
+    if (timer != null) {
+        clearTimeout(timer);
+    }
+}
+
+function schedule(run: () => void, delay: number, activeRef: { current: boolean }): ReturnType<typeof setTimeout> | undefined {
+    if (!activeRef.current) return undefined;
+    return setTimeout(() => {
+        if (activeRef.current) {
+            run();
+        }
+    }, delay);
+}
+
 export function useUserRows(): HookResult<UserRow> {
     const initial = useRefState(readUsersState);
-    const initialKey = useMemo(
-        () => `users:${initial.page}:${initial.pageSize}:${initial.search}`,
-        [initial.page, initial.pageSize, initial.search],
-    );
-    const cached = readCache<UserRow>(initialKey);
-
     const [page, setPage] = useState(initial.page);
     const [pageSize, setPageSize] = useState(initial.pageSize);
     const [search, setSearch] = useState(initial.search);
     const debouncedSearch = useDebounced(search, 300);
-    const [rows, setRows] = useState<readonly UserRow[]>(cached?.rows ?? []);
-    const [hasNext, setHasNext] = useState(cached?.hasNext ?? false);
-    const [totalResults, setTotalResults] = useState<number | undefined>(cached?.totalResults);
+
+    const [rows, setRows] = useState<readonly UserRow[]>([]);
+    const [hasNext, setHasNext] = useState(false);
+    const [totalResults, setTotalResults] = useState<number | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -239,55 +200,74 @@ export function useUserRows(): HookResult<UserRow> {
         });
     }, [page, pageSize, search]);
 
-    const key = useMemo(
-        () => `users:${page}:${pageSize}:${debouncedSearch}`,
-        [page, pageSize, debouncedSearch],
-    );
-
     useEffect(() => {
-        const cachedEntry = readCache<UserRow>(key);
-        if (cachedEntry) {
-            setRows(cachedEntry.rows);
-            setHasNext(cachedEntry.hasNext);
-            setTotalResults(cachedEntry.totalResults);
-        }
-    }, [key]);
+        let controller: AbortController | null = null;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let initialRun = true;
+        let backoffIndex = 0;
+        const active = { current: true };
 
-    useEffect(() => {
-        let active = true;
-        const controller = new AbortController();
-        setLoading(true);
-        setError(null);
-        fetchWithRetry(
-            () =>
-                getUsers({ q: debouncedSearch || undefined, page, pageSize }, controller.signal).then((list) => {
+        const load = () => {
+            if (!active.current) return;
+            controller?.abort();
+            controller = new AbortController();
+            if (initialRun) {
+                setLoading(true);
+            }
+            getUsers(
+                {
+                    q: debouncedSearch || undefined,
+                    page,
+                    pageSize,
+                },
+                controller.signal,
+            )
+                .then((list) => {
+                    if (!active.current) return;
                     const mapped = freezeRows(list.items.map(adaptUser));
-                    writeCache<UserRow>(key, {
-                        rows: mapped,
-                        hasNext: list.hasNext,
-                        totalResults: list.totalResults,
-                    });
-                    if (!active) return list;
                     setRows(mapped);
                     setHasNext(list.hasNext);
                     setTotalResults(list.totalResults);
-                    return list;
-                }),
-            controller.signal,
-        ).catch((err) => {
-            if (isAbort(err) || !active) return;
-            setError(errorMessage(err));
-        }).finally(() => {
-            if (active) {
-                setLoading(false);
-            }
-        });
+                    setError(null);
+                    setLoading(false);
+                    initialRun = false;
+                    backoffIndex = 0;
+                    clearTimer(timer);
+                    timer = schedule(load, POLL_INTERVAL, active);
+                })
+                .catch((err) => {
+                    if (!active.current || isAbortError(err)) return;
+                    setLoading(false);
+                    initialRun = false;
+                    setError(errorMessage(err));
+                    const status = (err as ApiError | undefined)?.status ?? 0;
+                    const serverError = status >= 500 && status < 600;
+                    const delay = serverError
+                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
+                        : POLL_INTERVAL;
+                    if (serverError) {
+                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
+                    } else {
+                        backoffIndex = 0;
+                    }
+                    clearTimer(timer);
+                    timer = schedule(load, delay, active);
+                });
+        };
+
+        load();
 
         return () => {
-            active = false;
-            controller.abort();
+            active.current = false;
+            controller?.abort();
+            clearTimer(timer);
         };
-    }, [debouncedSearch, key, page, pageSize]);
+    }, [debouncedSearch, page, pageSize]);
+
+    const updateSearch = useCallback((value: string) => {
+        setSearch(value);
+        setPage(1);
+    }, []);
 
     const reset = useCallback(() => {
         setPage(1);
@@ -306,23 +286,21 @@ export function useUserRows(): HookResult<UserRow> {
         hasNext,
         totalResults,
         search,
-        setSearch,
+        setSearch: updateSearch,
         reset,
     } satisfies HookResult<UserRow>;
 }
 
 export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow> {
     const initial = useRefState(readBidsState);
-    const keyBase = `bids:${gebruikerNr}`;
-    const cached = readCache<UserBidRow>(`${keyBase}:${initial.page}:${initial.pageSize}:${initial.from}:${initial.to}`);
-
     const [page, setPage] = useState(initial.page);
     const [pageSize, setPageSize] = useState(initial.pageSize);
     const [from, setFrom] = useState(initial.from);
     const [to, setTo] = useState(initial.to);
-    const [rows, setRows] = useState<readonly UserBidRow[]>(cached?.rows ?? []);
-    const [hasNext, setHasNext] = useState(cached?.hasNext ?? false);
-    const [totalResults, setTotalResults] = useState<number | undefined>(cached?.totalResults);
+
+    const [rows, setRows] = useState<readonly UserBidRow[]>([]);
+    const [hasNext, setHasNext] = useState(false);
+    const [totalResults, setTotalResults] = useState<number | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -330,71 +308,92 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
         writeStorage(BIDS_STORAGE_KEY, { page, pageSize, from, to });
     }, [page, pageSize, from, to]);
 
-    const key = useMemo(
-        () => `${keyBase}:${page}:${pageSize}:${from || ""}:${to || ""}`,
-        [keyBase, page, pageSize, from, to],
-    );
-
     useEffect(() => {
-        const cachedEntry = readCache<UserBidRow>(key);
-        if (cachedEntry) {
-            setRows(cachedEntry.rows);
-            setHasNext(cachedEntry.hasNext);
-            setTotalResults(cachedEntry.totalResults);
-        }
-    }, [key]);
+        const invalidRange = isInvalidDateRange(from, to);
+        let controller: AbortController | null = null;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let initialRun = true;
+        let backoffIndex = 0;
+        const active = { current: true };
 
-    useEffect(() => {
-        let active = true;
-        const controller = new AbortController();
-        const invalidRange = Boolean(from && to && to < from);
         if (invalidRange) {
-            setLoading(false);
             setError("Ongeldig datumbereik. Controleer de waarden.");
+            setLoading(false);
             return () => {
-                active = false;
-                controller.abort();
+                active.current = false;
+                controller?.abort();
+                clearTimer(timer);
             };
         }
-        setLoading(true);
-        setError(null);
-        fetchWithRetry(
-            () =>
-                getBids(
-                    {
-                        gebruikerNr,
-                        from: from || undefined,
-                        to: to || undefined,
-                        page,
-                        pageSize,
-                    },
-                    controller.signal,
-                ).then((list) => {
+
+        const load = () => {
+            if (!active.current) return;
+            controller?.abort();
+            controller = new AbortController();
+            if (initialRun) {
+                setLoading(true);
+            }
+            getBids(
+                {
+                    gebruikerNr,
+                    from: from || undefined,
+                    to: to || undefined,
+                    page,
+                    pageSize,
+                },
+                controller.signal,
+            )
+                .then((list) => {
+                    if (!active.current) return;
                     const mapped = freezeRows(list.items.map(adaptBid));
-                    writeCache<UserBidRow>(key, {
-                        rows: mapped,
-                        hasNext: list.hasNext,
-                        totalResults: list.totalResults,
-                    });
-                    if (!active) return list;
                     setRows(mapped);
                     setHasNext(list.hasNext);
                     setTotalResults(list.totalResults);
-                    return list;
-                }),
-            controller.signal,
-        ).catch((err) => {
-            if (isAbort(err) || !active) return;
-            setError(errorMessage(err));
-        }).finally(() => {
-            if (active) setLoading(false);
-        });
+                    setError(null);
+                    setLoading(false);
+                    initialRun = false;
+                    backoffIndex = 0;
+                    clearTimer(timer);
+                    timer = schedule(load, POLL_INTERVAL, active);
+                })
+                .catch((err) => {
+                    if (!active.current || isAbortError(err)) return;
+                    setLoading(false);
+                    initialRun = false;
+                    setError(errorMessage(err));
+                    const status = (err as ApiError | undefined)?.status ?? 0;
+                    const serverError = status >= 500 && status < 600;
+                    const delay = serverError
+                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
+                        : POLL_INTERVAL;
+                    if (serverError) {
+                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
+                    } else {
+                        backoffIndex = 0;
+                    }
+                    clearTimer(timer);
+                    timer = schedule(load, delay, active);
+                });
+        };
+
+        load();
 
         return () => {
-            active = false;
-            controller.abort();
+            active.current = false;
+            controller?.abort();
+            clearTimer(timer);
         };
-    }, [from, gebruikerNr, key, page, pageSize, to]);
+    }, [from, gebruikerNr, page, pageSize, to]);
+
+    const updateFrom = useCallback((value: string) => {
+        setFrom(value);
+        setPage(1);
+    }, []);
+
+    const updateTo = useCallback((value: string) => {
+        setTo(value);
+        setPage(1);
+    }, []);
 
     const reset = useCallback(() => {
         setPage(1);
@@ -414,26 +413,24 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
         hasNext,
         totalResults,
         from,
-        setFrom,
+        setFrom: updateFrom,
         to,
-        setTo,
+        setTo: updateTo,
         reset,
     } satisfies HookResult<UserBidRow>;
 }
 
 export function useVeilingRows(): HookResult<VeilingRow> {
     const initial = useRefState(readAuctionsState);
-    const keyBase = `auctions:${initial.status}:${initial.from}:${initial.to}`;
-    const cached = readCache<VeilingRow>(`${keyBase}:${initial.page}:${initial.pageSize}`);
-
     const [page, setPage] = useState(initial.page);
     const [pageSize, setPageSize] = useState(initial.pageSize);
     const [status, setStatus] = useState<"alle" | "actief" | "inactief">(initial.status);
     const [from, setFrom] = useState(initial.from);
     const [to, setTo] = useState(initial.to);
-    const [rows, setRows] = useState<readonly VeilingRow[]>(cached?.rows ?? []);
-    const [hasNext, setHasNext] = useState(cached?.hasNext ?? false);
-    const [totalResults, setTotalResults] = useState<number | undefined>(cached?.totalResults);
+
+    const [rows, setRows] = useState<readonly VeilingRow[]>([]);
+    const [hasNext, setHasNext] = useState(false);
+    const [totalResults, setTotalResults] = useState<number | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -451,65 +448,102 @@ export function useVeilingRows(): HookResult<VeilingRow> {
         });
     }, [from, page, pageSize, status, to]);
 
-    const key = useMemo(
-        () => `auctions:${status}:${from || ""}:${to || ""}:${page}:${pageSize}`,
-        [status, from, to, page, pageSize],
-    );
-
     useEffect(() => {
-        const cachedEntry = readCache<VeilingRow>(key);
-        if (cachedEntry) {
-            setRows(cachedEntry.rows);
-            setHasNext(cachedEntry.hasNext);
-            setTotalResults(cachedEntry.totalResults);
+        const invalidRange = isInvalidDateRange(from, to);
+        let controller: AbortController | null = null;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let initialRun = true;
+        let backoffIndex = 0;
+        const active = { current: true };
+
+        if (invalidRange) {
+            setError("Ongeldig datumbereik. Controleer de waarden.");
+            setLoading(false);
+            return () => {
+                active.current = false;
+                controller?.abort();
+                clearTimer(timer);
+            };
         }
-    }, [key]);
 
-    useEffect(() => {
-        let active = true;
-        const controller = new AbortController();
-        setLoading(true);
-        setError(null);
-        const onlyActive = status === "actief";
-        fetchWithRetry(
-            () =>
-                getAuctions(
-                    {
-                        from: from || undefined,
-                        to: to || undefined,
-                        onlyActive,
-                        page,
-                        pageSize,
-                    },
-                    controller.signal,
-                ).then((list) => {
-                    const mappedRows = list.items.map(adaptAuction);
-                    const filteredRows = status === "inactief" ? mappedRows.filter((row) => row.status !== "active") : mappedRows;
-                    const frozen = freezeRows(filteredRows);
-                    writeCache<VeilingRow>(key, {
-                        rows: frozen,
-                        hasNext: status === "inactief" ? list.hasNext || filteredRows.length < mappedRows.length : list.hasNext,
-                        totalResults: list.totalResults,
-                    });
-                    if (!active) return list;
+        const load = () => {
+            if (!active.current) return;
+            controller?.abort();
+            controller = new AbortController();
+            if (initialRun) {
+                setLoading(true);
+            }
+            const onlyActive = status === "actief";
+            getAuctions(
+                {
+                    from: from || undefined,
+                    to: to || undefined,
+                    onlyActive: onlyActive ? true : undefined,
+                    page,
+                    pageSize,
+                },
+                controller.signal,
+            )
+                .then((list) => {
+                    if (!active.current) return;
+                    const mapped = list.items.map(adaptAuction);
+                    const filtered = status === "inactief" ? mapped.filter((row) => row.status !== "active") : mapped;
+                    const frozen = freezeRows(filtered);
                     setRows(frozen);
-                    setHasNext(status === "inactief" ? list.hasNext || filteredRows.length < mappedRows.length : list.hasNext);
+                    const derivedHasNext =
+                        status === "inactief" && filtered.length < mapped.length ? true : list.hasNext;
+                    setHasNext(derivedHasNext);
                     setTotalResults(list.totalResults);
-                    return list;
-                }),
-            controller.signal,
-        ).catch((err) => {
-            if (isAbort(err) || !active) return;
-            setError(errorMessage(err));
-        }).finally(() => {
-            if (active) setLoading(false);
-        });
+                    setError(null);
+                    setLoading(false);
+                    initialRun = false;
+                    backoffIndex = 0;
+                    clearTimer(timer);
+                    timer = schedule(load, POLL_INTERVAL, active);
+                })
+                .catch((err) => {
+                    if (!active.current || isAbortError(err)) return;
+                    setLoading(false);
+                    initialRun = false;
+                    setError(errorMessage(err));
+                    const statusCode = (err as ApiError | undefined)?.status ?? 0;
+                    const serverError = statusCode >= 500 && statusCode < 600;
+                    const delay = serverError
+                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
+                        : POLL_INTERVAL;
+                    if (serverError) {
+                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
+                    } else {
+                        backoffIndex = 0;
+                    }
+                    clearTimer(timer);
+                    timer = schedule(load, delay, active);
+                });
+        };
+
+        load();
 
         return () => {
-            active = false;
-            controller.abort();
+            active.current = false;
+            controller?.abort();
+            clearTimer(timer);
         };
-    }, [from, key, page, pageSize, status, to]);
+    }, [from, page, pageSize, status, to]);
+
+    const updateStatus = useCallback((value: "alle" | "actief" | "inactief") => {
+        setStatus(value);
+        setPage(1);
+    }, []);
+
+    const updateFrom = useCallback((value: string) => {
+        setFrom(value);
+        setPage(1);
+    }, []);
+
+    const updateTo = useCallback((value: string) => {
+        setTo(value);
+        setPage(1);
+    }, []);
 
     const reset = useCallback(() => {
         setPage(1);
@@ -530,25 +564,23 @@ export function useVeilingRows(): HookResult<VeilingRow> {
         hasNext,
         totalResults,
         status,
-        setStatus,
+        setStatus: updateStatus,
         from,
-        setFrom,
+        setFrom: updateFrom,
         to,
-        setTo,
+        setTo: updateTo,
         reset,
     } satisfies HookResult<VeilingRow>;
 }
 
 export function useVeilingProductsByGrower(kwekernr: number | string): HookResult<VeilingProductRow> {
     const initial = useRefState(readProductsState);
-    const keyBase = `products:${kwekernr}`;
-    const cached = readCache<VeilingProductRow>(`${keyBase}:${initial.page}:${initial.pageSize}`);
-
     const [page, setPage] = useState(initial.page);
     const [pageSize, setPageSize] = useState(initial.pageSize);
-    const [rows, setRows] = useState<readonly VeilingProductRow[]>(cached?.rows ?? []);
-    const [hasNext, setHasNext] = useState(cached?.hasNext ?? false);
-    const [totalResults, setTotalResults] = useState<number | undefined>(cached?.totalResults);
+
+    const [rows, setRows] = useState<readonly VeilingProductRow[]>([]);
+    const [hasNext, setHasNext] = useState(false);
+    const [totalResults, setTotalResults] = useState<number | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -556,50 +588,66 @@ export function useVeilingProductsByGrower(kwekernr: number | string): HookResul
         writeStorage(PRODUCTS_STORAGE_KEY, { page, pageSize });
     }, [page, pageSize]);
 
-    const key = useMemo(() => `${keyBase}:${page}:${pageSize}`, [keyBase, page, pageSize]);
-
     useEffect(() => {
-        const cachedEntry = readCache<VeilingProductRow>(key);
-        if (cachedEntry) {
-            setRows(cachedEntry.rows);
-            setHasNext(cachedEntry.hasNext);
-            setTotalResults(cachedEntry.totalResults);
-        }
-    }, [key]);
+        let controller: AbortController | null = null;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let initialRun = true;
+        let backoffIndex = 0;
+        const active = { current: true };
 
-    useEffect(() => {
-        let active = true;
-        const controller = new AbortController();
-        setLoading(true);
-        setError(null);
-        fetchWithRetry(
-            () =>
-                getProductsByGrower(kwekernr, { page, pageSize }, controller.signal).then((list) => {
+        const load = () => {
+            if (!active.current) return;
+            controller?.abort();
+            controller = new AbortController();
+            if (initialRun) {
+                setLoading(true);
+            }
+            getProductsByGrower(
+                kwekernr,
+                { page, pageSize },
+                controller.signal,
+            )
+                .then((list) => {
+                    if (!active.current) return;
                     const mapped = freezeRows(list.items.map((item) => adaptProduct(item)));
-                    writeCache<VeilingProductRow>(key, {
-                        rows: mapped,
-                        hasNext: list.hasNext,
-                        totalResults: list.totalResults,
-                    });
-                    if (!active) return list;
                     setRows(mapped);
                     setHasNext(list.hasNext);
                     setTotalResults(list.totalResults);
-                    return list;
-                }),
-            controller.signal,
-        ).catch((err) => {
-            if (isAbort(err) || !active) return;
-            setError(errorMessage(err));
-        }).finally(() => {
-            if (active) setLoading(false);
-        });
+                    setError(null);
+                    setLoading(false);
+                    initialRun = false;
+                    backoffIndex = 0;
+                    clearTimer(timer);
+                    timer = schedule(load, POLL_INTERVAL, active);
+                })
+                .catch((err) => {
+                    if (!active.current || isAbortError(err)) return;
+                    setLoading(false);
+                    initialRun = false;
+                    setError(errorMessage(err));
+                    const status = (err as ApiError | undefined)?.status ?? 0;
+                    const serverError = status >= 500 && status < 600;
+                    const delay = serverError
+                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
+                        : POLL_INTERVAL;
+                    if (serverError) {
+                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
+                    } else {
+                        backoffIndex = 0;
+                    }
+                    clearTimer(timer);
+                    timer = schedule(load, delay, active);
+                });
+        };
+
+        load();
 
         return () => {
-            active = false;
-            controller.abort();
+            active.current = false;
+            controller?.abort();
+            clearTimer(timer);
         };
-    }, [kwekernr, key, page, pageSize]);
+    }, [kwekernr, page, pageSize]);
 
     const reset = useCallback(() => {
         setPage(1);
@@ -619,4 +667,3 @@ export function useVeilingProductsByGrower(kwekernr: number | string): HookResul
         reset,
     } satisfies HookResult<VeilingProductRow>;
 }
-

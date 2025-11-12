@@ -15,6 +15,7 @@ type FetchInit = RequestInit & { signal?: AbortSignal };
 type ListResult<T> = { data: readonly T[]; headers: Headers };
 
 const BASE_URL = typeof window !== "undefined" ? window.location.origin : "";
+const REQUEST_TIMEOUT = 10000;
 
 export async function fetchJson<T>(path: string, init?: FetchInit): Promise<T> {
     const { data } = await fetchJsonWithMeta<T>(path, init);
@@ -22,28 +23,76 @@ export async function fetchJson<T>(path: string, init?: FetchInit): Promise<T> {
 }
 
 async function fetchJsonWithMeta<T>(path: string, init?: FetchInit): Promise<{ data: T; headers: Headers }> {
-    const request = new Request(`${BASE_URL}${path}`, {
-        credentials: "include",
-        ...init,
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            ...(init?.headers ?? {}),
+    const controller = createAbortController(init?.signal);
+    const timeoutId = startTimeout(controller);
+
+    try {
+        const request = new Request(`${BASE_URL}${path}`, {
+            credentials: "include",
+            ...init,
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                ...(init?.headers ?? {}),
+            },
+            signal: controller.signal,
+        });
+
+        const response = await safeFetch(request);
+
+        if (!response.ok) {
+            throw await normaliseError(response);
+        }
+
+        if (response.status === 204) {
+            return { data: undefined as T, headers: response.headers };
+        }
+
+        const data = (await response.json()) as T;
+        return { data, headers: response.headers };
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+function createAbortController(signal?: AbortSignal): AbortController {
+    const controller = new AbortController();
+    if (!signal) {
+        return controller;
+    }
+    if (signal.aborted) {
+        controller.abort();
+        return controller;
+    }
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    controller.signal.addEventListener(
+        "abort",
+        () => {
+            signal.removeEventListener("abort", abort);
         },
-    });
+        { once: true },
+    );
+    return controller;
+}
 
-    const response = await fetch(request);
-
-    if (!response.ok) {
-        throw await normaliseError(response);
+function startTimeout(controller: AbortController): ReturnType<typeof setTimeout> {
+    if (typeof window === "undefined") {
+        return setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     }
+    return window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+}
 
-    if (response.status === 204) {
-        return { data: undefined as T, headers: response.headers };
+async function safeFetch(request: Request): Promise<Response> {
+    try {
+        return await fetch(request);
+    } catch (error) {
+        if ((error as { name?: string }).name === "AbortError") {
+            throw error;
+        }
+        const apiError: ApiError = { status: 0, message: "Kan geen verbinding maken met de server." };
+        throw apiError;
     }
-
-    const data = (await response.json()) as T;
-    return { data, headers: response.headers };
 }
 
 async function normaliseError(response: Response): Promise<ApiError> {

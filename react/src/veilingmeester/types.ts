@@ -211,12 +211,13 @@ export function adaptPrice(
     auction: VeilingDto | VeilingDetailDto | null | undefined,
     product?: VeilingproductDto | null,
 ): { minPrice: number; maxPrice: number } {
-    const productMin = toNumber(product?.minimumprijs ?? product?.startprijs);
-    const productMax = toNumber(product?.maximumprijs ?? product?.startprijs);
     const auctionMin = toNumber(auction?.minimumprijs);
     const auctionMax = toNumber(auction?.maximumprijs);
+    const productMin = toNumber(product?.minimumprijs);
+    const productStart = toNumber(product?.startprijs);
+    const productMax = toNumber(product?.maximumprijs);
     const minPrice = productMin ?? auctionMin ?? 0;
-    const maxPrice = auctionMax ?? productMax ?? minPrice;
+    const maxPrice = auctionMax ?? productStart ?? productMax ?? minPrice;
     return { minPrice, maxPrice };
 }
 
