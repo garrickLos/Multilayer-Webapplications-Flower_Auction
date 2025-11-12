@@ -6,3 +6,5 @@ export * from './useSearchPagination';
 export * from './useSearchTableSection';
 export * from './useSearchableLiveRows';
 export * from './useDebouncedValue';
+export * from './useUserRows';
+export * from './useUserBids';

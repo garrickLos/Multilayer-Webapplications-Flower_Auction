@@ -1,10 +1,4 @@
-import {
-    memo,
-    useId,
-    useMemo,
-    useState,
-    type KeyboardEventHandler,
-} from 'react';
+import { memo, useId, useMemo, useState, type KeyboardEventHandler } from 'react';
 import type {
     AriaAttributes,
     CSSProperties,
@@ -61,7 +55,6 @@ export type DataTableProps<T extends RowBase> = {
     getRowKey?: (row: T, index: number) => Key;
     defaultSortKey?: keyof T & string;
     defaultSortDir?: SortDirection;
-    filterPlaceholder?: string;
 };
 
 const autoColumns = <T extends RowBase>(rows: readonly T[], max = 8): ReadonlyArray<Column<T>> => {
@@ -112,21 +105,6 @@ const useSorting = <T extends RowBase>(
     return { sortKey, sortDirection, comparator, toggleSort };
 };
 
-const useFiltering = <T extends RowBase>(rows: readonly T[], query: string, columns: ReadonlyArray<Column<T>>) => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return useMemo(() => {
-        if (!normalizedQuery) return rows;
-        return rows.filter(row =>
-            columns.some(column =>
-                stringifyValue(column.accessor ? column.accessor(row) : row[column.key as keyof T])
-                    .toLowerCase()
-                    .includes(normalizedQuery),
-            ),
-        );
-    }, [rows, normalizedQuery, columns]);
-};
-
 function DataTableInner<T extends RowBase>({
     rows,
     columns,
@@ -135,7 +113,6 @@ function DataTableInner<T extends RowBase>({
     getRowKey,
     defaultSortKey,
     defaultSortDir = 'asc',
-    filterPlaceholder = 'zoeken…',
 }: DataTableProps<T>): ReactElement {
     const resolvedColumns = useMemo(
         () => (columns?.length ? columns : autoColumns(rows)),
@@ -148,11 +125,9 @@ function DataTableInner<T extends RowBase>({
         defaultSortDir,
     );
 
-    const [query, setQuery] = useState('');
-    const filteredRows = useFiltering(rows, query, resolvedColumns);
     const data = useMemo(
-        () => (comparator ? stableSort(filteredRows, comparator) : filteredRows),
-        [filteredRows, comparator],
+        () => (comparator ? stableSort(rows, comparator) : rows),
+        [rows, comparator],
     );
 
     const tableId = useId();
@@ -176,33 +151,10 @@ function DataTableInner<T extends RowBase>({
                     </div>
                 )}
                 <div className="card-body pt-2">
-                    <div className="d-flex align-items-center justify-content-between mb-2">
+                    <div className="mb-2">
                         <span className="badge bg-success-subtle text-success" aria-live="polite">
                             {data.length.toLocaleString('nl-NL')} resultaten
                         </span>
-                        <div className="input-group input-group-sm" style={{ maxWidth: 320 }}>
-                            <span className="input-group-text bg-success-subtle text-success border-success-subtle">
-                                Zoek
-                            </span>
-                            <input
-                                className="form-control"
-                                value={query}
-                                onChange={event => setQuery(event.currentTarget.value)}
-                                placeholder={filterPlaceholder}
-                                aria-label="Filter resultaten"
-                                inputMode="search"
-                                autoComplete="off"
-                            />
-                            {query && (
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary"
-                                    onClick={() => setQuery('')}
-                                >
-                                    Wissen
-                                </button>
-                            )}
-                        </div>
                     </div>
 
                     <div className="table-responsive rounded-3 border bg-body">

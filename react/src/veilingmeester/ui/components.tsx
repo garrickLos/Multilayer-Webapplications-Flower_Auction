@@ -70,6 +70,39 @@ export const SelectSm = memo<SelectSmProps>(
 );
 SelectSm.displayName = 'SelectSm';
 
+type SelectStatusSmProps = {
+    id: string;
+    label?: string;
+    value: 'alle' | 'actief' | 'inactief';
+    onChange: (v: 'alle' | 'actief' | 'inactief') => void;
+    className?: string;
+};
+
+export const SelectStatusSm = ({
+    id,
+    label = 'Status',
+    value,
+    onChange,
+    className,
+}: SelectStatusSmProps) => (
+    <div className={className ?? 'col-12 col-md-3'}>
+        <label htmlFor={id} className="form-label mb-1">
+            {label}
+        </label>
+        <select
+            id={id}
+            className="form-select form-select-sm"
+            value={value}
+            onChange={e => onChange(e.currentTarget.value as 'alle' | 'actief' | 'inactief')}
+            aria-label={label}
+        >
+            <option value="alle">Alle</option>
+            <option value="actief">Actief</option>
+            <option value="inactief">Inactief</option>
+        </select>
+    </div>
+);
+
 export const Loading = memo(() => (
     <div className="placeholder-glow" aria-live="polite" aria-busy="true" role="status">
         <div className="placeholder col-12 mb-2" />

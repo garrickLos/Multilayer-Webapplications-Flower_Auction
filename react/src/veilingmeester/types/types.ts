@@ -1,13 +1,22 @@
 // api
 export type MaybeNumber = number | '' | null | undefined;
 
-export type Bieding = Partial<{
-    biedNr: number;
-    bedragPerFust: number;
-    aantalStuks: number;
-    gebruikerNr: number;
-    veilingNr: number;
-}> &
+export type Bieding =
+    Partial<{
+        biedNr: number;
+        bedragPerFust: number;
+        aantalStuks: number;
+        gebruikerNr: number;
+        veilingNr: number;
+        status: string;
+        datum: string;
+        aanmaakDatum: string;
+        aangemaaktOp: string;
+        createdAt: string;
+        updatedAt: string;
+        totaalBedrag: number;
+        veilingTitel: string;
+    }> &
     Record<string, unknown>;
 
 export type Veilingproduct = Partial<{
@@ -50,6 +59,17 @@ export type Categorie = Partial<{
 }> &
     Record<string, unknown>;
 
+export type User =
+    Partial<{
+        gebruikerNr: number;
+        naam: string;
+        email: string;
+        status: string;
+        rollen: string[];
+        rol: string;
+    }> &
+    Record<string, unknown>;
+
 
 // http
 
@@ -85,10 +105,30 @@ export type VeilingRow = RowBase & {
     aantalProducten: number;
 };
 
+export type UserRow = RowBase & {
+    id: number | string;
+    gebruikerNr: number | string;
+    naam: string;
+    email: string;
+    status: string;
+    rol: string;
+};
+
+export type UserBidRow = RowBase & {
+    id: number | string;
+    biedNr: number | string;
+    veiling: string | number;
+    veilingNr: number | string;
+    bedragPerFust: number | string;
+    aantalStuks: number | string;
+    status: string;
+    datum: string;
+};
+
 
 // tabs
 
-export type TabKey = 'biedingen' | 'veilingen';
+export type TabKey = 'users' | 'veilingen';
 
 export type TabDefinition = {
     key: TabKey;

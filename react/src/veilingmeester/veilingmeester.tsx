@@ -1,8 +1,15 @@
 import { useCallback, useState, type FC } from 'react';
 import { TAB_IDS } from './config';
-import { FilterChip, SearchTableSection, VeilingModal } from './ui/ui.ts';
-import { useBidRows, useVeilingRows } from './hooks';
-import type { BidRow, TabKey, VeilingRow } from './types/types.ts';
+import {
+    FilterChip,
+    SearchTableSection,
+    VeilingModal,
+    SelectStatusSm,
+    UserBidsModal,
+    type Column,
+} from './ui/ui.ts';
+import { useUserRows, useVeilingRows } from './hooks';
+import type { TabKey, VeilingRow, UserRow } from './types/types.ts';
 
 type SectionProps = {
     hidden: boolean;
@@ -14,7 +21,21 @@ type SectionConfig = {
     Component: FC<SectionProps>;
 };
 
-const BidsSection: FC<SectionProps> = ({ hidden }) => {
+const USER_COLUMNS: ReadonlyArray<Column<UserRow>> = [
+    { key: 'gebruikerNr', header: '#', width: 80, className: 'text-nowrap', sortable: true },
+    { key: 'naam', header: 'Naam', sortable: true },
+    { key: 'email', header: 'E-mail', className: 'text-nowrap', sortable: true },
+    { key: 'status', header: 'Status', className: 'text-nowrap', sortable: true },
+    { key: 'rol', header: 'Rol(len)', sortable: true },
+];
+
+const STATUS_LABELS: Record<'alle' | 'actief' | 'inactief', string> = {
+    alle: 'Alle',
+    actief: 'Actief',
+    inactief: 'Inactief',
+};
+
+const UsersSection: FC<SectionProps> = ({ hidden }) => {
     const {
         rows,
         loading,
@@ -26,28 +47,44 @@ const BidsSection: FC<SectionProps> = ({ hidden }) => {
         setPageSize,
         search,
         setSearch,
-    } = useBidRows();
+    } = useUserRows();
+
+    const [selectedUserId, setSelectedUserId] = useState<number | string | null>(null);
 
     const trimmedQuery = search.trim();
 
+    const handleRowClick = useCallback(
+        (row: UserRow) => {
+            const identifier = row.gebruikerNr !== '' ? row.gebruikerNr : row.id;
+            if (identifier !== '' && identifier !== null && identifier !== undefined) {
+                setSelectedUserId(identifier);
+            }
+        },
+        [],
+    );
+
+    const closeModal = useCallback(() => setSelectedUserId(null), []);
+
     return (
-        <SearchTableSection<BidRow>
-            panelId={TAB_IDS.biedingen.panel}
-            tabId={TAB_IDS.biedingen.tab}
+        <SearchTableSection<UserRow>
+            panelId={TAB_IDS.users.panel}
+            tabId={TAB_IDS.users.tab}
             hidden={hidden}
             className="mb-4"
             search={{
-                id: 'bid-search',
-                label: 'Zoek in biedingen',
+                id: 'user-search',
+                label: 'Zoek in users',
                 value: search,
                 onChange: setSearch,
-                placeholder: 'zoek op gebruiker, veiling, bedrag, aantal, etc.',
+                placeholder: 'bijv. naam, e-mail, rol…',
+                columnClassName: 'col-12 col-md-6',
             }}
             pageSize={{
-                id: 'bid-page-size',
+                id: 'user-page-size',
                 label: 'Per pagina',
                 value: pageSize,
                 onChange: setPageSize,
+                columnClassName: 'col-12 col-md-3',
             }}
             rows={rows}
             loading={loading}
@@ -66,7 +103,17 @@ const BidsSection: FC<SectionProps> = ({ hidden }) => {
                     </FilterChip>
                 ) : undefined
             }
-        />
+            tableProps={{
+                onRowClick: handleRowClick,
+                getRowKey: row => row.id,
+                caption: 'Klik een gebruiker voor biedingen',
+                columns: USER_COLUMNS,
+            }}
+        >
+            {selectedUserId != null && (
+                <UserBidsModal userId={selectedUserId} onClose={closeModal} />
+            )}
+        </SearchTableSection>
     );
 };
 
@@ -83,6 +130,8 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
         search,
         setSearch,
         reset,
+        status,
+        setStatus,
     } = useVeilingRows();
 
     const [selectedVeilingId, setSelectedVeilingId] = useState<number | null>(null);
@@ -96,6 +145,22 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
         },
         [],
     );
+
+    const filterChips =
+        trimmedSearch || status !== 'alle' ? (
+            <>
+                {trimmedSearch && (
+                    <FilterChip onClear={() => setSearch('')} title="Zoekfilter">
+                        Zoek: “{trimmedSearch}”
+                    </FilterChip>
+                )}
+                {status !== 'alle' && (
+                    <FilterChip onClear={() => setStatus('alle')} title="Statusfilter">
+                        Status: {STATUS_LABELS[status]}
+                    </FilterChip>
+                )}
+            </>
+        ) : undefined;
 
     return (
         <SearchTableSection<VeilingRow>
@@ -118,18 +183,26 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
                 columnClassName: 'col-12 col-md-3',
             }}
             extraFilterColumns={
-                <div className="col-12 col-md-3 text-md-end">
-                    <label className="form-label mb-1 d-block">&nbsp;</label>
-                    <button
-                        type="button"
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => reset()}
-                        disabled={loading}
-                        aria-label="Reset"
-                    >
-                        Reset
-                    </button>
-                </div>
+                <>
+                    <SelectStatusSm
+                        id="veiling-status"
+                        value={status}
+                        onChange={setStatus}
+                        className="col-12 col-md-3"
+                    />
+                    <div className="col-12 col-md-3 text-md-end">
+                        <label className="form-label mb-1 d-block">&nbsp;</label>
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={() => reset()}
+                            disabled={loading}
+                            aria-label="Reset"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </>
             }
             rows={rows}
             loading={loading}
@@ -141,13 +214,7 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
                 loading,
                 total: rows.length,
             }}
-            filterChips={
-                trimmedSearch ? (
-                    <FilterChip onClear={() => setSearch('')} title="Zoekfilter">
-                        Zoek: “{trimmedSearch}”
-                    </FilterChip>
-                ) : undefined
-            }
+            filterChips={filterChips}
             tableProps={{
                 onRowClick: handleRowClick,
                 caption: 'Klik een veiling voor producten',
@@ -164,7 +231,7 @@ const VeilingenSection: FC<SectionProps> = ({ hidden }) => {
 };
 
 const SECTIONS: SectionConfig[] = [
-    { key: 'biedingen', label: 'Biedingen', Component: BidsSection },
+    { key: 'users', label: 'Users', Component: UsersSection },
     { key: 'veilingen', label: 'Veilingen', Component: VeilingenSection },
 ];
 
@@ -175,7 +242,7 @@ export default function Veilingmeester() {
         <div className="container py-4">
             <section className="mb-4 rounded-4 p-4 p-md-5 shadow-sm bg-light">
                 <h2 className="mb-1">Veilingmeester</h2>
-                <p className="text-muted mb-0">Zoek, filter en bekijk biedingen en veilingen.</p>
+                <p className="text-muted mb-0">Zoek, filter en bekijk gebruikers en veilingen.</p>
             </section>
 
             <ul className="nav nav-pills mb-3 rounded-3 bg-light p-2 gap-2" role="tablist" aria-label="Hoofdtabbladen">

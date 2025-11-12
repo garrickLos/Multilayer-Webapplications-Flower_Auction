@@ -25,7 +25,12 @@ export type UseSearchTableSectionOptions<TSource, TRow extends RowBase> = Intern
 export function useSearchTableSection<TSource, TRow extends RowBase>(
     options: UseSearchTableSectionOptions<TSource, TRow>,
 ): SearchTableSectionResult<TSource, TRow> {
-    const { initialPageSize = 25, initialSearch = '', ...rest } = options;
+    const {
+        initialPageSize = 25,
+        initialSearch = '',
+        debounceMs = 350,
+        ...rest
+    } = options;
 
     const pagination = useSearchPagination(initialPageSize, initialSearch);
 
@@ -34,6 +39,7 @@ export function useSearchTableSection<TSource, TRow extends RowBase>(
         page: pagination.page,
         pageSize: pagination.pageSize,
         query: pagination.search,
+        debounceMs,
     });
 
     return {
