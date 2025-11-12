@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 
-import Veilingmeester from './veilingmeester/veilingmeester.tsx'
+import {Veilingmeester} from './veilingmeester/Veilingmeester.tsx'
 import Hoofdscherm from './schermen/hoofdscherm/Hoofdscherm.tsx'
 import PrivacyScherm from './schermen/privacyBeleid/privacyBeleid.tsx'
 import Registration from './Registration'
