@@ -1,9 +1,9 @@
 import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { cx } from "./components";
 
 type ModalProps = {
-    title: string;
+    title: ReactNode;
     children: ReactNode;
     onClose: () => void;
     footer?: ReactNode;
@@ -20,19 +20,22 @@ const focusableSelectors = [
 ].join(",");
 
 export function Modal({ title, children, onClose, footer, size = "lg" }: ModalProps): ReactElement {
-    const containerRef = useRef<HTMLDivElement | null>(null);
+    const dialogRef = useRef<HTMLDivElement | null>(null);
     const previouslyFocused = useRef<HTMLElement | null>(null);
+    const headingId = useId();
 
     useEffect(() => {
         if (typeof document === "undefined") return;
         previouslyFocused.current = document.activeElement as HTMLElement | null;
-        const node = containerRef.current;
+        const node = dialogRef.current;
         const query = () =>
             node
-                ? Array.from(node.querySelectorAll<HTMLElement>(focusableSelectors)).filter((el) => el.offsetParent !== null)
+                ? Array.from(node.querySelectorAll<HTMLElement>(focusableSelectors)).filter(
+                      (element) => element.offsetParent !== null || element === node,
+                  )
                 : [];
-        const current = query();
-        (current[0] ?? node)?.focus({ preventScroll: true });
+        const focusables = query();
+        (focusables[0] ?? node)?.focus({ preventScroll: true });
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
@@ -42,7 +45,10 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
             }
             if (event.key !== "Tab") return;
             const list = query();
-            if (list.length === 0) return;
+            if (list.length === 0) {
+                event.preventDefault();
+                return;
+            }
             const firstEl = list[0];
             const lastEl = list[list.length - 1];
             if (!event.shiftKey && document.activeElement === lastEl) {
@@ -57,7 +63,7 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
         document.addEventListener("keydown", handleKeyDown);
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
-            previouslyFocused.current?.focus();
+            previouslyFocused.current?.focus({ preventScroll: true });
         };
     }, [onClose]);
 
@@ -67,23 +73,28 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
         }
     };
 
-    const dialogClass = cx("modal-dialog modal-dialog-scrollable", size === "lg" && "modal-lg", size === "xl" && "modal-xl", size === "sm" && "modal-sm");
+    const dialogClass = cx(
+        "modal-dialog modal-dialog-scrollable",
+        size === "lg" && "modal-lg",
+        size === "xl" && "modal-xl",
+        size === "sm" && "modal-sm",
+    );
 
     return (
         <>
-            <div className="modal-backdrop show" />
-            <div className="modal show d-block" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+            <div className="modal-backdrop fade show" />
+            <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby={headingId} onMouseDown={handleBackdropClick}>
                 <div className={dialogClass}>
-                    <div className="modal-content border-0 rounded-4 shadow">
-                        <div className="modal-header sticky-top bg-white" style={{ top: 0, zIndex: 5 }}>
-                            <h2 className="modal-title h5 mb-0">{title}</h2>
+                    <div className="modal-content border-0 rounded-4 shadow-lg" ref={dialogRef} tabIndex={-1}>
+                        <div className="modal-header bg-white sticky-top" style={{ top: 0, zIndex: 5 }}>
+                            <h2 className="modal-title h5 mb-0" id={headingId}>
+                                {title}
+                            </h2>
                             <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
                         </div>
-                        <div className="modal-body" ref={containerRef} tabIndex={-1}>
-                            {children}
-                        </div>
+                        <div className="modal-body py-3">{children}</div>
                         {footer && (
-                            <div className="modal-footer bg-white" style={{ position: "sticky", bottom: 0, zIndex: 5 }}>
+                            <div className="modal-footer bg-white d-flex justify-content-end" style={{ position: "sticky", bottom: 0, zIndex: 5 }}>
                                 {footer}
                             </div>
                         )}
@@ -93,4 +104,3 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
         </>
     );
 }
-
