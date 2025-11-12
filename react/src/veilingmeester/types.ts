@@ -1,223 +1,171 @@
+import type { Dispatch, SetStateAction } from "react";
+
 export type Status = "active" | "inactive" | "sold" | "deleted";
 
-export const STATUS_LABEL: Record<Status, string> = {
-    active: "Actief",
-    inactive: "Inactief",
-    sold: "Verkocht",
-    deleted: "Geannuleerd",
-};
+export type Soort = "koper" | "kweker" | "veilingmeester" | "onbekend";
 
-export const STATUS_VARIANT: Record<Status, string> = {
-    active: "bg-success-subtle text-success-emphasis border-success-subtle",
-    inactive: "bg-secondary-subtle text-secondary-emphasis border-secondary-subtle",
-    sold: "bg-info-subtle text-info-emphasis border-info-subtle",
-    deleted: "bg-danger-subtle text-danger-emphasis border-danger-subtle",
-};
+export interface PaginatedList<T> {
+    readonly items: readonly T[];
+    readonly page: number;
+    readonly pageSize: number;
+    readonly hasNext: boolean;
+    readonly totalResults?: number;
+}
 
-export type ListResult<T> = {
-    items: T[];
-    totalResults?: number;
-    page: number;
-    pageSize: number;
-    hasNext: boolean;
-};
-
-export type UserDto = {
+export interface GebruikerDto {
     gebruikerNr?: number;
-    naam?: string;
-    email?: string;
-    soort?: string;
-    status?: string;
-    rollen?: string[];
-    rol?: string;
-    kvk?: string;
-    laatstIngelogd?: string;
-};
+    naam?: string | null;
+    email?: string | null;
+    soort?: string | null;
+    status?: string | null;
+    kvk?: string | null;
+    rollen?: readonly string[] | null;
+}
 
-export type BidDto = {
+export interface BiedingDto {
     biedNr?: number;
+    gebruikerNr?: number;
+    veilingNr?: number;
     bedragPerFust?: number;
     aantalStuks?: number;
-    gebruikerNr?: number;
-    veilingNr?: number;
-    status?: string;
-    datum?: string;
-};
-
-export type AuctionProductSummaryDto = {
-    veilingProductNr?: number;
-    naam?: string;
-    geplaatstDatum?: string;
-    fust?: number;
-    voorraad?: number;
-    startprijs?: number;
-    minimumprijs?: number;
-    maximumprijs?: number;
-    categorie?: string | null;
-    categorieNr?: number;
-    veilingNr?: number;
-    plaats?: string | null;
-    image?: string | null;
-    kwekerNr?: number | null;
-    begindatum?: string | null;
-    einddatum?: string | null;
     status?: string | null;
-    isDeleted?: boolean | null;
-};
+    datum?: string | null;
+}
 
-export type AuctionDto = {
+export interface VeilingDto {
     veilingNr?: number;
     titel?: string | null;
-    begintijd?: string;
-    eindtijd?: string;
-    status?: string;
-    minimumprijs?: number;
-    maximumprijs?: number;
-    producten?: AuctionProductSummaryDto[];
-};
+    begintijd?: string | null;
+    eindtijd?: string | null;
+    status?: string | null;
+    minimumprijs?: number | string | null;
+    maximumprijs?: number | string | null;
+    veilingnaam?: string | null;
+    producten?: readonly VeilingproductDto[] | null;
+}
 
-export type AuctionDetailDto = AuctionDto;
+export type VeilingDetailDto = VeilingDto;
 
-export type ProductDto = {
+export interface VeilingproductDto {
     veilingProductNr?: number;
-    naam?: string;
-    geplaatstDatum?: string;
-    fust?: number;
-    voorraad?: number;
-    startprijs?: number;
-    minimumprijs?: number;
-    maximumprijs?: number;
+    naam?: string | null;
+    startprijs?: number | string | null;
+    minimumprijs?: number | string | null;
+    maximumprijs?: number | string | null;
+    voorraad?: number | null;
+    fust?: number | null;
     categorie?: string | null;
     categorieNr?: number | null;
-    veilingNr?: number | null;
-    plaats?: string | null;
-    image?: string | null;
-    kwekerNr?: number | null;
+    kwekerNr?: number | string | null;
     begindatum?: string | null;
     einddatum?: string | null;
+    plaats?: string | null;
+    image?: string | null;
     status?: string | null;
     isDeleted?: boolean | null;
-};
+}
 
-export type CategoryDto = {
+export interface CategorieDto {
     categorieNr?: number;
-    naam?: string;
-};
+    naam?: string | null;
+}
 
-export type UserRow = {
-    id: string;
-    gebruikerNr?: number;
-    naam: string;
-    email: string;
-    kvk: string;
-    soort: string;
-    soortLabel: string;
-    status: Status;
-    statusLabel: string;
-    statusVariant: string;
-};
+export type GList = PaginatedList<GebruikerDto>;
+export type BList = PaginatedList<BiedingDto>;
+export type VList = PaginatedList<VeilingDto>;
+export type VpList = PaginatedList<VeilingproductDto>;
+export type CList = PaginatedList<CategorieDto>;
 
-export type UserBidRow = {
-    id: string;
-    biedNr?: number;
-    veilingNr?: number;
-    bedragPerFust: number;
-    bedragLabel: string;
-    aantalStuks: number;
-    datumIso?: string;
-    datumLabel: string;
-    status: Status;
-    statusLabel: string;
-    statusVariant: string;
-};
+export interface UserRow {
+    readonly id: number;
+    readonly naam: string;
+    readonly email: string;
+    readonly kvk: string | null;
+    readonly soort: Soort;
+    readonly status: Status;
+}
 
-export type VeilingRow = {
-    id: string;
-    veilingNr?: number;
-    titel: string;
-    startIso?: string;
-    startLabel: string;
-    endIso?: string;
-    endLabel: string;
-    status: Status;
-    statusLabel: string;
-    statusVariant: string;
-    minPrice: number;
-    minLabel: string;
-    maxPrice: number;
-    maxLabel: string;
-    productCount: number;
-};
+export interface UserBidRow {
+    readonly id: number;
+    readonly biedNr?: number;
+    readonly veilingNr?: number;
+    readonly bedragPerFust: number;
+    readonly aantalStuks: number;
+    readonly datumIso?: string;
+    readonly status: Status;
+}
 
-export type VeilingProductRow = {
-    id: string;
-    veilingProductNr?: number;
-    naam: string;
-    geplaatstIso?: string;
-    geplaatstLabel: string;
-    fust: number;
-    voorraad: number;
-    piecesPerBundle: number;
-    categorie?: string;
-    minPrice: number;
-    minLabel: string;
-    maxPrice: number;
-    maxLabel: string;
-    status: Status;
-    statusLabel: string;
-    statusVariant: string;
-    isDeleted: boolean;
-};
+export interface VeilingRow {
+    readonly id: number;
+    readonly veilingNr?: number;
+    readonly titel: string;
+    readonly startIso?: string;
+    readonly endIso?: string;
+    readonly status: Status;
+    readonly minPrice: number;
+    readonly maxPrice: number;
+    readonly productCount: number;
+}
 
-const currency = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" });
-const dateTimeFormatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" });
+export interface VeilingProductRow {
+    readonly id: number;
+    readonly veilingProductNr?: number;
+    readonly naam: string;
+    readonly voorraad?: number;
+    readonly fust?: number;
+    readonly piecesPerBundle?: number;
+    readonly minPrice: number;
+    readonly maxPrice: number;
+    readonly status: Status;
+    readonly image?: string | null;
+    readonly isDeleted: boolean;
+    readonly categorie?: string;
+}
 
-export const collator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
+export interface HookResult<T> {
+    readonly rows: readonly T[];
+    readonly loading: boolean;
+    readonly error?: string | null;
+    readonly page: number;
+    readonly setPage: Dispatch<SetStateAction<number>>;
+    readonly pageSize: number;
+    readonly setPageSize: Dispatch<SetStateAction<number>>;
+    readonly hasNext: boolean;
+    readonly totalResults?: number;
+    readonly search?: string;
+    readonly setSearch?: (value: string) => void;
+    readonly status?: "alle" | "actief" | "inactief";
+    readonly setStatus?: (value: "alle" | "actief" | "inactief") => void;
+    readonly from?: string;
+    readonly setFrom?: (value: string) => void;
+    readonly to?: string;
+    readonly setTo?: (value: string) => void;
+    readonly reset?: () => void;
+}
 
-export function formatCurrency(value: number | undefined | null): string {
-    if (value == null || Number.isNaN(value)) {
-        return "€ 0,00";
+export const nlCollator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
+
+const knownSoorten: readonly Soort[] = ["koper", "kweker", "veilingmeester"] as const;
+
+function sanitizeText(value: string | null | undefined): string {
+    return value?.trim() ?? "";
+}
+
+function toNumber(value: number | string | null | undefined): number | undefined {
+    if (typeof value === "number") {
+        return Number.isFinite(value) ? value : undefined;
     }
-    return currency.format(value);
-}
-
-export function formatDate(value: string | undefined | null): string {
-    if (!value) return "-";
-    const date = parseDate(value);
-    return date ? dateFormatter.format(date) : "-";
-}
-
-export function formatDateTime(value: string | undefined | null): string {
-    if (!value) return "-";
-    const date = parseDate(value);
-    return date ? dateTimeFormatter.format(date) : "-";
-}
-
-export function parseDate(value: string | undefined | null): Date | undefined {
-    if (!value) return undefined;
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-}
-
-export function buildQueryString(params: Record<string, unknown>): string {
-    const search = new URLSearchParams();
-    for (const [key, raw] of Object.entries(params)) {
-        if (raw == null || raw === "") continue;
-        if (typeof raw === "boolean") {
-            if (!raw) continue;
-            search.append(key, "true");
-        } else {
-            search.append(key, raw instanceof Date ? raw.toISOString() : String(raw));
-        }
+    if (typeof value === "string" && value.trim().length > 0) {
+        const normalised = value.replace(",", ".");
+        const parsed = Number.parseFloat(normalised);
+        return Number.isFinite(parsed) ? parsed : undefined;
     }
-    const query = search.toString();
-    return query ? `?${query}` : "";
+    return undefined;
 }
 
 export function normalizeStatus(value: string | null | undefined): Status {
-    const normalized = value?.trim().toLowerCase();
-    switch (normalized) {
+    const raw = sanitizeText(value).toLowerCase();
+    switch (raw) {
         case "active":
         case "actief":
             return "active";
@@ -233,168 +181,122 @@ export function normalizeStatus(value: string | null | undefined): Status {
     }
 }
 
-function sanitizeText(value: string | null | undefined): string {
-    return value?.trim() ?? "";
-}
-
-function toNumber(value: number | string | null | undefined): number | undefined {
-    if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
-    if (typeof value === "string" && value.trim().length > 0) {
-        const parsed = Number.parseFloat(value.replace(",", "."));
-        return Number.isFinite(parsed) ? parsed : undefined;
+export function statusLabel(status: Status): "Actief" | "Inactief" | "Verkocht" | "Geannuleerd" {
+    switch (status) {
+        case "active":
+            return "Actief";
+        case "sold":
+            return "Verkocht";
+        case "deleted":
+            return "Geannuleerd";
+        default:
+            return "Inactief";
     }
-    return undefined;
 }
 
-function resolveMinPrice(auction: AuctionDto | AuctionDetailDto | undefined, product?: ProductDto | AuctionProductSummaryDto): number {
-    const productMinimum = toNumber(product?.minimumprijs ?? product?.startprijs);
-    const auctionMinimum = toNumber(auction?.minimumprijs);
-    return productMinimum ?? auctionMinimum ?? 0;
+export function statusBadgeVariant(status: Status): string {
+    switch (status) {
+        case "active":
+            return "text-bg-success";
+        case "sold":
+            return "text-bg-info";
+        case "deleted":
+            return "text-bg-danger";
+        default:
+            return "text-bg-secondary";
+    }
 }
 
-function resolveMaxPrice(auction: AuctionDto | AuctionDetailDto | undefined, product?: ProductDto | AuctionProductSummaryDto): number {
+export function adaptPrice(
+    auction: VeilingDto | VeilingDetailDto | null | undefined,
+    product?: VeilingproductDto | null,
+): { minPrice: number; maxPrice: number } {
+    const productMin = toNumber(product?.minimumprijs ?? product?.startprijs);
     const productMax = toNumber(product?.maximumprijs ?? product?.startprijs);
-    const auctionMax = toNumber((auction as AuctionDetailDto | undefined)?.maximumprijs);
-    return auctionMax ?? productMax ?? resolveMinPrice(auction, product);
+    const auctionMin = toNumber(auction?.minimumprijs);
+    const auctionMax = toNumber(auction?.maximumprijs);
+    const minPrice = productMin ?? auctionMin ?? 0;
+    const maxPrice = auctionMax ?? productMax ?? minPrice;
+    return { minPrice, maxPrice };
 }
 
-export function mapUserDtoToRow(dto: UserDto): UserRow {
-    const status = normalizeStatus(dto.status);
+export function adaptUser(dto: GebruikerDto): UserRow {
+    const id = dto.gebruikerNr ?? 0;
+    const soortRaw = sanitizeText(dto.soort).toLowerCase();
+    const soort = (knownSoorten.find((value) => value === soortRaw) ?? "onbekend") satisfies Soort;
     return {
-        id: generateId(dto.gebruikerNr ?? dto.naam),
-        gebruikerNr: dto.gebruikerNr,
-        naam: sanitizeText(dto.naam) || "Onbekend",
-        email: sanitizeText(dto.email) || "-",
-        kvk: sanitizeText(dto.kvk) || "—",
-        soort: sanitizeText(dto.soort) || "onbekend",
-        soortLabel: sanitizeText(dto.soort) || "Onbekend",
-        status,
-        statusLabel: STATUS_LABEL[status],
-        statusVariant: STATUS_VARIANT[status],
+        id,
+        naam: sanitizeText(dto.naam) || `Gebruiker ${id}`,
+        email: sanitizeText(dto.email) || "",
+        kvk: sanitizeText(dto.kvk) || null,
+        soort,
+        status: normalizeStatus(dto.status),
     };
 }
 
-export function mapBidDtoToRow(dto: BidDto): UserBidRow {
-    const bedrag = toNumber(dto.bedragPerFust) ?? 0;
-    const status = normalizeStatus(dto.status);
+export function adaptBid(dto: BiedingDto): UserBidRow {
     return {
-        id: generateId(dto.biedNr),
+        id: dto.biedNr ?? 0,
         biedNr: dto.biedNr,
         veilingNr: dto.veilingNr,
-        bedragPerFust: bedrag,
-        bedragLabel: formatCurrency(bedrag),
+        bedragPerFust: toNumber(dto.bedragPerFust) ?? 0,
         aantalStuks: dto.aantalStuks ?? 0,
-        datumIso: dto.datum,
-        datumLabel: formatDateTime(dto.datum),
-        status,
-        statusLabel: STATUS_LABEL[status],
-        statusVariant: STATUS_VARIANT[status],
+        datumIso: dto.datum ?? undefined,
+        status: normalizeStatus(dto.status),
     };
 }
 
-export function mapAuctionDtoToRow(dto: AuctionDto): VeilingRow {
-    const status = normalizeStatus(dto.status);
-    const start = dto.begintijd ?? undefined;
-    const end = dto.eindtijd ?? undefined;
-    const minPrice = resolveMinPrice(dto);
-    const maxPrice = resolveMaxPrice(dto);
+export function adaptAuction(dto: VeilingDto): VeilingRow {
+    const id = dto.veilingNr ?? 0;
+    const title = sanitizeText(dto.veilingnaam ?? dto.titel);
+    const { minPrice, maxPrice } = adaptPrice(dto);
     return {
-        id: generateId(dto.veilingNr),
+        id,
         veilingNr: dto.veilingNr,
-        titel: sanitizeText(dto.titel) || `Veiling ${dto.veilingNr ?? ""}`.trim(),
-        startIso: start,
-        startLabel: formatDateTime(start),
-        endIso: end,
-        endLabel: formatDateTime(end),
-        status,
-        statusLabel: STATUS_LABEL[status],
-        statusVariant: STATUS_VARIANT[status],
+        titel: title || `Veiling ${id}`,
+        startIso: dto.begintijd ?? undefined,
+        endIso: dto.eindtijd ?? undefined,
+        status: normalizeStatus(dto.status),
         minPrice,
-        minLabel: formatCurrency(minPrice),
         maxPrice,
-        maxLabel: formatCurrency(maxPrice),
         productCount: dto.producten?.length ?? 0,
     };
 }
 
-export function mapProductDtoToRow(
-    dto: ProductDto | AuctionProductSummaryDto,
-    contextAuction?: AuctionDto | AuctionDetailDto,
+export function adaptProduct(
+    dto: VeilingproductDto,
+    context?: VeilingDto | VeilingDetailDto | null,
 ): VeilingProductRow {
-    const status = normalizeStatus(dto.status);
-    const minPrice = resolveMinPrice(contextAuction, dto);
-    const maxPrice = resolveMaxPrice(contextAuction, dto);
-    const fust = dto.fust ?? 0;
-    const voorraad = dto.voorraad ?? 0;
-    const piecesPerBundle = fust > 0 ? Math.max(1, Math.floor(voorraad / fust)) : voorraad;
+    const id = dto.veilingProductNr ?? 0;
+    const { minPrice, maxPrice } = adaptPrice(context, dto);
+    const voorraad = dto.voorraad ?? undefined;
+    const fust = dto.fust ?? undefined;
+    const piecesPerBundle =
+        voorraad != null && fust != null && voorraad > 0 && fust > 0
+            ? Math.floor(voorraad / fust)
+            : undefined;
     return {
-        id: generateId(dto.veilingProductNr ?? sanitizeText(dto.naam)),
+        id,
         veilingProductNr: dto.veilingProductNr,
-        naam: sanitizeText(dto.naam) || "Onbekend product",
-        geplaatstIso: dto.geplaatstDatum ?? dto.begindatum ?? undefined,
-        geplaatstLabel: formatDate(dto.geplaatstDatum ?? dto.begindatum ?? undefined),
-        fust,
+        naam: sanitizeText(dto.naam) || `Product ${id}`,
         voorraad,
+        fust,
         piecesPerBundle,
-        categorie: sanitizeText(dto.categorie ?? ""),
         minPrice,
-        minLabel: formatCurrency(minPrice),
         maxPrice,
-        maxLabel: formatCurrency(maxPrice),
-        status,
-        statusLabel: STATUS_LABEL[status],
-        statusVariant: STATUS_VARIANT[status],
-        isDeleted: Boolean(dto.isDeleted) || status === "deleted",
+        status: normalizeStatus(dto.status),
+        image: dto.image ?? null,
+        isDeleted: Boolean(dto.isDeleted),
+        categorie: sanitizeText(dto.categorie),
     };
 }
 
 export function splitProducts(
-    auction: AuctionDetailDto,
-): { active: VeilingProductRow[]; inactive: VeilingProductRow[] } {
-    const products = auction.producten ?? [];
-    const mapped = products.map((product) => mapProductDtoToRow(product, auction));
-    const active: VeilingProductRow[] = [];
-    const inactive: VeilingProductRow[] = [];
-    for (const product of mapped) {
-        if (product.status === "active" && !product.isDeleted) {
-            active.push(product);
-        } else {
-            inactive.push(product);
-        }
-    }
+    auction: VeilingDetailDto,
+): { active: readonly VeilingProductRow[]; inactive: readonly VeilingProductRow[] } {
+    const rows = (auction.producten ?? []).map((product) => adaptProduct(product, auction));
+    const active = rows.filter((row) => row.status === "active" && !row.isDeleted);
+    const inactive = rows.filter((row) => row.status !== "active" || row.isDeleted);
     return { active, inactive };
 }
 
-export type ClockState = {
-    startPrice: number;
-    endPrice: number;
-    currentPrice: number;
-    status: Status;
-    endIso?: string;
-    startIso?: string;
-};
-
-export function createClockState(auction: AuctionDetailDto): ClockState {
-    const status = normalizeStatus(auction.status);
-    const startPrice = resolveMaxPrice(auction);
-    const endPrice = resolveMinPrice(auction);
-    return {
-        startPrice,
-        endPrice,
-        currentPrice: startPrice,
-        status,
-        endIso: auction.eindtijd,
-        startIso: auction.begintijd,
-    };
-}
-
-function generateId(seed: unknown): string {
-    if (typeof seed === "number" || typeof seed === "string") {
-        const value = String(seed);
-        if (value.length > 0) return value;
-    }
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-        return crypto.randomUUID();
-    }
-    return `id-${Math.random().toString(36).slice(2, 11)}`;
-}

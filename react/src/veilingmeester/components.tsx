@@ -1,64 +1,53 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { ChangeEvent, ReactElement, ReactNode } from "react";
-import { memo } from "react";
+import { useId } from "react";
+import type { Status } from "./types";
+import { statusBadgeVariant, statusLabel } from "./types";
 
-export const cx = (...classes: Array<string | false | null | undefined>): string =>
-    classes.filter(Boolean).join(" ");
+export function cx(...classes: Array<string | false | null | undefined>): string {
+    return classes.filter(Boolean).join(" ");
+}
 
-export type SelectOption<T extends string | number> = {
+type Option<T extends string | number> = { value: T; label: string };
+
+type SelectProps<T extends string | number> = {
+    id?: string;
+    label?: string;
     value: T;
-    label: string;
-};
-
-type BaseSelectProps<T extends string | number> = {
-    id: string;
-    label: string;
-    value: T;
+    options: readonly Option<T>[];
     onChange: (value: T) => void;
-    options: ReadonlyArray<SelectOption<T>>;
-    placeholder?: string;
+    ariaLabel?: string;
     disabled?: boolean;
-    required?: boolean;
     className?: string;
-    size?: "sm" | "lg";
-    ariaDescribedBy?: string;
-    parse?: (value: string) => T;
+    parse?: (raw: string) => T;
 };
 
-export function Select<T extends string | number>({
-    id,
-    label,
-    value,
-    onChange,
-    options,
-    placeholder,
-    disabled,
-    required,
-    className,
-    size,
-    ariaDescribedBy,
-    parse,
-}: BaseSelectProps<T>): ReactElement {
+export function Select<T extends string | number>(props: SelectProps<T>): ReactElement {
+    const { id: providedId, label, value, options, onChange, ariaLabel, disabled, className, parse } = props;
+    const generatedId = useId();
+    const selectId = providedId ?? generatedId;
+
     const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
         const raw = event.target.value;
-        const next = parse ? parse(raw) : (typeof value === "number" ? (Number(raw) as T) : (raw as T));
-        onChange(next);
+        const parsed = parse ? parse(raw) : (typeof value === "number" ? (Number(raw) as T) : (raw as T));
+        onChange(parsed);
     };
 
     return (
         <div className={className}>
-            <label htmlFor={id} className="form-label mb-1 small text-uppercase fw-semibold text-secondary">
-                {label}
-            </label>
+            {label && (
+                <label htmlFor={selectId} className="form-label small text-uppercase text-muted mb-1">
+                    {label}
+                </label>
+            )}
             <select
-                id={id}
-                className={cx("form-select", size === "sm" && "form-select-sm")}
+                id={selectId}
+                className="form-select form-select-sm"
                 value={String(value)}
                 onChange={handleChange}
+                aria-label={ariaLabel ?? label}
                 disabled={disabled}
-                required={required}
-                aria-describedby={ariaDescribedBy}
             >
-                {placeholder && <option value="">{placeholder}</option>}
                 {options.map((option) => (
                     <option key={String(option.value)} value={String(option.value)}>
                         {option.label}
@@ -69,137 +58,102 @@ export function Select<T extends string | number>({
     );
 }
 
-export type SelectSmProps<T extends string | number> = Omit<BaseSelectProps<T>, "size">;
-
-export function SelectSm<T extends string | number>(props: SelectSmProps<T>): ReactElement {
-    return <Select {...props} size="sm" />;
+export function SelectSm<T extends string | number>(props: SelectProps<T>): ReactElement {
+    return <Select {...props} />;
 }
 
-const STATUS_OPTIONS: ReadonlyArray<SelectOption<"alle" | "actief" | "inactief">> = [
-    { value: "alle", label: "Alle statussen" },
-    { value: "actief", label: "Alleen actieve" },
-    { value: "inactief", label: "Inactieve" },
-];
-
-type SelectStatusSmProps = {
-    id: string;
-    value: "alle" | "actief" | "inactief";
-    onChange: (value: "alle" | "actief" | "inactief") => void;
-    className?: string;
-};
-
-export function SelectStatusSm({ id, value, onChange, className }: SelectStatusSmProps): ReactElement {
+export function SelectStatusSm(
+    props: Omit<SelectProps<"alle" | "actief" | "inactief">, "options" | "parse">,
+): ReactElement {
     return (
-        <SelectSm
-            id={id}
-            label="Status"
-            value={value}
-            onChange={onChange}
-            options={STATUS_OPTIONS}
-            className={className}
+        <Select
+            {...props}
+            options={[
+                { value: "alle", label: "Alle statussen" },
+                { value: "actief", label: "Actief" },
+                { value: "inactief", label: "Inactief" },
+            ]}
         />
     );
 }
 
 type SearchInputProps = {
-    id: string;
-    label: string;
+    id?: string;
+    label?: string;
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
-    className?: string;
+    autoFocus?: boolean;
 };
 
-export function SearchInput({ id, label, value, onChange, placeholder, className }: SearchInputProps): ReactElement {
+export function SearchInput({ id, label, value, onChange, placeholder, autoFocus }: SearchInputProps): ReactElement {
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
     return (
-        <div className={className}>
-            <label htmlFor={id} className="form-label mb-1 small text-uppercase fw-semibold text-secondary">
-                {label}
-            </label>
+        <div>
+            {label && (
+                <label htmlFor={inputId} className="form-label small text-uppercase text-muted mb-1">
+                    {label}
+                </label>
+            )}
             <input
-                id={id}
+                id={inputId}
                 type="search"
                 className="form-control form-control-sm"
                 value={value}
-                placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                autoFocus={autoFocus}
+                aria-label={label ?? placeholder ?? "Zoeken"}
             />
         </div>
     );
 }
 
-type LoadingProps = {
-    text?: string;
-};
-
-export const Loading = memo(function Loading({ text = "Gegevens laden…" }: LoadingProps): ReactElement {
+export function Loading(): ReactElement {
     return (
-        <div className="placeholder-glow py-5 text-center" role="status" aria-live="polite">
-            <div className="placeholder col-6 placeholder-lg" />
-            <p className="mt-3 text-muted small">{text}</p>
+        <div className="placeholder-glow">
+            <div className="placeholder col-12 mb-2" style={{ height: 32 }} />
+            <div className="placeholder col-10 mb-2" style={{ height: 32 }} />
+            <div className="placeholder col-8" style={{ height: 32 }} />
         </div>
     );
-});
+}
 
-type EmptyProps = {
-    title: string;
-    children?: ReactNode;
-};
-
-export const Empty = memo(function Empty({ title, children }: EmptyProps): ReactElement {
+export function Empty({ message }: { message: string }): ReactElement {
     return (
-        <div className="text-center py-5" role="status" aria-live="polite">
-            <div className="display-6" aria-hidden="true">
-                🌸
-            </div>
-            <p className="mt-2 fw-semibold text-secondary">{title}</p>
-            {children && <p className="text-muted small mb-0">{children}</p>}
+        <div className="text-center text-muted py-5" role="status">
+            <div className="display-6">🌱</div>
+            <p className="mb-0">{message}</p>
         </div>
     );
-});
+}
 
 type PagerProps = {
     page: number;
     pageSize: number;
-    rowCount: number;
-    totalResults?: number;
     hasNext: boolean;
-    loading: boolean;
-    onPrev: () => void;
+    onPrevious: () => void;
     onNext: () => void;
+    totalResults?: number;
 };
 
-function plural(count: number, singular: string, pluralLabel: string): string {
-    return count === 1 ? `${count} ${singular}` : `${count} ${pluralLabel}`;
-}
-
-export const Pager = memo(function Pager({
-    page,
-    pageSize,
-    rowCount,
-    totalResults,
-    hasNext,
-    loading,
-    onPrev,
-    onNext,
-}: PagerProps): ReactElement {
-    const shownRaw = rowCount + (page - 1) * pageSize;
-    const shown = totalResults != null ? Math.min(shownRaw, totalResults) : shownRaw;
-    const countLabel = totalResults != null
-        ? `${plural(rowCount, "resultaat", "resultaten")} • ${shown} van ${totalResults}`
-        : plural(rowCount, "resultaat", "resultaten");
-
+export function Pager({ page, pageSize, hasNext, onPrevious, onNext, totalResults }: PagerProps): ReactElement {
+    const from = (page - 1) * pageSize + 1;
+    const maxTo = from + pageSize - 1;
+    const to = totalResults != null ? Math.min(page * pageSize, totalResults) : hasNext ? page * pageSize : maxTo;
+    const summary = totalResults != null ? `• van ${totalResults} totaal` : "";
     return (
-        <div className="d-flex align-items-center justify-content-between gap-3 mt-3">
-            <div className="small text-muted" aria-live="polite">
-                Pagina {page} • {countLabel}
+        <div className="d-flex align-items-center justify-content-between gap-2" aria-live="polite">
+            <div className="text-muted small">
+                Pagina {page} • {from} – {to} getoond {summary}
             </div>
             <div className="btn-group">
                 <button
                     type="button"
                     className="btn btn-outline-secondary btn-sm"
-                    onClick={onPrev}
-                    disabled={loading || page <= 1}
+                    onClick={onPrevious}
+                    disabled={page <= 1}
                 >
                     Vorige
                 </button>
@@ -207,47 +161,56 @@ export const Pager = memo(function Pager({
                     type="button"
                     className="btn btn-outline-secondary btn-sm"
                     onClick={onNext}
-                    disabled={loading || !hasNext}
+                    disabled={!hasNext}
                 >
                     Volgende
                 </button>
             </div>
         </div>
     );
-});
+}
 
 type FilterChipProps = {
-    children: ReactNode;
-    onClear: () => void;
-    title?: string;
+    label: string;
+    onRemove: () => void;
 };
 
-export const FilterChip = memo(function FilterChip({ children, onClear, title }: FilterChipProps): ReactElement {
+export function FilterChip({ label, onRemove }: FilterChipProps): ReactElement {
     return (
-        <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm rounded-pill d-inline-flex align-items-center gap-2"
-            onClick={onClear}
-            aria-label={title ? `${title} verwijderen` : "Filter verwijderen"}
-        >
-            <span className="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
-                ✕
-            </span>
-            <span>{children}</span>
-        </button>
-    );
-});
-
-export type AlertProps = {
-    variant?: "danger" | "warning" | "info";
-    children: ReactNode;
-    id?: string;
-};
-
-export function InlineAlert({ variant = "danger", children, id }: AlertProps): ReactElement {
-    return (
-        <div className={`alert alert-${variant}`} role="alert" id={id}>
-            {children}
-        </div>
+        <span className="badge text-bg-light border d-inline-flex align-items-center gap-2">
+            <span>{label}</span>
+            <button
+                type="button"
+                className="btn btn-link p-0 text-decoration-none"
+                onClick={onRemove}
+                aria-label={`${label} verwijderen`}
+            >
+                ×
+            </button>
+        </span>
     );
 }
+
+type StatusBadgeProps = {
+    status: Status;
+};
+
+export function StatusBadge({ status }: StatusBadgeProps): ReactElement {
+    return <span className={cx("badge", statusBadgeVariant(status))}>{statusLabel(status)}</span>;
+}
+
+export function ResultBadge({ count, total }: { count: number; total?: number }): ReactElement {
+    const base = count === 1 ? "1 resultaat" : `${count} resultaten`;
+    const suffix = total != null ? ` • van ${total} totaal` : "";
+    return (
+        <span className="badge text-bg-secondary" aria-live="polite">
+            {base}
+            {suffix}
+        </span>
+    );
+}
+
+export function Alert({ variant = "danger", children }: { variant?: "danger" | "warning" | "info"; children: ReactNode }): ReactElement {
+    return <div className={`alert alert-${variant}`} role="alert">{children}</div>;
+}
+
