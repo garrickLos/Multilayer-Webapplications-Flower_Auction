@@ -82,7 +82,6 @@ export type VeilingRow = RowBase & {
     begintijd: string;
     eindtijd: string;
     status: string | undefined;
-    minimumprijs: string;
     aantalProducten: number;
 };
 

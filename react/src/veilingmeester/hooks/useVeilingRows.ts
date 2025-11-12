@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { DEFAULT_PAGE_SIZE } from '../config';
 import { useSearchTableSection } from './useSearchTableSection';
-import { formatCurrency, formatDateTime } from '../utils/format';
+import { formatDateTime } from '../utils/format';
 import type { Veiling, VeilingRow } from '../types/types.ts';
 
 export function useVeilingRows() {
@@ -12,7 +12,6 @@ export function useVeilingRows() {
             begintijd: formatDateTime(row.begintijd),
             eindtijd: formatDateTime(row.eindtijd),
             status: row.status ?? undefined,
-            minimumprijs: formatCurrency(row.minimumprijs),
             aantalProducten: Array.isArray(row.producten)
                 ? row.producten.length
                 : 0,
