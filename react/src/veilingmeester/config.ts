@@ -3,7 +3,7 @@ import type { TabKey } from './types/types.ts';
 type TabIds = Record<TabKey, { tab: string; panel: string }>;
 
 export const TAB_IDS: TabIds = {
-    biedingen: { tab: 'tab-biedingen', panel: 'panel-biedingen' },
+    users: { tab: 'tab-users', panel: 'panel-users' },
     veilingen: { tab: 'tab-veilingen', panel: 'panel-veilingen' },
 };
 
