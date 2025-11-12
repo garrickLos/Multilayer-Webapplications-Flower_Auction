@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiError } from "./api";
 import { getAuctions, getBids, getProductsByGrower, getUsers } from "./api";
+import { appConfig } from "./config";
 import {
     adaptAuction,
     adaptBid,
@@ -13,13 +14,13 @@ import {
     type VeilingRow,
 } from "./types";
 
-const USERS_STORAGE_KEY = "vm_users_filters";
-const AUCTIONS_STORAGE_KEY = "vm_veilingen_filters";
-const BIDS_STORAGE_KEY = "vm_bids_filters";
-const PRODUCTS_STORAGE_KEY = "vm_products_filters";
+const USERS_STORAGE_KEY = appConfig.storageKeys.users;
+const AUCTIONS_STORAGE_KEY = appConfig.storageKeys.auctions;
+const BIDS_STORAGE_KEY = appConfig.storageKeys.bids;
+const PRODUCTS_STORAGE_KEY = appConfig.storageKeys.products;
 
-const POLL_INTERVAL = 5000;
-const BACKOFF_DELAYS = [1000, 2000, 4000] as const;
+const POLL_INTERVAL = appConfig.polling.defaultIntervalMs;
+const BACKOFF_DELAYS = appConfig.polling.backoffDelaysMs;
 
 type UsersState = { page: number; pageSize: number; search: string };
 type AuctionsState = {
@@ -175,6 +176,11 @@ function schedule(run: () => void, delay: number, activeRef: { current: boolean 
     }, delay);
 }
 
+/**
+ * Retrieves gebruikers with polling and persisted filters.
+ *
+ * @returns De tabelgegevens voor gebruikersbeheer.
+ */
 export function useUserRows(): HookResult<UserRow> {
     const initial = useRefState(readUsersState);
     const [page, setPage] = useState(initial.page);
@@ -291,6 +297,12 @@ export function useUserRows(): HookResult<UserRow> {
     } satisfies HookResult<UserRow>;
 }
 
+/**
+ * Retrieves biedingen for a gebruiker with automatic refresh.
+ *
+ * @param gebruikerNr - Het identificatienummer van de gebruiker.
+ * @returns De biedingen inclusief filters en statusinformatie.
+ */
 export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow> {
     const initial = useRefState(readBidsState);
     const [page, setPage] = useState(initial.page);
@@ -420,6 +432,11 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
     } satisfies HookResult<UserBidRow>;
 }
 
+/**
+ * Retrieves veilingen including filters and periodic updates.
+ *
+ * @returns Veilinggegevens voor het overzichtsscherm.
+ */
 export function useVeilingRows(): HookResult<VeilingRow> {
     const initial = useRefState(readAuctionsState);
     const [page, setPage] = useState(initial.page);
@@ -573,6 +590,12 @@ export function useVeilingRows(): HookResult<VeilingRow> {
     } satisfies HookResult<VeilingRow>;
 }
 
+/**
+ * Retrieves products for a specific grower.
+ *
+ * @param kwekernr - Het identificatienummer van de kweker.
+ * @returns Productgegevens voor detailoverzichten.
+ */
 export function useVeilingProductsByGrower(kwekernr: number | string): HookResult<VeilingProductRow> {
     const initial = useRefState(readProductsState);
     const [page, setPage] = useState(initial.page);

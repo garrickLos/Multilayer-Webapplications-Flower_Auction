@@ -1,41 +1,54 @@
-import type { KeyboardEvent, ReactElement, ReactNode } from "react";
-import { useMemo, useState } from "react";
-import { ResultBadge, cx } from "./components";
+import type { KeyboardEvent, ReactNode } from "react";
+import { memo, useMemo, useState } from "react";
+import { ResultBadge } from "./components";
+import { cx } from "./utils/classNames";
 import { nlCollator } from "./types";
 
-type DataTableColumn<T> = {
-    key: keyof T | string;
-    header: string;
-    className?: string;
-    width?: string | number;
-    sortable?: boolean;
-    render?: (row: T) => ReactNode;
-    getValue?: (row: T) => string | number | Date | null | undefined;
-};
+type SortDirection = "asc" | "desc";
 
-type SortState = { key: string; direction: "asc" | "desc" } | null;
+type SortState = { readonly key: string; readonly direction: SortDirection } | null;
+
+type Primitive = string | number;
+
+type ColumnValue = Primitive | Date | null | undefined;
+
+type DataTableColumn<T> = {
+    readonly key: keyof T | string;
+    readonly header: string;
+    readonly headerClassName?: string;
+    readonly cellClassName?: string;
+    readonly sortable?: boolean;
+    readonly render?: (row: T) => ReactNode;
+    readonly getValue?: (row: T) => ColumnValue;
+};
 
 type DataTableProps<T> = {
-    columns: readonly DataTableColumn<T>[];
-    rows: readonly T[];
-    totalResults?: number;
-    caption?: string;
-    empty?: ReactNode;
-    getRowKey: (row: T, index: number) => string;
-    onRowClick?: (row: T) => void;
-    isRowInteractive?: (row: T) => boolean;
+    readonly columns: readonly DataTableColumn<T>[];
+    readonly rows: readonly T[];
+    readonly totalResults?: number;
+    readonly caption?: string;
+    readonly empty?: ReactNode;
+    readonly getRowKey: (row: T, index: number) => string;
+    readonly onRowClick?: (row: T) => void;
+    readonly isRowInteractive?: (row: T) => boolean;
 };
 
-type IndexedRow<T> = { row: T; index: number };
+type IndexedRow<T> = { readonly row: T; readonly index: number };
 
-function toPrimitive(value: unknown): string | number {
-    if (value instanceof Date) return value.getTime();
-    if (typeof value === "number") return value;
-    if (value == null) return "";
+function toPrimitive(value: ColumnValue): Primitive {
+    if (value instanceof Date) {
+        return value.getTime();
+    }
+    if (typeof value === "number") {
+        return value;
+    }
+    if (value == null) {
+        return "";
+    }
     return String(value);
 }
 
-function compareValues(a: unknown, b: unknown): number {
+function compareValues(a: ColumnValue, b: ColumnValue): number {
     const left = toPrimitive(a);
     const right = toPrimitive(b);
     if (typeof left === "number" && typeof right === "number") {
@@ -44,30 +57,43 @@ function compareValues(a: unknown, b: unknown): number {
     return nlCollator.compare(String(left), String(right));
 }
 
-function getCellValue<T>(row: T, column: DataTableColumn<T>): string | number | Date | null | undefined {
-    if (column.getValue) return column.getValue(row);
-    const record = row as Record<string, unknown>;
-    return record[column.key as string] as string | number | Date | null | undefined;
+function getCellValue<T>(row: T, column: DataTableColumn<T>): ColumnValue {
+    if (column.getValue) {
+        return column.getValue(row);
+    }
+    const record = row as Record<string, ColumnValue>;
+    return record[column.key as string];
 }
 
 function sortRows<T>(rows: readonly T[], columns: readonly DataTableColumn<T>[], sortState: SortState): readonly T[] {
-    if (!sortState) return rows;
+    if (!sortState) {
+        return rows;
+    }
     const column = columns.find((col) => (col.key as string) === sortState.key);
-    if (!column) return rows;
+    if (!column) {
+        return rows;
+    }
     const factor = sortState.direction === "asc" ? 1 : -1;
     return rows
         .map<IndexedRow<T>>((row, index) => ({ row, index }))
         .sort((a, b) => {
             const aValue = getCellValue(a.row, column);
             const bValue = getCellValue(b.row, column);
-            const compare = compareValues(aValue, bValue);
-            if (compare !== 0) return compare * factor;
+            const comparison = compareValues(aValue, bValue);
+            if (comparison !== 0) {
+                return comparison * factor;
+            }
             return a.index - b.index;
         })
         .map((entry) => entry.row);
 }
 
-export function DataTable<T>({
+/**
+ * Responsive, sortable table built with Bootstrap utilities.
+ *
+ * @param props - Configuration and data rows to render.
+ */
+function DataTableComponent<T>({
     columns,
     rows,
     totalResults,
@@ -76,25 +102,28 @@ export function DataTable<T>({
     getRowKey,
     onRowClick,
     isRowInteractive,
-}: DataTableProps<T>): ReactElement {
+}: DataTableProps<T>): JSX.Element {
     const [sortState, setSortState] = useState<SortState>(null);
 
     const sortedRows = useMemo(() => sortRows(rows, columns, sortState), [rows, columns, sortState]);
 
     const handleSort = (column: DataTableColumn<T>) => {
-        if (!column.sortable) return;
+        if (!column.sortable) {
+            return;
+        }
         const key = column.key as string;
-        setSortState((prev) => {
-            if (prev?.key === key) {
-                const direction = prev.direction === "asc" ? "desc" : "asc";
-                return { key, direction };
+        setSortState((previous) => {
+            if (previous?.key === key) {
+                return { key, direction: previous.direction === "asc" ? "desc" : "asc" };
             }
             return { key, direction: "asc" };
         });
     };
 
     const handleRowKey = (event: KeyboardEvent<HTMLTableRowElement>, row: T) => {
-        if (!onRowClick) return;
+        if (!onRowClick) {
+            return;
+        }
         if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             onRowClick(row);
@@ -114,35 +143,30 @@ export function DataTable<T>({
                 <div className="table-responsive" role="region">
                     <table className="table table-sm table-hover align-middle caption-top mb-0">
                         {caption && <caption className="text-muted small">{caption}</caption>}
-                        <thead className="table-light" style={{ position: "sticky", top: 0, zIndex: 2 }}>
+                        <thead className="table-light position-sticky top-0 z-2">
                             <tr>
                                 {columns.map((column) => {
                                     const sortable = Boolean(column.sortable);
                                     const active = sortState?.key === (column.key as string);
                                     const direction = active ? sortState?.direction : null;
                                     const icon = !sortable ? null : active ? (direction === "asc" ? "▲" : "▼") : "↕";
+                                    const ariaSort = sortable
+                                        ? active
+                                            ? direction === "asc"
+                                                ? "ascending"
+                                                : "descending"
+                                            : "none"
+                                        : undefined;
                                     return (
                                         <th
                                             key={String(column.key)}
                                             scope="col"
                                             className={cx(
-                                                "bg-light",
-                                                "text-uppercase",
-                                                "small",
-                                                "text-secondary",
-                                                column.className,
+                                                "bg-light text-uppercase small text-secondary",
                                                 sortable && "user-select-none",
+                                                column.headerClassName,
                                             )}
-                                            style={{ position: "sticky", top: 0, zIndex: 2, width: column.width }}
-                                            aria-sort={
-                                                sortable
-                                                    ? active
-                                                        ? direction === "asc"
-                                                            ? "ascending"
-                                                            : "descending"
-                                                        : "none"
-                                                    : undefined
-                                            }
+                                            aria-sort={ariaSort}
                                         >
                                             {sortable ? (
                                                 <button
@@ -166,16 +190,18 @@ export function DataTable<T>({
                         <tbody>
                             {sortedRows.map((row, index) => {
                                 const interactive = Boolean(onRowClick && (isRowInteractive ? isRowInteractive(row) : true));
+                                const handleClick = interactive && onRowClick ? () => onRowClick(row) : undefined;
+                                const handleKeyDown = interactive && onRowClick ? (event: KeyboardEvent<HTMLTableRowElement>) => handleRowKey(event, row) : undefined;
                                 return (
                                     <tr
                                         key={getRowKey(row, index)}
                                         className={cx(interactive && "cursor-pointer")}
-                                        onClick={interactive && onRowClick ? () => onRowClick(row) : undefined}
-                                        onKeyDown={interactive && onRowClick ? (event) => handleRowKey(event, row) : undefined}
+                                        onClick={handleClick}
+                                        onKeyDown={handleKeyDown}
                                         tabIndex={interactive ? 0 : undefined}
                                     >
                                         {columns.map((column) => (
-                                            <td key={`${String(column.key)}-${index}`} className={column.className}>
+                                            <td key={`${String(column.key)}-${index}`} className={column.cellClassName}>
                                                 {column.render ? column.render(row) : getCellValue(row, column)}
                                             </td>
                                         ))}
@@ -189,3 +215,5 @@ export function DataTable<T>({
         </div>
     );
 }
+
+export const DataTable = memo(DataTableComponent) as typeof DataTableComponent;
