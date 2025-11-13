@@ -1,4 +1,4 @@
-import './css/MainScreenStyle.css';
+import './css/HoofdSchermStyle.css';
 import './css/registration.css';
 import { Link } from 'react-router-dom';
 
