@@ -24,13 +24,15 @@ export default function App() {
                 <Route path="/veilingmeester" element={<Veilingmeester />} />
                 <Route path="/gegevens" element={<h2 className="h4">Gegevens pagina (coming soon)</h2>} />
                 <Route path="/veilingPlaatsen" element={<SellerScreenAdd />} />
-                <Route path="/veilingBekijken" element={""} />
-                <Route path="/klantGegevens" element={""} />
+                {/* <Route path="/veilingBekijken" element={""} />
+                <Route path="/klantGegevens" element={""} /> */}
                 <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
                 <Route path="/privacyBeleid" element={<PrivacyScherm />} />
 
-                <Route path='/404' element={<ErrorPage />} />          
+                <Route path='/404' element={<ErrorPage />} />
+
+                <Route path='*' element={<Navigate to="/404" replace />} />          
             </Routes>
 
             <Footer />
