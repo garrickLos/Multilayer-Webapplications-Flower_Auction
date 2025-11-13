@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { DataTable } from "../../DataTable";
 import { EmptyState, InlineAlert, LoadingPlaceholder, StatusBadge } from "../../components";
 import { Modal } from "../../Modal";

@@ -42,14 +42,27 @@ type AppConfig = {
     };
 };
 
+// Light-weight declaration to avoid needing @types/node
+declare const process:
+    | {
+    env?: EnvSource;
+}
+    | undefined;
+
 function readEnvSource(): EnvSource {
     const sources: EnvSource[] = [];
-    if (typeof import.meta !== "undefined" && typeof (import.meta as { env?: EnvSource }).env === "object") {
-        sources.push(((import.meta as { env?: EnvSource }).env ?? {}) as EnvSource);
+
+    if (typeof import.meta !== "undefined") {
+        const metaEnv = (import.meta as { env?: EnvSource }).env;
+        if (metaEnv && typeof metaEnv === "object") {
+            sources.push(metaEnv);
+        }
     }
-    if (typeof process !== "undefined" && typeof process.env === "object") {
-        sources.push(process.env as EnvSource);
+
+    if (typeof process !== "undefined" && process.env && typeof process.env === "object") {
+        sources.push(process.env);
     }
+
     return Object.assign({}, ...sources);
 }
 
@@ -61,11 +74,18 @@ function toNumber(value: string | undefined): number | undefined {
 
 function toNumberList(value: string | undefined): readonly number[] | undefined {
     if (!value) return undefined;
-    const parts = value.split(",").map((part) => part.trim()).filter((part) => part.length > 0);
+    const parts = value
+        .split(",")
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+
+    if (!parts.length) return undefined;
+
     const numbers = parts
         .map((part) => Number.parseInt(part, 10))
         .filter((num) => Number.isFinite(num) && num > 0);
-    return numbers.length > 0 ? numbers : undefined;
+
+    return numbers.length ? numbers : undefined;
 }
 
 const env = readEnvSource();
@@ -75,35 +95,50 @@ const runtimeEnv: RuntimeEnv = {
         env.VITE_VEILINGMEESTER_API_BASE_URL ??
         env.REACT_APP_VEILINGMEESTER_API_BASE_URL ??
         env.VEILINGMEESTER_API_BASE_URL,
-    requestTimeoutMs:
-        toNumber(env.VITE_VEILINGMEESTER_REQUEST_TIMEOUT_MS ?? env.REACT_APP_VEILINGMEESTER_REQUEST_TIMEOUT_MS) ?? undefined,
-    pollIntervalMs:
-        toNumber(env.VITE_VEILINGMEESTER_POLL_INTERVAL_MS ?? env.REACT_APP_VEILINGMEESTER_POLL_INTERVAL_MS) ?? undefined,
-    pollBackoffDelays:
-        toNumberList(env.VITE_VEILINGMEESTER_POLL_BACKOFF_MS ?? env.REACT_APP_VEILINGMEESTER_POLL_BACKOFF_MS),
-    realtimePollSteps:
-        toNumberList(env.VITE_VEILINGMEESTER_REALTIME_STEPS_MS ?? env.REACT_APP_VEILINGMEESTER_REALTIME_STEPS_MS),
-    perPageOptions:
-        toNumberList(env.VITE_VEILINGMEESTER_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_PER_PAGE_OPTIONS),
-    modalPerPageOptions:
-        toNumberList(env.VITE_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS),
-    productThumbnailSize:
-        toNumber(env.VITE_VEILINGMEESTER_PRODUCT_THUMBNAIL ?? env.REACT_APP_VEILINGMEESTER_PRODUCT_THUMBNAIL) ?? undefined,
-    dashboardSampleSize:
-        toNumber(env.VITE_VEILINGMEESTER_DASHBOARD_SAMPLE ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_SAMPLE) ?? undefined,
-    dashboardRefreshMs:
-        toNumber(env.VITE_VEILINGMEESTER_DASHBOARD_REFRESH_MS ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_REFRESH_MS) ?? undefined,
+    requestTimeoutMs: toNumber(
+        env.VITE_VEILINGMEESTER_REQUEST_TIMEOUT_MS ?? env.REACT_APP_VEILINGMEESTER_REQUEST_TIMEOUT_MS,
+    ),
+    pollIntervalMs: toNumber(
+        env.VITE_VEILINGMEESTER_POLL_INTERVAL_MS ?? env.REACT_APP_VEILINGMEESTER_POLL_INTERVAL_MS,
+    ),
+    pollBackoffDelays: toNumberList(
+        env.VITE_VEILINGMEESTER_POLL_BACKOFF_MS ?? env.REACT_APP_VEILINGMEESTER_POLL_BACKOFF_MS,
+    ),
+    realtimePollSteps: toNumberList(
+        env.VITE_VEILINGMEESTER_REALTIME_STEPS_MS ?? env.REACT_APP_VEILINGMEESTER_REALTIME_STEPS_MS,
+    ),
+    perPageOptions: toNumberList(
+        env.VITE_VEILINGMEESTER_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_PER_PAGE_OPTIONS,
+    ),
+    modalPerPageOptions: toNumberList(
+        env.VITE_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS,
+    ),
+    productThumbnailSize: toNumber(
+        env.VITE_VEILINGMEESTER_PRODUCT_THUMBNAIL ?? env.REACT_APP_VEILINGMEESTER_PRODUCT_THUMBNAIL,
+    ),
+    dashboardSampleSize: toNumber(
+        env.VITE_VEILINGMEESTER_DASHBOARD_SAMPLE ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_SAMPLE,
+    ),
+    dashboardRefreshMs: toNumber(
+        env.VITE_VEILINGMEESTER_DASHBOARD_REFRESH_MS ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_REFRESH_MS,
+    ),
 };
 
 const defaultBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
 export const appConfig: AppConfig = {
     api: {
-        baseUrl: runtimeEnv.apiBaseUrl && runtimeEnv.apiBaseUrl.trim().length > 0 ? runtimeEnv.apiBaseUrl : defaultBaseUrl,
+        baseUrl:
+            runtimeEnv.apiBaseUrl && runtimeEnv.apiBaseUrl.trim().length > 0
+                ? runtimeEnv.apiBaseUrl
+                : defaultBaseUrl,
         requestTimeoutMs: runtimeEnv.requestTimeoutMs ?? 10000,
     },
     pagination: {
-        table: runtimeEnv.perPageOptions && runtimeEnv.perPageOptions.length > 0 ? runtimeEnv.perPageOptions : [10, 25, 50],
+        table:
+            runtimeEnv.perPageOptions && runtimeEnv.perPageOptions.length > 0
+                ? runtimeEnv.perPageOptions
+                : [10, 25, 50],
         modal:
             runtimeEnv.modalPerPageOptions && runtimeEnv.modalPerPageOptions.length > 0
                 ? runtimeEnv.modalPerPageOptions
