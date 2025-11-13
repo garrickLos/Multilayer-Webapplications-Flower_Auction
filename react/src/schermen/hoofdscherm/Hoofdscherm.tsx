@@ -15,7 +15,7 @@ export default function MainScreen() {
         MyComponent(loading);
     }
 
-    if (error) return <div>Fout: {error}</div>;
+    // if (error) return <div>Fout: {error}</div>;
 
     //maakt het mogelijk om de data op te delen op basis van een item en de inhoud (actief en inactief om te laten zien)
     const actieveVeilingen = veilingen.filter(v => v.status == 'active');

@@ -57,50 +57,55 @@ export default function SellerScreenAdd() {
         <main className="SellerScreenAdd">
             <div className="BODY">
                 <div className="Mainschermen">
-                    <h2>Artificial Citroen boom in deco pot</h2>
+                    <h2>Kunstmatig Citroen boom in deco pot</h2>
                     <div className="ArtikelNummer">
-                        <h2>Actn:</h2>
+                        <h2>Artikel nummer:</h2>
                         <h3>A3-36638-132</h3>
                     </div>
 
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src="../../webp/download.webp" alt="productfoto" className="grote-foto" />
+                                <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="grote-foto" />
                                 <div className="kleine-fotos">
-                                    <img src="../../webp/download.webp" alt="productfoto" className="kleine-foto" />
-                                    <img src="../../webp/download.webp" alt="productfoto" className="kleine-foto" />
-                                    <img src="../../webp/download.webp" alt="productfoto" className="kleine-foto" />
+                                    <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
+                                    <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
+                                    <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
                                 </div>
                             </div>
                         </section>
 
                         <section className="schermDeel2">
                             <div className="scherm2Container">
-                                <div className="kopje">Product Details</div>
+                                <div className="kopje">Product informatie</div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Naam" className="name">Product name:</label>
+                                    <label htmlFor="Naam" className="name">Product naam:</label>
                                     <input type="text" id="Naam" value={product.Naam} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Categorie" className="category">Product category:</label>
+                                    <label htmlFor="Categorie" className="category">Product categorie:</label>
                                     <input type="text" id="Categorie" value={product.Categorie} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Voorraad" className="amount">Amount:</label>
+                                    <label htmlFor="Voorraad" className="amount">Voorraad:</label>
                                     <input type="number" id="Voorraad" step="1" value={product.Voorraad} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Plaats" className="place">Place:</label>
+                                    <label htmlFor="AantalFusten" className="Fusten">Aantal fusten:</label>
+                                    <input type="number" id="AantalFusten" step="1" value={product.Voorraad} onChange={handleChange} />
+                                </div>
+
+                                <div className="ordenen">
+                                    <label htmlFor="Plaats" className="place">Plaats:</label>
                                     <input type="text" id="Plaats" value={product.Plaats} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="MinimalePrijs" className="minimumPrice">Minimum Price:</label>
+                                    <label htmlFor="MinimalePrijs" className="minimumPrice">Minimum prijs:</label>
                                     <input type="decimal" id="MinimalePrijs" step="0.01" value={product.MinimalePrijs} onChange={handleChange} />
                                 </div>
                             </div>
@@ -108,23 +113,19 @@ export default function SellerScreenAdd() {
 
                         <section className="schermDeel3">
                             <div className="scherm3Container">
-                                <div className="scherm3Ordenen">
-                                    <label htmlFor="StartPrijs" className="price">Start price:</label>
-                                    <input type="number" id="StartPrijs" step="0.01" value={product.StartPrijs} onChange={handleChange} />
-                                </div>
 
                                 <div className="scherm3Ordenen">
-                                    <label htmlFor="StartDatum" className="sDate">Start date:</label>
+                                    <label htmlFor="StartDatum" className="sDate">Begin datum:</label>
                                     <input type="date" id="StartDatum" value={product.StartDatum} onChange={handleChange} />
                                 </div>
 
                                 <div className="scherm3Ordenen">
-                                    <label htmlFor="EindDatum" className="eDate">End date:</label>
+                                    <label htmlFor="EindDatum" className="eDate">Eind datum:</label>
                                     <input type="date" id="EindDatum" value={product.EindDatum} onChange={handleChange} />
                                 </div>
 
                                 <button className="placeProduct" onClick={handleSubmit}>
-                                    Place Product
+                                    Product Plaatsen
                                 </button>
                             </div>
                         </section>
