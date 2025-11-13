@@ -1,5 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import {lazy, Suspense, useEffect, useMemo, useState, type ReactNode} from "react";
 import { ErrorBoundary, InlineAlert, LoadingPlaceholder } from "./components";
 import { useOffline } from "./utils/useOffline";
 import type { UserRow, VeilingRow } from "./types";
@@ -7,19 +6,19 @@ import { DashboardMetrics } from "./features/dashboard/DashboardMetrics";
 import { cx } from "./utils/classNames";
 
 const UsersTab = lazy(async () =>
-    import("./features/users/UsersTab").then((module) => ({ default: module.UsersTab })),
+    import("./features/users/UsersTab").then((m) => ({ default: m.UsersTab })),
 );
 const AuctionsTab = lazy(async () =>
-    import("./features/auctions/AuctionsTab").then((module) => ({ default: module.AuctionsTab })),
+    import("./features/auctions/AuctionsTab").then((m) => ({ default: m.AuctionsTab })),
 );
 const BidsModal = lazy(async () =>
-    import("./features/users/BidsModal").then((module) => ({ default: module.BidsModal })),
+    import("./features/users/BidsModal").then((m) => ({ default: m.BidsModal })),
 );
 const ProductsModal = lazy(async () =>
-    import("./features/products/ProductsModal").then((module) => ({ default: module.ProductsModal })),
+    import("./features/products/ProductsModal").then((m) => ({ default: m.ProductsModal })),
 );
 const AuctionModal = lazy(async () =>
-    import("./features/auctions/AuctionModal").then((module) => ({ default: module.AuctionModal })),
+    import("./features/auctions/AuctionModal").then((m) => ({ default: m.AuctionModal })),
 );
 
 type TabKey = "users" | "auctions";
@@ -31,17 +30,13 @@ type TabDefinition = {
 };
 
 function readInitialTab(): TabKey {
-    if (typeof window === "undefined") {
-        return "users";
-    }
+    if (typeof window === "undefined") return "users";
     const value = new URLSearchParams(window.location.search).get("vm_tab");
     return value === "veilingen" ? "auctions" : "users";
 }
 
 function updateTabUrl(tab: TabKey): void {
-    if (typeof window === "undefined") {
-        return;
-    }
+    if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     url.searchParams.set("vm_tab", tab === "auctions" ? "veilingen" : "gebruikers");
     window.history.replaceState({}, "", url.toString());
@@ -78,10 +73,12 @@ export function Veilingmeester() {
             {
                 key: "auctions",
                 label: "Veilingen",
-                render: () => <AuctionsTab onSelectAuction={(row) => setSelectedAuction(row)} />,
+                render: () => (
+                    <AuctionsTab onSelectAuction={(row) => setSelectedAuction(row)} />
+                ),
             },
         ],
-        [],
+        [setSelectedBidUser, setSelectedGrower, setSelectedAuction],
     );
 
     return (
@@ -183,15 +180,9 @@ export function Veilingmeester() {
                     {selectedBidUser && (
                         <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />
                     )}
-                </Suspense>
-
-                <Suspense fallback={null}>
                     {selectedGrower && (
                         <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />
                     )}
-                </Suspense>
-
-                <Suspense fallback={null}>
                     {selectedAuction && (
                         <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />
                     )}

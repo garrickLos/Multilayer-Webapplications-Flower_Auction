@@ -1,15 +1,13 @@
-import type { KeyboardEvent, ReactNode } from "react";
 import { memo, useMemo, useState } from "react";
+import type { JSX, KeyboardEvent, ReactNode } from "react";
 import { ResultBadge } from "./components";
 import { cx } from "./utils/classNames";
 import { nlCollator } from "./types";
 
 type SortDirection = "asc" | "desc";
-
 type SortState = { readonly key: string; readonly direction: SortDirection } | null;
 
 type Primitive = string | number;
-
 type ColumnValue = Primitive | Date | null | undefined;
 
 type DataTableColumn<T> = {
@@ -35,104 +33,76 @@ type DataTableProps<T> = {
 
 type IndexedRow<T> = { readonly row: T; readonly index: number };
 
-function toPrimitive(value: ColumnValue): Primitive {
-    if (value instanceof Date) {
-        return value.getTime();
-    }
-    if (typeof value === "number") {
-        return value;
-    }
-    if (value == null) {
-        return "";
-    }
-    return String(value);
-}
+const toPrimitive = (value: ColumnValue): Primitive =>
+    value instanceof Date ? value.getTime() : value == null ? "" : (typeof value === "number" ? value : String(value));
 
 function compareValues(a: ColumnValue, b: ColumnValue): number {
     const left = toPrimitive(a);
     const right = toPrimitive(b);
-    if (typeof left === "number" && typeof right === "number") {
-        return left - right;
-    }
-    return nlCollator.compare(String(left), String(right));
+    return typeof left === "number" && typeof right === "number"
+        ? left - right
+        : nlCollator.compare(String(left), String(right));
 }
 
 function getCellValue<T>(row: T, column: DataTableColumn<T>): ColumnValue {
-    if (column.getValue) {
-        return column.getValue(row);
-    }
+    if (column.getValue) return column.getValue(row);
     const record = row as Record<string, ColumnValue>;
     return record[column.key as string];
 }
 
-function sortRows<T>(rows: readonly T[], columns: readonly DataTableColumn<T>[], sortState: SortState): readonly T[] {
-    if (!sortState) {
-        return rows;
-    }
-    const column = columns.find((col) => (col.key as string) === sortState.key);
-    if (!column) {
-        return rows;
-    }
+function sortRows<T>(
+    rows: readonly T[],
+    columns: readonly DataTableColumn<T>[],
+    sortState: SortState,
+): readonly T[] {
+    if (!sortState) return rows;
+    const column = columns.find((c) => (c.key as string) === sortState.key);
+    if (!column) return rows;
+
     const factor = sortState.direction === "asc" ? 1 : -1;
+
     return rows
         .map<IndexedRow<T>>((row, index) => ({ row, index }))
         .sort((a, b) => {
-            const aValue = getCellValue(a.row, column);
-            const bValue = getCellValue(b.row, column);
-            const comparison = compareValues(aValue, bValue);
-            if (comparison !== 0) {
-                return comparison * factor;
-            }
-            return a.index - b.index;
+            const cmp = compareValues(getCellValue(a.row, column), getCellValue(b.row, column));
+            return cmp !== 0 ? cmp * factor : a.index - b.index; // stabiele sortering
         })
-        .map((entry) => entry.row);
+        .map((x) => x.row);
 }
 
 /**
  * Responsive, sortable table built with Bootstrap utilities.
- *
- * @param props - Configuration and data rows to render.
  */
 function DataTableComponent<T>({
-    columns,
-    rows,
-    totalResults,
-    caption,
-    empty,
-    getRowKey,
-    onRowClick,
-    isRowInteractive,
-}: DataTableProps<T>): JSX.Element {
+                                   columns,
+                                   rows,
+                                   totalResults,
+                                   caption,
+                                   empty,
+                                   getRowKey,
+                                   onRowClick,
+                                   isRowInteractive,
+                               }: DataTableProps<T>): JSX.Element {
     const [sortState, setSortState] = useState<SortState>(null);
-
     const sortedRows = useMemo(() => sortRows(rows, columns, sortState), [rows, columns, sortState]);
 
     const handleSort = (column: DataTableColumn<T>) => {
-        if (!column.sortable) {
-            return;
-        }
+        if (!column.sortable) return;
         const key = column.key as string;
-        setSortState((previous) => {
-            if (previous?.key === key) {
-                return { key, direction: previous.direction === "asc" ? "desc" : "asc" };
-            }
-            return { key, direction: "asc" };
-        });
+        setSortState((prev) =>
+            prev?.key === key ? { key, direction: prev.direction === "asc" ? "desc" : "asc" } : { key, direction: "asc" },
+        );
     };
 
     const handleRowKey = (event: KeyboardEvent<HTMLTableRowElement>, row: T) => {
-        if (!onRowClick) {
-            return;
-        }
+        if (!onRowClick) return;
         if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             onRowClick(row);
         }
     };
 
-    if (!rows.length && empty) {
-        return <>{empty}</>;
-    }
+    if (!rows.length && empty) return <>{empty}</>;
 
     const resultCount = rows.length;
 
@@ -143,71 +113,72 @@ function DataTableComponent<T>({
                 <div className="table-responsive" role="region">
                     <table className="table table-sm table-hover align-middle caption-top mb-0">
                         {caption && <caption className="text-muted small">{caption}</caption>}
+
                         <thead className="bg-success-subtle position-sticky top-0 z-2">
-                            <tr>
-                                {columns.map((column) => {
-                                    const sortable = Boolean(column.sortable);
-                                    const active = sortState?.key === (column.key as string);
-                                    const direction = active ? sortState?.direction : null;
-                                    const icon = !sortable ? null : active ? (direction === "asc" ? "▲" : "▼") : "↕";
-                                    const ariaSort = sortable
-                                        ? active
-                                            ? direction === "asc"
-                                                ? "ascending"
-                                                : "descending"
-                                            : "none"
-                                        : undefined;
-                                    return (
-                                        <th
-                                            key={String(column.key)}
-                                            scope="col"
-                                            className={cx(
-                                                "text-uppercase small text-success-emphasis",
-                                                sortable && "user-select-none",
-                                                column.headerClassName,
-                                            )}
-                                            aria-sort={ariaSort}
-                                        >
-                                            {sortable ? (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-link p-0 text-decoration-none text-success fw-semibold"
-                                                    onClick={() => handleSort(column)}
-                                                >
-                                                    <span className="d-inline-flex align-items-center gap-1">
-                                                        <span>{column.header}</span>
-                                                        <span aria-hidden="true">{icon}</span>
-                                                    </span>
-                                                </button>
-                                            ) : (
-                                                column.header
-                                            )}
-                                        </th>
-                                    );
-                                })}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedRows.map((row, index) => {
-                                const interactive = Boolean(onRowClick && (isRowInteractive ? isRowInteractive(row) : true));
-                                const handleClick = interactive && onRowClick ? () => onRowClick(row) : undefined;
-                                const handleKeyDown = interactive && onRowClick ? (event: KeyboardEvent<HTMLTableRowElement>) => handleRowKey(event, row) : undefined;
+                        <tr>
+                            {columns.map((column) => {
+                                const keyStr = String(column.key);
+                                const sortable = !!column.sortable;
+                                const active = sortState?.key === keyStr;
+                                const direction = active ? sortState?.direction : null;
+                                const icon = !sortable ? null : active ? (direction === "asc" ? "▲" : "▼") : "↕";
+                                const ariaSort =
+                                    sortable ? (active ? (direction === "asc" ? "ascending" : "descending") : "none") : undefined;
+
                                 return (
-                                    <tr
-                                        key={getRowKey(row, index)}
-                                        className={cx(interactive && "cursor-pointer")}
-                                        onClick={handleClick}
-                                        onKeyDown={handleKeyDown}
-                                        tabIndex={interactive ? 0 : undefined}
+                                    <th
+                                        key={keyStr}
+                                        scope="col"
+                                        className={cx(
+                                            "text-uppercase small text-success-emphasis",
+                                            sortable && "user-select-none",
+                                            column.headerClassName,
+                                        )}
+                                        aria-sort={ariaSort}
                                     >
-                                        {columns.map((column) => (
-                                            <td key={`${String(column.key)}-${index}`} className={column.cellClassName}>
-                                                {column.render ? column.render(row) : getCellValue(row, column)}
-                                            </td>
-                                        ))}
-                                    </tr>
+                                        {sortable ? (
+                                            <button
+                                                type="button"
+                                                className="btn btn-link p-0 text-decoration-none text-success fw-semibold"
+                                                onClick={() => handleSort(column)}
+                                            >
+                          <span className="d-inline-flex align-items-center gap-1">
+                            <span>{column.header}</span>
+                            <span aria-hidden="true">{icon}</span>
+                          </span>
+                                            </button>
+                                        ) : (
+                                            column.header
+                                        )}
+                                    </th>
                                 );
                             })}
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        {sortedRows.map((row, index) => {
+                            const interactive = Boolean(onRowClick && (isRowInteractive ? isRowInteractive(row) : true));
+                            const handleClick = interactive && onRowClick ? () => onRowClick(row) : undefined;
+                            const handleKeyDown =
+                                interactive && onRowClick ? (e: KeyboardEvent<HTMLTableRowElement>) => handleRowKey(e, row) : undefined;
+
+                            return (
+                                <tr
+                                    key={getRowKey(row, index)}
+                                    className={cx(interactive && "cursor-pointer")}
+                                    onClick={handleClick}
+                                    onKeyDown={handleKeyDown}
+                                    tabIndex={interactive ? 0 : undefined}
+                                >
+                                    {columns.map((column) => (
+                                        <td key={`${String(column.key)}-${index}`} className={column.cellClassName}>
+                                            {column.render ? column.render(row) : getCellValue(row, column)}
+                                        </td>
+                                    ))}
+                                </tr>
+                            );
+                        })}
                         </tbody>
                     </table>
                 </div>

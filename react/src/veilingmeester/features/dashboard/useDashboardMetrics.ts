@@ -20,46 +20,31 @@ type MetricsState = {
     readonly lastUpdated: Date | null;
 };
 
-const integerFormatter = new Intl.NumberFormat("nl-NL");
-const decimalFormatter = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const intFmt = new Intl.NumberFormat("nl-NL");
+const decFmt = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-function formatCount(value: number | undefined): string {
-    return integerFormatter.format(value ?? 0);
-}
-
-function formatAverage(value: number): string {
-    return decimalFormatter.format(value);
-}
+const formatCount = (n?: number) => intFmt.format(n ?? 0);
+const formatAverage = (n: number) => decFmt.format(n);
 
 function resolveErrorMessage(error: unknown): string {
     if (!error) return "Er ging iets mis.";
     if (typeof error === "string") return error;
-    if (typeof (error as { message?: string }).message === "string") {
-        return (error as { message: string }).message;
-    }
-    return "Er ging iets mis. Probeer het later opnieuw.";
+    const msg = (error as { message?: string }).message;
+    return msg == "string" ? msg : "Er ging iets mis. Probeer het later opnieuw.";
 }
 
-function percentage(part: number, total: number): number {
-    if (total <= 0) {
-        return 0;
-    }
-    return Math.max(0, Math.min(100, Math.round((part / total) * 100)));
-}
+const percentage = (part: number, total: number) =>
+    total <= 0 ? 0 : Math.max(0, Math.min(100, Math.round((part / total) * 100)));
 
 function averageProductCount(list: PaginatedList<VeilingDto>): number {
-    if (!list.items.length) {
-        return 0;
-    }
-    const rows = list.items.map((item) => adaptAuction(item));
-    const sum = rows.reduce((total, row) => total + row.productCount, 0);
-    return rows.length === 0 ? 0 : sum / rows.length;
+    if (!list.items.length) return 0;
+    const rows = list.items.map(adaptAuction);
+    const sum = rows.reduce((acc, r) => acc + r.productCount, 0);
+    return rows.length ? sum / rows.length : 0;
 }
 
 /**
  * Aggregates KPI data for the dashboard and keeps it refreshed.
- *
- * @returns The live dashboard metrics with helpers and refresh controls.
  */
 export function useDashboardMetrics(): {
     readonly metrics: readonly MetricCard[];
@@ -76,115 +61,103 @@ export function useDashboardMetrics(): {
         error: null,
         lastUpdated: null,
     });
+
     const controllerRef = useRef<AbortController | null>(null);
-    const refreshInterval = appConfig.ui.dashboardRefreshMs;
+    const refreshInterval = appConfig.ui.dashboardRefreshMs as number;
+    const sampleSize = appConfig.ui.dashboardSampleSize as number;
 
-    const load = useCallback(
-        (options?: { readonly silent?: boolean }) => {
-            controllerRef.current?.abort();
-            const controller = new AbortController();
-            controllerRef.current = controller;
-            setState((previous) => ({
-                ...previous,
-                loading: options?.silent ? previous.loading : true,
-                refreshing: Boolean(options?.silent),
-                error: null,
-            }));
+    const load = useCallback((options?: { readonly silent?: boolean }) => {
+        controllerRef.current?.abort();
+        const controller = new AbortController();
+        controllerRef.current = controller;
 
-            const sampleSize = appConfig.ui.dashboardSampleSize;
+        setState((prev) => ({
+            ...prev,
+            loading: options?.silent ? prev.loading : true,
+            refreshing: Boolean(options?.silent),
+            error: null,
+        }));
 
-            void Promise.all([
-                getUsers({ page: 1, pageSize: 1 }, controller.signal),
-                getAuctions({ page: 1, pageSize: sampleSize, status: "actief" }, controller.signal),
-                getAuctions({ page: 1, pageSize: 1, status: "inactief" }, controller.signal),
-                getAuctions({ page: 1, pageSize: 1 }, controller.signal),
-            ])
-                .then(([users, active, inactive, all]) => {
-                    const totals = {
-                        users: users.totalResults ?? users.items.length,
-                        active: active.totalResults ?? active.items.length,
-                        inactive: inactive.totalResults ?? inactive.items.length,
-                        all: all.totalResults ?? all.items.length,
-                    };
-                    const totalAuctions = totals.all > 0 ? totals.all : totals.active + totals.inactive;
-                    const activeShare = percentage(totals.active, totalAuctions);
-                    const inactiveShare = percentage(totals.inactive, totalAuctions);
-                    const averageProducts = averageProductCount(active);
+        void Promise.all([
+            getUsers({ page: 1, pageSize: 1 }, controller.signal),
+            getAuctions({ page: 1, pageSize: sampleSize, status: "actief" } as never, controller.signal),
+            getAuctions({ page: 1, pageSize: 1, status: "inactief" } as never, controller.signal),
+            getAuctions({ page: 1, pageSize: 1 } as never, controller.signal),
+        ])
+            .then(([users, active, inactive, all]) => {
+                const totals = {
+                    users: users.totalResults ?? users.items.length,
+                    active: active.totalResults ?? active.items.length,
+                    inactive: inactive.totalResults ?? inactive.items.length,
+                    all: all.totalResults ?? all.items.length,
+                };
 
-                    const metrics: MetricCard[] = [
-                        {
-                            id: "users",
-                            label: "Gebruikers",
-                            value: formatCount(totals.users),
-                            helper: "Geactiveerde accounts",
-                            accent: "Realtime toegang",
-                        },
-                        {
-                            id: "active",
-                            label: "Actieve veilingen",
-                            value: formatCount(totals.active),
-                            helper: "Live klokken",
-                            accent: `${activeShare}% van totaal`,
-                            progress: activeShare,
-                        },
-                        {
-                            id: "inactive",
-                            label: "Inactief of gepland",
-                            value: formatCount(totals.inactive),
-                            helper: "Gepland of afgerond",
-                            accent: `${inactiveShare}% van totaal`,
-                            progress: inactiveShare,
-                        },
-                        {
-                            id: "inventory",
-                            label: "Gem. producten",
-                            value: formatAverage(averageProducts),
-                            helper: "per actieve veiling",
-                            accent: active.items.length > 0 ? `${active.items.length} veilingen gescand` : "Geen monsters",
-                        },
-                    ];
+                const totalAuctions = totals.all > 0 ? totals.all : totals.active + totals.inactive;
+                const activeShare = percentage(totals.active, totalAuctions);
+                const inactiveShare = percentage(totals.inactive, totalAuctions);
+                const avgProducts = averageProductCount(active);
 
-                    setState({
-                        metrics,
-                        loading: false,
-                        refreshing: false,
-                        error: null,
-                        lastUpdated: new Date(),
-                    });
-                })
-                .catch((error) => {
-                    if ((error as { name?: string }).name === "AbortError") {
-                        return;
-                    }
-                    setState((previous) => ({
-                        ...previous,
-                        loading: false,
-                        refreshing: false,
-                        error: resolveErrorMessage(error),
-                    }));
+                const metrics: MetricCard[] = [
+                    {
+                        id: "users",
+                        label: "Gebruikers",
+                        value: formatCount(totals.users),
+                        helper: "Geactiveerde accounts",
+                        accent: "Realtime toegang",
+                    },
+                    {
+                        id: "active",
+                        label: "Actieve veilingen",
+                        value: formatCount(totals.active),
+                        helper: "Live klokken",
+                        accent: `${activeShare}% van totaal`,
+                        progress: activeShare,
+                    },
+                    {
+                        id: "inactive",
+                        label: "Inactief of gepland",
+                        value: formatCount(totals.inactive),
+                        helper: "Gepland of afgerond",
+                        accent: `${inactiveShare}% van totaal`,
+                        progress: inactiveShare,
+                    },
+                    {
+                        id: "inventory",
+                        label: "Gem. producten",
+                        value: formatAverage(avgProducts),
+                        helper: "per actieve veiling",
+                        accent: active.items.length > 0 ? `${active.items.length} veilingen gescand` : "Geen monsters",
+                    },
+                ];
+
+                setState({
+                    metrics,
+                    loading: false,
+                    refreshing: false,
+                    error: null,
+                    lastUpdated: new Date(),
                 });
-        },
-        [],
-    );
+            })
+            .catch((error) => {
+                if ((error as { name?: string }).name === "AbortError") return;
+                setState((prev) => ({
+                    ...prev,
+                    loading: false,
+                    refreshing: false,
+                    error: resolveErrorMessage(error),
+                }));
+            });
+    }, [sampleSize]);
 
     useEffect(() => load(), [load]);
 
     useEffect(() => {
-        if (!refreshInterval || refreshInterval <= 0) {
-            return undefined;
-        }
-        if (typeof window === "undefined") {
-            return undefined;
-        }
+        if (!refreshInterval || refreshInterval <= 0 || typeof window === "undefined") return;
         const timer = window.setInterval(() => load({ silent: true }), refreshInterval);
         return () => window.clearInterval(timer);
     }, [load, refreshInterval]);
 
-    useEffect(() => {
-        return () => {
-            controllerRef.current?.abort();
-        };
-    }, []);
+    useEffect(() => () => controllerRef.current?.abort(), []);
 
     const refresh = useCallback(() => load(), [load]);
 
@@ -197,6 +170,6 @@ export function useDashboardMetrics(): {
             lastUpdated: state.lastUpdated,
             refresh,
         }),
-        [refresh, state.error, state.lastUpdated, state.loading, state.metrics, state.refreshing],
+        [refresh, state.metrics, state.loading, state.refreshing, state.error, state.lastUpdated],
     );
 }

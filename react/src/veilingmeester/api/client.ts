@@ -1,25 +1,29 @@
 import type {
     BiedingDto,
+    CategorieDto,
     GebruikerDto,
     PaginatedList,
     VeilingDetailDto,
     VeilingDto,
     VeilingproductDto,
 } from "./types";
-import {appConfig} from "./config";
+import { appConfig } from "./config";
 
 export type ApiError = { status: number; message: string };
 
 type FetchInit = RequestInit & { signal?: AbortSignal };
+
 type ListResult<T> = { data: readonly T[]; headers: Headers };
 
 const BASE_URL = appConfig.api.baseUrl;
 const REQUEST_TIMEOUT = appConfig.api.requestTimeoutMs;
 
-async function fetchJsonWithMeta<T>(
-    path: string,
-    init?: FetchInit,
-): Promise<{ data: T; headers: Headers }> {
+export async function fetchJson<T>(path: string, init?: FetchInit): Promise<T> {
+    const { data } = await fetchJsonWithMeta<T>(path, init);
+    return data;
+}
+
+async function fetchJsonWithMeta<T>(path: string, init?: FetchInit): Promise<{ data: T; headers: Headers }> {
     const controller = createAbortController(init?.signal);
     const timeoutId = startTimeout(controller);
 
@@ -37,7 +41,9 @@ async function fetchJsonWithMeta<T>(
 
         const response = await safeFetch(request);
 
-        if (!response.ok) throw await normaliseError(response);
+        if (!response.ok) {
+            throw await normaliseError(response);
+        }
 
         if (response.status === 204) {
             return { data: undefined as T, headers: response.headers };
@@ -50,20 +56,22 @@ async function fetchJsonWithMeta<T>(
     }
 }
 
-function createAbortController(linked?: AbortSignal): AbortController {
+function createAbortController(signal?: AbortSignal): AbortController {
     const controller = new AbortController();
-    if (!linked) return controller;
-
-    if (linked.aborted) {
+    if (!signal) {
+        return controller;
+    }
+    if (signal.aborted) {
         controller.abort();
         return controller;
     }
-
-    const onAbort = () => controller.abort();
-    linked.addEventListener("abort", onAbort, { once: true });
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
     controller.signal.addEventListener(
         "abort",
-        () => linked.removeEventListener("abort", onAbort),
+        () => {
+            signal.removeEventListener("abort", abort);
+        },
         { once: true },
     );
     return controller;
@@ -80,8 +88,11 @@ async function safeFetch(request: Request): Promise<Response> {
     try {
         return await fetch(request);
     } catch (error) {
-        if ((error as { name?: string }).name === "AbortError") throw error;
-        throw {status: 0, message: "Kan geen verbinding maken met de server."};
+        if ((error as { name?: string }).name === "AbortError") {
+            throw error;
+        }
+        const apiError: ApiError = { status: 0, message: "Kan geen verbinding maken met de server." };
+        throw apiError;
     }
 }
 
@@ -101,12 +112,14 @@ async function normaliseError(response: Response): Promise<ApiError> {
             message = detail || title || generic || message;
         } else {
             const text = await response.clone().text();
-            if (text.trim()) message = text.trim();
+            if (text.trim().length > 0) {
+                message = text.trim();
+            }
         }
     } catch {
         // negeer parsefouten
     }
-    const clean = message.replaceAll(/https?:\/?\/?\S+/gu, "").trim();
+    const clean = message.replaceAll(/https?:\/?\/?[^\s]+/gu, "").trim();
     return { status: response.status, message: clean || `Er ging iets mis (${response.status}).` };
 }
 
@@ -115,10 +128,11 @@ function buildQuery(params: Record<string, unknown>): string {
     for (const [key, value] of Object.entries(params)) {
         if (value == null || value === "") continue;
         if (typeof value === "boolean") {
-            if (value) search.append(key, "true");
-            continue;
+            if (!value) continue;
+            search.append(key, "true");
+        } else {
+            search.append(key, String(value));
         }
-        search.append(key, String(value));
     }
     const query = search.toString();
     return query ? `?${query}` : "";
@@ -130,13 +144,12 @@ function normaliseList<T>(
     pageSize: number,
 ): PaginatedList<T> {
     const items = Array.isArray(result.data) ? [...result.data] : [];
-    const { headers } = result;
-
+    const headers = result.headers;
     const totalHeader = headers.get("X-Total-Count");
     const totalResults = totalHeader ? Number.parseInt(totalHeader, 10) : undefined;
-
     const pageHeader = headers.get("X-Page");
     const pageSizeHeader = headers.get("X-Page-Size");
+
     const resolvedPage = pageHeader ? Number.parseInt(pageHeader, 10) || page : page;
     const resolvedPageSize = pageSizeHeader ? Number.parseInt(pageSizeHeader, 10) || pageSize : pageSize;
 
@@ -145,7 +158,13 @@ function normaliseList<T>(
             ? resolvedPage * resolvedPageSize < totalResults
             : items.length === resolvedPageSize;
 
-    return { items, page: resolvedPage, pageSize: resolvedPageSize, hasNext, totalResults };
+    return {
+        items,
+        page: resolvedPage,
+        pageSize: resolvedPageSize,
+        hasNext,
+        totalResults,
+    };
 }
 
 async function fetchList<T>(
@@ -219,7 +238,9 @@ export async function getProductsByGrower(
         collected.push(...matches);
         currentPage += 1;
         hasNext = list.hasNext;
-        if (!list.hasNext || list.items.length === 0) break;
+        if (!list.hasNext || list.items.length === 0) {
+            break;
+        }
     }
 
     const sliced = collected.slice(0, pageSize);
@@ -231,3 +252,11 @@ export async function getProductsByGrower(
         totalResults: undefined,
     } satisfies PaginatedList<VeilingproductDto>;
 }
+
+export async function getCategories(
+    params: { q?: string; page?: number; pageSize?: number },
+    signal?: AbortSignal,
+): Promise<PaginatedList<CategorieDto>> {
+    return fetchList<CategorieDto>("/api/Categorie", params, { signal });
+}
+

@@ -1,27 +1,21 @@
 import { useEffect, useState } from "react";
 
 /**
- * Tracks the browser network connectivity state and updates when it changes.
+ * Tracks the browser's online/offline state.
  */
 export function useOffline(): boolean {
-    const [offline, setOffline] = useState<boolean>(() => {
-        if (typeof navigator === "undefined") {
-            return false;
-        }
-        return !navigator.onLine;
-    });
+    const [offline, setOffline] = useState(() =>
+        typeof navigator === "undefined" ? false : !navigator.onLine,
+    );
 
     useEffect(() => {
-        const handleOnline = () => setOffline(false);
-        const handleOffline = () => setOffline(true);
-        if (typeof window === "undefined") {
-            return undefined;
-        }
-        window.addEventListener("online", handleOnline);
-        window.addEventListener("offline", handleOffline);
+        if (typeof window === "undefined") return;
+        const update = () => setOffline(!navigator.onLine);
+        window.addEventListener("online", update);
+        window.addEventListener("offline", update);
         return () => {
-            window.removeEventListener("online", handleOnline);
-            window.removeEventListener("offline", handleOffline);
+            window.removeEventListener("online", update);
+            window.removeEventListener("offline", update);
         };
     }, []);
 

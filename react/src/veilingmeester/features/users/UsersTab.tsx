@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 import { DataTable } from "../../DataTable";
 import {
     InlineAlert,
@@ -28,43 +28,91 @@ const soortBadgeClass: Record<UserRow["soort"], string> = {
 };
 
 /**
- * Renders the beheer view for gebruikers with filters, pagination and actions.
- *
- * @param props - Component properties containing event handlers for koper and kweker acties.
+ * Renders the beheer view voor gebruikers met filters, paginatie en acties.
  */
 export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JSX.Element {
-    const {
-        rows,
-        loading,
-        error,
-        page,
-        setPage,
-        pageSize,
-        setPageSize,
-        hasNext,
-        totalResults,
-        search,
-        setSearch,
-    } = useUserRows();
+    const {rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch,} = useUserRows();
 
     const perPageOptions = useMemo(
-        () => appConfig.pagination.table.map((size) => ({ value: size, label: `${size}` })),
-        [],
+        () => appConfig.pagination.table.map((size) => ({ value: size, label: String(size) })), [],
     );
 
     const handleRowClick = useCallback(
         (row: UserRow) => {
-            if (row.soort === "koper") {
-                onSelectBidUser(row);
-            }
-            if (row.soort === "kweker") {
-                onSelectGrower(row);
-            }
-        },
-        [onSelectBidUser, onSelectGrower],
+            if (row.soort === "koper") onSelectBidUser(row);
+            if (row.soort === "kweker") onSelectGrower(row);
+        }, [onSelectBidUser, onSelectGrower],
     );
 
-    const isInteractive = useCallback((row: UserRow) => row.soort === "koper" || row.soort === "kweker", []);
+    const isInteractive = useCallback(
+        (row: UserRow) => row.soort === "koper" || row.soort === "kweker",
+        [],
+    );
+
+    const columns = useMemo(
+        () => [
+            {
+                key: "id",
+                header: "#",
+                sortable: true,
+                headerClassName: "text-nowrap",
+                cellClassName: "text-nowrap",
+            },
+            {
+                key: "naam",
+                header: "Naam",
+                sortable: true,
+                render: (row: UserRow) => (
+                    <div className="d-flex flex-column">
+                        <span className="fw-semibold text-break">{row.naam}</span>
+                        <span className="text-muted small">#{row.id}</span>
+                    </div>
+                ),
+                getValue: (row: UserRow) => row.naam,
+            },
+            {
+                key: "email",
+                header: "E-mail",
+                sortable: true,
+                render: (row: UserRow) =>
+                    row.email ? <span className="text-break">{row.email}</span> : <span className="text-muted">—</span>,
+                getValue: (row: UserRow) => row.email ?? "",
+            },
+            {
+                key: "kvk",
+                header: "KVK",
+                sortable: true,
+                render: (row: UserRow) => (
+                    <span className="font-monospace" title={row.kvk ? undefined : "Geen KVK"}>
+            {row.kvk ?? "—"}
+          </span>
+                ),
+                getValue: (row: UserRow) => row.kvk ?? "",
+            },
+            {
+                key: "soort",
+                header: "Soort",
+                sortable: true,
+                render: (row: UserRow) => (
+                    <span className={cx("badge", "rounded-pill", soortBadgeClass[row.soort] ?? "text-bg-secondary")}>
+            {row.soort}
+          </span>
+                ),
+                getValue: (row: UserRow) => row.soort,
+                cellClassName: "text-capitalize",
+            },
+            {
+                key: "status",
+                header: "Status",
+                sortable: true,
+                render: (row: UserRow) => <StatusBadge status={row.status} />,
+                getValue: (row: UserRow) => row.status,
+            },
+        ],
+        [],
+    );
+
+    const hasSearch = Boolean((search ?? "").trim());
 
     return (
         <section className="d-flex flex-column gap-3" aria-label="Gebruikersbeheer">
@@ -76,7 +124,11 @@ export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JS
                     </div>
                     <div className="row g-3 align-items-end">
                         <div className="col-12 col-md-6 col-lg-4">
-                            <SearchField label="Zoeken" value={search ?? ""} onChange={(value) => setSearch?.(value)} />
+                            <SearchField
+                                label="Zoeken"
+                                value={search ?? ""}
+                                onChange={(value) => setSearch?.(value)}
+                            />
                         </div>
                         <div className="col-6 col-md-3 col-lg-2">
                             <SmallSelectField<number>
@@ -90,70 +142,22 @@ export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JS
                     </div>
                 </div>
             </div>
-            {(search ?? "").trim().length > 0 && (
+
+            {hasSearch && (
                 <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
                     <FilterChip label={`Zoeken: ${search}`} onRemove={() => setSearch?.("")} />
                 </div>
             )}
+
             {error && <InlineAlert>{error}</InlineAlert>}
+
             {loading && !rows.length ? (
                 <LoadingPlaceholder />
             ) : rows.length === 0 ? (
                 <EmptyState message="Geen gebruikers gevonden." />
             ) : (
                 <DataTable
-                    columns={[
-                        { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
-                        {
-                            key: "naam",
-                            header: "Naam",
-                            sortable: true,
-                            render: (row) => (
-                                <div className="d-flex flex-column">
-                                    <span className="fw-semibold text-break">{row.naam}</span>
-                                    <span className="text-muted small">#{row.id}</span>
-                                </div>
-                            ),
-                            getValue: (row) => row.naam,
-                        },
-                        {
-                            key: "email",
-                            header: "E-mail",
-                            sortable: true,
-                            render: (row) => (row.email ? <span className="text-break">{row.email}</span> : <span className="text-muted">—</span>),
-                            getValue: (row) => row.email ?? "",
-                        },
-                        {
-                            key: "kvk",
-                            header: "KVK",
-                            sortable: true,
-                            render: (row) => (
-                                <span className="font-monospace" title={row.kvk ? undefined : "Geen KVK"}>
-                                    {row.kvk ?? "—"}
-                                </span>
-                            ),
-                            getValue: (row) => row.kvk ?? "",
-                        },
-                        {
-                            key: "soort",
-                            header: "Soort",
-                            sortable: true,
-                            render: (row) => (
-                                <span className={cx("badge", "rounded-pill", soortBadgeClass[row.soort] ?? "text-bg-secondary")}>
-                                    {row.soort}
-                                </span>
-                            ),
-                            getValue: (row) => row.soort,
-                            cellClassName: "text-capitalize",
-                        },
-                        {
-                            key: "status",
-                            header: "Status",
-                            sortable: true,
-                            render: (row) => <StatusBadge status={row.status} />,
-                            getValue: (row) => row.status,
-                        },
-                    ]}
+                    columns={columns}
                     rows={rows}
                     totalResults={totalResults}
                     empty={<EmptyState message="Geen gebruikers gevonden." />}
@@ -162,12 +166,13 @@ export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JS
                     isRowInteractive={isInteractive}
                 />
             )}
+
             <Pager
                 page={page}
                 pageSize={pageSize}
                 hasNext={hasNext}
-                onPrevious={() => setPage((previous) => Math.max(1, previous - 1))}
-                onNext={() => setPage((previous) => previous + 1)}
+                onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+                onNext={() => setPage((prev) => prev + 1)}
                 totalResults={totalResults}
             />
         </section>

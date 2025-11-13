@@ -19,8 +19,8 @@ const AUCTIONS_STORAGE_KEY = appConfig.storageKeys.auctions;
 const BIDS_STORAGE_KEY = appConfig.storageKeys.bids;
 const PRODUCTS_STORAGE_KEY = appConfig.storageKeys.products;
 
-const POLL_INTERVAL = appConfig.polling.defaultIntervalMs;
-const BACKOFF_DELAYS = appConfig.polling.backoffDelaysMs;
+const POLL_INTERVAL = appConfig.polling.defaultIntervalMs as number;
+const BACKOFF_DELAYS = appConfig.polling.backoffDelaysMs as readonly number[];
 
 type UsersState = { page: number; pageSize: number; search: string };
 type AuctionsState = {
@@ -34,52 +34,11 @@ type BidsState = { page: number; pageSize: number; from: string; to: string };
 type ProductsState = { page: number; pageSize: number };
 
 function useRefState<T>(factory: () => T): T {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     const ref = useRef<T>();
-    if (!ref.current) {
-        ref.current = factory();
-    }
+    if (!ref.current) ref.current = factory();
     return ref.current;
-}
-
-function readUsersState(): UsersState {
-    const defaults: UsersState = { page: 1, pageSize: 25, search: "" };
-    if (typeof window === "undefined") return defaults;
-    const params = new URLSearchParams(window.location.search);
-    const stored = readStorage<Partial<UsersState>>(USERS_STORAGE_KEY);
-    const page = parsePositive(params.get("vm_users_page")) ?? stored?.page ?? defaults.page;
-    const pageSize = parsePositive(params.get("vm_users_pageSize")) ?? stored?.pageSize ?? defaults.pageSize;
-    const search = params.get("vm_users_q") ?? stored?.search ?? defaults.search;
-    return { page, pageSize, search };
-}
-
-function readAuctionsState(): AuctionsState {
-    const defaults: AuctionsState = { page: 1, pageSize: 25, status: "alle", from: "", to: "" };
-    if (typeof window === "undefined") return defaults;
-    const params = new URLSearchParams(window.location.search);
-    const stored = readStorage<Partial<AuctionsState>>(AUCTIONS_STORAGE_KEY) ?? {};
-    const status =
-        normaliseStatusFilter(params.get("vm_veilingen_status")) ??
-        normaliseStatusFilter(stored.status) ??
-        defaults.status;
-    return {
-        page: parsePositive(params.get("vm_veilingen_page")) ?? stored.page ?? defaults.page,
-        pageSize: parsePositive(params.get("vm_veilingen_pageSize")) ?? stored.pageSize ?? defaults.pageSize,
-        status,
-        from: params.get("vm_veilingen_from") ?? stored.from ?? defaults.from,
-        to: params.get("vm_veilingen_to") ?? stored.to ?? defaults.to,
-    };
-}
-
-function readBidsState(): BidsState {
-    const defaults: BidsState = { page: 1, pageSize: 10, from: "", to: "" };
-    const stored = readStorage<Partial<BidsState>>(BIDS_STORAGE_KEY);
-    return { ...defaults, ...(stored ?? {}) };
-}
-
-function readProductsState(): ProductsState {
-    const defaults: ProductsState = { page: 1, pageSize: 10 };
-    const stored = readStorage<Partial<ProductsState>>(PRODUCTS_STORAGE_KEY);
-    return { ...defaults, ...(stored ?? {}) };
 }
 
 function parsePositive(value: string | null): number | undefined {
@@ -88,11 +47,11 @@ function parsePositive(value: string | null): number | undefined {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function normaliseStatusFilter(value: string | null | undefined): "alle" | "actief" | "inactief" | undefined {
+function normaliseStatusFilter(
+    value: string | null | undefined,
+): "alle" | "actief" | "inactief" | undefined {
     const raw = (value ?? "").toLowerCase();
-    if (raw === "actief") return "actief";
-    if (raw === "inactief") return "inactief";
-    if (raw === "alle") return "alle";
+    if (raw === "actief" || raw === "inactief" || raw === "alle") return raw;
     return undefined;
 }
 
@@ -119,11 +78,8 @@ function updateUrlParams(entries: Record<string, string | null>): void {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     for (const [key, value] of Object.entries(entries)) {
-        if (value == null || value === "") {
-            url.searchParams.delete(key);
-        } else {
-            url.searchParams.set(key, value);
-        }
+        if (!value) url.searchParams.delete(key);
+        else url.searchParams.set(key, value);
     }
     window.history.replaceState({}, "", url.toString());
 }
@@ -137,22 +93,17 @@ function useDebounced(value: string, delay: number): string {
     return debounced;
 }
 
-function isAbortError(error: unknown): boolean {
-    return Boolean((error as { name?: string })?.name === "AbortError");
-}
+const isAbortError = (error: unknown): boolean =>
+    Boolean((error as { name?: string })?.name === "AbortError");
 
 function errorMessage(error: unknown): string {
     if (!error) return "Er ging iets mis.";
     if (typeof error === "string") return error;
-    if ((error as ApiError | undefined)?.message) {
-        return (error as ApiError).message;
-    }
+    if ((error as ApiError | undefined)?.message) return (error as ApiError).message;
     return "Er ging iets mis. Probeer het later opnieuw.";
 }
 
-function freezeRows<T>(rows: readonly T[]): readonly T[] {
-    return Object.freeze([...rows]);
-}
+const freezeRows = <T,>(rows: readonly T[]): readonly T[] => Object.freeze([...rows]);
 
 function isInvalidDateRange(from: string | undefined, to: string | undefined): boolean {
     if (!from || !to) return false;
@@ -162,24 +113,48 @@ function isInvalidDateRange(from: string | undefined, to: string | undefined): b
 }
 
 function clearTimer(timer: ReturnType<typeof setTimeout> | undefined): void {
-    if (timer != null) {
-        clearTimeout(timer);
-    }
+    if (timer != null) clearTimeout(timer);
 }
 
-function schedule(run: () => void, delay: number, activeRef: { current: boolean }): ReturnType<typeof setTimeout> | undefined {
+function schedule(
+    run: () => void,
+    delay: number,
+    activeRef: { current: boolean },
+): ReturnType<typeof setTimeout> | undefined {
     if (!activeRef.current) return undefined;
     return setTimeout(() => {
-        if (activeRef.current) {
-            run();
-        }
+        if (activeRef.current) run();
     }, delay);
+}
+
+function computeBackoff(statusCode: number, index: number): { delay: number; nextIndex: number } {
+    const serverError = statusCode >= 500 && statusCode < 600;
+    if (!serverError) return { delay: POLL_INTERVAL, nextIndex: 0 };
+    const capped = Math.min(index, BACKOFF_DELAYS.length - 1);
+    return {
+        delay: BACKOFF_DELAYS[capped],
+        nextIndex: Math.min(capped + 1, BACKOFF_DELAYS.length - 1),
+    };
+}
+
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Users                                                                       */
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+function readUsersState(): UsersState {
+    const defaults: UsersState = { page: 1, pageSize: 25, search: "" };
+    if (typeof window === "undefined") return defaults;
+    const params = new URLSearchParams(window.location.search);
+    const stored = readStorage<Partial<UsersState>>(USERS_STORAGE_KEY);
+    return {
+        page: parsePositive(params.get("vm_users_page")) ?? stored?.page ?? defaults.page,
+        pageSize: parsePositive(params.get("vm_users_pageSize")) ?? stored?.pageSize ?? defaults.pageSize,
+        search: params.get("vm_users_q") ?? stored?.search ?? defaults.search,
+    };
 }
 
 /**
  * Retrieves gebruikers with polling and persisted filters.
- *
- * @returns De tabelgegevens voor gebruikersbeheer.
  */
 export function useUserRows(): HookResult<UserRow> {
     const initial = useRefState(readUsersState);
@@ -202,7 +177,7 @@ export function useUserRows(): HookResult<UserRow> {
         updateUrlParams({
             vm_users_page: page > 1 ? String(page) : null,
             vm_users_pageSize: pageSize !== 25 ? String(pageSize) : null,
-            vm_users_q: search ? search : null,
+            vm_users_q: search || null,
         });
     }, [page, pageSize, search]);
 
@@ -217,21 +192,12 @@ export function useUserRows(): HookResult<UserRow> {
             if (!active.current) return;
             controller?.abort();
             controller = new AbortController();
-            if (initialRun) {
-                setLoading(true);
-            }
-            getUsers(
-                {
-                    q: debouncedSearch || undefined,
-                    page,
-                    pageSize,
-                },
-                controller.signal,
-            )
+            if (initialRun) setLoading(true);
+
+            getUsers({ q: debouncedSearch || undefined, page, pageSize }, controller.signal)
                 .then((list) => {
                     if (!active.current) return;
-                    const mapped = freezeRows(list.items.map(adaptUser));
-                    setRows(mapped);
+                    setRows(freezeRows(list.items.map(adaptUser)));
                     setHasNext(list.hasNext);
                     setTotalResults(list.totalResults);
                     setError(null);
@@ -247,22 +213,14 @@ export function useUserRows(): HookResult<UserRow> {
                     initialRun = false;
                     setError(errorMessage(err));
                     const status = (err as ApiError | undefined)?.status ?? 0;
-                    const serverError = status >= 500 && status < 600;
-                    const delay = serverError
-                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
-                        : POLL_INTERVAL;
-                    if (serverError) {
-                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
-                    } else {
-                        backoffIndex = 0;
-                    }
+                    const { delay, nextIndex } = computeBackoff(status, backoffIndex);
+                    backoffIndex = nextIndex;
                     clearTimer(timer);
                     timer = schedule(load, delay, active);
                 });
         };
 
         load();
-
         return () => {
             active.current = false;
             controller?.abort();
@@ -297,11 +255,18 @@ export function useUserRows(): HookResult<UserRow> {
     } satisfies HookResult<UserRow>;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Bids                                                                        */
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+function readBidsState(): BidsState {
+    const defaults: BidsState = { page: 1, pageSize: 10, from: "", to: "" };
+    const stored = readStorage<Partial<BidsState>>(BIDS_STORAGE_KEY);
+    return { ...defaults, ...(stored ?? {}) };
+}
+
 /**
  * Retrieves biedingen for a gebruiker with automatic refresh.
- *
- * @param gebruikerNr - Het identificatienummer van de gebruiker.
- * @returns De biedingen inclusief filters en statusinformatie.
  */
 export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow> {
     const initial = useRefState(readBidsState);
@@ -342,23 +307,15 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
             if (!active.current) return;
             controller?.abort();
             controller = new AbortController();
-            if (initialRun) {
-                setLoading(true);
-            }
+            if (initialRun) setLoading(true);
+
             getBids(
-                {
-                    gebruikerNr,
-                    from: from || undefined,
-                    to: to || undefined,
-                    page,
-                    pageSize,
-                },
+                { gebruikerNr, from: from || undefined, to: to || undefined, page, pageSize },
                 controller.signal,
             )
                 .then((list) => {
                     if (!active.current) return;
-                    const mapped = freezeRows(list.items.map(adaptBid));
-                    setRows(mapped);
+                    setRows(freezeRows(list.items.map(adaptBid)));
                     setHasNext(list.hasNext);
                     setTotalResults(list.totalResults);
                     setError(null);
@@ -374,22 +331,14 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
                     initialRun = false;
                     setError(errorMessage(err));
                     const status = (err as ApiError | undefined)?.status ?? 0;
-                    const serverError = status >= 500 && status < 600;
-                    const delay = serverError
-                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
-                        : POLL_INTERVAL;
-                    if (serverError) {
-                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
-                    } else {
-                        backoffIndex = 0;
-                    }
+                    const { delay, nextIndex } = computeBackoff(status, backoffIndex);
+                    backoffIndex = nextIndex;
                     clearTimer(timer);
                     timer = schedule(load, delay, active);
                 });
         };
 
         load();
-
         return () => {
             active.current = false;
             controller?.abort();
@@ -401,12 +350,10 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
         setFrom(value);
         setPage(1);
     }, []);
-
     const updateTo = useCallback((value: string) => {
         setTo(value);
         setPage(1);
     }, []);
-
     const reset = useCallback(() => {
         setPage(1);
         setPageSize(10);
@@ -432,10 +379,31 @@ export function useUserBids(gebruikerNr: number | string): HookResult<UserBidRow
     } satisfies HookResult<UserBidRow>;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Veilingen                                                                   */
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+function readAuctionsState(): AuctionsState {
+    const defaults: AuctionsState = { page: 1, pageSize: 25, status: "alle", from: "", to: "" };
+    if (typeof window === "undefined") return defaults;
+    const params = new URLSearchParams(window.location.search);
+    const stored = readStorage<Partial<AuctionsState>>(AUCTIONS_STORAGE_KEY) ?? {};
+    const status =
+        normaliseStatusFilter(params.get("vm_veilingen_status")) ??
+        normaliseStatusFilter(stored.status) ??
+        defaults.status;
+
+    return {
+        page: parsePositive(params.get("vm_veilingen_page")) ?? stored.page ?? defaults.page,
+        pageSize: parsePositive(params.get("vm_veilingen_pageSize")) ?? stored.pageSize ?? defaults.pageSize,
+        status,
+        from: params.get("vm_veilingen_from") ?? stored.from ?? defaults.from,
+        to: params.get("vm_veilingen_to") ?? stored.to ?? defaults.to,
+    };
+}
+
 /**
  * Retrieves veilingen including filters and periodic updates.
- *
- * @returns Veilinggegevens voor het overzichtsscherm.
  */
 export function useVeilingRows(): HookResult<VeilingRow> {
     const initial = useRefState(readAuctionsState);
@@ -487,32 +455,28 @@ export function useVeilingRows(): HookResult<VeilingRow> {
             if (!active.current) return;
             controller?.abort();
             controller = new AbortController();
-            if (initialRun) {
-                setLoading(true);
-            }
+            if (initialRun) setLoading(true);
+
             const onlyActive = status === "actief";
             getAuctions(
-                {
-                    from: from || undefined,
-                    to: to || undefined,
-                    onlyActive: onlyActive ? true : undefined,
-                    page,
-                    pageSize,
-                },
+                { from: from || undefined, to: to || undefined, onlyActive: onlyActive ? true : undefined, page, pageSize },
                 controller.signal,
             )
                 .then((list) => {
                     if (!active.current) return;
+
                     const mapped = list.items.map(adaptAuction);
                     const filtered = status === "inactief" ? mapped.filter((row) => row.status !== "active") : mapped;
                     const frozen = freezeRows(filtered);
+
                     setRows(frozen);
-                    const derivedHasNext =
-                        status === "inactief" && filtered.length < mapped.length ? true : list.hasNext;
+                    // Als 'inactief' filter meer wegfiltert dan er in de pagina zat, houden we 'hasNext' aan.
+                    const derivedHasNext = status === "inactief" && filtered.length < mapped.length ? true : list.hasNext;
                     setHasNext(derivedHasNext);
                     setTotalResults(list.totalResults);
                     setError(null);
                     setLoading(false);
+
                     initialRun = false;
                     backoffIndex = 0;
                     clearTimer(timer);
@@ -524,22 +488,14 @@ export function useVeilingRows(): HookResult<VeilingRow> {
                     initialRun = false;
                     setError(errorMessage(err));
                     const statusCode = (err as ApiError | undefined)?.status ?? 0;
-                    const serverError = statusCode >= 500 && statusCode < 600;
-                    const delay = serverError
-                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
-                        : POLL_INTERVAL;
-                    if (serverError) {
-                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
-                    } else {
-                        backoffIndex = 0;
-                    }
+                    const { delay, nextIndex } = computeBackoff(statusCode, backoffIndex);
+                    backoffIndex = nextIndex;
                     clearTimer(timer);
                     timer = schedule(load, delay, active);
                 });
         };
 
         load();
-
         return () => {
             active.current = false;
             controller?.abort();
@@ -551,17 +507,14 @@ export function useVeilingRows(): HookResult<VeilingRow> {
         setStatus(value);
         setPage(1);
     }, []);
-
     const updateFrom = useCallback((value: string) => {
         setFrom(value);
         setPage(1);
     }, []);
-
     const updateTo = useCallback((value: string) => {
         setTo(value);
         setPage(1);
     }, []);
-
     const reset = useCallback(() => {
         setPage(1);
         setPageSize(25);
@@ -590,11 +543,18 @@ export function useVeilingRows(): HookResult<VeilingRow> {
     } satisfies HookResult<VeilingRow>;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Products by grower                                                          */
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+function readProductsState(): ProductsState {
+    const defaults: ProductsState = { page: 1, pageSize: 10 };
+    const stored = readStorage<Partial<ProductsState>>(PRODUCTS_STORAGE_KEY);
+    return { ...defaults, ...(stored ?? {}) };
+}
+
 /**
  * Retrieves products for a specific grower.
- *
- * @param kwekernr - Het identificatienummer van de kweker.
- * @returns Productgegevens voor detailoverzichten.
  */
 export function useVeilingProductsByGrower(kwekernr: number | string): HookResult<VeilingProductRow> {
     const initial = useRefState(readProductsState);
@@ -622,18 +582,12 @@ export function useVeilingProductsByGrower(kwekernr: number | string): HookResul
             if (!active.current) return;
             controller?.abort();
             controller = new AbortController();
-            if (initialRun) {
-                setLoading(true);
-            }
-            getProductsByGrower(
-                kwekernr,
-                { page, pageSize },
-                controller.signal,
-            )
+            if (initialRun) setLoading(true);
+
+            getProductsByGrower(kwekernr, { page, pageSize }, controller.signal)
                 .then((list) => {
                     if (!active.current) return;
-                    const mapped = freezeRows(list.items.map((item) => adaptProduct(item)));
-                    setRows(mapped);
+                    setRows(freezeRows(list.items.map((item) => adaptProduct(item))));
                     setHasNext(list.hasNext);
                     setTotalResults(list.totalResults);
                     setError(null);
@@ -649,22 +603,14 @@ export function useVeilingProductsByGrower(kwekernr: number | string): HookResul
                     initialRun = false;
                     setError(errorMessage(err));
                     const status = (err as ApiError | undefined)?.status ?? 0;
-                    const serverError = status >= 500 && status < 600;
-                    const delay = serverError
-                        ? BACKOFF_DELAYS[Math.min(backoffIndex, BACKOFF_DELAYS.length - 1)]
-                        : POLL_INTERVAL;
-                    if (serverError) {
-                        backoffIndex = Math.min(backoffIndex + 1, BACKOFF_DELAYS.length - 1);
-                    } else {
-                        backoffIndex = 0;
-                    }
+                    const { delay, nextIndex } = computeBackoff(status, backoffIndex);
+                    backoffIndex = nextIndex;
                     clearTimer(timer);
                     timer = schedule(load, delay, active);
                 });
         };
 
         load();
-
         return () => {
             active.current = false;
             controller?.abort();

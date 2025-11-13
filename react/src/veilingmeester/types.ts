@@ -1,7 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 
 export type Status = "active" | "inactive" | "sold" | "deleted";
-
 export type Soort = "koper" | "kweker" | "veilingmeester" | "onbekend";
 
 export interface PaginatedList<T> {
@@ -43,7 +42,6 @@ export interface VeilingDto {
     veilingnaam?: string | null;
     producten?: readonly VeilingproductDto[] | null;
 }
-
 export type VeilingDetailDto = VeilingDto;
 
 export interface VeilingproductDto {
@@ -64,17 +62,6 @@ export interface VeilingproductDto {
     status?: string | null;
     isDeleted?: boolean | null;
 }
-
-export interface CategorieDto {
-    categorieNr?: number;
-    naam?: string | null;
-}
-
-export type GList = PaginatedList<GebruikerDto>;
-export type BList = PaginatedList<BiedingDto>;
-export type VList = PaginatedList<VeilingDto>;
-export type VpList = PaginatedList<VeilingproductDto>;
-export type CList = PaginatedList<CategorieDto>;
 
 export interface UserRow {
     readonly id: number;
@@ -143,68 +130,61 @@ export interface HookResult<T> {
     readonly reset?: () => void;
 }
 
-export const nlCollator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
+export const nlCollator = new Intl.Collator("nl-NL", {
+    numeric: true,
+    sensitivity: "base",
+});
 
-const knownSoorten: readonly Soort[] = ["koper", "kweker", "veilingmeester"] as const;
+const knownSoorten = ["koper", "kweker", "veilingmeester"] as const;
+const isSoort = (s: string): s is Soort =>
+    (knownSoorten as readonly string[]).includes(s as (typeof knownSoorten)[number]);
 
 function sanitizeText(value: string | null | undefined): string {
     return value?.trim() ?? "";
 }
 
 function toNumber(value: number | string | null | undefined): number | undefined {
-    if (typeof value === "number") {
-        return Number.isFinite(value) ? value : undefined;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-        const normalised = value.replace(",", ".");
-        const parsed = Number.parseFloat(normalised);
+    if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+    if (typeof value === "string" && value.trim()) {
+        const parsed = Number.parseFloat(value.replace(",", "."));
         return Number.isFinite(parsed) ? parsed : undefined;
     }
     return undefined;
 }
 
+const STATUS_MAP: Record<string, Status> = {
+    active: "active",
+    actief: "active",
+    sold: "sold",
+    verkocht: "sold",
+    deleted: "deleted",
+    geannuleerd: "deleted",
+    cancelled: "deleted",
+};
+
 export function normalizeStatus(value: string | null | undefined): Status {
-    const raw = sanitizeText(value).toLowerCase();
-    switch (raw) {
-        case "active":
-        case "actief":
-            return "active";
-        case "sold":
-        case "verkocht":
-            return "sold";
-        case "deleted":
-        case "geannuleerd":
-        case "cancelled":
-            return "deleted";
-        default:
-            return "inactive";
-    }
+    const key = sanitizeText(value).toLowerCase();
+    return STATUS_MAP[key] ?? "inactive";
 }
 
+const STATUS_LABEL: Record<Status, "Actief" | "Inactief" | "Verkocht" | "Geannuleerd"> = {
+    active: "Actief",
+    inactive: "Inactief",
+    sold: "Verkocht",
+    deleted: "Geannuleerd",
+};
 export function statusLabel(status: Status): "Actief" | "Inactief" | "Verkocht" | "Geannuleerd" {
-    switch (status) {
-        case "active":
-            return "Actief";
-        case "sold":
-            return "Verkocht";
-        case "deleted":
-            return "Geannuleerd";
-        default:
-            return "Inactief";
-    }
+    return STATUS_LABEL[status];
 }
 
+const STATUS_BADGE: Record<Status, string> = {
+    active: "text-bg-success",
+    inactive: "text-bg-secondary",
+    sold: "text-bg-info",
+    deleted: "text-bg-danger",
+};
 export function statusBadgeVariant(status: Status): string {
-    switch (status) {
-        case "active":
-            return "text-bg-success";
-        case "sold":
-            return "text-bg-info";
-        case "deleted":
-            return "text-bg-danger";
-        default:
-            return "text-bg-secondary";
-    }
+    return STATUS_BADGE[status];
 }
 
 export function adaptPrice(
@@ -223,8 +203,8 @@ export function adaptPrice(
 
 export function adaptUser(dto: GebruikerDto): UserRow {
     const id = dto.gebruikerNr ?? 0;
-    const soortRaw = sanitizeText(dto.soort).toLowerCase();
-    const soort = (knownSoorten.find((value) => value === soortRaw) ?? "onbekend") satisfies Soort;
+    const raw = sanitizeText(dto.soort).toLowerCase();
+    const soort: Soort = isSoort(raw) ? raw : "onbekend";
     return {
         id,
         naam: sanitizeText(dto.naam) || `Gebruiker ${id}`,
@@ -255,6 +235,7 @@ export function adaptAuction(dto: VeilingDto): VeilingRow {
         id,
         veilingNr: dto.veilingNr,
         titel: title || `Veiling ${id}`,
+        // Let op: bewust `?? undefined` om types netjes te houden (string | undefined)
         startIso: dto.begintijd ?? undefined,
         endIso: dto.eindtijd ?? undefined,
         status: normalizeStatus(dto.status),
@@ -276,6 +257,7 @@ export function adaptProduct(
         voorraad != null && fust != null && voorraad > 0 && fust > 0
             ? Math.floor(voorraad / fust)
             : undefined;
+
     return {
         id,
         veilingProductNr: dto.veilingProductNr,
@@ -295,9 +277,8 @@ export function adaptProduct(
 export function splitProducts(
     auction: VeilingDetailDto,
 ): { active: readonly VeilingProductRow[]; inactive: readonly VeilingProductRow[] } {
-    const rows = (auction.producten ?? []).map((product) => adaptProduct(product, auction));
-    const active = rows.filter((row) => row.status === "active" && !row.isDeleted);
-    const inactive = rows.filter((row) => row.status !== "active" || row.isDeleted);
+    const rows = (auction.producten ?? []).map((p) => adaptProduct(p, auction));
+    const active = rows.filter((r) => r.status === "active" && !r.isDeleted);
+    const inactive = rows.filter((r) => r.status !== "active" || r.isDeleted);
     return { active, inactive };
 }
-

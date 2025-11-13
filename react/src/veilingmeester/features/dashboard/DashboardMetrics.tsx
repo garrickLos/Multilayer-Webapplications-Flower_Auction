@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 import { InlineAlert, LoadingPlaceholder } from "../../components";
 import { useDashboardMetrics } from "./useDashboardMetrics";
 
@@ -9,18 +9,14 @@ const updatedFormatter = new Intl.DateTimeFormat("nl-NL", {
 
 /**
  * Card-based KPI overview for the veilingmeester dashboard.
- *
- * @returns Structured Bootstrap layout with live metrics.
  */
 export function DashboardMetrics(): JSX.Element {
     const { metrics, loading, refreshing, error, lastUpdated, refresh } = useDashboardMetrics();
 
-    const lastUpdatedLabel = useMemo(() => {
-        if (!lastUpdated) {
-            return "Nog niet geladen";
-        }
-        return updatedFormatter.format(lastUpdated);
-    }, [lastUpdated]);
+    const lastUpdatedLabel = useMemo(
+        () => (lastUpdated ? updatedFormatter.format(lastUpdated) : "Nog niet geladen"),
+        [lastUpdated],
+    );
 
     return (
         <section className="card border-0 shadow-sm rounded-4 mb-4" aria-label="Dashboard overzicht">
@@ -33,19 +29,20 @@ export function DashboardMetrics(): JSX.Element {
                     </div>
                     <div className="d-flex align-items-center gap-2">
                         {refreshing && (
-                            <span className="spinner-border spinner-border-sm text-success" role="status" aria-label="Bezig met vernieuwen" />
+                            <span
+                                className="spinner-border spinner-border-sm text-success"
+                                role="status"
+                                aria-label="Bezig met vernieuwen"
+                            />
                         )}
-                        <button
-                            type="button"
-                            className="btn btn-success btn-sm px-4"
-                            onClick={refresh}
-                            disabled={loading}
-                        >
+                        <button type="button" className="btn btn-success btn-sm px-4" onClick={refresh} disabled={loading}>
                             Dashboard bijwerken
                         </button>
                     </div>
                 </div>
+
                 {error && <InlineAlert>{error}</InlineAlert>}
+
                 {loading && !metrics.length ? (
                     <div className="py-4">
                         <LoadingPlaceholder />
@@ -60,13 +57,19 @@ export function DashboardMetrics(): JSX.Element {
                                             <p className="text-uppercase text-muted small mb-1">{metric.label}</p>
                                             <div className="fs-2 fw-semibold text-success">{metric.value}</div>
                                         </div>
-                                        <span className="badge text-success-emphasis bg-success-subtle rounded-pill">
-                                            {metric.helper}
-                                        </span>
+                                        <span className="badge text-success-emphasis bg-success-subtle rounded-pill">{metric.helper}</span>
                                     </div>
+
                                     {metric.accent && <p className="text-muted small mb-3">{metric.accent}</p>}
+
                                     {metric.progress != null && (
-                                        <div className="progress bg-success-subtle" role="progressbar" aria-valuenow={metric.progress} aria-valuemin={0} aria-valuemax={100}>
+                                        <div
+                                            className="progress bg-success-subtle"
+                                            role="progressbar"
+                                            aria-valuenow={metric.progress}
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                        >
                                             <div className="progress-bar bg-success" style={{ width: `${metric.progress}%` }} />
                                         </div>
                                     )}

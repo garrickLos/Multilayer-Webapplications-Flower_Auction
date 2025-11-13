@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 import { DataTable } from "../../DataTable";
 import {
     EmptyState,
@@ -23,27 +23,64 @@ export type BidsModalProps = {
 function isInvalidRange(from?: string, to?: string): boolean {
     const fromMs = parseIsoDate(from ?? null);
     const toMs = parseIsoDate(to ?? null);
-    if (fromMs == null || toMs == null) {
-        return false;
-    }
-    return toMs < fromMs;
+    return fromMs != null && toMs != null && toMs < fromMs;
 }
 
 /**
  * Displays paginated bidding history for a selected buyer.
- *
- * @param props - Component properties including the selected user and afsluit-actie.
  */
 export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, from, setFrom, to, setTo } =
-        useUserBids(user.id);
+    const {rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, from, setFrom, to, setTo} = useUserBids(user.id);
 
     const invalidRange = isInvalidRange(from, to);
 
     const perPageOptions = useMemo(
-        () => appConfig.pagination.modal.map((size) => ({ value: size, label: `${size}` })),
+        () => appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) })), [],
+    );
+
+    const columns = useMemo(
+        () => [
+            {
+                key: "id",
+                header: "#",
+                sortable: true,
+                headerClassName: "text-nowrap",
+                cellClassName: "text-nowrap",
+            },
+            {
+                key: "bedragPerFust",
+                header: "Bedrag per fust",
+                sortable: true,
+                render: (row: { bedragPerFust: number }) => formatCurrency(row.bedragPerFust),
+                getValue: (row: { bedragPerFust: number }) => row.bedragPerFust,
+            },
+            {
+                key: "aantalStuks",
+                header: "Stuks",
+                sortable: true,
+                render: (row: { aantalStuks: number }) => row.aantalStuks,
+                getValue: (row: { aantalStuks: number }) => row.aantalStuks,
+            },
+            {
+                key: "datumIso",
+                header: "Datum",
+                sortable: true,
+                render: (row: { datumIso?: string }) => formatDateTime(row.datumIso),
+                getValue: (row: { datumIso?: string }) => row.datumIso ?? "",
+            },
+            {
+                key: "status",
+                header: "Status",
+                sortable: true,
+                render: (row: { status: UserRow["status"] }) => <StatusBadge status={row.status} />,
+                getValue: (row: { status: UserRow["status"] }) => row.status,
+            },
+        ],
         [],
     );
+
+    const hasFrom = Boolean((from ?? "") !== "");
+    const hasTo = Boolean((to ?? "") !== "");
 
     return (
         <Modal
@@ -71,6 +108,7 @@ export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
                         parse={(raw) => Number(raw)}
                     />
                 </div>
+
                 <div className="col-6 col-lg-3">
                     <label htmlFor="bids-from" className="form-label small text-uppercase text-success-emphasis mb-1">
                         Vanaf
@@ -80,10 +118,11 @@ export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
                         type="date"
                         className="form-control form-control-sm border-success-subtle"
                         value={from ?? ""}
-                        onChange={(event) => setFrom?.(event.target.value)}
+                        onChange={(e) => setFrom?.(e.target.value)}
                         aria-invalid={invalidRange}
                     />
                 </div>
+
                 <div className="col-6 col-lg-3">
                     <label htmlFor="bids-to" className="form-label small text-uppercase text-success-emphasis mb-1">
                         Tot en met
@@ -93,73 +132,46 @@ export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
                         type="date"
                         className="form-control form-control-sm border-success-subtle"
                         value={to ?? ""}
-                        onChange={(event) => setTo?.(event.target.value)}
+                        onChange={(e) => setTo?.(e.target.value)}
                         aria-invalid={invalidRange}
                     />
                 </div>
+
                 {invalidRange && (
                     <div className="col-12">
                         <div className="text-danger small">Einddatum moet na begindatum liggen.</div>
                     </div>
                 )}
             </div>
+
             <div className="d-flex flex-wrap gap-2 mb-3" aria-label="Actieve filters">
-                {(from ?? "") !== "" && <FilterChip label={`Vanaf: ${from}`} onRemove={() => setFrom?.("")} />}
-                {(to ?? "") !== "" && <FilterChip label={`Tot: ${to}`} onRemove={() => setTo?.("")} />}
-                {(from ?? "") === "" && (to ?? "") === "" && (
-                    <span className="text-muted small">Geen extra filters actief.</span>
-                )}
+                {hasFrom && <FilterChip label={`Vanaf: ${from}`} onRemove={() => setFrom?.("")} />}
+                {hasTo && <FilterChip label={`Tot: ${to}`} onRemove={() => setTo?.("")} />}
+                {!hasFrom && !hasTo && <span className="text-muted small">Geen extra filters actief.</span>}
             </div>
+
             {error && <InlineAlert>{error}</InlineAlert>}
+
             {loading && !rows.length ? (
                 <LoadingPlaceholder />
             ) : rows.length === 0 ? (
                 <EmptyState message="Geen biedingen gevonden." />
             ) : (
                 <DataTable
-                    columns={[
-                        { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
-                        {
-                            key: "bedragPerFust",
-                            header: "Bedrag per fust",
-                            sortable: true,
-                            render: (row) => formatCurrency(row.bedragPerFust),
-                            getValue: (row) => row.bedragPerFust,
-                        },
-                        {
-                            key: "aantalStuks",
-                            header: "Stuks",
-                            sortable: true,
-                            render: (row) => row.aantalStuks,
-                            getValue: (row) => row.aantalStuks,
-                        },
-                        {
-                            key: "datumIso",
-                            header: "Datum",
-                            sortable: true,
-                            render: (row) => formatDateTime(row.datumIso),
-                            getValue: (row) => row.datumIso ?? "",
-                        },
-                        {
-                            key: "status",
-                            header: "Status",
-                            sortable: true,
-                            render: (row) => <StatusBadge status={row.status} />,
-                            getValue: (row) => row.status,
-                        },
-                    ]}
+                    columns={columns}
                     rows={rows}
                     totalResults={totalResults}
                     empty={<EmptyState message="Geen biedingen gevonden." />}
                     getRowKey={(row) => String(row.id)}
                 />
             )}
+
             <Pager
                 page={page}
                 pageSize={pageSize}
                 hasNext={hasNext}
-                onPrevious={() => setPage((previous) => Math.max(1, previous - 1))}
-                onNext={() => setPage((previous) => previous + 1)}
+                onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
+                onNext={() => setPage((prev) => prev + 1)}
                 totalResults={totalResults}
             />
         </Modal>
