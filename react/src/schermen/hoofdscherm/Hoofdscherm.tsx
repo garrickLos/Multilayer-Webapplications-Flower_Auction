@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {NavLink} from 'react-router-dom';
 
 import '../../css/MainScreenStyle.css';
-import '../../css/cookieOverlay.css';
+import '../../css/cookieStylesheet.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
 import { useFetchDatajson } from '../../typeScript/jsonOphalen.tsx';
