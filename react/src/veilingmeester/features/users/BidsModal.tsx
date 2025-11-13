@@ -7,6 +7,7 @@ import {
     Pager,
     SmallSelectField,
     StatusBadge,
+    FilterChip,
 } from "../../components";
 import { appConfig } from "../../config";
 import { Modal } from "../../Modal";
@@ -55,7 +56,7 @@ export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
             onClose={onClose}
             size="xl"
             footer={
-                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                <button type="button" className="btn btn-success" onClick={onClose}>
                     Sluiten
                 </button>
             }
@@ -71,26 +72,26 @@ export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
                     />
                 </div>
                 <div className="col-6 col-lg-3">
-                    <label htmlFor="bids-from" className="form-label small text-uppercase text-muted mb-1">
+                    <label htmlFor="bids-from" className="form-label small text-uppercase text-success-emphasis mb-1">
                         Vanaf
                     </label>
                     <input
                         id="bids-from"
                         type="date"
-                        className="form-control form-control-sm"
+                        className="form-control form-control-sm border-success-subtle"
                         value={from ?? ""}
                         onChange={(event) => setFrom?.(event.target.value)}
                         aria-invalid={invalidRange}
                     />
                 </div>
                 <div className="col-6 col-lg-3">
-                    <label htmlFor="bids-to" className="form-label small text-uppercase text-muted mb-1">
+                    <label htmlFor="bids-to" className="form-label small text-uppercase text-success-emphasis mb-1">
                         Tot en met
                     </label>
                     <input
                         id="bids-to"
                         type="date"
-                        className="form-control form-control-sm"
+                        className="form-control form-control-sm border-success-subtle"
                         value={to ?? ""}
                         onChange={(event) => setTo?.(event.target.value)}
                         aria-invalid={invalidRange}
@@ -100,6 +101,13 @@ export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
                     <div className="col-12">
                         <div className="text-danger small">Einddatum moet na begindatum liggen.</div>
                     </div>
+                )}
+            </div>
+            <div className="d-flex flex-wrap gap-2 mb-3" aria-label="Actieve filters">
+                {(from ?? "") !== "" && <FilterChip label={`Vanaf: ${from}`} onRemove={() => setFrom?.("")} />}
+                {(to ?? "") !== "" && <FilterChip label={`Tot: ${to}`} onRemove={() => setTo?.("")} />}
+                {(from ?? "") === "" && (to ?? "") === "" && (
+                    <span className="text-muted small">Geen extra filters actief.</span>
                 )}
             </div>
             {error && <InlineAlert>{error}</InlineAlert>}

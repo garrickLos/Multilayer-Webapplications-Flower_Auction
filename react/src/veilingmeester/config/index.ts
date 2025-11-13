@@ -9,6 +9,8 @@ type RuntimeEnv = {
     readonly perPageOptions?: readonly number[];
     readonly modalPerPageOptions?: readonly number[];
     readonly productThumbnailSize?: number;
+    readonly dashboardSampleSize?: number;
+    readonly dashboardRefreshMs?: number;
 };
 
 type AppConfig = {
@@ -35,6 +37,8 @@ type AppConfig = {
     };
     readonly ui: {
         readonly productThumbnailSize: number;
+        readonly dashboardSampleSize: number;
+        readonly dashboardRefreshMs: number;
     };
 };
 
@@ -85,6 +89,10 @@ const runtimeEnv: RuntimeEnv = {
         toNumberList(env.VITE_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS),
     productThumbnailSize:
         toNumber(env.VITE_VEILINGMEESTER_PRODUCT_THUMBNAIL ?? env.REACT_APP_VEILINGMEESTER_PRODUCT_THUMBNAIL) ?? undefined,
+    dashboardSampleSize:
+        toNumber(env.VITE_VEILINGMEESTER_DASHBOARD_SAMPLE ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_SAMPLE) ?? undefined,
+    dashboardRefreshMs:
+        toNumber(env.VITE_VEILINGMEESTER_DASHBOARD_REFRESH_MS ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_REFRESH_MS) ?? undefined,
 };
 
 const defaultBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -122,5 +130,7 @@ export const appConfig: AppConfig = {
     },
     ui: {
         productThumbnailSize: runtimeEnv.productThumbnailSize ?? 48,
+        dashboardSampleSize: runtimeEnv.dashboardSampleSize ?? 8,
+        dashboardRefreshMs: runtimeEnv.dashboardRefreshMs ?? 60000,
     },
 };

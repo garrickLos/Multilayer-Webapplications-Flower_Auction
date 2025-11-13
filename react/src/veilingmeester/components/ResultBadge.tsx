@@ -7,7 +7,7 @@ export function ResultBadge({ count, total }: { readonly count: number; readonly
     const base = count === 1 ? "1 resultaat" : `${count} resultaten`;
     const suffix = total != null ? ` • van ${total} totaal` : "";
     return (
-        <span className="badge text-bg-secondary rounded-pill shadow-sm" aria-live="polite">
+        <span className="badge bg-success-subtle text-success-emphasis rounded-pill shadow-sm" aria-live="polite">
             {base}
             {suffix}
         </span>

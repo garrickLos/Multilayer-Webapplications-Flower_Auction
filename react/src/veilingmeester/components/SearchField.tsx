@@ -20,14 +20,14 @@ export function SearchField({ id, label, value, onChange, placeholder, autoFocus
     return (
         <div className="w-100">
             {label && (
-                <label htmlFor={inputId} className="form-label small text-uppercase text-muted mb-1">
+                <label htmlFor={inputId} className="form-label small text-uppercase text-success-emphasis mb-1">
                     {label}
                 </label>
             )}
             <input
                 id={inputId}
                 type="search"
-                className="form-control form-control-sm"
+                className="form-control form-control-sm border-success-subtle"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}

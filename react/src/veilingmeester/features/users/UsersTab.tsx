@@ -1,6 +1,15 @@
 import { useCallback, useMemo } from "react";
 import { DataTable } from "../../DataTable";
-import { InlineAlert, EmptyState, LoadingPlaceholder, Pager, SearchField, SmallSelectField, StatusBadge } from "../../components";
+import {
+    InlineAlert,
+    EmptyState,
+    LoadingPlaceholder,
+    Pager,
+    SearchField,
+    SmallSelectField,
+    StatusBadge,
+    FilterChip,
+} from "../../components";
 import { appConfig } from "../../config";
 import { useUserRows } from "../../hooks";
 import type { UserRow } from "../../types";
@@ -61,6 +70,10 @@ export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JS
         <section className="d-flex flex-column gap-3" aria-label="Gebruikersbeheer">
             <div className="card border-0 shadow-sm rounded-4">
                 <div className="card-body">
+                    <div className="d-flex flex-column gap-2 mb-3">
+                        <p className="text-uppercase text-success-emphasis small fw-semibold mb-0">Filters</p>
+                        <p className="text-muted small mb-0">Zoek snel op naam of pas de paginagrootte aan.</p>
+                    </div>
                     <div className="row g-3 align-items-end">
                         <div className="col-12 col-md-6 col-lg-4">
                             <SearchField label="Zoeken" value={search ?? ""} onChange={(value) => setSearch?.(value)} />
@@ -77,6 +90,11 @@ export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JS
                     </div>
                 </div>
             </div>
+            {(search ?? "").trim().length > 0 && (
+                <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
+                    <FilterChip label={`Zoeken: ${search}`} onRemove={() => setSearch?.("")} />
+                </div>
+            )}
             {error && <InlineAlert>{error}</InlineAlert>}
             {loading && !rows.length ? (
                 <LoadingPlaceholder />

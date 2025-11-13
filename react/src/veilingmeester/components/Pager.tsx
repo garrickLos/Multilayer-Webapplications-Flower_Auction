@@ -18,20 +18,20 @@ export function Pager({ page, pageSize, hasNext, onPrevious, onNext, totalResult
     const to = totalResults != null ? Math.min(page * pageSize, totalResults) : hasNext ? page * pageSize : maxTo;
     const summary = totalResults != null ? `• van ${totalResults} totaal` : "";
     return (
-        <div className="d-flex align-items-center justify-content-between gap-2" aria-live="polite">
+        <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap" aria-live="polite">
             <div className="text-muted small">
                 Pagina {page} • {from} – {to} getoond {summary}
             </div>
-            <div className="btn-group shadow-sm">
+            <div className="btn-group shadow-sm rounded-4 overflow-hidden">
                 <button
                     type="button"
-                    className="btn btn-outline-secondary btn-sm"
+                    className="btn btn-outline-success btn-sm"
                     onClick={onPrevious}
                     disabled={page <= 1}
                 >
                     Vorige
                 </button>
-                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onNext} disabled={!hasNext}>
+                <button type="button" className="btn btn-success btn-sm" onClick={onNext} disabled={!hasNext}>
                     Volgende
                 </button>
             </div>
