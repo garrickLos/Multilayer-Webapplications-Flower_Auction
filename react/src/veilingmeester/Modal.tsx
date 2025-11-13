@@ -94,15 +94,19 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
             <div className="modal-backdrop fade show" />
             <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby={headingId} onMouseDown={handleBackdropClick}>
                 <div className={dialogClass}>
-                    <div className="modal-content border-0 rounded-4 shadow-lg" ref={dialogRef} tabIndex={-1}>
-                        <div className="modal-header bg-white position-sticky top-0 z-3">
+                    <div className="modal-content border border-success-subtle rounded-4 shadow-lg" ref={dialogRef} tabIndex={-1}>
+                        <div className="modal-header bg-white position-sticky top-0 z-3 border-success-subtle">
                             <h2 className="modal-title h5 mb-0" id={headingId}>
                                 {title}
                             </h2>
                             <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
                         </div>
                         <div className="modal-body py-3">{children}</div>
-                        {footer && <div className="modal-footer bg-white position-sticky bottom-0 z-3 d-flex justify-content-end">{footer}</div>}
+                        {footer && (
+                            <div className="modal-footer bg-white position-sticky bottom-0 z-3 d-flex justify-content-end border-success-subtle">
+                                {footer}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

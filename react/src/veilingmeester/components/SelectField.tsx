@@ -50,13 +50,13 @@ export function SelectField<T extends string | number>({
     return (
         <div className={className}>
             {label && (
-                <label htmlFor={inputId} className="form-label small text-uppercase text-muted mb-1">
+                <label htmlFor={inputId} className="form-label small text-uppercase text-success-emphasis mb-1">
                     {label}
                 </label>
             )}
             <select
                 id={inputId}
-                className="form-select form-select-sm"
+                className="form-select form-select-sm border-success-subtle"
                 value={String(value)}
                 onChange={handleChange}
                 aria-label={ariaLabel ?? label}

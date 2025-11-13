@@ -140,7 +140,7 @@ export function AuctionModal({ row, onClose }: AuctionModalProps): JSX.Element {
             onClose={handleClose}
             size="xl"
             footer={
-                <button type="button" className="btn btn-outline-secondary" onClick={handleClose}>
+                <button type="button" className="btn btn-success" onClick={handleClose}>
                     Sluiten
                 </button>
             }
@@ -152,7 +152,7 @@ export function AuctionModal({ row, onClose }: AuctionModalProps): JSX.Element {
                 <div className="d-flex flex-column gap-3">
                     <div className="d-flex flex-column flex-lg-row gap-3 align-items-lg-start justify-content-between">
                         <div>
-                            <h3 className="h4 fw-semibold mb-1">{currentRow.titel}</h3>
+                            <h3 className="h4 fw-semibold mb-1 text-success">{currentRow.titel}</h3>
                             <p className="text-muted mb-0 small">
                                 {formatDateTime(currentRow.startIso)} • {formatDateTime(currentRow.endIso)}
                             </p>
@@ -161,10 +161,10 @@ export function AuctionModal({ row, onClose }: AuctionModalProps): JSX.Element {
                             {statusLabel(currentRow.status)}
                         </span>
                     </div>
-                    <div className="card border-0 shadow-sm rounded-4">
+                    <div className="card border border-success-subtle shadow-sm rounded-4">
                         <div className="card-body">
-                            <p className="text-muted text-uppercase small mb-1">Klokprijs</p>
-                            <div className="display-5 fw-semibold" aria-live="polite">
+                            <p className="text-success-emphasis text-uppercase small mb-1">Klokprijs</p>
+                            <div className="display-5 fw-semibold text-success" aria-live="polite">
                                 {formatCurrency(currentPrice)}
                             </div>
                             <p className="text-muted mb-2">
@@ -173,8 +173,8 @@ export function AuctionModal({ row, onClose }: AuctionModalProps): JSX.Element {
                             {clockStatic ? (
                                 <div className="text-muted small">Klok staat stil</div>
                             ) : (
-                                <div className="progress" aria-hidden="true">
-                                    <div className="progress-bar" style={{ width: `${progressPercent}%` }} />
+                                <div className="progress bg-success-subtle" aria-hidden="true">
+                                    <div className="progress-bar bg-success" style={{ width: `${progressPercent}%` }} />
                                 </div>
                             )}
                         </div>
@@ -226,10 +226,10 @@ function createProductColumns(thumbnailSize: number) {
                             alt=""
                             width={thumbnailSize}
                             height={thumbnailSize}
-                            className="rounded-3 border object-fit-cover flex-shrink-0"
+                            className="rounded-3 border border-success-subtle object-fit-cover flex-shrink-0"
                         />
                     ) : (
-                        <span className="badge text-bg-light">Geen afbeelding</span>
+                        <span className="badge bg-success-subtle text-success-emphasis">Geen afbeelding</span>
                     )}
                     <div>
                         <div className="fw-semibold text-break">{row.naam}</div>

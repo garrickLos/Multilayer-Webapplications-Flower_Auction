@@ -8,6 +8,7 @@ import {
     SmallSelectField,
     StatusBadge,
     StatusSelectField,
+    FilterChip,
 } from "../../components";
 import { appConfig } from "../../config";
 import { useVeilingRows } from "../../hooks";
@@ -57,11 +58,18 @@ export function AuctionsTab({ onSelectAuction }: AuctionsTabProps): JSX.Element 
     );
 
     const invalidRange = isInvalidRange(from, to);
+    const hasStatusFilter = (status ?? "alle") !== "alle";
+    const hasFromFilter = Boolean(from);
+    const hasToFilter = Boolean(to);
 
     return (
         <section className="d-flex flex-column gap-3" aria-label="Veilingen">
             <div className="card border-0 shadow-sm rounded-4">
                 <div className="card-body">
+                    <div className="d-flex flex-column gap-2 mb-3">
+                        <p className="text-uppercase text-success-emphasis small fw-semibold mb-0">Filter veilingen</p>
+                        <p className="text-muted small mb-0">Stel status en datumbereik in om gericht te controleren.</p>
+                    </div>
                     <div className="row g-3 align-items-end">
                         <div className="col-6 col-lg-2">
                             <SmallSelectField<number>
@@ -80,26 +88,26 @@ export function AuctionsTab({ onSelectAuction }: AuctionsTabProps): JSX.Element 
                             />
                         </div>
                         <div className="col-6 col-lg-2">
-                            <label htmlFor="auctions-from" className="form-label small text-uppercase text-muted mb-1">
+                            <label htmlFor="auctions-from" className="form-label small text-uppercase text-success-emphasis mb-1">
                                 Vanaf
                             </label>
                             <input
                                 id="auctions-from"
                                 type="date"
-                                className="form-control form-control-sm"
+                                className="form-control form-control-sm border-success-subtle"
                                 value={from ?? ""}
                                 onChange={(event) => setFrom?.(event.target.value)}
                                 aria-invalid={invalidRange}
                             />
                         </div>
                         <div className="col-6 col-lg-2">
-                            <label htmlFor="auctions-to" className="form-label small text-uppercase text-muted mb-1">
+                            <label htmlFor="auctions-to" className="form-label small text-uppercase text-success-emphasis mb-1">
                                 Tot en met
                             </label>
                             <input
                                 id="auctions-to"
                                 type="date"
-                                className="form-control form-control-sm"
+                                className="form-control form-control-sm border-success-subtle"
                                 value={to ?? ""}
                                 onChange={(event) => setTo?.(event.target.value)}
                                 aria-invalid={invalidRange}
@@ -112,6 +120,14 @@ export function AuctionsTab({ onSelectAuction }: AuctionsTabProps): JSX.Element 
                         )}
                     </div>
                 </div>
+            </div>
+            <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
+                {hasStatusFilter && <FilterChip label={`Status: ${status}`} onRemove={() => setStatus?.("alle")} />}
+                {hasFromFilter && <FilterChip label={`Vanaf: ${from}`} onRemove={() => setFrom?.("")} />}
+                {hasToFilter && <FilterChip label={`Tot: ${to}`} onRemove={() => setTo?.("")} />}
+                {!hasStatusFilter && !hasFromFilter && !hasToFilter && (
+                    <span className="text-muted small">Geen extra filters actief.</span>
+                )}
             </div>
             {error && <InlineAlert>{error}</InlineAlert>}
             {loading && !rows.length ? (

@@ -40,11 +40,15 @@ export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Elemen
             onClose={onClose}
             size="xl"
             footer={
-                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                <button type="button" className="btn btn-success" onClick={onClose}>
                     Sluiten
                 </button>
             }
         >
+            <div className="d-flex flex-column gap-2 mb-3">
+                <p className="text-uppercase text-success-emphasis small fw-semibold mb-0">Overzicht</p>
+                <p className="text-muted small mb-0">Selecteer het aantal resultaten per pagina.</p>
+            </div>
             <div className="row g-3 align-items-end mb-3">
                 <div className="col-6 col-lg-2">
                     <SmallSelectField<number>
@@ -77,10 +81,10 @@ export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Elemen
                                             alt=""
                                             width={thumbnailSize}
                                             height={thumbnailSize}
-                                            className="rounded-3 border object-fit-cover flex-shrink-0"
+                                            className="rounded-3 border border-success-subtle object-fit-cover flex-shrink-0"
                                         />
                                     ) : (
-                                        <span className="badge text-bg-light">Geen afbeelding</span>
+                                        <span className="badge bg-success-subtle text-success-emphasis">Geen afbeelding</span>
                                     )}
                                     <div>
                                         <div className="fw-semibold text-break">{row.naam}</div>

@@ -139,11 +139,11 @@ function DataTableComponent<T>({
     return (
         <div className="d-flex flex-column gap-2">
             <ResultBadge count={resultCount} total={totalResults} />
-            <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div className="card shadow-sm border border-success-subtle rounded-4 overflow-hidden">
                 <div className="table-responsive" role="region">
                     <table className="table table-sm table-hover align-middle caption-top mb-0">
                         {caption && <caption className="text-muted small">{caption}</caption>}
-                        <thead className="table-light position-sticky top-0 z-2">
+                        <thead className="bg-success-subtle position-sticky top-0 z-2">
                             <tr>
                                 {columns.map((column) => {
                                     const sortable = Boolean(column.sortable);
@@ -162,7 +162,7 @@ function DataTableComponent<T>({
                                             key={String(column.key)}
                                             scope="col"
                                             className={cx(
-                                                "bg-light text-uppercase small text-secondary",
+                                                "text-uppercase small text-success-emphasis",
                                                 sortable && "user-select-none",
                                                 column.headerClassName,
                                             )}
@@ -171,7 +171,7 @@ function DataTableComponent<T>({
                                             {sortable ? (
                                                 <button
                                                     type="button"
-                                                    className="btn btn-link p-0 text-decoration-none text-secondary"
+                                                    className="btn btn-link p-0 text-decoration-none text-success fw-semibold"
                                                     onClick={() => handleSort(column)}
                                                 >
                                                     <span className="d-inline-flex align-items-center gap-1">
