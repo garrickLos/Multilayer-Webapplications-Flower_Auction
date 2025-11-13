@@ -1,5 +1,6 @@
 import {NavLink} from 'react-router-dom';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
@@ -10,9 +11,11 @@ import { useVeilingData} from '../../typeScript/ApiGetVeilingItems.tsx';
 export default function MainScreen() {
     const { veilingen, loading, error } = useVeilingData();
 
-    if (loading) return <div>Laden van items...</div>;
+    if (loading) {
+        MyComponent(loading);
+    }
+
     if (error) return <div>Fout: {error}</div>;
-    if (veilingen.length === 0) return <div>Geen items gevonden.</div>;
 
     //maakt het mogelijk om de data op te delen op basis van een item en de inhoud (actief en inactief om te laten zien)
     const actieveVeilingen = veilingen.filter(v => v.status == 'active');
@@ -26,11 +29,11 @@ export default function MainScreen() {
         items.flatMap((item, veilingIndex) =>
             item.producten.map((product: producten, index: number) => (
                 <AuctionCard
-                key={`${veilingIndex}-${index}`}
-                imagePath={product.Imagepath || Default_ImagePlaceholder}
-                altText={product.naam || 'Item afbeelding'}
-                headerText={product.naam || 'Geen Titel'}
-                paragraafText={beschrijving(product, item)}
+                    key={`${veilingIndex}-${index}`}
+                    imagePath={product.Imagepath || Default_ImagePlaceholder}
+                    altText={product.naam || 'Item afbeelding'}
+                    headerText={product.naam || 'Geen Titel'}
+                    paragraafText={beschrijving(product, item)}
                 />
             ))
         ); 
@@ -160,5 +163,17 @@ export function AuctionCard({ imagePath, altText, headerText, paragraafText }: C
       </div>
       <button className='auctionButton'>go to auction</button>
     </div>
+  );
+}
+
+function MyComponent(loading) {
+  const container = document.querySelector('.slider');
+
+  return (
+    <>
+      {loading &&
+        container &&
+        createPortal(<div>Laden van items...</div>, container)}
+    </>
   );
 }
