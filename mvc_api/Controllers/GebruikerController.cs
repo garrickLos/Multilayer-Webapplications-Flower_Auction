@@ -48,17 +48,17 @@ public class GebruikerController : ControllerBase
         {
             var term = q.Trim();
             query = query.Where(g =>
-                g.Naam.Contains(term) ||
+                g.BedrfijfNaam.Contains(term) ||
                 g.Email.Contains(term));
         }
 
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .OrderBy(g => g.Naam)
+            .OrderBy(g => g.BedrfijfNaam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(g => new GList(g.GebruikerNr, g.Naam, g.Email, g.Soort))
+            .Select(g => new GList(g.GebruikerNr, g.BedrfijfNaam, g.Email, g.Soort))
             .ToListAsync(ct);
 
         Response.Headers["X-Total-Count"] = total.ToString();
@@ -92,7 +92,7 @@ public class GebruikerController : ControllerBase
 
         var e = new Gebruiker
         {
-            Naam         = dto.Naam.Trim(),
+            BedrfijfNaam = dto.Naam.Trim(),
             Email        = dto.Email.Trim(),
             Wachtwoord   = dto.Wachtwoord,
             Soort        = dto.Soort,
@@ -127,7 +127,7 @@ public class GebruikerController : ControllerBase
         if (e is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        e.Naam         = dto.Naam.Trim();
+        e.BedrfijfNaam = dto.Naam.Trim();
         e.Email        = dto.Email.Trim();
         e.Soort        = dto.Soort;
         e.Kvk          = dto.Kvk;
@@ -163,7 +163,7 @@ public class GebruikerController : ControllerBase
     private static IQueryable<GDetail> ProjectToDetail(IQueryable<Gebruiker> query) =>
         query.Select(g => new GDetail(
             g.GebruikerNr,
-            g.Naam,
+            g.BedrfijfNaam,
             g.Email,
             g.Soort,
             g.LaatstIngelogd,

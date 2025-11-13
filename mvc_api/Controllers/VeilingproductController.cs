@@ -73,8 +73,8 @@ public class VeilingproductController : ControllerBase
                 v.VeilingProductNr,
                 v.Naam,
                 v.GeplaatstDatum,
-                v.Fust,
-                v.Voorraad,
+                v.HoeveelheidFusten,
+                v.VoorraadBloemen,
                 v.Startprijs,
                 v.Categorie == null ? null : v.Categorie.Naam,
                 v.VeilingNr
@@ -123,8 +123,8 @@ public class VeilingproductController : ControllerBase
         var e = new Veilingproduct
         {
             Naam        = dto.Naam.Trim(),
-            Fust        = dto.Fust,
-            Voorraad    = dto.Voorraad,
+            HoeveelheidFusten        = dto.Fust,
+            VoorraadBloemen    = dto.Voorraad,
             Startprijs  = dto.Startprijs,
             CategorieNr = dto.CategorieNr,
             VeilingNr   = dto.VeilingNr,
@@ -167,8 +167,8 @@ public class VeilingproductController : ControllerBase
 
         e.Naam        = dto.Naam.Trim();
         e.GeplaatstDatum = dto.GeplaatstDatum ?? e.GeplaatstDatum;
-        e.Fust        = dto.Fust;
-        e.Voorraad    = dto.Voorraad;
+        e.HoeveelheidFusten        = dto.Fust;
+        e.VoorraadBloemen    = dto.Voorraad;
         e.Startprijs  = dto.Startprijs;
         e.CategorieNr = dto.CategorieNr;
         e.VeilingNr   = dto.VeilingNr;
@@ -202,8 +202,8 @@ public class VeilingproductController : ControllerBase
             v.VeilingProductNr,
             v.Naam,
             v.GeplaatstDatum,
-            v.Fust,
-            v.Voorraad,
+            v.HoeveelheidFusten,
+            v.VoorraadBloemen,
             v.Startprijs,
             v.Categorie == null ? null : v.Categorie.Naam,
             v.VeilingNr,

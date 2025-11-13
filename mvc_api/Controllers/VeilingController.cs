@@ -203,7 +203,7 @@ public class VeilingController : ControllerBase
             v.Begintijd,
             v.Eindtijd,
             v.Veilingproducten.Any() &&
-            v.Veilingproducten.All(p => p.Voorraad <= 0)
+            v.Veilingproducten.All(p => p.VoorraadBloemen <= 0)
                 ? VeilingStatus.Sold
                 : (v.Eindtijd <= now && v.Status == VeilingStatus.Active
                     ? VeilingStatus.Inactive
@@ -213,7 +213,7 @@ public class VeilingController : ControllerBase
                 p.VeilingProductNr,
                 p.Naam,
                 p.Startprijs,
-                p.Voorraad
+                p.VoorraadBloemen
             ))
         ));
     }
