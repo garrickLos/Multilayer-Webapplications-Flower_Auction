@@ -6,9 +6,15 @@ import type { UserRow, VeilingRow } from "./types";
 import { DashboardMetrics } from "./features/dashboard/DashboardMetrics";
 import { cx } from "./utils/classNames";
 
-const UsersTab = lazy(async () => import("./features/users/UsersTab").then((module) => ({ default: module.UsersTab })));
-const AuctionsTab = lazy(async () => import("./features/auctions/AuctionsTab").then((module) => ({ default: module.AuctionsTab })));
-const BidsModal = lazy(async () => import("./features/users/BidsModal").then((module) => ({ default: module.BidsModal })));
+const UsersTab = lazy(async () =>
+    import("./features/users/UsersTab").then((module) => ({ default: module.UsersTab })),
+);
+const AuctionsTab = lazy(async () =>
+    import("./features/auctions/AuctionsTab").then((module) => ({ default: module.AuctionsTab })),
+);
+const BidsModal = lazy(async () =>
+    import("./features/users/BidsModal").then((module) => ({ default: module.BidsModal })),
+);
 const ProductsModal = lazy(async () =>
     import("./features/products/ProductsModal").then((module) => ({ default: module.ProductsModal })),
 );
@@ -46,7 +52,7 @@ function updateTabUrl(tab: TabKey): void {
  *
  * @returns Het dashboard inclusief tabnavigatie en modals.
  */
-export function Veilingmeester(): JSX.Element {
+export function Veilingmeester() {
     const offline = useOffline();
     const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab());
     const [selectedBidUser, setSelectedBidUser] = useState<UserRow | null>(null);
@@ -81,6 +87,7 @@ export function Veilingmeester(): JSX.Element {
     return (
         <div className="bg-body-tertiary min-vh-100">
             <div className="container py-4 py-lg-5 d-flex flex-column gap-4">
+                {/* Navbar */}
                 <nav
                     className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4"
                     aria-label="Hoofdnavigatie veilingmeester"
@@ -90,6 +97,8 @@ export function Veilingmeester(): JSX.Element {
                         Dagelijkse controle van gebruikers en veilingen
                     </div>
                 </nav>
+
+                {/* Header */}
                 <header className="bg-white border border-success-subtle rounded-4 shadow-sm p-4">
                     <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
                         <div>
@@ -100,24 +109,34 @@ export function Veilingmeester(): JSX.Element {
                             </p>
                         </div>
                         <div className="text-center text-lg-end">
-                            <span className="badge text-success-emphasis bg-success-subtle rounded-pill px-3 py-2 shadow-sm">
-                                Vertrouwde gegevens in realtime
-                            </span>
+              <span className="badge text-success-emphasis bg-success-subtle rounded-pill px-3 py-2 shadow-sm">
+                Vertrouwde gegevens in realtime
+              </span>
                         </div>
                     </div>
                 </header>
+
+                {/* Offline waarschuwing */}
                 {offline && (
                     <InlineAlert variant="warning">
                         Je bent offline. Gegevens verversen zodra de verbinding terug is.
                     </InlineAlert>
                 )}
+
+                {/* Dashboard metrics */}
                 <DashboardMetrics />
+
+                {/* Tabs navigatie */}
                 <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
                     <div className="card-body p-4 d-flex flex-column gap-3">
                         <div className="text-center">
                             <p className="text-muted small mb-2">Kies een module om te beheren</p>
                         </div>
-                        <div className="d-flex flex-wrap justify-content-center gap-2" role="tablist" aria-label="Veiling tabs">
+                        <div
+                            className="d-flex flex-wrap justify-content-center gap-2"
+                            role="tablist"
+                            aria-label="Veiling tabs"
+                        >
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.key}
@@ -140,6 +159,8 @@ export function Veilingmeester(): JSX.Element {
                         </div>
                     </div>
                 </section>
+
+                {/* Tab inhoud */}
                 {tabs.map((tab) => (
                     <section
                         key={tab.key}
@@ -151,28 +172,31 @@ export function Veilingmeester(): JSX.Element {
                     >
                         {activeTab === tab.key && (
                             <ErrorBoundary resetKey={tab.key}>
-                                <Suspense fallback={<LoadingPlaceholder />}>
-                                    {tab.render()}
-                                </Suspense>
+                                <Suspense fallback={<LoadingPlaceholder />}>{tab.render()}</Suspense>
                             </ErrorBoundary>
                         )}
                     </section>
                 ))}
-            <Suspense fallback={null}>
-                {selectedBidUser && (
-                    <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />
-                )}
-            </Suspense>
-            <Suspense fallback={null}>
-                {selectedGrower && (
-                    <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />
-                )}
-            </Suspense>
-            <Suspense fallback={null}>
-                {selectedAuction && (
-                    <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />
-                )}
-            </Suspense>
+
+                {/* Modals */}
+                <Suspense fallback={null}>
+                    {selectedBidUser && (
+                        <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />
+                    )}
+                </Suspense>
+
+                <Suspense fallback={null}>
+                    {selectedGrower && (
+                        <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />
+                    )}
+                </Suspense>
+
+                <Suspense fallback={null}>
+                    {selectedAuction && (
+                        <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />
+                    )}
+                </Suspense>
+            </div>
         </div>
     );
 }

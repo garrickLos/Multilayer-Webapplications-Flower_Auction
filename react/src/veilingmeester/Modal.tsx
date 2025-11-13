@@ -1,4 +1,4 @@
-import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import type {JSX, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { useEffect, useId, useRef } from "react";
 import { cx } from "./utils/classNames";
 
