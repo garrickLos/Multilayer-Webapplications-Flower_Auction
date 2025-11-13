@@ -177,7 +177,7 @@ namespace mvc_api.Migrations
                         });
                 });
 
-            modelBuilder.Entity("mvc_api.Models.Tijdelijk", b =>
+            modelBuilder.Entity("mvc_api.Models.TijdelijkProduct", b =>
                 {
                     b.Property<string>("Naam")
                         .HasColumnType("TEXT");
@@ -188,8 +188,8 @@ namespace mvc_api.Migrations
                     b.Property<DateOnly?>("EindDatum")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("MinimalePrijs")
-                        .HasColumnType("INTEGER");
+                    b.Property<decimal?>("MinimalePrijs")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Plaats")
                         .HasColumnType("TEXT");
@@ -197,8 +197,8 @@ namespace mvc_api.Migrations
                     b.Property<DateOnly?>("StartDatum")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("StartPrijs")
-                        .HasColumnType("INTEGER");
+                    b.Property<decimal?>("StartPrijs")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("Voorraad")
                         .HasColumnType("INTEGER");

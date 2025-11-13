@@ -1,3 +1,4 @@
+/*
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -45,3 +46,4 @@ public class VeilingproductV2Controller : ControllerBase
         return Ok(_veilingproduct);
     }
 }
+*/

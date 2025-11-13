@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+/*using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -11,7 +11,7 @@ namespace mvc_api.Controllers;
  GebruikerNr
  Veilingnr
  KwekerNr
- */
+ #1#
 
 [ApiController]
 [Route("api/[Controller]")]
@@ -50,4 +50,4 @@ public class BiedingV2Controller : ControllerBase
         return Ok(Bod);
     }
     
-}
+}*/

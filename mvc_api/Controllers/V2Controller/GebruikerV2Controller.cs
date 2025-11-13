@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+/*using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -43,4 +43,4 @@ public class GebruikerV2Controller : ControllerBase
     }
     
     //Put en Delete kunnen later toegevoegd worden zijn voor nu minder belangrijk
-}
+}*/

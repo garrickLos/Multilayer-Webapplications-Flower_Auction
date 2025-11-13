@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+/*using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -27,4 +27,4 @@ public class CategorieV2Controller : ControllerBase
     {
         return Ok(_categorie);
     }
-}
+}*/
