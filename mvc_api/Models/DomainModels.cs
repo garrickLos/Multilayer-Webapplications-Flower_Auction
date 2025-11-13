@@ -109,9 +109,9 @@ public class TijdelijkProduct
     public string? Naam { get; set; }
     public string? Categorie { get; set; }
     public int? Voorraad { get; set; }
+    public int? Fusten { get; set; }
     public string? Plaats { get; set; }
     public decimal? MinimalePrijs { get; set; }     
-    public decimal? StartPrijs { get; set; }
     public DateOnly? StartDatum { get; set; }
     public DateOnly? EindDatum { get; set; }
 }

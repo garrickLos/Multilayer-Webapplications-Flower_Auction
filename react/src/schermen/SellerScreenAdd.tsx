@@ -6,9 +6,9 @@ export default function SellerScreenAdd() {
         Naam: "",
         Categorie: "",
         Voorraad : "",
+        AantalFusten: "",
         Plaats: "",
         MinimalePrijs : "",
-        StartPrijs : "",
         StartDatum: "",
         EindDatum: "",
     });
@@ -83,25 +83,33 @@ export default function SellerScreenAdd() {
                                     <label htmlFor="Naam" className="name">Product naam:</label>
                                     <input type="text" id="Naam" value={product.Naam} onChange={handleChange} />
                                 </div>
-
+                                
                                 <div className="ordenen">
-                                    <label htmlFor="Categorie" className="category">Product categorie:</label>
-                                    <input type="text" id="Categorie" value={product.Categorie} onChange={handleChange} />
+                                    <label htmlFor="Categorie">Kies categorie:</label>
+                                    <select className="Categorie" name="Categorie">
+                                        <option value={product.Categorie}>Bloem</option>
+                                        <option value={product.Categorie}>Tulp</option>
+                                    </select>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="Voorraad" className="amount">Voorraad:</label>
-                                    <input type="number" id="Voorraad" step="1" value={product.Voorraad} onChange={handleChange} />
+                                    <input type="number" id="Voorraad"  value={product.Voorraad} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="AantalFusten" className="Fusten">Aantal fusten:</label>
-                                    <input type="number" id="AantalFusten" step="1" value={product.Voorraad} onChange={handleChange} />
+                                    <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
+                                    <input type="number" id="AantalFusten"  value={product.AantalFusten} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="Plaats" className="place">Plaats:</label>
-                                    <input type="text" id="Plaats" value={product.Plaats} onChange={handleChange} />
+                                    <select className="Plaats" value={product.Plaats} onChange={handleChange}>
+                                        <option value="Aalsmeer">Aalsmeer</option>
+                                        <option value="Rijnsburg">Rijnsburg</option>
+                                        <option value="Eelde">Eelde</option>
+                                        <option value="Naaldwijk">Naaldwijk</option>
+                                    </select>
                                 </div>
 
                                 <div className="ordenen">
