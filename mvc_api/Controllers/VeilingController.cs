@@ -22,13 +22,21 @@ public class VeilingController : ControllerBase
 
     private const decimal MinToegestanePrijs = 0.01m;
 
-    public sealed record VProd(int VeilingProductNr, string Naam, decimal Startprijs, int Voorraad);
+    //wat er wordt opgehaald van de api dat gebruikt kan worden voor de veilingproduct 
+    public sealed record VProd(
+        int VeilingProductNr, 
+        string Naam,
+        DateTime GeplaatstDatum, 
+        decimal Startprijs, 
+        int Voorraad, 
+        string ImagePath);
+
+    //wat er wordt opgehaald dat gebruikt wordt in de json api van de veiling zelf
     public sealed record VeilingDto(
         int VeilingNr,
         DateTime Begintijd,
         DateTime Eindtijd,
         string Status,
-        decimal Minimumprijs,
         IEnumerable<VProd> Producten
     );
 
@@ -110,7 +118,6 @@ public class VeilingController : ControllerBase
         {
             Begintijd    = dto.Begintijd,
             Eindtijd     = dto.Eindtijd,
-            Minimumprijs = dto.Minimumprijs,
             Status       = NormalizeStatus(dto.Status, fallback: VeilingStatus.Inactive)
         };
 
@@ -146,7 +153,6 @@ public class VeilingController : ControllerBase
 
         entity.Begintijd    = dto.Begintijd;
         entity.Eindtijd     = dto.Eindtijd;
-        entity.Minimumprijs = dto.Minimumprijs;
 
         if (!string.IsNullOrWhiteSpace(dto.Status))
             entity.Status = NormalizeStatus(dto.Status);
@@ -208,12 +214,13 @@ public class VeilingController : ControllerBase
                 : (v.Eindtijd <= now && v.Status == VeilingStatus.Active
                     ? VeilingStatus.Inactive
                     : v.Status),
-            v.Minimumprijs,
             v.Veilingproducten.Select(p => new VProd(
                 p.VeilingProductNr,
                 p.Naam,
+                p.GeplaatstDatum,
                 p.Startprijs,
-                p.VoorraadBloemen
+                p.VoorraadBloemen,
+                p.ImagePath
             ))
         ));
     }

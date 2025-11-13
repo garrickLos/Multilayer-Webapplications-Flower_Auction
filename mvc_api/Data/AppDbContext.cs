@@ -52,7 +52,7 @@ public class AppDbContext : DbContext
             .HasIndex(x => new { x.CategorieNr, x.Naam });
 
         // Geld-precisie (Bieding/Veilingproduct via attributen, hier extra voor Minimumprijs)
-        b.Entity<Veiling>()
+        b.Entity<Veilingproduct>()
             .Property(v => v.Minimumprijs)
             .HasPrecision(18, 2);
 
@@ -66,54 +66,54 @@ public class AppDbContext : DbContext
             new Gebruiker
             {
                 GebruikerNr    = 1,
-                Naam           = "Flora BV",
+                BedrijfsNaam   = "Flora BV",
                 Email          = "flora@example.nl",
                 Wachtwoord     = "***",
                 LaatstIngelogd = loginD1,
                 Soort          = "Bedrijf",
                 Kvk            = "12345678",
                 StraatAdres    = "Bloemig 10",
-                Postcode       = "1234AB",
-                Assortiment    = 12,
-                PersoneelsNr   = "P1001"
+                Postcode       = "1234AB"
             },
             new Gebruiker
             {
                 GebruikerNr    = 2,
-                Naam           = "Jan Jansen",
+                BedrijfsNaam   = "Jan Jansen",
                 Email          = "jan@example.nl",
                 Wachtwoord     = "***",
                 LaatstIngelogd = loginD2,
                 Soort          = "Koper",
                 Kvk            = "00000000",
                 StraatAdres    = "Laan 5",
-                Postcode       = "2345BC",
-                Assortiment    = 0,
-                PersoneelsNr   = "P0000"
+                Postcode       = "2345BC"
             }
         );
 
         b.Entity<Categorie>().HasData(
             new Categorie { CategorieNr = 1, Naam = "Tulpen" },
-            new Categorie { CategorieNr = 2, Naam = "Rozen" }
+            new Categorie { CategorieNr = 2, Naam = "Rozen" },
+            new Categorie { CategorieNr = 3, Naam = "Lelie" },
+            new Categorie { CategorieNr = 4, Naam = "Zonnebloem" },
+            new Categorie { CategorieNr = 5, Naam = "Chrysant" },
+            new Categorie { CategorieNr = 6, Naam = "Pioenroos" }
         );
 
         b.Entity<Veiling>().HasData(
             new Veiling
             {
                 VeilingNr    = 201,
+                VeilingNaam  = "veiling001",
                 Begintijd    = dag.AddHours(9),
                 Eindtijd     = dag.AddHours(10),
                 Status       = "active",
-                Minimumprijs = 10m
             },
             new Veiling
             {
                 VeilingNr    = 202,
+                VeilingNaam  = "veiling001",
                 Begintijd    = dag.AddHours(10),
                 Eindtijd     = dag.AddHours(11),
-                Status       = "active",
-                Minimumprijs = 15m
+                Status       = "active"
             }
         );
 
@@ -123,22 +123,30 @@ public class AppDbContext : DbContext
                 VeilingProductNr = 101,
                 Naam             = "Tulp Mix",
                 GeplaatstDatum   = geplaatst,
-                Fust             = 10,
-                Voorraad         = 500,
+                AantalFusten     = 10,
+                VoorraadBloemen  = 500,
                 Startprijs       = 12m,
                 CategorieNr      = 1,
-                VeilingNr        = 201
+                VeilingNr        = 201,
+                Plaats           = "Zoetermeer",
+                Minimumprijs     = 10m,
+                Kwekernr         = 1,
+                ImagePath        = "../../src/assets/pictures/productBloemen"
             },
             new Veilingproduct
             {
                 VeilingProductNr = 102,
                 Naam             = "Rode Roos",
                 GeplaatstDatum   = geplaatst,
-                Fust             = 10,
-                Voorraad         = 300,
+                AantalFusten     = 10,
+                VoorraadBloemen  = 300,
                 Startprijs       = 20m,
                 CategorieNr      = 2,
-                VeilingNr        = 202
+                VeilingNr        = 202,
+                Plaats           = "Zoetermeer",
+                Minimumprijs     = 15m,
+                Kwekernr         = 1,
+                ImagePath        = "../../src/assets/pictures/productBloemen"
             }
         );
 

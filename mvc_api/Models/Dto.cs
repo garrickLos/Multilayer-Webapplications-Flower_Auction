@@ -16,11 +16,17 @@ public record CategorieUpdateDto(
 public record VeilingproductCreateDto(
     [Required, StringLength(200)] string Naam,
     DateTime? GeplaatstDatum,
-    [Range(1, int.MaxValue)] int Fust,
-    [Range(0, int.MaxValue)] int Voorraad,
+    [Range(1, int.MaxValue)] int AantalFusten,
+    [Range(0, int.MaxValue)] int VoorraadBloemen,
     [Range(typeof(decimal), "0.01", "999999999")] decimal Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
-    [Range(1, int.MaxValue)] int VeilingNr
+    [Range(1, int.MaxValue)] int VeilingNr,
+    string Plaats,
+    decimal Minimumprijs,
+    Gebruiker Kwekernr,
+    DateTime beginDatum,
+    bool status,
+    string ImagePath
 );
 
 public record VeilingproductUpdateDto(
@@ -30,7 +36,8 @@ public record VeilingproductUpdateDto(
     [Range(0, int.MaxValue)] int Voorraad,
     [Range(typeof(decimal), "0.01", "999999999")] decimal Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
-    [Range(1, int.MaxValue)] int VeilingNr
+    [Range(1, int.MaxValue)] int VeilingNr,
+    string ImagePath
 );
 
 // Bieding CRUD
@@ -48,26 +55,22 @@ public record BiedingUpdateDto(
 
 // Gebruiker CRUD
 public record GebruikerCreateDto(
-    [Required, StringLength(200)] string Naam,
+    [Required, StringLength(200)] string BedrijfsNaam,
     [Required, EmailAddress, StringLength(200)] string Email,
     [Required, StringLength(200)] string Wachtwoord,
     [Required, StringLength(50)] string Soort,
     [StringLength(20)] string? Kvk,
     [StringLength(200)] string? StraatAdres,
-    [StringLength(10)] string? Postcode,
-    int? Assortiment,
-    [StringLength(50)] string? PersoneelsNr
+    [StringLength(10)] string? Postcode
 );
 
 public record GebruikerUpdateDto(
-    [Required, StringLength(200)] string Naam,
+    [Required, StringLength(200)] string BedrijfsNaam,
     [Required, EmailAddress, StringLength(200)] string Email,
     [Required, StringLength(50)] string Soort,
     [StringLength(20)] string? Kvk,
     [StringLength(200)] string? StraatAdres,
-    [StringLength(10)] string? Postcode,
-    int? Assortiment,
-    [StringLength(50)] string? PersoneelsNr
+    [StringLength(10)] string? Postcode
 );
 
 // Veiling CRUD
