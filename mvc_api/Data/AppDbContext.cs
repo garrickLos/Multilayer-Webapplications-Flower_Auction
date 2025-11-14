@@ -13,7 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Veilingproduct> Veilingproducten => Set<Veilingproduct>();
     public DbSet<Categorie>      Categorieen      => Set<Categorie>();
     public DbSet<Veiling>        Veilingen        => Set<Veiling>();
-
+    public DbSet<TijdelijkProduct>     Tijdelijks => Set<TijdelijkProduct>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
