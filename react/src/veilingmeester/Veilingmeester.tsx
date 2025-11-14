@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ErrorBoundary, InlineAlert, LoadingPlaceholder } from "./components";
+import { ErrorBoundary, InlineAlert, LoadingPlaceholder } from "./components/ui.tsx";
 import { useOffline } from "./hooks";
 import type { UserRow, VeilingRow } from "./types";
 import { DashboardMetrics } from "./features/dashboard";

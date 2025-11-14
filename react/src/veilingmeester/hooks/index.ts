@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ApiError } from "./api";
-import { getAuctions, getBids, getProductsByGrower, getUsers } from "./api";
-import { appConfig } from "./config";
+import type { ApiError } from "../api";
+import { getAuctions, getBids, getProductsByGrower, getUsers } from "../api";
+import { appConfig } from "../config";
 import {
     adaptAuction,
     adaptBid,
@@ -14,7 +14,7 @@ import {
     type VeilingDto,
     type VeilingProductRow,
     type VeilingRow,
-} from "./types";
+} from "../types";
 
 const USERS_STORAGE_KEY = appConfig.storageKeys.users;
 const AUCTIONS_STORAGE_KEY = appConfig.storageKeys.auctions;

@@ -7,7 +7,7 @@ import {
     Pager,
     SmallSelectField,
     StatusBadge,
-} from "../components";
+} from "../components/ui.tsx";
 import { appConfig } from "../config";
 import { Modal } from "../Modal";
 import { useVeilingProductsByGrower } from "../hooks";

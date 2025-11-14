@@ -1,5 +1,5 @@
 import { useMemo, type JSX } from "react";
-import { InlineAlert, LoadingPlaceholder } from "../components";
+import { InlineAlert, LoadingPlaceholder } from "../components/ui.tsx";
 import { useDashboardMetrics } from "../hooks";
 
 const updatedFormatter = new Intl.DateTimeFormat("nl-NL", {

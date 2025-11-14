@@ -14,11 +14,16 @@ import type { Status } from "../types";
 import { nlCollator, statusBadgeVariant, statusLabel } from "../types";
 import { cx } from "../utils";
 
+/*
+    Zo kunnen filteren op zowel value als label
+    bekijk functie StatusSelectField als voorbeeld
+*/
 export type Option<T extends string | number> = {
     readonly value: T;
     readonly label: string;
 };
 
+/* Eigenschappen van select‑veld eenvoudig herbruikbaar maken */
 export type SelectFieldProps<T extends string | number> = {
     readonly id?: string;
     readonly label?: string;
@@ -31,32 +36,19 @@ export type SelectFieldProps<T extends string | number> = {
     readonly parse?: (raw: string) => T;
 };
 
-/**
- * Renders a small Bootstrap select field with label support.
- */
-export function SelectField<T extends string | number>({
-    id: providedId,
-    label,
-    value,
-    options,
-    onChange,
-    ariaLabel,
-    disabled,
-    className,
-    parse,
-}: SelectFieldProps<T>): JSX.Element {
+
+/* Geeft een Bootstrap select-veld met label ondersteuning weer */
+export function SelectField<T extends string | number>({id: providedId, label, value, options, onChange, ariaLabel, disabled, className, parse}: SelectFieldProps<T>): JSX.Element {
     const generatedId = useId();
     const inputId = providedId ?? generatedId;
 
     const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
         const raw = event.target.value;
-
         const nextValue = parse
             ? parse(raw)
             : typeof value === "number"
                 ? (Number(raw) as T)
                 : (raw as T);
-
         onChange(nextValue);
     };
 
@@ -65,8 +57,7 @@ export function SelectField<T extends string | number>({
             {label && (
                 <label
                     htmlFor={inputId}
-                    className="form-label small text-uppercase text-success-emphasis mb-1"
-                >
+                    className="form-label small text-uppercase text-success-emphasis mb-1">
                     {label}
                 </label>
             )}
@@ -76,8 +67,7 @@ export function SelectField<T extends string | number>({
                 value={String(value)}
                 onChange={handleChange}
                 aria-label={ariaLabel ?? label}
-                disabled={disabled}
-            >
+                disabled={disabled}>
                 {options.map((option) => (
                     <option key={String(option.value)} value={String(option.value)}>
                         {option.label}
@@ -88,21 +78,15 @@ export function SelectField<T extends string | number>({
     );
 }
 
-/**
- * Convenience wrapper for a small select field.
- */
+/* Wrapper voor een klein, responsief selectieveld */
 export function SmallSelectField<T extends string | number>(
-    props: SelectFieldProps<T>,
-): JSX.Element {
+    props: SelectFieldProps<T>): JSX.Element {
     return <SelectField {...props} />;
 }
 
-/**
- * Select field for status filtering with standaard opties.
- */
+/* Selecteer veld voor status filteren met standaard opties */
 export function StatusSelectField(
-    props: Omit<SelectFieldProps<"alle" | "actief" | "inactief">, "options" | "parse">,
-): JSX.Element {
+    props: Omit<SelectFieldProps<"alle" | "actief" | "inactief">, "options" | "parse">): JSX.Element {
     return (
         <SelectField
             {...props}
@@ -124,20 +108,10 @@ export type SearchFieldProps = {
     readonly autoFocus?: boolean;
 };
 
-/**
- * Renders a searchable input with optional label.
- */
-export function SearchField({
-    id,
-    label,
-    value,
-    onChange,
-    placeholder,
-    autoFocus,
-}: SearchFieldProps): JSX.Element {
+/* Geeft een doorzoekbare invoer met optioneel label weer */
+export function SearchField({id, label, value, onChange, placeholder, autoFocus}: SearchFieldProps): JSX.Element {
     const generatedId = useId();
     const inputId = id ?? generatedId;
-
     const aria = label ?? placeholder ?? "Zoeken";
 
     return (
@@ -145,32 +119,37 @@ export function SearchField({
             {label && (
                 <label
                     htmlFor={inputId}
-                    className="form-label small text-uppercase text-success-emphasis mb-1"
-                >
+                    className="form-label small text-uppercase text-success-emphasis mb-1">
                     {label}
                 </label>
             )}
-            <input
-                id={inputId}
-                type="search"
-                className="form-control form-control-sm border-success-subtle"
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                placeholder={placeholder}
-                autoFocus={autoFocus}
-                aria-label={aria}
-            />
+
+            <div className="input-group input-group-sm">
+                <input
+                    id={inputId}
+                    type="search"
+                    className="form-control border-success-subtle"
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder={placeholder}
+                    autoFocus={autoFocus}
+                    aria-label={aria}
+                />
+
+                <label
+                    htmlFor={inputId}
+                    className="input-group-text border-success-subtle bg-white"
+                    style={{ cursor: "pointer" }}>
+                    <i className="bi bi-search" />
+                </label>
+            </div>
         </div>
     );
 }
 
-export function FilterChip({
-    label,
-    onRemove,
-}: {
+export function FilterChip({label, onRemove}: {
     readonly label: string;
-    readonly onRemove: () => void;
-}): JSX.Element {
+    readonly onRemove: () => void; }): JSX.Element {
     return (
         <span className="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill d-inline-flex align-items-center gap-2 px-2 py-1">
             <span>{label}</span>
@@ -180,7 +159,7 @@ export function FilterChip({
                 aria-label={`${label} verwijderen`}
                 onClick={onRemove}
             />
-        </span>
+    </span>
     );
 }
 
@@ -193,27 +172,16 @@ export type PagerProps = {
     readonly totalResults?: number;
 };
 
-/**
- * Pagination controls with summary text.
- */
-export function Pager({
-    page,
-    pageSize,
-    hasNext,
-    onPrevious,
-    onNext,
-    totalResults,
-}: PagerProps): JSX.Element {
+/* Paginatie besturings elementen met samenvattende tekst */
+export function Pager({page, pageSize, hasNext, onPrevious, onNext, totalResults}: PagerProps): JSX.Element {
     const from = (page - 1) * pageSize + 1;
     const maxTo = from + pageSize - 1;
-
     const to =
         totalResults != null
             ? Math.min(page * pageSize, totalResults)
             : hasNext
                 ? page * pageSize
                 : maxTo;
-
     const summary = totalResults != null ? `• van ${totalResults} totaal` : "";
 
     return (
@@ -226,16 +194,14 @@ export function Pager({
                     type="button"
                     className="btn btn-outline-success btn-sm"
                     onClick={onPrevious}
-                    disabled={page <= 1}
-                >
+                    disabled={page <= 1}>
                     Vorige
                 </button>
                 <button
                     type="button"
                     className="btn btn-success btn-sm"
                     onClick={onNext}
-                    disabled={!hasNext}
-                >
+                    disabled={!hasNext}>
                     Volgende
                 </button>
             </div>
@@ -243,9 +209,7 @@ export function Pager({
     );
 }
 
-/**
- * Skeleton-like loading placeholder.
- */
+/* Loading plaatshouder */
 export function LoadingPlaceholder(): JSX.Element {
     return (
         <div className="d-flex flex-column gap-2" role="status" aria-live="polite">
@@ -258,9 +222,7 @@ export function LoadingPlaceholder(): JSX.Element {
     );
 }
 
-/**
- * Accessible empty state.
- */
+/* Toegankelijke lege staat */
 export function EmptyState({ message }: { readonly message: string }): JSX.Element {
     return (
         <div className="text-center text-muted py-5" role="status" aria-live="polite">
@@ -272,16 +234,10 @@ export function EmptyState({ message }: { readonly message: string }): JSX.Eleme
     );
 }
 
-/**
- * Inline alert for contextual messaging.
- */
-export function InlineAlert({
-    variant = "danger",
-    children,
-}: {
+/* Inline waarschuwing voor contextuele berichten */
+export function InlineAlert({variant = "danger", children}: {
     readonly variant?: "danger" | "warning" | "info" | "success";
-    readonly children: ReactNode;
-}): JSX.Element {
+    readonly children: ReactNode; }): JSX.Element {
     return (
         <div className={`alert alert-${variant} py-2 px-3 shadow-sm rounded-4 border-0 mb-0`} role="alert">
             {children}
@@ -289,32 +245,24 @@ export function InlineAlert({
     );
 }
 
-export function ResultBadge({
-    count,
-    total,
-}: {
+export function ResultBadge({count, total}: {
     readonly count: number;
-    readonly total?: number;
-}): JSX.Element {
+    readonly total?: number; }): JSX.Element {
     const base = count === 1 ? "1 resultaat" : `${count} resultaten`;
-    const suffix = total != null ? ` • van ${total} totaal` : "";
-
+    const suffix = total != null ? ` - van ${total} totaal` : "";
     return (
         <span className="badge bg-success-subtle text-success-emphasis rounded-pill shadow-sm" aria-live="polite">
-            {base}
-            {suffix}
-        </span>
+        {base}{suffix}
+    </span>
     );
 }
 
-/**
- * Badge component for statuswaarden met consistente kleurcodering.
- */
+/* Badge component voor statuswaarden met consistente kleurcodering */
 export function StatusBadge({ status }: { readonly status: Status }): JSX.Element {
     return (
         <span className={`badge rounded-pill ${statusBadgeVariant(status)}`}>
-            {statusLabel(status)}
-        </span>
+    {statusLabel(status)}
+    </span>
     );
 }
 
@@ -334,18 +282,15 @@ const INITIAL_STATE: ErrorBoundaryState = {
     message: undefined,
 };
 
-/**
- * Captures rendering errors and displays an accessible fallback alert.
- */
+/* Vangt renderfouten op en geeft een toegankelijke fallbackwaarschuwing weer */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     override state: ErrorBoundaryState = INITIAL_STATE;
 
-    static override getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
         const message =
             typeof error === "string"
                 ? error
                 : (error as { message?: string })?.message;
-
         return { hasError: true, message };
     }
 
@@ -372,7 +317,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         if (!hasError) {
             return children;
         }
-
         if (fallback) {
             return fallback;
         }
@@ -385,8 +329,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                     <button
                         type="button"
                         className="btn btn-success btn-sm align-self-start"
-                        onClick={this.handleReset}
-                    >
+                        onClick={this.handleReset}>
                         Opnieuw proberen
                     </button>
                 </div>
@@ -397,12 +340,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
 type SortDirection = "asc" | "desc";
 
-type SortState =
-    | {
-          readonly key: string;
-          readonly direction: SortDirection;
-      }
-    | null;
+type SortState = | {
+    readonly key: string;
+    readonly direction: SortDirection;
+} | null;
 
 type Primitive = string | number;
 type ColumnValue = Primitive | Date | null | undefined;
@@ -476,19 +417,8 @@ function sortRows<T>(
         .map((entry) => entry.row);
 }
 
-/**
- * Responsive, sortable table built with Bootstrap utilities.
- */
-function DataTableComponent<T>({
-    columns,
-    rows,
-    totalResults,
-    caption,
-    empty,
-    getRowKey,
-    onRowClick,
-    isRowInteractive,
-}: DataTableProps<T>): JSX.Element {
+/* Vangt renderfouten op en geeft een toegankelijke fallbackwaarschuwing weer */
+function DataTableComponent<T>({columns, rows, totalResults, caption, empty, getRowKey, onRowClick, isRowInteractive}: DataTableProps<T>): JSX.Element {
     const [sortState, setSortState] = useState<SortState>(null);
 
     const sortedRows = useMemo(
@@ -531,108 +461,104 @@ function DataTableComponent<T>({
                         {caption && <caption className="text-muted small">{caption}</caption>}
 
                         <thead className="bg-success-subtle position-sticky top-0 z-2">
-                            <tr>
-                                {columns.map((column) => {
-                                    const sortable = Boolean(column.sortable);
-                                    const active = sortState?.key === (column.key as string);
-                                    const direction = active ? sortState?.direction : null;
-                                    const icon = !sortable
-                                        ? null
-                                        : active
-                                            ? direction === "asc"
-                                                ? "▲"
-                                                : "▼"
-                                            : "↕";
+                        <tr>
+                            {columns.map((column) => {
+                                const sortable = Boolean(column.sortable);
+                                const active = sortState?.key === (column.key as string);
+                                const direction = active ? sortState?.direction : null;
+                                const icon = !sortable
+                                    ? null
+                                    : active
+                                        ? direction === "asc"
+                                            ? "▲"
+                                            : "▼"
+                                        : "↕";
 
-                                    const ariaSort = sortable
-                                        ? active
-                                            ? direction === "asc"
-                                                ? "ascending"
-                                                : "descending"
-                                            : "none"
-                                        : undefined;
+                                const ariaSort = sortable
+                                    ? active
+                                        ? direction === "asc"
+                                            ? "ascending"
+                                            : "descending"
+                                        : "none"
+                                    : undefined;
 
-                                    return (
-                                        <th
-                                            key={String(column.key)}
-                                            scope="col"
-                                            className={cx(
-                                                "text-uppercase small text-success-emphasis",
-                                                sortable && "user-select-none",
-                                                column.headerClassName,
-                                            )}
-                                            aria-sort={ariaSort}
-                                        >
-                                            {sortable ? (
-                                                <button
-                                                    type="button"
+                                return (
+                                    <th key={String(column.key)}
+                                        scope="col"
+                                        className={cx(
+                                            "text-uppercase small text-success-emphasis",
+                                            sortable && "user-select-none",
+                                            column.headerClassName,
+                                        )}
+                                        aria-sort={ariaSort}>
+                                        {sortable ? (
+                                            <button type="button"
                                                     className="btn btn-link p-0 text-decoration-none text-success fw-semibold"
-                                                    onClick={() => handleSort(column)}
-                                                >
-                                                    <span className="d-inline-flex align-items-center gap-1">
-                                                        <span>{column.header}</span>
-                                                        <span aria-hidden="true">{icon}</span>
-                                                    </span>
-                                                </button>
-                                            ) : (
-                                                column.header
-                                            )}
-                                        </th>
-                                    );
-                                })}
-                            </tr>
+                                                    onClick={() => handleSort(column)}>
+                                            <span className="d-inline-flex align-items-center gap-1">
+                                                <span>{column.header}</span>
+                                                <span aria-hidden="true">{icon}</span>
+                                                </span>
+                                            </button>
+                                        ) : (
+                                            column.header
+                                        )}
+                                    </th>
+                                );
+                            })}
+                        </tr>
                         </thead>
 
                         <tbody>
-                            {sortedRows.map((row, index) => {
-                                const interactive = Boolean(
-                                    onRowClick && (isRowInteractive ? isRowInteractive(row) : true),
-                                );
+                        {sortedRows.map((row, index) => {
+                            const interactive = Boolean(
+                                onRowClick && (isRowInteractive ? isRowInteractive(row) : true),
+                            );
 
-                                const handleClick =
-                                    interactive && onRowClick ? () => onRowClick(row) : undefined;
+                            const handleClick =
+                                interactive && onRowClick ? () => onRowClick(row) : undefined;
 
-                                const handleKeyDown =
-                                    interactive && onRowClick
-                                        ? (event: KeyboardEvent<HTMLTableRowElement>) =>
-                                              handleRowKey(event, row)
-                                        : undefined;
+                            const handleKeyDown =
+                                interactive && onRowClick
+                                    ? (event: KeyboardEvent<HTMLTableRowElement>) =>
+                                        handleRowKey(event, row)
+                                    : undefined;
 
-                                return (
-                                    <tr
-                                        key={getRowKey(row, index)}
-                                        className={cx(interactive && "cursor-pointer")}
-                                        onClick={handleClick}
-                                        onKeyDown={handleKeyDown}
-                                        tabIndex={interactive ? 0 : undefined}
-                                    >
-                                        {columns.map((column) => {
-                                            let content: ReactNode;
+                            return (
+                                <tr
+                                    key={getRowKey(row, index)}
+                                    className={cx(interactive && "cursor-pointer")}
+                                    onClick={handleClick}
+                                    onKeyDown={handleKeyDown}
+                                    tabIndex={interactive ? 0 : undefined}
+                                >
+                                    {columns.map((column) => {
+                                        let content: ReactNode;
 
-                                            if (column.render) {
-                                                // custom render always wint
-                                                content = column.render(row);
-                                            } else {
-                                                const value = getCellValue(row, column);
-                                                // Fix TS2322: Date is geen ReactNode → als string renderen
-                                                content =
-                                                    value instanceof Date
-                                                        ? String(value)
-                                                        : value ?? "";
-                                            }
+                                        if (column.render) {
+                                            // custom render always wint
+                                            content = column.render(row);
+                                        } else {
+                                            const value = getCellValue(row, column);
+                                            // Fix TS2322: Date is geen ReactNode → als string renderen
+                                            content =
+                                                value instanceof Date
+                                                    ? String(value)
+                                                    : value ?? "";
+                                        }
 
-                                            return (
-                                                <td
-                                                    key={`${String(column.key)}-${index}`}
-                                                    className={column.cellClassName}
-                                                >
-                                                    {content}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                );
-                            })}
+                                        return (
+                                            <td
+                                                key={`${String(column.key)}-${index}`}
+                                                className={column.cellClassName}
+                                            >
+                                                {content}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
                         </tbody>
                     </table>
                 </div>
@@ -641,7 +567,5 @@ function DataTableComponent<T>({
     );
 }
 
-/**
- * Memoized table component voor betere performance.
- */
+/* Memoized table component voor betere performance */
 export const DataTable = memo(DataTableComponent) as typeof DataTableComponent;

@@ -7,7 +7,7 @@ type Cleanup = () => void;
 
 const POLL_STEPS = appConfig.realtime.pollStepsMs;
 
-// Strip readonly (alleen intern gebruikt)
+// Strip readonly only for internal construction
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 function shouldStop(row: VeilingRow): boolean {
@@ -24,17 +24,21 @@ function createDiff(
 ): Partial<VeilingRow> | null {
     if (!previous) return next;
 
-    const diff = {} as Partial<Mutable<VeilingRow>>;
+    const diff: Partial<VeilingRow> = {};
     let changed = false;
 
-    (Object.keys(next) as Array<keyof VeilingRow>).forEach((key) => {
+    const mutableDiff = diff as Mutable<Partial<VeilingRow>>;
+
+    for (const key of Object.keys(next) as (keyof VeilingRow)[]) {
         if (!Object.is(previous[key], next[key])) {
-            diff[key] = next[key];
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            mutableDiff[key] = next[key];
             changed = true;
         }
-    });
+    }
 
-    return changed ? (diff as Partial<VeilingRow>) : null;
+    return changed ? diff : null;
 }
 
 async function pollOnce(
@@ -48,8 +52,10 @@ async function pollOnce(
         apply(row);
         return shouldStop(row);
     } catch (error) {
-        return (error as { name?: string }).name === "AbortError" || controller.signal.aborted;
-
+        return (
+            (error as { name?: string }).name === "AbortError" ||
+            controller.signal.aborted
+        );
     }
 }
 

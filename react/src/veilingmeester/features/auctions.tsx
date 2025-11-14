@@ -9,7 +9,7 @@ import {
     SmallSelectField,
     StatusBadge,
     StatusSelectField,
-} from "../components";
+} from "../components/ui.tsx";
 import { Modal } from "../Modal";
 import { useVeilingRows } from "../hooks";
 import type { VeilingProductRow, VeilingRow, VeilingDetailDto } from "../types";
