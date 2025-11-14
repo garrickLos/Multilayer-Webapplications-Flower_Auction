@@ -51,7 +51,7 @@
     margin-top: 10px;
 }
 
-.MainScreen .registratie-knoppen button {
+.MainScreen .registratie-knoppen .knoppen {
     background-color: transparent;
     color: var(--inverse-text);
     border-style: unset;
@@ -59,7 +59,7 @@
     font-weight: 500;
 }
 
-.MainScreen .registratie-knoppen button:hover {
+.MainScreen .registratie-knoppen .knoppen:hover {
     text-decoration: underline;
     cursor: pointer;
 }
@@ -142,14 +142,15 @@
 .MainScreen .card h3 {
     font-size: 17px;
 
-    margin: 0px
+    margin: 5px 0 0 0;
 }
 
 .MainScreen .card p {
     font-size: clamp(0.2rem, 15px, 0.8rem);
     color: var(--ink-light);
 
-    overflow-wrap: none;
+    text-align: center;
+
     text-wrap: balance;
 
     white-space: pre-line;
@@ -164,6 +165,11 @@
 }
 
 .MainScreen .auctionButton {
+    height: 45px;
+
+    align-items: center;
+    justify-content: center;
+
     background-color: var(--accent-light);
     color: var(--inverse-text);
 

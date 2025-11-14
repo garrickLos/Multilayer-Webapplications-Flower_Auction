@@ -27,7 +27,12 @@ public class VeilingproductController : ControllerBase
         string ImagePath
     );
 
-    public sealed record VBList(int BiedNr, decimal BedragPerFust, int AantalStuks, int GebruikerNr);
+    public sealed record VBList(
+        int BiedNr, 
+        decimal BedragPerFust, 
+        int AantalStuks, 
+        int GebruikerNr
+    );
 
     public sealed record VpDetail(
         int VeilingProductNr,
