@@ -1,9 +1,7 @@
-import type { ReactNode } from "react";
+import type {JSX, ReactNode } from "react";
 
 /**
- * Skeleton-like placeholder using Bootstrap placeholders.
- *
- * @returns Placeholder UI.
+ * Skeleton-like loading placeholder.
  */
 export function LoadingPlaceholder(): JSX.Element {
     return (
@@ -18,9 +16,7 @@ export function LoadingPlaceholder(): JSX.Element {
 }
 
 /**
- * Accessible empty state presentation.
- *
- * @param props - Contains the uitlegtekst.
+ * Accessible empty state.
  */
 export function EmptyState({ message }: { readonly message: string }): JSX.Element {
     return (
@@ -35,18 +31,19 @@ export function EmptyState({ message }: { readonly message: string }): JSX.Eleme
 
 /**
  * Inline alert for contextual messaging.
- *
- * @param props - Alert properties including variant en inhoud.
  */
 export function InlineAlert({
-    variant = "danger",
-    children,
-}: {
+                                variant = "danger",
+                                children,
+                            }: {
     readonly variant?: "danger" | "warning" | "info" | "success";
     readonly children: ReactNode;
 }): JSX.Element {
     return (
-        <div className={`alert alert-${variant} py-2 px-3 shadow-sm rounded-4 border-0 mb-0`} role="alert">
+        <div
+            className={`alert alert-${variant} py-2 px-3 shadow-sm rounded-4 border-0 mb-0`}
+            role="alert"
+        >
             {children}
         </div>
     );

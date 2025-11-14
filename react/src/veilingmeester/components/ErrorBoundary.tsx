@@ -12,14 +12,23 @@ type ErrorBoundaryState = {
     readonly message?: string;
 };
 
+const INITIAL_STATE: ErrorBoundaryState = {
+    hasError: false,
+    message: undefined,
+};
+
 /**
  * Captures rendering errors and displays an accessible fallback alert.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    override state: ErrorBoundaryState = { hasError: false };
+    override state: ErrorBoundaryState = INITIAL_STATE;
 
-    static override getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-        const message = typeof error === "string" ? error : (error as { message?: string })?.message;
+    static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+        const message =
+            typeof error === "string"
+                ? error
+                : (error as { message?: string })?.message;
+
         return { hasError: true, message };
     }
 
@@ -29,31 +38,40 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     override componentDidUpdate(prevProps: Readonly<ErrorBoundaryProps>): void {
         if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
-            this.setState({ hasError: false, message: undefined });
+            this.setState(INITIAL_STATE);
         }
     }
 
     private readonly handleReset = () => {
-        this.setState({ hasError: false, message: undefined });
+        this.setState(INITIAL_STATE);
     };
 
     override render(): ReactNode {
-        if (this.state.hasError) {
-            if (this.props.fallback) {
-                return this.props.fallback;
-            }
-            return (
-                <InlineAlert>
-                    <div className="d-flex flex-column gap-2">
-                        <div>Er trad een fout op tijdens het laden van deze sectie.</div>
-                        {this.state.message && <small className="text-muted">{this.state.message}</small>}
-                        <button type="button" className="btn btn-success btn-sm align-self-start" onClick={this.handleReset}>
-                            Opnieuw proberen
-                        </button>
-                    </div>
-                </InlineAlert>
-            );
+        const { fallback, children } = this.props;
+        const { hasError, message } = this.state;
+
+        if (!hasError) {
+            return children;
         }
-        return this.props.children;
+
+        if (fallback) {
+            return fallback;
+        }
+
+        return (
+            <InlineAlert>
+                <div className="d-flex flex-column gap-2">
+                    <div>Er trad een fout op tijdens het laden van deze sectie.</div>
+                    {message && <small className="text-muted">{message}</small>}
+                    <button
+                        type="button"
+                        className="btn btn-success btn-sm align-self-start"
+                        onClick={this.handleReset}
+                    >
+                        Opnieuw proberen
+                    </button>
+                </div>
+            </InlineAlert>
+        );
     }
 }

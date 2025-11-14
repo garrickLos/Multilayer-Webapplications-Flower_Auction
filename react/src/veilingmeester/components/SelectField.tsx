@@ -1,7 +1,10 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, JSX } from "react";
 import { useId } from "react";
 
-export type Option<T extends string | number> = { readonly value: T; readonly label: string };
+export type Option<T extends string | number> = {
+    readonly value: T;
+    readonly label: string;
+};
 
 export type SelectFieldProps<T extends string | number> = {
     readonly id?: string;
@@ -17,40 +20,40 @@ export type SelectFieldProps<T extends string | number> = {
 
 /**
  * Renders a small Bootstrap select field with label support.
- *
- * @param props - Select configuration including options and change handler.
  */
 export function SelectField<T extends string | number>({
-    id: providedId,
-    label,
-    value,
-    options,
-    onChange,
-    ariaLabel,
-    disabled,
-    className,
-    parse,
-}: SelectFieldProps<T>): JSX.Element {
+                                                           id: providedId,
+                                                           label,
+                                                           value,
+                                                           options,
+                                                           onChange,
+                                                           ariaLabel,
+                                                           disabled,
+                                                           className,
+                                                           parse,
+                                                       }: SelectFieldProps<T>): JSX.Element {
     const generatedId = useId();
     const inputId = providedId ?? generatedId;
 
     const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
         const raw = event.target.value;
-        if (parse) {
-            onChange(parse(raw));
-            return;
-        }
-        if (typeof value === "number") {
-            onChange(Number(raw) as T);
-            return;
-        }
-        onChange(raw as T);
+
+        const nextValue = parse
+            ? parse(raw)
+            : typeof value === "number"
+                ? (Number(raw) as T)
+                : (raw as T);
+
+        onChange(nextValue);
     };
 
     return (
         <div className={className}>
             {label && (
-                <label htmlFor={inputId} className="form-label small text-uppercase text-success-emphasis mb-1">
+                <label
+                    htmlFor={inputId}
+                    className="form-label small text-uppercase text-success-emphasis mb-1"
+                >
                     {label}
                 </label>
             )}
@@ -74,17 +77,15 @@ export function SelectField<T extends string | number>({
 
 /**
  * Convenience wrapper for a small select field.
- *
- * @param props - Select configuration identical to {@link SelectField}.
  */
-export function SmallSelectField<T extends string | number>(props: SelectFieldProps<T>): JSX.Element {
+export function SmallSelectField<T extends string | number>(
+    props: SelectFieldProps<T>,
+): JSX.Element {
     return <SelectField {...props} />;
 }
 
 /**
  * Select field for status filtering with standaard opties.
- *
- * @param props - Select configuration excluding custom options.
  */
 export function StatusSelectField(
     props: Omit<SelectFieldProps<"alle" | "actief" | "inactief">, "options" | "parse">,

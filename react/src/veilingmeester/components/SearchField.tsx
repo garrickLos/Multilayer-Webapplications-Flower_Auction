@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type JSX } from "react";
 
 export type SearchFieldProps = {
     readonly id?: string;
@@ -11,16 +11,27 @@ export type SearchFieldProps = {
 
 /**
  * Renders a searchable input with optional label.
- *
- * @param props - Input configuration and change handler.
  */
-export function SearchField({ id, label, value, onChange, placeholder, autoFocus }: SearchFieldProps): JSX.Element {
+export function SearchField({
+                                id,
+                                label,
+                                value,
+                                onChange,
+                                placeholder,
+                                autoFocus,
+                            }: SearchFieldProps): JSX.Element {
     const generatedId = useId();
     const inputId = id ?? generatedId;
+
+    const aria = label ?? placeholder ?? "Zoeken";
+
     return (
         <div className="w-100">
             {label && (
-                <label htmlFor={inputId} className="form-label small text-uppercase text-success-emphasis mb-1">
+                <label
+                    htmlFor={inputId}
+                    className="form-label small text-uppercase text-success-emphasis mb-1"
+                >
                     {label}
                 </label>
             )}
@@ -29,10 +40,10 @@ export function SearchField({ id, label, value, onChange, placeholder, autoFocus
                 type="search"
                 className="form-control form-control-sm border-success-subtle"
                 value={value}
-                onChange={(event) => onChange(event.target.value)}
+                onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 autoFocus={autoFocus}
-                aria-label={label ?? placeholder ?? "Zoeken"}
+                aria-label={aria}
             />
         </div>
     );

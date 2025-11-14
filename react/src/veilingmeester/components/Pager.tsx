@@ -1,3 +1,5 @@
+import type { JSX } from "react";
+
 export type PagerProps = {
     readonly page: number;
     readonly pageSize: number;
@@ -9,16 +11,32 @@ export type PagerProps = {
 
 /**
  * Pagination controls with summary text.
- *
- * @param props - Paging state and callbacks.
  */
-export function Pager({ page, pageSize, hasNext, onPrevious, onNext, totalResults }: PagerProps): JSX.Element {
+export function Pager({
+                          page,
+                          pageSize,
+                          hasNext,
+                          onPrevious,
+                          onNext,
+                          totalResults,
+                      }: PagerProps): JSX.Element {
     const from = (page - 1) * pageSize + 1;
     const maxTo = from + pageSize - 1;
-    const to = totalResults != null ? Math.min(page * pageSize, totalResults) : hasNext ? page * pageSize : maxTo;
+
+    const to =
+        totalResults != null
+            ? Math.min(page * pageSize, totalResults)
+            : hasNext
+                ? page * pageSize
+                : maxTo;
+
     const summary = totalResults != null ? `• van ${totalResults} totaal` : "";
+
     return (
-        <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap" aria-live="polite">
+        <div
+            className="d-flex align-items-center justify-content-between gap-2 flex-wrap"
+            aria-live="polite"
+        >
             <div className="text-muted small">
                 Pagina {page} • {from} – {to} getoond {summary}
             </div>
@@ -31,7 +49,12 @@ export function Pager({ page, pageSize, hasNext, onPrevious, onNext, totalResult
                 >
                     Vorige
                 </button>
-                <button type="button" className="btn btn-success btn-sm" onClick={onNext} disabled={!hasNext}>
+                <button
+                    type="button"
+                    className="btn btn-success btn-sm"
+                    onClick={onNext}
+                    disabled={!hasNext}
+                >
                     Volgende
                 </button>
             </div>
