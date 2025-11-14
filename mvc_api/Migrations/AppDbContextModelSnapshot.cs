@@ -186,37 +186,6 @@ namespace mvc_api.Migrations
                         });
                 });
 
-            modelBuilder.Entity("mvc_api.Models.TijdelijkProduct", b =>
-                {
-                    b.Property<string>("Naam")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Categorie")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("EindDatum")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("MinimalePrijs")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Plaats")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("StartDatum")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("StartPrijs")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("Voorraad")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Naam");
-
-                    b.ToTable("Tijdelijk");
-                });
-
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>
                 {
                     b.Property<int>("VeilingNr")

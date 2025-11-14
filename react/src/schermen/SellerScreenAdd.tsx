@@ -3,59 +3,49 @@ import "../css/SellerScreenAdd.css";
 
 export default function SellerScreenAdd() {
     const [product, setProduct] = useState({
-        Naam: "",
-        Categorie: "",
-        Voorraad : "",
-        Plaats: "",
-        MinimalePrijs : "",
-        StartPrijs : "",
-        StartDatum: "",
-        EindDatum: "",
+        name: "",
+        category: "",
+        amount: "",
+        place: "",
+        minimumPrice: "",
+        startPrice: "",
+        startDate: "",
+        endDate: "",
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value, type } = e.target;
-        setProduct(prev => ({
-            ...prev,
-            [id]: type === "number" ? Number(value) : value
-        }));
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const { id, value } = e.target;
+        setProduct((prev) => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = async () => {
-        const values = Object.values(product).map(value  =>
-            typeof value === "string" ? value.trim() : value
-        );
-
-        const isLeeg = values.some(v => v === "");
+    const handleSubmit = () => {
+        const values = Object.values(product).map((v) => v.trim());
+        const isLeeg = values.some((v) => v === "");
 
         if (isLeeg) {
             alert("Een of meer velden zijn leeg!");
-            return;
-        }
-
-        try {
-            const response = await fetch("/api/Tijdelijk", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(product),
-            });
-
-            if (response.ok) {
-                alert("Product toegevoegd!");
-                const data = await response.json();
-                console.log(data);
-            } else {
-                alert("Fout bij toevoegen product!");
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Netwerk fout");
+        } else {
+            alert("Product is succesvol opgeslagen!");
+            console.log("✅ Productgegevens:", product);
         }
     };
 
     return (
         <main className="SellerScreenAdd">
             <div className="BODY">
+                <div className="banner-content">
+                    <div className="registratie-knoppen">
+                        <button type="button" className="knop-inloggen" aria-label="knop voor het inloggen">
+                            inloggen &#10095;
+                        </button>
+                        <button type="button" className="knop-registreren" aria-label="knop voor registreren van een account">
+                            registreren &#10095;
+                        </button>
+                    </div>
+                </div>
+
                 <div className="Mainschermen">
                     <h2>Artificial Citroen boom in deco pot</h2>
                     <div className="ArtikelNummer">
@@ -80,28 +70,28 @@ export default function SellerScreenAdd() {
                                 <div className="kopje">Product Details</div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Naam" className="name">Product name:</label>
-                                    <input type="text" id="Naam" value={product.Naam} onChange={handleChange} />
+                                    <label htmlFor="name" className="name">Product name:</label>
+                                    <input type="text" id="name" value={product.name} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Categorie" className="category">Product category:</label>
-                                    <input type="text" id="Categorie" value={product.Categorie} onChange={handleChange} />
+                                    <label htmlFor="category" className="category">Product category:</label>
+                                    <input type="text" id="category" value={product.category} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Voorraad" className="amount">Amount:</label>
-                                    <input type="number" id="Voorraad" step="1" value={product.Voorraad} onChange={handleChange} />
+                                    <label htmlFor="amount" className="amount">Amount:</label>
+                                    <input type="number" id="amount" value={product.amount} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Plaats" className="place">Place:</label>
-                                    <input type="text" id="Plaats" value={product.Plaats} onChange={handleChange} />
+                                    <label htmlFor="place" className="place">Place:</label>
+                                    <input type="text" id="place" value={product.place} onChange={handleChange} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="MinimalePrijs" className="minimumPrice">Minimum Price:</label>
-                                    <input type="decimal" id="MinimalePrijs" step="0.01" value={product.MinimalePrijs} onChange={handleChange} />
+                                    <label htmlFor="minimumPrice" className="minimumPrice">Minimum Price:</label>
+                                    <input type="number" id="minimumPrice" value={product.minimumPrice} onChange={handleChange} />
                                 </div>
                             </div>
                         </section>
@@ -109,18 +99,18 @@ export default function SellerScreenAdd() {
                         <section className="schermDeel3">
                             <div className="scherm3Container">
                                 <div className="scherm3Ordenen">
-                                    <label htmlFor="StartPrijs" className="price">Start price:</label>
-                                    <input type="number" id="StartPrijs" step="0.01" value={product.StartPrijs} onChange={handleChange} />
+                                    <label htmlFor="startPrice" className="price">Start price:</label>
+                                    <input type="number" id="startPrice" value={product.startPrice} onChange={handleChange} />
                                 </div>
 
                                 <div className="scherm3Ordenen">
-                                    <label htmlFor="StartDatum" className="sDate">Start date:</label>
-                                    <input type="date" id="StartDatum" value={product.StartDatum} onChange={handleChange} />
+                                    <label htmlFor="startDate" className="sDate">Start date:</label>
+                                    <input type="date" id="startDate" value={product.startDate} onChange={handleChange} />
                                 </div>
 
                                 <div className="scherm3Ordenen">
-                                    <label htmlFor="EindDatum" className="eDate">End date:</label>
-                                    <input type="date" id="EindDatum" value={product.EindDatum} onChange={handleChange} />
+                                    <label htmlFor="endDate" className="eDate">End date:</label>
+                                    <input type="date" id="endDate" value={product.endDate} onChange={handleChange} />
                                 </div>
 
                                 <button className="placeProduct" onClick={handleSubmit}>
