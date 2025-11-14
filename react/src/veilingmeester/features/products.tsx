@@ -1,18 +1,18 @@
 import { useMemo, type JSX } from "react";
-import { DataTable } from "../../DataTable";
 import {
+    DataTable,
     EmptyState,
     InlineAlert,
     LoadingPlaceholder,
     Pager,
     SmallSelectField,
     StatusBadge,
-} from "../../components";
-import { appConfig } from "../../config";
-import { Modal } from "../../Modal";
-import { useVeilingProductsByGrower } from "../../hooks";
-import type { UserRow, VeilingProductRow } from "../../types";
-import { formatCurrency } from "../../utils/formatting";
+} from "../components";
+import { appConfig } from "../config";
+import { Modal } from "../Modal";
+import { useVeilingProductsByGrower } from "../hooks";
+import type { UserRow, VeilingProductRow } from "../types";
+import { formatCurrency } from "../utils";
 
 export type ProductsModalProps = {
     readonly user: UserRow;
@@ -23,10 +23,12 @@ export type ProductsModalProps = {
  * Presents paginated products for a selected grower.
  */
 export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Element {
-    const {rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults,} = useVeilingProductsByGrower(user.id);
+    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults } =
+        useVeilingProductsByGrower(user.id);
 
     const perPageOptions = useMemo(
-        () => appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) })), [],
+        () => appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) })),
+        [],
     );
 
     const thumbnailSize = appConfig.ui.productThumbnailSize;

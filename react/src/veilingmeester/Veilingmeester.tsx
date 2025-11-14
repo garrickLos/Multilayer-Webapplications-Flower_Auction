@@ -1,24 +1,20 @@
-import {lazy, Suspense, useEffect, useMemo, useState, type ReactNode} from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ErrorBoundary, InlineAlert, LoadingPlaceholder } from "./components";
-import { useOffline } from "./utils/useOffline";
+import { useOffline } from "./hooks";
 import type { UserRow, VeilingRow } from "./types";
-import { DashboardMetrics } from "./features/dashboard/DashboardMetrics";
-import { cx } from "./utils/classNames";
+import { DashboardMetrics } from "./features/dashboard";
+import { cx } from "./utils";
 
-const UsersTab = lazy(async () =>
-    import("./features/users/UsersTab").then((m) => ({ default: m.UsersTab })),
-);
+const UsersTab = lazy(async () => import("./features/users").then((m) => ({ default: m.UsersTab })));
 const AuctionsTab = lazy(async () =>
-    import("./features/auctions/AuctionsTab").then((m) => ({ default: m.AuctionsTab })),
+    import("./features/auctions").then((m) => ({ default: m.AuctionsTab })),
 );
-const BidsModal = lazy(async () =>
-    import("./features/users/BidsModal").then((m) => ({ default: m.BidsModal })),
-);
+const BidsModal = lazy(async () => import("./features/users").then((m) => ({ default: m.BidsModal })));
 const ProductsModal = lazy(async () =>
-    import("./features/products/ProductsModal").then((m) => ({ default: m.ProductsModal })),
+    import("./features/products").then((m) => ({ default: m.ProductsModal })),
 );
 const AuctionModal = lazy(async () =>
-    import("./features/auctions/AuctionModal").then((m) => ({ default: m.AuctionModal })),
+    import("./features/auctions").then((m) => ({ default: m.AuctionModal })),
 );
 
 type TabKey = "users" | "auctions";

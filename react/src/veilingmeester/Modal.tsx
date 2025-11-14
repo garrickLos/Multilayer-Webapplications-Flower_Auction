@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, type JSX } from "react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import { cx } from "./utils/classNames";
+import { cx } from "./utils";
 
 type ModalProps = {
     readonly title: ReactNode;
