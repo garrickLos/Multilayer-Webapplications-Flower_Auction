@@ -16,14 +16,15 @@ public class VeilingproductController : ControllerBase
 
     // Response DTO's
     public sealed record VpList(
-        int? VeilingProductNr,
+        int VeilingProductNr,
         string Naam,
         DateTime GeplaatstDatum,
-        int? Fust,
+        int Fust,
         int Voorraad,
         decimal Startprijs,
         string? Categorie,
-        int? VeilingNr
+        int VeilingNr,
+        string ImagePath
     );
 
     public sealed record VBList(int BiedNr, decimal BedragPerFust, int AantalStuks, int GebruikerNr);
@@ -37,6 +38,7 @@ public class VeilingproductController : ControllerBase
         decimal Startprijs,
         string? Categorie,
         int VeilingNr,
+        string ImagePath,
         IEnumerable<VBList> Biedingen
     );
 
@@ -73,11 +75,12 @@ public class VeilingproductController : ControllerBase
                 v.VeilingProductNr,
                 v.Naam,
                 v.GeplaatstDatum,
-                v.Fust,
-                v.Voorraad,
+                v.AantalFusten,
+                v.VoorraadBloemen,
                 v.Startprijs,
                 v.Categorie == null ? null : v.Categorie.Naam,
-                v.VeilingNr
+                v.VeilingNr,
+                v.ImagePath
             ))
             .ToListAsync(ct);
 
@@ -123,12 +126,13 @@ public class VeilingproductController : ControllerBase
         var e = new Veilingproduct
         {
             Naam        = dto.Naam.Trim(),
-            Fust        = dto.Fust,
-            Voorraad    = dto.Voorraad,
+            AantalFusten        = dto.AantalFusten,
+            VoorraadBloemen    = dto.VoorraadBloemen,
             Startprijs  = dto.Startprijs,
             CategorieNr = dto.CategorieNr,
             VeilingNr   = dto.VeilingNr,
-            GeplaatstDatum = dto.GeplaatstDatum ?? DateTime.UtcNow
+            GeplaatstDatum = dto.GeplaatstDatum ?? DateTime.UtcNow,
+            ImagePath   = dto.ImagePath
         };
 
         _db.Veilingproducten.Add(e);
@@ -165,13 +169,14 @@ public class VeilingproductController : ControllerBase
         if (!veilingBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
-        e.Naam        = dto.Naam.Trim();
-        e.GeplaatstDatum = dto.GeplaatstDatum ?? e.GeplaatstDatum;
-        e.Fust        = dto.Fust;
-        e.Voorraad    = dto.Voorraad;
-        e.Startprijs  = dto.Startprijs;
-        e.CategorieNr = dto.CategorieNr;
-        e.VeilingNr   = dto.VeilingNr;
+        e.Naam               = dto.Naam.Trim();
+        e.GeplaatstDatum     = dto.GeplaatstDatum ?? e.GeplaatstDatum;
+        e.AantalFusten       = dto.Fust;
+        e.VoorraadBloemen    = dto.Voorraad;
+        e.Startprijs         = dto.Startprijs;
+        e.CategorieNr        = dto.CategorieNr;
+        e.VeilingNr          = dto.VeilingNr;
+        e.ImagePath          = dto.ImagePath;
 
         await _db.SaveChangesAsync(ct);
 
@@ -202,11 +207,12 @@ public class VeilingproductController : ControllerBase
             v.VeilingProductNr,
             v.Naam,
             v.GeplaatstDatum,
-            v.Fust,
-            v.Voorraad,
+            v.AantalFusten,
+            v.VoorraadBloemen,
             v.Startprijs,
             v.Categorie == null ? null : v.Categorie.Naam,
             v.VeilingNr,
+            v.ImagePath,
             v.Veiling.Biedingen
                 .OrderByDescending(b => b.BiedNr)
                 .Select(b => new VBList(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.GebruikerNr))

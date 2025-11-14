@@ -8,14 +8,11 @@ export function useVeilingData() {
     useEffect(() => {
         async function fetchVeilingen() {
             try {
-                const response = await fetch('/api/Veiling');
-                if (!response.ok) throw new Error('Netwerkfout');
+                const responseVeilingen = await fetch('/api/Veiling');
                 
-                const data = await response.json();
+                const dataVeilingen = await responseVeilingen.json();
 
-                
-
-                setVeilingen(data);
+                setVeilingen(dataVeilingen);
 
             } catch (err: any) {
                 console.error('Fout bij laden veilingen:', err);

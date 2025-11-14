@@ -11,8 +11,8 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251113091003_AddTijdelijkProductTable")]
-    partial class AddTijdelijkProductTable
+    [Migration("20251113152508_DatabaseUpdate1")]
+    partial class DatabaseUpdate1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -91,6 +91,26 @@ namespace mvc_api.Migrations
                         {
                             CategorieNr = 2,
                             Naam = "Rozen"
+                        },
+                        new
+                        {
+                            CategorieNr = 3,
+                            Naam = "Lelie"
+                        },
+                        new
+                        {
+                            CategorieNr = 4,
+                            Naam = "Zonnebloem"
+                        },
+                        new
+                        {
+                            CategorieNr = 5,
+                            Naam = "Chrysant"
+                        },
+                        new
+                        {
+                            CategorieNr = 6,
+                            Naam = "Pioenroos"
                         });
                 });
 
@@ -100,8 +120,10 @@ namespace mvc_api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("Assortiment")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("BedrijfsNaam")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -113,15 +135,6 @@ namespace mvc_api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("LaatstIngelogd")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Naam")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PersoneelsNr")
-                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Postcode")
@@ -153,12 +166,10 @@ namespace mvc_api.Migrations
                         new
                         {
                             GebruikerNr = 1,
-                            Assortiment = 12,
+                            BedrijfsNaam = "Flora BV",
                             Email = "flora@example.nl",
                             Kvk = "12345678",
                             LaatstIngelogd = new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Naam = "Flora BV",
-                            PersoneelsNr = "P1001",
                             Postcode = "1234AB",
                             Soort = "Bedrijf",
                             StraatAdres = "Bloemig 10",
@@ -167,48 +178,15 @@ namespace mvc_api.Migrations
                         new
                         {
                             GebruikerNr = 2,
-                            Assortiment = 0,
+                            BedrijfsNaam = "Jan Jansen",
                             Email = "jan@example.nl",
                             Kvk = "00000000",
                             LaatstIngelogd = new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc),
-                            Naam = "Jan Jansen",
-                            PersoneelsNr = "P0000",
                             Postcode = "2345BC",
                             Soort = "Koper",
                             StraatAdres = "Laan 5",
                             Wachtwoord = "***"
                         });
-                });
-
-            modelBuilder.Entity("mvc_api.Models.TijdelijkProduct", b =>
-                {
-                    b.Property<string>("Naam")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Categorie")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("EindDatum")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("MinimalePrijs")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Plaats")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("StartDatum")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("StartPrijs")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("Voorraad")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Naam");
-
-                    b.ToTable("Tijdelijk");
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>
@@ -223,13 +201,14 @@ namespace mvc_api.Migrations
                     b.Property<DateTime>("Eindtijd")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Minimumprijs")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VeilingNaam")
+                        .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("VeilingNr");
@@ -242,16 +221,16 @@ namespace mvc_api.Migrations
                             VeilingNr = 201,
                             Begintijd = new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc),
                             Eindtijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Minimumprijs = 10m,
-                            Status = "active"
+                            Status = "active",
+                            VeilingNaam = "veiling001"
                         },
                         new
                         {
                             VeilingNr = 202,
                             Begintijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
                             Eindtijd = new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc),
-                            Minimumprijs = 15m,
-                            Status = "active"
+                            Status = "active",
+                            VeilingNaam = "veiling001"
                         });
                 });
 
@@ -261,18 +240,34 @@ namespace mvc_api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CategorieNr")
+                    b.Property<int>("AantalFusten")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Fust")
+                    b.Property<int>("CategorieNr")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("GeplaatstDatum")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kwekernr")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Minimumprijs")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Naam")
                         .IsRequired()
                         .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Plaats")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Startprijs")
@@ -282,10 +277,18 @@ namespace mvc_api.Migrations
                     b.Property<int>("VeilingNr")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Voorraad")
+                    b.Property<int>("VoorraadBloemen")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("beginDatum")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("status")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("VeilingProductNr");
+
+                    b.HasIndex("Kwekernr");
 
                     b.HasIndex("VeilingNr");
 
@@ -297,24 +300,36 @@ namespace mvc_api.Migrations
                         new
                         {
                             VeilingProductNr = 101,
+                            AantalFusten = 10,
                             CategorieNr = 1,
-                            Fust = 10,
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
+                            ImagePath = "../../src/assets/pictures/productBloemen",
+                            Kwekernr = 1,
+                            Minimumprijs = 10m,
                             Naam = "Tulp Mix",
+                            Plaats = "Zoetermeer",
                             Startprijs = 12m,
                             VeilingNr = 201,
-                            Voorraad = 500
+                            VoorraadBloemen = 500,
+                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            status = false
                         },
                         new
                         {
                             VeilingProductNr = 102,
+                            AantalFusten = 10,
                             CategorieNr = 2,
-                            Fust = 10,
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
+                            ImagePath = "../../src/assets/pictures/productBloemen",
+                            Kwekernr = 1,
+                            Minimumprijs = 15m,
                             Naam = "Rode Roos",
+                            Plaats = "Zoetermeer",
                             Startprijs = 20m,
                             VeilingNr = 202,
-                            Voorraad = 300
+                            VoorraadBloemen = 300,
+                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            status = false
                         });
                 });
 
@@ -345,6 +360,12 @@ namespace mvc_api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("mvc_api.Models.Gebruiker", "Gebruiker")
+                        .WithMany()
+                        .HasForeignKey("Kwekernr")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
@@ -352,6 +373,8 @@ namespace mvc_api.Migrations
                         .IsRequired();
 
                     b.Navigation("Categorie");
+
+                    b.Navigation("Gebruiker");
 
                     b.Navigation("Veiling");
                 });

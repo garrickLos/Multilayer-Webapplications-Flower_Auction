@@ -26,8 +26,6 @@ public class GebruikerController : ControllerBase
         string? Kvk,
         string? StraatAdres,
         string? Postcode,
-        int? Assortiment,
-        string? PersoneelsNr,
         IEnumerable<GBid> Biedingen
     );
 
@@ -48,17 +46,17 @@ public class GebruikerController : ControllerBase
         {
             var term = q.Trim();
             query = query.Where(g =>
-                g.Naam.Contains(term) ||
+                g.BedrijfsNaam.Contains(term) ||
                 g.Email.Contains(term));
         }
 
         var total = await query.CountAsync(ct);
 
         var items = await query
-            .OrderBy(g => g.Naam)
+            .OrderBy(g => g.BedrijfsNaam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(g => new GList(g.GebruikerNr, g.Naam, g.Email, g.Soort))
+            .Select(g => new GList(g.GebruikerNr, g.BedrijfsNaam, g.Email, g.Soort))
             .ToListAsync(ct);
 
         Response.Headers["X-Total-Count"] = total.ToString();
@@ -92,15 +90,13 @@ public class GebruikerController : ControllerBase
 
         var e = new Gebruiker
         {
-            Naam         = dto.Naam.Trim(),
+            BedrijfsNaam = dto.BedrijfsNaam.Trim(),
             Email        = dto.Email.Trim(),
             Wachtwoord   = dto.Wachtwoord,
             Soort        = dto.Soort,
             Kvk          = dto.Kvk,
             StraatAdres  = dto.StraatAdres,
             Postcode     = dto.Postcode,
-            Assortiment  = dto.Assortiment,
-            PersoneelsNr = dto.PersoneelsNr
         };
 
         _db.Gebruikers.Add(e);
@@ -127,14 +123,12 @@ public class GebruikerController : ControllerBase
         if (e is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        e.Naam         = dto.Naam.Trim();
+        e.BedrijfsNaam = dto.BedrijfsNaam.Trim();
         e.Email        = dto.Email.Trim();
         e.Soort        = dto.Soort;
         e.Kvk          = dto.Kvk;
         e.StraatAdres  = dto.StraatAdres;
         e.Postcode     = dto.Postcode;
-        e.Assortiment  = dto.Assortiment;
-        e.PersoneelsNr = dto.PersoneelsNr;
 
         await _db.SaveChangesAsync(ct);
 
@@ -163,15 +157,13 @@ public class GebruikerController : ControllerBase
     private static IQueryable<GDetail> ProjectToDetail(IQueryable<Gebruiker> query) =>
         query.Select(g => new GDetail(
             g.GebruikerNr,
-            g.Naam,
+            g.BedrijfsNaam,
             g.Email,
             g.Soort,
             g.LaatstIngelogd,
             g.Kvk,
             g.StraatAdres,
             g.Postcode,
-            g.Assortiment,
-            g.PersoneelsNr,
             g.Biedingen
                 .OrderByDescending(b => b.BiedNr)
                 .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))

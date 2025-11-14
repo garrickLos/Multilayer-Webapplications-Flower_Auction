@@ -4651,19 +4651,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\thoma\\.nuget\\packages\\": {}
+    "C:\\Users\\Bayra\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
+      "projectUniqueName": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
       "projectName": "mvc_api",
-      "projectPath": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
-      "packagesPath": "C:\\Users\\thoma\\.nuget\\packages\\",
-      "outputPath": "C:\\hhs school\\jaar 2\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
+      "projectPath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\mvc_api.csproj",
+      "packagesPath": "C:\\Users\\Bayra\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Bayra\\Documents\\GitHub\\Bitbusters-Multilayer-Webapplications-Groep-6\\mvc_api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\thoma\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Bayra\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"

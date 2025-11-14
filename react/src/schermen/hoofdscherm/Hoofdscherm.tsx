@@ -1,4 +1,4 @@
-import {NavLink} from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -30,7 +30,7 @@ export default function MainScreen() {
             item.producten.map((product: producten, index: number) => (
                 <AuctionCard
                     key={`${veilingIndex}-${index}`}
-                    imagePath={product.Imagepath || Default_ImagePlaceholder}
+                    imagePath={product.imagePath || Default_ImagePlaceholder}
                     altText={product.naam || 'Item afbeelding'}
                     headerText={product.naam || 'Geen Titel'}
                     paragraafText={beschrijving(product, item)}
@@ -39,16 +39,28 @@ export default function MainScreen() {
         ); 
         
         //voor de beschrijving zodat het invullen van de  beschrijving op een plek is voor overzicht
-
+    const options = {
+        
+    }
         //enige errors die je hier hebt kloppen niet, het werkt gewoon prima
     const beschrijving = (product: producten, item: typeof veilingen) =>
         `
-            veilingnummer: ${item.veilingNr}
+            lotNummer: ${item.veilingNr}
 
             Hoeveelheid bloemen: ${product.voorraad}
             prijs begint op: ${product.startprijs}
-            starttijd is: ${item.begintijd}  
-            eindtijd is: ${item.eindtijd.toLocaleString()}
+            
+            start tijd is: 
+            ${new Date(item.begintijd).toLocaleString('nl-NL', {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour12: false,
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric'
+            })}
         `;
 
     return (
