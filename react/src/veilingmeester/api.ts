@@ -182,7 +182,14 @@ export async function getBids(
 }
 
 export async function getAuctions(
-    params: { from?: string; to?: string; onlyActive?: boolean; page?: number; pageSize?: number },
+    params: {
+        from?: string;
+        to?: string;
+        onlyActive?: boolean;
+        status?: string;
+        page?: number;
+        pageSize?: number;
+    },
     signal?: AbortSignal,
 ): Promise<PaginatedList<VeilingDto>> {
     return fetchList<VeilingDto>("/api/Veiling", params, { signal });
