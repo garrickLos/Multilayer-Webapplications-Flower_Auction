@@ -22,6 +22,7 @@ export default function MainScreen() {
     //maakt het mogelijk om de data op te delen op basis van een item en de inhoud (actief en inactief om te laten zien)
     const actieveVeilingen = veilingen.filter(v => v.status == 'active');
     const inactieveVeilingen = veilingen.filter(v => v.status == 'inactive');
+    // voor het laten zien van alle veilingen
     const allDeals = veilingen;
         
     return (

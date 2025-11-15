@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 
+//aantal seconden dat het herhaald in miliseconden voor het ophalen van de data
+const intervalInMS = 180000;
+
 export function useVeilingData() {
     const [veilingen, setVeilingen] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,6 +26,14 @@ export function useVeilingData() {
         }
 
         fetchVeilingen();
+
+        //zet de interval om elke 2 minuten te herhalen (ligt aan hoe de POLLING_INTERVAL is ingesteld qua miliseconden)
+        const intervalId = setInterval(fetchVeilingen, intervalInMS);
+
+        //stopt de interval wanneer de component gebruikt wordt verwijderd (unmount)
+        return () => {
+            clearInterval(intervalId);
+        };
         
     }, []);
 
