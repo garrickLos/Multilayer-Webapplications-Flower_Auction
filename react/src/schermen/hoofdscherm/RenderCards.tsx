@@ -58,7 +58,7 @@ export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }:
         <h3>{headerText}</h3>
         <p className='Description'>{paragraafText}</p>
       </div>
-      <NavLink to={`/Veiling/${veilingnr}`} type="button" className='auctionButton' aria-label={`Ga naar de veiling van: ${headerText}`}>go to auction</NavLink>
+      <NavLink to={`/Veiling/${veilingnr}/`} type="button" className='auctionButton' aria-label={`Ga naar de veiling van: ${headerText}`}>go to auction</NavLink>
     </div>
   );
 }

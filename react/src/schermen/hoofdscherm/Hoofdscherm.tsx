@@ -5,11 +5,11 @@ import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { useVeilingData } from '../../typeScript/ApiGetVeilingItems.tsx';
+import { GetDataApi } from '../../typeScript/ApiGetVeilingItems.tsx';
 import { renderCards } from './RenderCards.tsx';
 
 export default function MainScreen() {
-    const { veilingen, loading, error } = useVeilingData();
+    const { ApiElement: veilingen, loading, error } = GetDataApi('/api/Veiling');
 
     if (loading) {
         StateComponent({ component: loading });

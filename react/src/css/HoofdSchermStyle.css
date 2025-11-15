@@ -17,7 +17,6 @@
 }
 
 .MainScreen .banner {
-    display: inline-block;
     background-color: var(--brand-light);
     color: var(--inverse-text);
 
@@ -88,22 +87,6 @@
     height: 100%;
 }
 
-.MainScreen .slider {
-    display: flex;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    scroll-snap-type: x mandatory;
-    gap: 20px;
-    padding: 10px 0;
-
-    min-height: 95%;
-    height: auto;
-}
-
-.MainScreen .slider::-webkit-scrollbar {
-    display: none;
-}
-
 .MainScreen .card {
     height: 450px;
     max-height: 50%;
@@ -146,7 +129,7 @@
 }
 
 .MainScreen .card p {
-    font-size: clamp(0.2rem, 15px, 0.8rem);
+    font-size: clamp(0.2rem, 15px, 1rem);
     color: var(--ink-light);
 
     text-align: center;
@@ -154,6 +137,8 @@
     text-wrap: balance;
 
     white-space: pre-line;
+
+    overflow-wrap: break-word;
 }
 
 .MainScreen .text-container {
@@ -173,13 +158,17 @@
     background-color: var(--accent-light);
     color: var(--inverse-text);
 
-    border-radius: 50px;
+    border-radius: 5px;
 }
 
 .MainScreen .auctionButton:hover {
     background-color: var(--accent-muted);
 
     color: var(--ink-light);
+/*     
+    outline-color: var(--accent-muted);
+    outline-style: solid;
+    outline-offset: 2px; */
 }
 
 .MainScreen .ImageErrorMsg {
@@ -193,20 +182,40 @@
 }
 
 .MainScreen .arrow {
-    background-color: transparent;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
+    --fontSize: 25px;
+
     color: var(--ink);
+    background-color: transparent;
+    outline-color: var(--bg);
+
+    border: none;
+    
+    font-size: var(--fontSize);
+    
+    cursor: pointer;
+}
+
+.MainScreen .arrow:hover{
+    border-radius: 5px;
+
+    outline-style: solid;
+    outline-offset: 0px;
+    outline-color: var(--border);
+
+    /* font-size: calc(var(--fontSize) + 5px);
+    transition: font-size 0.5s; */
 }
 
 .MainScreen .slider {
+    display: flex;
+
     width: 100%;
 
-    display: flex;
     overflow-x: auto;
+    
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
+
     gap: 20px;
     padding: 10px 0;
 }
