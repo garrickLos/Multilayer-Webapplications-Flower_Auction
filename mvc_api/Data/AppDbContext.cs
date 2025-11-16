@@ -128,10 +128,10 @@ public class AppDbContext : DbContext
                 Startprijs       = 12m,
                 CategorieNr      = 1,
                 VeilingNr        = 201,
-                Plaats           = "Zoetermeer",
+                Plaats           = " Aalsmeer",
                 Minimumprijs     = 10m,
                 Kwekernr         = 1,
-                ImagePath        = "../../src/assets/pictures/productBloemen"
+                ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
             },
             new Veilingproduct
             {
@@ -143,10 +143,10 @@ public class AppDbContext : DbContext
                 Startprijs       = 20m,
                 CategorieNr      = 2,
                 VeilingNr        = 202,
-                Plaats           = "Zoetermeer",
+                Plaats           = "Eelde",
                 Minimumprijs     = 15m,
                 Kwekernr         = 1,
-                ImagePath        = "../../src/assets/pictures/productBloemen"
+                ImagePath        = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
             }
         );
 

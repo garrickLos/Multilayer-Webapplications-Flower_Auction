@@ -15,6 +15,7 @@ public class VeilingproductController : ControllerBase
     public VeilingproductController(AppDbContext db) => _db = db;
 
     // Response DTO's
+    //Veilingproducten die worden opgehaald en getoond
     public sealed record VpList(
         int VeilingProductNr,
         string Naam,
@@ -26,8 +27,14 @@ public class VeilingproductController : ControllerBase
         int VeilingNr,
         string ImagePath
     );
-
-    public sealed record VBList(int BiedNr, decimal BedragPerFust, int AantalStuks, int GebruikerNr);
+    
+    //Veilingbiedingen die worden opgehaald en getoond in de api
+    public sealed record VBList(
+        int BiedNr, 
+        decimal BedragPerFust, 
+        int AantalStuks, 
+        int GebruikerNr
+    );
 
     public sealed record VpDetail(
         int VeilingProductNr,
@@ -125,14 +132,14 @@ public class VeilingproductController : ControllerBase
 
         var e = new Veilingproduct
         {
-            Naam        = dto.Naam.Trim(),
+            Naam                = dto.Naam.Trim(),
             AantalFusten        = dto.AantalFusten,
-            VoorraadBloemen    = dto.VoorraadBloemen,
-            Startprijs  = dto.Startprijs,
-            CategorieNr = dto.CategorieNr,
-            VeilingNr   = dto.VeilingNr,
-            GeplaatstDatum = dto.GeplaatstDatum ?? DateTime.UtcNow,
-            ImagePath   = dto.ImagePath
+            VoorraadBloemen     = dto.VoorraadBloemen,
+            Startprijs          = dto.Startprijs,
+            CategorieNr         = dto.CategorieNr,
+            VeilingNr           = dto.VeilingNr,
+            GeplaatstDatum      = dto.GeplaatstDatum ?? DateTime.UtcNow,
+            ImagePath           = dto.ImagePath
         };
 
         _db.Veilingproducten.Add(e);

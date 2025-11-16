@@ -1,31 +1,14 @@
 html, body{
     margin: 0;
-
-    height: 100%;
-}
-
-:root{
-  --bg:#f1f1f1;
-  --ink:#0f172a;
-  --muted:#6b7280;
-  --brand:#2e4a41;
-  --brand-2:#cfe5d2;
-  --card:#ffffff;
-  --focus:#64d5c4;
-  --accent:#25a18e;
-  --radius:12px;
-  --border-radius: 500px;
-}
-
-html,body{
-    height:100%;
 }
 
 body{
-  margin:0;
+
   font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  
   color:var(--ink);
   background:var(--bg);
+  
   line-height:1.4;
 }
 
@@ -39,6 +22,7 @@ body{
     radial-gradient(1800px 1800px at -200px 250px, var(--brand) 60.5%, transparent 61%) left top no-repeat,
     radial-gradient(500px 500px at 85% 110%, var(--brand-2) 60.5%, transparent 61%) right bottom no-repeat;
     
+    min-height: 75vh;
     height: 100%;
 
     width: 100%;
@@ -48,7 +32,7 @@ body{
 
 .background-left h1{
   color:#fff;
-  margin:0 0 0 0;
+  margin: 25px 0 100px 25px;
   font-size:2.2rem;
 }
 
@@ -72,8 +56,23 @@ body{
 }
 
 .dropdown h5 {
-    color: #2e4a41;
-    padding: 0 15px;
+    display: flex;
+
+    color: var(--brand);
+
+    margin: 1% 0 1% 20px;
+}
+
+.dropdown {
+    color: var(--ink);
+}
+
+.dropdown p {
+    margin: 1% 0 1% 2%;
+}
+
+.dropdown li {
+    margin: 5px 0 5px 2%;
 }
 
 .gegevens {
@@ -99,10 +98,6 @@ body{
     padding: 0 20px; 
 
     margin: 0 20px 0 20px;
-}
-
-.item-icon {
-    border-style: solid;
 }
 
 .item-header {
