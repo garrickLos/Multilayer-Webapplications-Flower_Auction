@@ -5,11 +5,11 @@ import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { GetDataApi } from '../../typeScript/ApiGetVeilingItems.tsx';
+import { GetDataApi as GetVeilingen } from '../../typeScript/ApiGetVeilingItems.tsx';
 import { renderCards } from './RenderCards.tsx';
 
 export default function MainScreen() {
-    const { ApiElement: veilingen, loading, error } = GetDataApi('/api/Veiling');
+    const { ApiElement: veilingen, loading, error } = GetVeilingen('/api/Veiling');
 
     if (loading) {
         StateComponent({ component: loading });
@@ -24,7 +24,7 @@ export default function MainScreen() {
     const inactieveVeilingen = veilingen.filter(v => v.status == 'inactive');
     // voor het laten zien van alle veilingen
     const allDeals = veilingen;
-        
+
     return (
         <main className='MainScreen'>
 

@@ -23,7 +23,7 @@ public record VeilingproductCreateDto(
     [Range(1, int.MaxValue)] int VeilingNr,
     string Plaats,
     decimal Minimumprijs,
-    Gebruiker Kwekernr,
+    int Kwekernr,
     DateTime beginDatum,
     bool status,
     string ImagePath
@@ -37,6 +37,7 @@ public record VeilingproductUpdateDto(
     [Range(typeof(decimal), "0.01", "999999999")] decimal Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
     [Range(1, int.MaxValue)] int VeilingNr,
+    int Kwekernr,
     string ImagePath
 );
 
