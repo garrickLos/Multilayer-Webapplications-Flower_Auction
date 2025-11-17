@@ -2,31 +2,17 @@ import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 
 export default function SellerScreenAdd() {
-    //Dit zijn de minimale inputs die je moet verzenden naar de API
-    /*const Data = {
-        Naam: "bbbbbbb",
-        GeplaatstDatum: "2025-11-17T10:16:37.880",
-        AantalFusten: 10,
-        VoorraadBloemen: 100,
-        Startprijs: 1,
-        CategorieNr: 1,
-        VeilingNr: 201,
-        Plaats: "Leiden",
-        Minimumprijs: 2,
-        Kwekernr: 1,
-        beginDatum: "2025-11-17T10:16:37.880Z",
-        status: true,
-        ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
-    }*/
+    //Vaste data (voor nu)
     const Data = {
         GeplaatstDatum: "2025-11-17T10:16:37.880",
         VeilingNr: 201,
         Startprijs: 4,
         status: true,
         Kwekernr: 1,
-        beginDatum: "2025-11-17T10:16:37.880Z", //In api, model en dto moet dit date worden als time niet nodig is.
+        beginDatum: "2025-11-17T10:16:37.880Z", 
         ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
     }
+    //Data die veranderd door de input van de gebruiker
     const [product, setProduct] = useState({
         Naam: "",
         AantalFusten: 0,
@@ -35,6 +21,7 @@ export default function SellerScreenAdd() {
         Plaats: "",
         Minimumprijs: 0
     });
+    //Kopieert de bestaande waardes en veranderd het
     const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value, type } = e.target;
         setProduct(prev => ({
@@ -44,24 +31,27 @@ export default function SellerScreenAdd() {
     };
 
     const GegevensVersturen = async () => {
+        //Voegt de 2 soorten waardes samen die worden meegegeven met POST
         const AlleGegevens  = {
             ...Data,
             ...product
         }
 
+        //Verwijderd spaties
         const values = Object.values(product).map(value =>
             typeof value === "string" ? value.trim() : value
         );
        
+        //Controleert of een input leeg is
         const isLeeg = values.some(v => v === "");
         
          if (isLeeg) {
             alert("Een of meer velden zijn leeg!");
             return;
         }
-
+         
+         //Verstuurt een POST verzoek naar de API
         try {
-            console.log(JSON.stringify(AlleGegevens, null, 2));
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
