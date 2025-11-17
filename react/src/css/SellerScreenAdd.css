@@ -59,12 +59,7 @@
 .SellerScreenAdd .fotoContainer {
     max-width: 250px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
 }
-
-
 
 .SellerScreenAdd .grote-foto {
     width: 100%;
@@ -75,7 +70,6 @@
     display: flex;
     justify-content: flex-start;
     gap: 15px;
-    
 }
 
 .SellerScreenAdd .kleine-foto {
@@ -110,8 +104,7 @@
 .SellerScreenAdd .category,
 .SellerScreenAdd .amount,
 .SellerScreenAdd .place,
-.SellerScreenAdd .minimumPrice,
-.SellerScreenAdd .Fusten {
+.SellerScreenAdd .minimumPrice {
     font-size: 8px;
     color: black;
 }
@@ -120,29 +113,16 @@
     border: 1px solid lightgray;
 }
 
-.SellerScreenAdd .scherm3Container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
 .SellerScreenAdd .scherm3Ordenen {
     display: block;
 }
 
 .SellerScreenAdd .placeProduct {
     color: white;
-    background-color: var(--accent-light);
+    background-color: blue;
     display: block;
     margin: 10px auto 0 auto;
     padding: 5px 50px;
-    border-radius: 10px;
-}
-
-.SellerScreenAdd .placeProduct:hover {
-    background-color: var(--accent-muted);
-
-    color: var(--ink-light);
 }
 
 .SellerScreenAdd section{
