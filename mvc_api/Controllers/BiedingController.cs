@@ -22,7 +22,8 @@ public class BiedingController : ControllerBase
         decimal BedragPerFust,
         int AantalStuks,
         int GebruikerNr,
-        int VeilingNr
+        int VeilingNr,
+        int Veilingproductnr
     );
 
     public sealed record BDetail(
@@ -30,7 +31,8 @@ public class BiedingController : ControllerBase
         decimal BedragPerFust,
         int AantalStuks,
         int GebruikerNr,
-        int VeilingNr
+        int VeilingNr,
+        int Veilingproductnr
     );
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
@@ -64,7 +66,8 @@ public class BiedingController : ControllerBase
                 b.BedragPerFust,
                 b.AantalStuks,
                 b.GebruikerNr,
-                b.VeilingNr
+                b.VeilingNr,
+                b.VeilingproductNr
             ))
             .ToListAsync(ct);
 
@@ -86,7 +89,8 @@ public class BiedingController : ControllerBase
                 x.BedragPerFust,
                 x.AantalStuks,
                 x.GebruikerNr,
-                x.VeilingNr
+                x.VeilingNr,
+                x.VeilingproductNr
             ))
             .FirstOrDefaultAsync(ct);
 
@@ -131,7 +135,8 @@ public class BiedingController : ControllerBase
             BedragPerFust = dto.BedragPerFust,
             AantalStuks   = dto.AantalStuks,
             GebruikerNr   = dto.GebruikerNr,
-            VeilingNr     = dto.VeilingNr
+            VeilingNr     = dto.VeilingNr,
+            VeilingproductNr = dto.VeilingProductNr
         };
 
         _db.Biedingen.Add(entity);
@@ -155,7 +160,8 @@ public class BiedingController : ControllerBase
             entity.BedragPerFust,
             entity.AantalStuks,
             entity.GebruikerNr,
-            entity.VeilingNr
+            entity.VeilingNr,
+            entity.VeilingproductNr
         );
 
         return CreatedAtAction(nameof(GetById), new { id = entity.BiedNr }, result);
@@ -185,7 +191,8 @@ public class BiedingController : ControllerBase
             entity.BedragPerFust,
             entity.AantalStuks,
             entity.GebruikerNr,
-            entity.VeilingNr
+            entity.VeilingNr,
+            entity.VeilingproductNr
         ));
     }
 

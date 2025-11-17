@@ -46,7 +46,8 @@ public record BiedingCreateDto(
     [Range(typeof(int), "1", "9999999")] int BedragPerFust,
     [Range(1, int.MaxValue)] int AantalStuks,
     [Range(1, int.MaxValue)] int GebruikerNr,
-    [Range(1, int.MaxValue)] int VeilingNr
+    [Range(1, int.MaxValue)] int VeilingNr,
+    int VeilingProductNr
 );
 
 public record BiedingUpdateDto(
@@ -76,15 +77,15 @@ public record GebruikerUpdateDto(
 
 // Veiling CRUD
 public record VeilingCreateDto(
+    [StringLength(100)] string VeilingNaam,
     [Required] DateTime Begintijd,
     [Required] DateTime Eindtijd,
-    [Range(typeof(int), "1", "9999999")] int Minimumprijs,
-    [StringLength(20)] string? Status
+    [StringLength(20)] string Status
 );
 
 public record VeilingUpdateDto(
+    [StringLength(100)] string VeilingNaam,
     [Required] DateTime Begintijd,
     [Required] DateTime Eindtijd,
-    [Range(typeof(int), "1", "9999999")] int Minimumprijs,
-    [StringLength(20)] string? Status
+    [StringLength(20)] string Status
 );

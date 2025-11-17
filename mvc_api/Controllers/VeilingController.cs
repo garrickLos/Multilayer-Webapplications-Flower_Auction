@@ -22,22 +22,29 @@ public class VeilingController : ControllerBase
 
     private const decimal MinToegestanePrijs = 0.01m;
 
+    //wat er wordt opgehaald dat gebruikt wordt in de json api van de veiling zelf
+    public sealed record VeilingDto(
+        int VeilingNr,
+        string VeilingNaam,
+        DateTime Begintijd,
+        DateTime Eindtijd,
+        string Status,
+        IEnumerable<VProd> Producten,
+        IEnumerable<VBiedingen> Biedingen
+    );
+    
     //wat er wordt opgehaald van de api dat gebruikt kan worden voor de veilingproduct 
     public sealed record VProd(
         int VeilingProductNr, 
         string Naam,
         DateTime GeplaatstDatum, 
         decimal Startprijs, 
-        int Voorraad, 
-        string ImagePath);
+        int Voorraad
+    );
 
-    //wat er wordt opgehaald dat gebruikt wordt in de json api van de veiling zelf
-    public sealed record VeilingDto(
-        int VeilingNr,
-        DateTime Begintijd,
-        DateTime Eindtijd,
-        string Status,
-        IEnumerable<VProd> Producten
+    //record voor de biedingen. heb alleen de ID gepakt zodat de json niet te groot en onoverzichtelijk wordt
+    public record VBiedingen (
+        int Biedingnr
     );
 
     // GET: api/Veiling
@@ -107,11 +114,11 @@ public class VeilingController : ControllerBase
         [FromBody] VeilingCreateDto dto,
         CancellationToken ct = default)
     {
-        if (dto.Minimumprijs < MinToegestanePrijs)
-            return BadRequest(CreateProblemDetails(
-                "Ongeldige minimumprijs",
-                $"Minimumprijs moet minimaal {MinToegestanePrijs} zijn.",
-                400));
+        // if (dto.Minimumprijs < MinToegestanePrijs)
+        //     return BadRequest(CreateProblemDetails(
+        //         "Ongeldige minimumprijs",
+        //         $"Minimumprijs moet minimaal {MinToegestanePrijs} zijn.",
+        //         400));
 
         var now    = DateTime.UtcNow;
         var entity = new Veiling
@@ -145,11 +152,11 @@ public class VeilingController : ControllerBase
         if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
-        if (dto.Minimumprijs < MinToegestanePrijs)
-            return BadRequest(CreateProblemDetails(
-                "Ongeldige minimumprijs",
-                $"Minimumprijs moet minimaal {MinToegestanePrijs} zijn.",
-                400));
+        // if (dto.Minimumprijs < MinToegestanePrijs)
+        //     return BadRequest(CreateProblemDetails(
+        //         "Ongeldige minimumprijs",
+        //         $"Minimumprijs moet minimaal {MinToegestanePrijs} zijn.",
+        //         400));
 
         entity.Begintijd    = dto.Begintijd;
         entity.Eindtijd     = dto.Eindtijd;
@@ -206,6 +213,7 @@ public class VeilingController : ControllerBase
 
         return query.Select(v => new VeilingDto(
             v.VeilingNr,
+            v.VeilingNaam,
             v.Begintijd,
             v.Eindtijd,
             v.Veilingproducten.Any() &&
@@ -219,8 +227,10 @@ public class VeilingController : ControllerBase
                 p.Naam,
                 p.GeplaatstDatum,
                 p.Startprijs,
-                p.VoorraadBloemen,
-                p.ImagePath
+                p.VoorraadBloemen
+            )),
+            v.Biedingen.Select(b => new VBiedingen(
+                b.BiedNr
             ))
         ));
     }
