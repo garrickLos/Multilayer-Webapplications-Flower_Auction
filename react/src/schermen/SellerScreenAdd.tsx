@@ -2,22 +2,40 @@ import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 
 export default function SellerScreenAdd() {
+    //Dit zijn de minimale inputs die je moet verzenden naar de API
+    /*const Data = {
+        Naam: "bbbbbbb",
+        GeplaatstDatum: "2025-11-17T10:16:37.880",
+        AantalFusten: 10,
+        VoorraadBloemen: 100,
+        Startprijs: 1,
+        CategorieNr: 1,
+        VeilingNr: 201,
+        Plaats: "Leiden",
+        Minimumprijs: 2,
+        Kwekernr: 1,
+        beginDatum: "2025-11-17T10:16:37.880Z",
+        status: true,
+        ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+    }*/
+    const Data = {
+        GeplaatstDatum: "2025-11-17T10:16:37.880",
+        VeilingNr: 201,
+        Startprijs: 4,
+        status: true,
+        Kwekernr: 1,
+        beginDatum: "2025-11-17T10:16:37.880Z", //In api, model en dto moet dit date worden als time niet nodig is.
+        ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+    }
     const [product, setProduct] = useState({
         Naam: "",
-        CategorieNr: 1,
-        VoorraadBloemen: 0,
         AantalFusten: 0,
+        VoorraadBloemen: 0,
+        CategorieNr: 1,
         Plaats: "",
-        Minimumprijs: 0,
-        beginDatum: "",
-        Startprijs: 2.5,
-        VeilingNr: 201,
-        Kwekernr: 42, // correct veldnaam
-        status: true,
-        ImagePath: "string"
+        Minimumprijs: 0
     });
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value, type } = e.target;
         setProduct(prev => ({
             ...prev,
@@ -25,26 +43,29 @@ export default function SellerScreenAdd() {
         }));
     };
 
-    const handleSubmit = async () => {
+    const GegevensVersturen = async () => {
+        const AlleGegevens  = {
+            ...Data,
+            ...product
+        }
+
         const values = Object.values(product).map(value =>
             typeof value === "string" ? value.trim() : value
         );
-
+       
         const isLeeg = values.some(v => v === "");
-
-        if (isLeeg) {
+        
+         if (isLeeg) {
             alert("Een of meer velden zijn leeg!");
             return;
         }
 
         try {
+            console.log(JSON.stringify(AlleGegevens, null, 2));
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...product,
-                    beginDatum: new Date(product.beginDatum) // verstuur als Date
-                }),
+                body: JSON.stringify(AlleGegevens),
             });
 
             if (response.ok) {
@@ -73,7 +94,7 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="grote-foto" />
+                                <img src="/../../webp/bloem.webp" alt="productfoto" className="grote-foto" />
                                 <div className="kleine-fotos">
                                     <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
                                     <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
@@ -88,32 +109,32 @@ export default function SellerScreenAdd() {
 
                                 <div className="ordenen">
                                     <label htmlFor="Naam" className="name">Product naam:</label>
-                                    <input type="text" id="Naam" value={product.Naam} onChange={handleChange} />
+                                    <input type="text" id="Naam"  value={product.Naam} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="CategorieNr" className="categorie">Categorie:</label>
-                                    <input type="number" id="CategorieNr" value={product.CategorieNr} onChange={handleChange} />
+                                    <input type="number" id="CategorieNr" value={product.CategorieNr} onChange={GebruikerInput} />
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="VoorraadBloemen" className="amount">Voorraad:</label>
-                                    <input type="number" id="VoorraadBloemen" value={product.VoorraadBloemen} onChange={handleChange} />
+                                    <input type="number" id="VoorraadBloemen"  value={product.VoorraadBloemen} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
-                                    <input type="number" id="AantalFusten" value={product.AantalFusten} onChange={handleChange} />
+                                    <input type="number" id="AantalFusten" value={product.AantalFusten} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="Plaats" className="plaats">Plaats:</label>
-                                    <input type="text" id="Plaats" value={product.Plaats} onChange={handleChange} />
+                                    <input type="text" id="Plaats" value={product.Plaats} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs:</label>
-                                    <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={handleChange} />
+                                    <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={GebruikerInput}/>
                                 </div>
                             </div>
                         </section>
@@ -122,10 +143,10 @@ export default function SellerScreenAdd() {
                             <div className="scherm3Container">
                                 <div className="scherm3Ordenen">
                                     <label htmlFor="beginDatum" className="sDate">Begin datum:</label>
-                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={handleChange} />
+                                    <input type="date" id="beginDatum"  />
                                 </div>
 
-                                <button className="placeProduct" onClick={handleSubmit}>
+                                <button className="placeProduct" onClick={GegevensVersturen}>
                                     Product Plaatsen
                                 </button>
                             </div>
