@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -14,8 +14,38 @@ public class VeilingproductController : ControllerBase
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
 
+    // Request DTO's (Create/Update)
+    public sealed record VeilingproductCreateDto(
+        [Required, StringLength(200)] string Naam,
+        DateTime? GeplaatstDatum,
+        [Range(1, int.MaxValue)] int AantalFusten,
+        [Range(0, int.MaxValue)] int VoorraadBloemen,
+        [Range(typeof(decimal), "0,01", "999999999")] decimal Startprijs,
+        [Range(1, int.MaxValue)] int CategorieNr,
+        [Range(1, int.MaxValue)] int VeilingNr,
+        [Required, StringLength(200)] string Plaats,
+        [Range(typeof(decimal), "0,01", "999999999")] decimal Minimumprijs,
+        [Range(1, int.MaxValue)] int Kwekernr,
+        DateTime beginDatum,
+        bool status,
+        [Required, StringLength(200)] string ImagePath
+    );
+
+    public sealed record VeilingproductUpdateDto(
+        [Required, StringLength(200)] string Naam,
+        DateTime? GeplaatstDatum,
+        [Range(1, int.MaxValue)] int Fust,
+        [Range(0, int.MaxValue)] int Voorraad,
+        [Range(typeof(decimal), "0,01", "999999999")] decimal Startprijs,
+        [Range(1, int.MaxValue)] int CategorieNr,
+        [Range(1, int.MaxValue)] int VeilingNr,
+        [Range(1, int.MaxValue)] int Kwekernr,
+        [Required, StringLength(200)] string ImagePath
+    );
+
     // Response DTO's
-    //Veilingproducten die worden opgehaald en getoond
+
+    // Lijstweergave
     public sealed record VpList(
         int VeilingProductNr,
         string Naam,
@@ -28,7 +58,7 @@ public class VeilingproductController : ControllerBase
         string ImagePath
     );
     
-    //Veilingbiedingen die worden opgehaald en getoond in de api
+    // Biedingen bij detailweergave
     public sealed record VBList(
         int BiedNr, 
         decimal BedragPerFust, 
@@ -130,16 +160,26 @@ public class VeilingproductController : ControllerBase
         if (!veilingBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
+        var kwekerBestaat = await _db.Gebruikers
+            .AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct);
+        if (!kwekerBestaat)
+            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
+
         var e = new Veilingproduct
         {
-            Naam                = dto.Naam.Trim(),
-            AantalFusten        = dto.AantalFusten,
-            VoorraadBloemen     = dto.VoorraadBloemen,
-            Startprijs          = dto.Startprijs,
-            CategorieNr         = dto.CategorieNr,
-            VeilingNr           = dto.VeilingNr,
-            GeplaatstDatum      = dto.GeplaatstDatum ?? DateTime.UtcNow,
-            ImagePath           = dto.ImagePath
+            Naam            = dto.Naam.Trim(),
+            GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
+            AantalFusten    = dto.AantalFusten,
+            VoorraadBloemen = dto.VoorraadBloemen,
+            Startprijs      = dto.Startprijs,
+            CategorieNr     = dto.CategorieNr,
+            VeilingNr       = dto.VeilingNr,
+            Plaats          = dto.Plaats,
+            Minimumprijs    = dto.Minimumprijs,
+            Kwekernr        = dto.Kwekernr,
+            beginDatum      = dto.beginDatum,
+            status          = dto.status,
+            ImagePath       = dto.ImagePath
         };
 
         _db.Veilingproducten.Add(e);
@@ -176,14 +216,20 @@ public class VeilingproductController : ControllerBase
         if (!veilingBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
-        e.Naam               = dto.Naam.Trim();
-        e.GeplaatstDatum     = dto.GeplaatstDatum ?? e.GeplaatstDatum;
-        e.AantalFusten       = dto.Fust;
-        e.VoorraadBloemen    = dto.Voorraad;
-        e.Startprijs         = dto.Startprijs;
-        e.CategorieNr        = dto.CategorieNr;
-        e.VeilingNr          = dto.VeilingNr;
-        e.ImagePath          = dto.ImagePath;
+        var kwekerBestaat = await _db.Gebruikers
+            .AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct);
+        if (!kwekerBestaat)
+            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
+
+        e.Naam            = dto.Naam.Trim();
+        e.GeplaatstDatum  = dto.GeplaatstDatum ?? e.GeplaatstDatum;
+        e.AantalFusten    = dto.Fust;
+        e.VoorraadBloemen = dto.Voorraad;
+        e.Startprijs      = dto.Startprijs;
+        e.CategorieNr     = dto.CategorieNr;
+        e.VeilingNr       = dto.VeilingNr;
+        e.Kwekernr        = dto.Kwekernr;
+        e.ImagePath       = dto.ImagePath;
 
         await _db.SaveChangesAsync(ct);
 
