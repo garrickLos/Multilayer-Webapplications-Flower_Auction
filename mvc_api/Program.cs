@@ -13,6 +13,7 @@
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 var app = builder.Build();
+
+var culture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+
 
 // ------------------------------
 // APP PIPELINE
