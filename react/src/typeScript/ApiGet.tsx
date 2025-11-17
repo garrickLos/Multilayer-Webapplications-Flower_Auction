@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 //aantal seconden dat het herhaald in miliseconden voor het ophalen van de data
-const intervalInMS = 180000;
+const intervalInMS = 150;
 
 export function GetDataApi(ApiUrl: string) {
     const [ApiElement, setApiElement] = useState<any[]>([]);
@@ -12,6 +12,8 @@ export function GetDataApi(ApiUrl: string) {
         async function fetchApiGet() {
             try {
                 const responseVeilingen = await fetch(ApiUrl);
+
+                console.log("fetched");
                 
                 const dataVeilingen = await responseVeilingen.json();
 

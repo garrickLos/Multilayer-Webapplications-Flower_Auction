@@ -22,7 +22,9 @@ export default function MainScreen() {
         if (loading) {
             return (
                 <div className="state-container">
-                    <span className='loader'>Loading</span>
+                    <span className='loader'></span>
+                    <br></br>
+                    <p>Loading data</p>
                 </div>
             );
         }
