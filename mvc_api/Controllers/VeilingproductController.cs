@@ -137,6 +137,7 @@ public class VeilingproductController : ControllerBase
             VoorraadBloemen     = dto.VoorraadBloemen,
             Startprijs          = dto.Startprijs,
             CategorieNr         = dto.CategorieNr,
+            Plaats              = dto.Plaats,
             VeilingNr           = dto.VeilingNr,
             GeplaatstDatum      = dto.GeplaatstDatum ?? DateTime.UtcNow,
             ImagePath           = dto.ImagePath

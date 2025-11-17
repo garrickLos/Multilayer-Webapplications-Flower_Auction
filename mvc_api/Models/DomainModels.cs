@@ -47,7 +47,7 @@ public class Bieding
     public int BiedNr { get; set; }
 
     [Precision(18, 2)]
-    [Range(0.01, 999999999)]
+    [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Startprijs moet >= 0.01 zijn.")] 
     public decimal BedragPerFust { get; set; }
 
     [Range(1, int.MaxValue)]
@@ -82,7 +82,7 @@ public class Veilingproduct
     public int VoorraadBloemen { get; set; }
 
     [Precision(18, 2)]
-    [Range(0.01, 999999999)]
+    [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Startprijs moet >= 0.01 zijn.")] 
     public decimal Startprijs { get; set; }
 
     [ForeignKey(nameof(Categorie))]
@@ -93,6 +93,7 @@ public class Veilingproduct
 
     public string Plaats { get; set; }
 
+    [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Startprijs moet >= 0.01 zijn.")] 
     public decimal Minimumprijs { get; set; }
 
     public int Kwekernr { get; set; } // foreign key
