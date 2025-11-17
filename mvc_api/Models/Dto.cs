@@ -18,15 +18,15 @@ public record VeilingproductCreateDto(
     DateTime? GeplaatstDatum,
     [Range(1, int.MaxValue)] int AantalFusten,
     [Range(0, int.MaxValue)] int VoorraadBloemen,
-    [Range(typeof(decimal), "0.01", "999999999")] decimal Startprijs,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
     [Range(1, int.MaxValue)] int VeilingNr,
-    string Plaats,
-    decimal Minimumprijs,
-    int Kwekernr,
+    [Required, StringLength(200)] string Plaats,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal Minimumprijs,
+    [Range(1, int.MaxValue)] int Kwekernr,
     DateTime beginDatum,
     bool status,
-    string ImagePath
+    [Required, StringLength(200)] string ImagePath
 );
 
 public record VeilingproductUpdateDto(
@@ -34,23 +34,23 @@ public record VeilingproductUpdateDto(
     DateTime? GeplaatstDatum,
     [Range(1, int.MaxValue)] int Fust,
     [Range(0, int.MaxValue)] int Voorraad,
-    [Range(typeof(decimal), "0.01", "999999999")] decimal Startprijs,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
     [Range(1, int.MaxValue)] int VeilingNr,
-    int Kwekernr,
-    string ImagePath
+    [Range(1, int.MaxValue)] int Kwekernr,
+    [Required, StringLength(200)] string ImagePath
 );
 
 // Bieding CRUD
 public record BiedingCreateDto(
-    [Range(typeof(decimal), "0.01", "999999999")] decimal BedragPerFust,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal BedragPerFust,
     [Range(1, int.MaxValue)] int AantalStuks,
     [Range(1, int.MaxValue)] int GebruikerNr,
     [Range(1, int.MaxValue)] int VeilingNr
 );
 
 public record BiedingUpdateDto(
-    [Range(typeof(decimal), "0.01", "999999999")] decimal BedragPerFust,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal BedragPerFust,
     [Range(1, int.MaxValue)] int AantalStuks
 );
 
@@ -78,13 +78,13 @@ public record GebruikerUpdateDto(
 public record VeilingCreateDto(
     [Required] DateTime Begintijd,
     [Required] DateTime Eindtijd,
-    [Range(typeof(decimal), "0.01", "999999999")] decimal Minimumprijs,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal Minimumprijs,
     [StringLength(20)] string? Status
 );
 
 public record VeilingUpdateDto(
     [Required] DateTime Begintijd,
     [Required] DateTime Eindtijd,
-    [Range(typeof(decimal), "0.01", "999999999")] decimal Minimumprijs,
+    [Range(typeof(decimal), "0,01", "999999999")] decimal Minimumprijs,
     [StringLength(20)] string? Status
 );

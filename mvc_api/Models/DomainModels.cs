@@ -14,18 +14,18 @@ public class Gebruiker
     public int GebruikerNr { get; set; }
 
     [Required, StringLength(200)]
-    public string? BedrijfsNaam { get; set; }
+    public string BedrijfsNaam { get; set; } = string.Empty;
 
     [Required, StringLength(200), EmailAddress]
-    public string? Email { get; set; }
+    public string Email { get; set; } = string.Empty;
 
     [Required, StringLength(200)]
-    public string? Wachtwoord { get; set; }
+    public string Wachtwoord { get; set; } = string.Empty;
 
     public DateTime? LaatstIngelogd { get; set; }
 
     [Required, StringLength(50)]
-    public string? Soort { get; set; }
+    public string Soort { get; set; } = string.Empty;
 
     [StringLength(20)]
     public string? Kvk { get; set; }
@@ -47,10 +47,11 @@ public class Bieding
     public int BiedNr { get; set; }
 
     [Precision(18, 2)]
-    [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Startprijs moet >= 0.01 zijn.")] 
+    [Range(typeof(decimal), "0,01", "999999999",
+        ErrorMessage = "Bedrag per fust moet minimaal 0,01 zijn.")]
     public decimal BedragPerFust { get; set; }
 
-    [Range(1, int.MaxValue)]
+    [Range(1, int.MaxValue, ErrorMessage = "Aantal stuks moet minimaal 1 zijn.")]
     public int AantalStuks { get; set; }
 
     [ForeignKey(nameof(Gebruiker))]
@@ -71,18 +72,19 @@ public class Veilingproduct
     public int VeilingProductNr { get; set; }
 
     [Required, StringLength(200)]
-    public string Naam { get; set; }
+    public string Naam { get; set; } = string.Empty;
 
     public DateTime GeplaatstDatum { get; set; } = DateTime.UtcNow;
 
-    [Range(1, int.MaxValue)]
+    [Range(1, int.MaxValue, ErrorMessage = "Aantal fusten moet minimaal 1 zijn.")]
     public int AantalFusten { get; set; }
 
     [Range(0, int.MaxValue)]
     public int VoorraadBloemen { get; set; }
 
     [Precision(18, 2)]
-    [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Startprijs moet >= 0.01 zijn.")] 
+    [Range(typeof(decimal), "0,01", "999999999",
+        ErrorMessage = "Startprijs moet minimaal 0,01 zijn.")]
     public decimal Startprijs { get; set; }
 
     [ForeignKey(nameof(Categorie))]
@@ -91,22 +93,25 @@ public class Veilingproduct
     [ForeignKey(nameof(Veiling))]
     public int VeilingNr { get; set; }
 
-    public string Plaats { get; set; }
+    [Required, StringLength(200)]
+    public string Plaats { get; set; } = string.Empty;
 
-    [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Startprijs moet >= 0.01 zijn.")] 
+    [Precision(18, 2)]
+    [Range(typeof(decimal), "0,01", "999999999",
+        ErrorMessage = "Minimumprijs moet minimaal 0,01 zijn.")]
     public decimal Minimumprijs { get; set; }
 
-    public int Kwekernr { get; set; } // foreign key
+    public int Kwekernr { get; set; }
 
     [ForeignKey(nameof(Kwekernr))]
-    public Gebruiker Gebruiker { get; set; }
+    public Gebruiker Gebruiker { get; set; } = null!;
 
     public DateTime beginDatum { get; set; }
 
     public bool status { get; set; }
 
-    [StringLength(200)]
-    public string ImagePath { get; set; }
+    [Required, StringLength(200)]
+    public string ImagePath { get; set; } = string.Empty;
 
     public virtual Categorie? Categorie { get; set; }
     public virtual Veiling? Veiling { get; set; }
@@ -133,7 +138,7 @@ public class Veiling
     public int VeilingNr { get; set; }
 
     [Required, StringLength(100)]
-    public string? VeilingNaam {get; set;}
+    public string VeilingNaam { get; set; } = string.Empty;
 
     public DateTime Begintijd { get; set; }
     public DateTime Eindtijd { get; set; }

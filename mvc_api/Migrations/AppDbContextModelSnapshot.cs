@@ -265,6 +265,7 @@ namespace mvc_api.Migrations
 
                     b.Property<string>("Plaats")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Startprijs")
