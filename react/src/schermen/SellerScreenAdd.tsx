@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 
 export default function SellerScreenAdd() {
+    //Lijst van mogelijke plaats opties
+    const MogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
+    
     //Vaste data (voor nu)
     const Data = {
         GeplaatstDatum: "2025-11-17T10:16:37.880",
@@ -9,7 +12,6 @@ export default function SellerScreenAdd() {
         Startprijs: 4,
         status: true,
         Kwekernr: 1,
-        beginDatum: "2025-11-17T10:16:37.880Z", 
         ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
     }
     //Data die veranderd door de input van de gebruiker
@@ -19,10 +21,11 @@ export default function SellerScreenAdd() {
         VoorraadBloemen: 0,
         CategorieNr: 1,
         Plaats: "",
-        Minimumprijs: 0
+        Minimumprijs: 0,
+        beginDatum: ""
     });
     //Kopieert de bestaande waardes en veranderd het
-    const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value, type } = e.target;
         setProduct(prev => ({
             ...prev,
@@ -52,6 +55,7 @@ export default function SellerScreenAdd() {
          
          //Verstuurt een POST verzoek naar de API
         try {
+            console.log(product.Plaats);
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -118,10 +122,15 @@ export default function SellerScreenAdd() {
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Plaats" className="plaats">Plaats:</label>
-                                    <input type="text" id="Plaats" value={product.Plaats} onChange={GebruikerInput}/>
+                                    <label htmlFor="plaats">Plaats:</label>
+                                    <select id="Plaats" value={product.Plaats} onChange={GebruikerInput}>
+                                        <option value="">selecteer een plaats</option> 
+                                        {MogelijkePlaatsen.map((plaats, index) => (
+                                            <option key={index} value={plaats}>{plaats}</option>
+                                        ))}
+                                    </select>
                                 </div>
-
+                                
                                 <div className="ordenen">
                                     <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs:</label>
                                     <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={GebruikerInput}/>
@@ -133,7 +142,7 @@ export default function SellerScreenAdd() {
                             <div className="scherm3Container">
                                 <div className="scherm3Ordenen">
                                     <label htmlFor="beginDatum" className="sDate">Begin datum:</label>
-                                    <input type="date" id="beginDatum"  />
+                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={GebruikerInput} />
                                 </div>
 
                                 <button className="placeProduct" onClick={GegevensVersturen}>

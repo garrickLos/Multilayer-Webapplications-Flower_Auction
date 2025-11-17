@@ -26,7 +26,7 @@ public class VeilingproductController : ControllerBase
         [Required, StringLength(200)] string Plaats,
         [Range(typeof(int), "1", "999999999")] int Minimumprijs,
         [Range(1, int.MaxValue)] int Kwekernr,
-        DateTime beginDatum,
+        DateOnly beginDatum,
         bool status,
         [Required, StringLength(200)] string ImagePath
     );
