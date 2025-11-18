@@ -6,13 +6,13 @@ import '../../css/cookieStylesheet.css';
 import '../../css/loadIcon.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { GetDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
-import { renderCards } from './RenderCards.tsx';
+import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
+import { renderCards, type VeilingItem } from './RenderCards.tsx';
 
 export default function MainScreen() {
-    const { ApiElement: veilingen, loading, error } = GetVeilingen('/api/Veiling');
+    const { data, loading, error } = GetVeilingen<VeilingItem[]>('/api/Veiling');
 
-    const safeVeilingen = veilingen || [];
+    const safeVeilingen = data || [];
 
     const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
     const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');

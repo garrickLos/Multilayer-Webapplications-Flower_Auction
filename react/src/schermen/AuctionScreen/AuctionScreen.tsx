@@ -14,7 +14,7 @@ export default function AuctionScreen() {
 
         <div className="Auction_Container">
             {/* <!-- Schermdeel 1 fotos van producten (nu staan ze vast later moeten ze toegevoegd worden) --> */}
-            <section className="schermDeel1">
+            <section className="Auction_Foto">
                 <div className="Auction_fotoContainer">
                     <img src="../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp" alt="Foto van een bloem" className="Auction_veilingFoto"></img>
                 </div>
@@ -40,9 +40,9 @@ export default function AuctionScreen() {
             </section>
 
             {/* <!-- Rechter deel van het scherm (miminumprijs en plaats bod) --> */}
-            <section className="schermDeel3">
-                <div className="scherm3Container">
-                    <div className="klok">
+            <section className="Auction_schermAankoop">
+                <div className="Auction_schermAankoop_container">
+                    <div className="Auction_klok">
                         00:00
                     </div>
                     <div className="huidigePrijs">

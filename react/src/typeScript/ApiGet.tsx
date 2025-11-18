@@ -1,41 +1,59 @@
 import { useState, useEffect } from 'react';
 
-//aantal seconden dat het herhaald in miliseconden voor het ophalen van de data
-const intervalInMS = 150000;
+const INTERVAL_MS = 150000; // 2.5 minuut
 
-export function GetDataApi(ApiUrl: string) {
-    const [ApiElement, setApiElement] = useState<any[]>([]);
+// <T> zorgt dat je straks kan aangeven welk type data je verwacht (bijv. <VeilingItem[]>), wordt aangegeven met een interface die de types die je moet zien gebruikt
+export function UseDataApi<T>(url: string) {
+    const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function fetchApiGet() {
+        // AbortController stopt de fetch als de component verdwijnt
+        const controller = new AbortController();
+        const { signal } = controller;
+
+        async function fetchData() {
+            setLoading(true);
+            setError(null);
+            
             try {
-                const responseVeilingen = await fetch(ApiUrl);
-                
-                const dataVeilingen = await responseVeilingen.json();
+                const response = await fetch(url, { signal });
 
-                setApiElement(dataVeilingen);
+                // Check of de server daadwerkelijk succesvol antwoordde
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+                }
 
+                const jsonData = await response.json();
+                setData(jsonData);
             } catch (err: any) {
-                console.error('Fout bij laden veilingen:', err);
-                setError(err.message);
+                // Negeer errors die komen door het annuleren van de fetch
+                if (err.name !== 'AbortError') {
+                    console.error('Fout bij ophalen data:', err);
+                    setError(err.message || 'Er is iets misgegaan');
+                }
             } finally {
-                setLoading(false);
+                // Alleen loading uitzetten als we niet geaborted zijn
+                if (!signal.aborted) {
+                    setLoading(false);
+                }
             }
         }
 
-        fetchApiGet();
+        // Directe eerste call
+        fetchData();
 
-        //zet de interval om elke 2 minuten te herhalen (ligt aan hoe de POLLING_INTERVAL is ingesteld qua miliseconden)
-        const intervalId = setInterval(fetchApiGet, intervalInMS);
+        // 3. Interval instellen
+        const intervalId = setInterval(fetchData, INTERVAL_MS);
 
-        //stopt de interval wanneer de component gebruikt wordt verwijderd (unmount)
+        // 4. Cleanup functie: stopt interval én lopende requests bij unmounten/URL wissel
         return () => {
             clearInterval(intervalId);
+            controller.abort();
         };
         
-    }, []);
+    }, [url]); // 5. url in dependency array!
 
-    return { ApiElement: ApiElement, loading, error };
+    return { data, loading, error };
 }

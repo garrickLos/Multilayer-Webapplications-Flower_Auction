@@ -1,94 +1,111 @@
-html, body {
-    height: 100%;
-    margin: 0;
-    position: relative;
-}
-
-.Auction_Body {
-    display: inline;
-
-    width: 50%;
-    min-height: 70vh;
-    height: 100%;
-}
-
-.Auction_Container {
-    display: inline-flex;
-
-    width: auto;
-}
-
-.Container section {
-    flex: 1;
+/* Algemene reset voor padding/margins om rekenfouten te voorkomen */
+* {
     box-sizing: border-box;
 }
 
-.scherm2Container, .scherm3Container {
-    outline: 1px solid saddlebrown;
-    outline-offset: 15px;
-    padding: 10px;
-    margin-top: 15px;
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: sans-serif;
 }
 
-.Auction_fotoContainer {
-    max-width: 300px;
-    margin: 0 auto;
+.Auction_Body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding-top: 20px;
+}
+
+.Auction_Container {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    justify-content: center;
+    align-items: flex-start;
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.Auction_Container section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.scherm2Container, .Auction_schermAankoop_container {
+    
+    width: 100%;
+    max-width: 100%;
+    
+    outline: 1px solid saddlebrown;
+    outline-offset: 5px;
+    
+    padding: 15px;
+    background: #fff;
+}
+
+.Auction_Foto {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .Auction_veilingFoto {
-    width: auto;
-    max-width: 40vh;
-
+    width: 100%;
+    max-width: 300px;
+    height: auto;
     border-radius: 5px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
 
-    object-fit: contain;
+.Auction_klok {
+    width: 200px;
+    height: 200px;
+
+    border-radius: 50%; 
+    border: 5px dotted saddlebrown;
+
+    margin: 0 auto; 
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    font-weight: bold;
+    font-size: 1.2rem;
+    background-color: #fff;
 }
 
 .ordenen {
     display: block;
-    border: 1px solid lightgray;
-    margin-bottom: 5px;
-}
-
-label, input {
-    display: block;
-}
-
-input {
-    border: none;
+    border-bottom: 1px solid lightgray;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
 }
 
 .kopje {
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: bold;
     color: saddlebrown;
-}
-
-.name, .category, .amount{
-    font-size: 8px;
-    color: black;
-}
-
-.scherm3Container input {
-    border: 1px solid lightgray;
-}
-
-.scherm3Ordenen {
-    display: block;
-}
-
-.scherm3Container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    margin-bottom: 10px;
+    text-transform: uppercase;
 }
 
 .koopNu {
     color: white;
-    background-color: blue;
+    background-color: saddlebrown;
+    border-radius: 5px;
     display: block;
-    margin: 10px auto 0 auto;
-    padding: 5px 50px;
+    margin: 15px auto 0 auto;
+    padding: 10px 30px;
+    border: none;
+    cursor: pointer;
 }
 
+.Auction_Body > section {
+    text-align: center;
+    margin-bottom: 10px;
+}
