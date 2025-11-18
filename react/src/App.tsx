@@ -3,8 +3,8 @@ import { Routes, Route } from 'react-router-dom'
 import {Veilingmeester} from './veilingmeester/Veilingmeester.tsx'
 import Hoofdscherm from './schermen/hoofdscherm/Hoofdscherm.tsx'
 import PrivacyScherm from './schermen/privacyBeleid/privacyBeleid.tsx'
-import Registration from './Registration'
-import Login from './Login.tsx'
+import Registration from './registratie_login/Registration.tsx'
+import Login from './registratie_login/Login.tsx'
 import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
