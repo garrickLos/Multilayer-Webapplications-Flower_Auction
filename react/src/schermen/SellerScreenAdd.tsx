@@ -2,96 +2,135 @@ import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 
 export default function SellerScreenAdd() {
+    //Lijst van mogelijke plaats opties
+    const MogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
+    
+    //Vaste data (voor nu)
+    const Data = {
+        GeplaatstDatum: "2025-11-17T10:16:37.880",
+        VeilingNr: 201,
+        Startprijs: 4,
+        status: true,
+        Kwekernr: 1,
+        ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+    }
+    
+    //Data die veranderd door de input van de gebruiker
     const [product, setProduct] = useState({
-        name: "",
-        category: "",
-        amount: "",
-        place: "",
-        minimumPrice: "",
-        startPrice: "",
-        startDate: "",
-        endDate: "",
+        Naam: "",
+        AantalFusten: 0,
+        VoorraadBloemen: 0,
+        CategorieNr: 1,
+        Plaats: "",
+        Minimumprijs: 0,
+        beginDatum: ""
     });
-
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const { id, value } = e.target;
-        setProduct((prev) => ({ ...prev, [id]: value }));
+    
+    //Kopieert de bestaande waardes en veranderd het
+    const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { id, value, type } = e.target;
+        setProduct(prev => ({
+            ...prev,
+            [id]: type === "number" ? Number(value) : value
+        }));
     };
 
-    const handleSubmit = () => {
-        const values = Object.values(product).map((v) => v.trim());
-        const isLeeg = values.some((v) => v === "");
+    const GegevensVersturen = async () => {
+        //Voegt de 2 soorten waardes samen die worden meegegeven met POST
+        const AlleGegevens  = {
+            ...Data,
+            ...product
+        }
 
-        if (isLeeg) {
+        //Verwijderd spaties
+        const values = Object.values(product).map(value =>
+            typeof value === "string" ? value.trim() : value
+        );
+       
+        //Controleert of een input leeg is
+        const isLeeg = values.some(v => v === "");
+        
+         if (isLeeg) {
             alert("Een of meer velden zijn leeg!");
-        } else {
-            alert("Product is succesvol opgeslagen!");
-            console.log("✅ Productgegevens:", product);
+            return;
+        }
+         
+         //Verstuurt een POST verzoek naar de API
+        try {
+            console.log(product.Plaats);
+            const response = await fetch("/api/Veilingproduct", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(AlleGegevens),
+            });
+
+            if (response.ok) {
+                alert("Product toegevoegd!");
+                const data = await response.json();
+                console.log(data);
+            } else {
+                alert("Fout bij toevoegen product!");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Netwerk fout");
         }
     };
 
     return (
         <main className="SellerScreenAdd">
             <div className="BODY">
-                <div className="banner-content">
-                    <div className="registratie-knoppen">
-                        <button type="button" className="knop-inloggen" aria-label="knop voor het inloggen">
-                            inloggen &#10095;
-                        </button>
-                        <button type="button" className="knop-registreren" aria-label="knop voor registreren van een account">
-                            registreren &#10095;
-                        </button>
-                    </div>
-                </div>
-
                 <div className="Mainschermen">
-                    <h2>Artificial Citroen boom in deco pot</h2>
+                    <h2>Kunstmatig Citroen boom in deco pot</h2>
                     <div className="ArtikelNummer">
-                        <h2>Actn:</h2>
+                        <h2>Artikel nummer:</h2>
                         <h3>A3-36638-132</h3>
                     </div>
 
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src="../../webp/download.webp" alt="productfoto" className="grote-foto" />
-                                <div className="kleine-fotos">
-                                    <img src="../../webp/download.webp" alt="productfoto" className="kleine-foto" />
-                                    <img src="../../webp/download.webp" alt="productfoto" className="kleine-foto" />
-                                    <img src="../../webp/download.webp" alt="productfoto" className="kleine-foto" />
-                                </div>
+                                <img src="../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp" alt="productfoto" className="grote-foto" />
                             </div>
                         </section>
 
                         <section className="schermDeel2">
                             <div className="scherm2Container">
-                                <div className="kopje">Product Details</div>
+                                <div className="kopje">Product informatie</div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="name" className="name">Product name:</label>
-                                    <input type="text" id="name" value={product.name} onChange={handleChange} />
+                                    <label htmlFor="Naam" className="name">Product naam:</label>
+                                    <input type="text" id="Naam"  value={product.Naam} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="category" className="category">Product category:</label>
-                                    <input type="text" id="category" value={product.category} onChange={handleChange} />
+                                    <label htmlFor="CategorieNr" className="categorie">Categorie:</label>
+                                    <input type="number" id="CategorieNr" value={product.CategorieNr} onChange={GebruikerInput} />
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="amount" className="amount">Amount:</label>
-                                    <input type="number" id="amount" value={product.amount} onChange={handleChange} />
+                                    <label htmlFor="VoorraadBloemen" className="amount">Voorraad:</label>
+                                    <input type="number" id="VoorraadBloemen"  value={product.VoorraadBloemen} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="place" className="place">Place:</label>
-                                    <input type="text" id="place" value={product.place} onChange={handleChange} />
+                                    <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
+                                    <input type="number" id="AantalFusten" value={product.AantalFusten} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="minimumPrice" className="minimumPrice">Minimum Price:</label>
-                                    <input type="number" id="minimumPrice" value={product.minimumPrice} onChange={handleChange} />
+                                    <label htmlFor="plaats">Plaats:</label>
+                                    <select id="Plaats" value={product.Plaats} onChange={GebruikerInput}>
+                                        <option value="">selecteer een plaats</option> 
+                                        {MogelijkePlaatsen.map((plaats, index) => (
+                                            <option key={index} value={plaats}>{plaats}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="ordenen">
+                                    <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs:</label>
+                                    <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={GebruikerInput}/>
                                 </div>
                             </div>
                         </section>
@@ -99,22 +138,12 @@ export default function SellerScreenAdd() {
                         <section className="schermDeel3">
                             <div className="scherm3Container">
                                 <div className="scherm3Ordenen">
-                                    <label htmlFor="startPrice" className="price">Start price:</label>
-                                    <input type="number" id="startPrice" value={product.startPrice} onChange={handleChange} />
+                                    <label htmlFor="beginDatum" className="sDate">Begin datum:</label>
+                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={GebruikerInput} />
                                 </div>
 
-                                <div className="scherm3Ordenen">
-                                    <label htmlFor="startDate" className="sDate">Start date:</label>
-                                    <input type="date" id="startDate" value={product.startDate} onChange={handleChange} />
-                                </div>
-
-                                <div className="scherm3Ordenen">
-                                    <label htmlFor="endDate" className="eDate">End date:</label>
-                                    <input type="date" id="endDate" value={product.endDate} onChange={handleChange} />
-                                </div>
-
-                                <button className="placeProduct" onClick={handleSubmit}>
-                                    Place Product
+                                <button className="placeProduct" onClick={GegevensVersturen}>
+                                    Product Plaatsen
                                 </button>
                             </div>
                         </section>

@@ -110,7 +110,7 @@ public class Veilingproduct
     [ForeignKey(nameof(Kwekernr))]
     public Gebruiker Gebruiker { get; set; } = null!;
 
-    public DateTime beginDatum { get; set; }
+    public DateOnly beginDatum { get; set; }
 
     public bool status { get; set; }
 

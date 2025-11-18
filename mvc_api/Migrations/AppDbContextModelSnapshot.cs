@@ -285,7 +285,7 @@ namespace mvc_api.Migrations
                     b.Property<int>("VoorraadBloemen")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("beginDatum")
+                    b.Property<DateOnly>("beginDatum")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("status")
@@ -316,7 +316,7 @@ namespace mvc_api.Migrations
                             Startprijs = 12m,
                             VeilingNr = 201,
                             VoorraadBloemen = 500,
-                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            beginDatum = new DateOnly(1, 1, 1),
                             status = false
                         },
                         new
@@ -333,7 +333,7 @@ namespace mvc_api.Migrations
                             Startprijs = 20m,
                             VeilingNr = 202,
                             VoorraadBloemen = 300,
-                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            beginDatum = new DateOnly(1, 1, 1),
                             status = false
                         });
                 });
