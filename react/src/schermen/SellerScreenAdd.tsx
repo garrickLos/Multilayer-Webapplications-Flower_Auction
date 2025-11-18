@@ -18,11 +18,11 @@ export default function SellerScreenAdd() {
     //Data die veranderd door de input van de gebruiker
     const [product, setProduct] = useState({
         Naam: "",
-        AantalFusten: 0,
-        VoorraadBloemen: 0,
+        AantalFusten: 1,
+        VoorraadBloemen: 1,
         CategorieNr: 1,
         Plaats: "",
-        Minimumprijs: 0,
+        Minimumprijs: 1,
         beginDatum: ""
     });
     
@@ -97,7 +97,6 @@ export default function SellerScreenAdd() {
                         <section className="schermDeel2">
                             <div className="scherm2Container">
                                 <div className="kopje">Product informatie</div>
-
                                 <div className="ordenen">
                                     <label htmlFor="Naam" className="name">Product naam:</label>
                                     <input type="text" id="Naam"  value={product.Naam} onChange={GebruikerInput}/>
@@ -105,7 +104,7 @@ export default function SellerScreenAdd() {
 
                                 <div className="ordenen">
                                     <label htmlFor="CategorieNr" className="categorie">Categorie:</label>
-                                    <input type="number" id="CategorieNr" value={product.CategorieNr} onChange={GebruikerInput} />
+                                    <input type="number" id="CategorieNr" min="1" value={product.CategorieNr} onChange={GebruikerInput} />
                                 </div>
 
                                 <div className="ordenen">
@@ -115,7 +114,7 @@ export default function SellerScreenAdd() {
 
                                 <div className="ordenen">
                                     <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
-                                    <input type="number" id="AantalFusten" value={product.AantalFusten} onChange={GebruikerInput}/>
+                                    <input type="number" id="AantalFusten" min="1" value={product.AantalFusten} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
