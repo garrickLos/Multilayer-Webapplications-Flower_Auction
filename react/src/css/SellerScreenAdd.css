@@ -66,18 +66,18 @@
     border: 1px solid saddlebrown;
 }
 
-.SellerScreenAdd .kleine-fotos {
+/*.SellerScreenAdd .kleine-fotos {
     display: flex;
     justify-content: flex-start;
     gap: 15px;
-}
+}*/
 
-.SellerScreenAdd .kleine-foto {
+/*.SellerScreenAdd .kleine-foto {
     width: calc((100% / 3) - 11px);
     height: auto;
     display: block;
     border: 1px solid saddlebrown;
-}
+}*/
 
 .SellerScreenAdd .ordenen {
     display: flex;

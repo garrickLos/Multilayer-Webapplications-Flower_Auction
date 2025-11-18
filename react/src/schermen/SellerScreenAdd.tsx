@@ -14,6 +14,7 @@ export default function SellerScreenAdd() {
         Kwekernr: 1,
         ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
     }
+    
     //Data die veranderd door de input van de gebruiker
     const [product, setProduct] = useState({
         Naam: "",
@@ -24,6 +25,7 @@ export default function SellerScreenAdd() {
         Minimumprijs: 0,
         beginDatum: ""
     });
+    
     //Kopieert de bestaande waardes en veranderd het
     const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value, type } = e.target;
@@ -88,12 +90,7 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src="/../../webp/bloem.webp" alt="productfoto" className="grote-foto" />
-                                <div className="kleine-fotos">
-                                    <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
-                                    <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
-                                    <img src="/src/assets/pictures/webp/bloem.webp" alt="productfoto" className="kleine-foto" />
-                                </div>
+                                <img src="../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp" alt="productfoto" className="grote-foto" />
                             </div>
                         </section>
 
