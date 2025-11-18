@@ -106,6 +106,7 @@ export interface VeilingProductRow {
 
 export interface HookResult<T> {
     readonly rows: readonly T[];
+    readonly setRows: (value: readonly T[] | ((prev: readonly T[]) => readonly T[])) => void;
     readonly loading: boolean;
     readonly error?: string | null;
     readonly page: number;
