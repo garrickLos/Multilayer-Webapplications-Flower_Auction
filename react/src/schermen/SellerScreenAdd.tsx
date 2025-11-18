@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
+import {GetDataApi as GetCategorie} from "../typeScript/ApiGetVeilingItems.tsx";
 
 export default function SellerScreenAdd() {
     //Lijst van mogelijke plaats opties
     const MogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     
+    //Categorien ophalen
+    const { ApiElement: Categorie} = GetCategorie('/api/Categorie');
+    console.log(Categorie);
+    
+    //const categorieNummer = Categorie.filter(v => v.CategorieNr);
+
     //Vaste data (voor nu)
     const Data = {
         GeplaatstDatum: "2025-11-17T10:16:37.880",
@@ -18,11 +25,11 @@ export default function SellerScreenAdd() {
     //Data die veranderd door de input van de gebruiker
     const [product, setProduct] = useState({
         Naam: "",
-        AantalFusten: 0,
-        VoorraadBloemen: 0,
-        CategorieNr: 1,
+        AantalFusten: 1,
+        VoorraadBloemen: 1,
+        CategorieNr: "",
         Plaats: "",
-        Minimumprijs: 0,
+        Minimumprijs: 1,
         beginDatum: ""
     });
     
@@ -58,6 +65,7 @@ export default function SellerScreenAdd() {
          //Verstuurt een POST verzoek naar de API
         try {
             console.log(product.Plaats);
+            console.log(product.CategorieNr);
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -97,17 +105,21 @@ export default function SellerScreenAdd() {
                         <section className="schermDeel2">
                             <div className="scherm2Container">
                                 <div className="kopje">Product informatie</div>
-
                                 <div className="ordenen">
                                     <label htmlFor="Naam" className="name">Product naam:</label>
                                     <input type="text" id="Naam"  value={product.Naam} onChange={GebruikerInput}/>
                                 </div>
-
+                                
                                 <div className="ordenen">
-                                    <label htmlFor="CategorieNr" className="categorie">Categorie:</label>
-                                    <input type="number" id="CategorieNr" value={product.CategorieNr} onChange={GebruikerInput} />
+                                    <label htmlFor="CategorieNr">Categorie:</label>
+                                    <select id="CategorieNr" value={product.CategorieNr} onChange={GebruikerInput}>
+                                        <option value="">selecteer een categorie</option>
+                                        {Categorie.map(c => (
+                                            <option key={c.CategorieNr} value={c.CategorieNr}>{c.naam}</option>
+                                        ))}
+                                    </select>
                                 </div>
-
+                                
                                 <div className="ordenen">
                                     <label htmlFor="VoorraadBloemen" className="amount">Voorraad:</label>
                                     <input type="number" id="VoorraadBloemen"  value={product.VoorraadBloemen} onChange={GebruikerInput}/>
@@ -115,7 +127,7 @@ export default function SellerScreenAdd() {
 
                                 <div className="ordenen">
                                     <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
-                                    <input type="number" id="AantalFusten" value={product.AantalFusten} onChange={GebruikerInput}/>
+                                    <input type="number" id="AantalFusten" min="1" value={product.AantalFusten} onChange={GebruikerInput}/>
                                 </div>
 
                                 <div className="ordenen">
