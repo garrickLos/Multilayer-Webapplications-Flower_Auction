@@ -1,20 +1,19 @@
-import { useEffect, useId, useRef, type JSX, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, type JSX, type ReactNode } from "react";
 import { cx } from "./utils";
 
+// Base modal used across all Veilingmeester flows.
 type ModalProps = {
     readonly title: ReactNode;
+    readonly subtitle?: ReactNode;
     readonly children: ReactNode;
     readonly onClose: () => void;
     readonly footer?: ReactNode;
-    readonly size?: "sm" | "lg" | "xl";
-    readonly searchLabel?: string;
-    readonly searchPlaceholder?: string;
-    readonly searchValue?: string;
-    readonly onSearchChange?: (value: string) => void;
-    readonly filters?: ReactNode;
+    readonly size?: "sm" | "md" | "lg" | "xl";
+    readonly allowBackdropClose?: boolean;
+    readonly controls?: ReactNode;
 };
 
-const focusableSelectors = [
+const focusSelectors = [
     "a[href]",
     "button:not([disabled])",
     "textarea:not([disabled])",
@@ -25,26 +24,23 @@ const focusableSelectors = [
 
 const dialogSizes: Record<NonNullable<ModalProps["size"]>, string> = {
     sm: "modal-sm",
+    md: "",
     lg: "modal-lg",
     xl: "modal-xl",
 };
 
-const shouldRenderFilters = (filters?: ReactNode, onSearchChange?: ModalProps["onSearchChange"]): boolean =>
-    Boolean(filters || onSearchChange);
-
 export function Modal({
     title,
+    subtitle,
     children,
     onClose,
     footer,
     size = "lg",
-    searchLabel = "Search",
-    searchPlaceholder = "Zoeken",
-    searchValue,
-    onSearchChange,
-    filters,
+    allowBackdropClose = true,
+    controls,
 }: ModalProps): JSX.Element {
     const dialogRef = useRef<HTMLDivElement | null>(null);
+    const focusables = useRef<HTMLElement[]>([]);
     const previousFocus = useRef<HTMLElement | null>(null);
     const headingId = useId();
 
@@ -52,10 +48,10 @@ export function Modal({
         if (typeof document === "undefined") return;
         previousFocus.current = document.activeElement as HTMLElement | null;
         const node = dialogRef.current;
-        const focusables = node
-            ? Array.from(node.querySelectorAll<HTMLElement>(focusableSelectors)).filter((el) => el.offsetParent !== null)
+        focusables.current = node
+            ? Array.from(node.querySelectorAll<HTMLElement>(focusSelectors)).filter((element) => element.offsetParent !== null)
             : [];
-        (focusables[0] ?? node)?.focus({ preventScroll: true });
+        (focusables.current[0] ?? node)?.focus({ preventScroll: true });
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
@@ -63,8 +59,8 @@ export function Modal({
                 onClose();
                 return;
             }
-            if (event.key !== "Tab" || !focusables.length) return;
-            const [first, last] = [focusables[0], focusables[focusables.length - 1]];
+            if (event.key !== "Tab" || focusables.current.length === 0) return;
+            const [first, last] = [focusables.current[0], focusables.current[focusables.current.length - 1]];
             if (!event.shiftKey && document.activeElement === last) {
                 event.preventDefault();
                 first.focus();
@@ -82,9 +78,28 @@ export function Modal({
         };
     }, [onClose]);
 
-    const handleBackdropClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (!allowBackdropClose) return;
         if (event.target === event.currentTarget) onClose();
     };
+
+    const renderHeader = useMemo(
+        () => (
+            <div className="modal-header bg-white position-sticky top-0 z-3 border-success-subtle flex-column align-items-start gap-1">
+                <div className="d-flex w-100 align-items-start">
+                    <div className="flex-grow-1">
+                        <p className="text-uppercase small text-success-emphasis mb-1">{subtitle}</p>
+                        <h2 className="modal-title h5 mb-0" id={headingId}>
+                            {title}
+                        </h2>
+                    </div>
+                    <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
+                </div>
+                {controls && <div className="w-100 pt-2">{controls}</div>}
+            </div>
+        ),
+        [controls, headingId, onClose, subtitle, title],
+    );
 
     return (
         <>
@@ -97,42 +112,10 @@ export function Modal({
                 onMouseDown={handleBackdropClick}
             >
                 <div className={cx("modal-dialog modal-dialog-scrollable", dialogSizes[size])}>
-                    <div
-                        ref={dialogRef}
-                        className="modal-content border border-success-subtle rounded-4 shadow-lg"
-                        tabIndex={-1}
-                    >
-                        <div className="modal-header bg-white position-sticky top-0 z-3 border-success-subtle">
-                            <h2 className="modal-title h5 mb-0" id={headingId}>
-                                {title}
-                            </h2>
-                            <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
-                        </div>
+                    <div ref={dialogRef} className="modal-content border border-success-subtle rounded-4 shadow-lg" tabIndex={-1}>
+                        {renderHeader}
 
                         <div className="modal-body py-3">
-                            {shouldRenderFilters(filters, onSearchChange) && (
-                                <div className="d-flex flex-column gap-3 mb-3">
-                                    {onSearchChange && (
-                                        <div>
-                                            <label
-                                                htmlFor={`${headingId}-search`}
-                                                className="form-label small text-uppercase text-success-emphasis mb-1"
-                                            >
-                                                {searchLabel}
-                                            </label>
-                                            <input
-                                                id={`${headingId}-search`}
-                                                type="search"
-                                                className="form-control form-control-sm border-success-subtle"
-                                                placeholder={searchPlaceholder}
-                                                value={searchValue ?? ""}
-                                                onChange={(event) => onSearchChange(event.target.value)}
-                                            />
-                                        </div>
-                                    )}
-                                    {filters && <div className="d-flex flex-wrap gap-2">{filters}</div>}
-                                </div>
-                            )}
                             <div className="d-flex flex-column gap-3">{children}</div>
                         </div>
 

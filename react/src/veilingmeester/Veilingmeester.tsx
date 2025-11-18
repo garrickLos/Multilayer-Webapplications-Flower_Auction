@@ -1,52 +1,138 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { DashboardMetrics } from "./features/dashboard";
-import { InlineAlert, LoadingPlaceholder, ErrorBoundary } from "./components/ui.tsx";
+import { AuctionsTab, AuctionDetailsModal, LinkProductsModal, NewAuctionModal } from "./features/auctions";
+import { ProductsTab } from "./features/products";
+import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
-import type { UserRow, VeilingRow } from "./types";
+import type { Auction, Bid, ModalState, Product, User } from "./types";
 import { cx } from "./utils";
 
-const UsersTab = lazy(async () => import("./features/users").then((m) => ({ default: m.UsersTab })));
-const AuctionsTab = lazy(async () => import("./features/auctions").then((m) => ({ default: m.AuctionsTab })));
-const BidsModal = lazy(async () => import("./features/users").then((m) => ({ default: m.BidsModal })));
-const ProductsModal = lazy(async () => import("./features/products").then((m) => ({ default: m.ProductsModal })));
-const AuctionModal = lazy(async () => import("./features/auctions").then((m) => ({ default: m.AuctionModal })));
+// Root container that holds all state and routes modals.
+const seedUsers: User[] = [
+    { id: 1, name: "Anke van Dijk", email: "anke@example.nl", role: "auctioneer", status: "active" },
+    { id: 2, name: "Bram de Boer", email: "bram@example.nl", role: "grower", status: "active" },
+    { id: 3, name: "Chantal Jansen", email: "chantal@example.nl", role: "buyer", status: "inactive" },
+];
 
-type TabKey = "users" | "auctions";
+const seedAuctions: Auction[] = [
+    {
+        id: 201,
+        title: "Tulpen ochtendveiling",
+        status: "active",
+        minPrice: 1.25,
+        maxPrice: 2.5,
+        startDate: "2024-05-10T08:00",
+        endDate: "2024-05-10T10:00",
+        linkedProductIds: [501, 502],
+    },
+    {
+        id: 202,
+        title: "Rozen middagveiling",
+        status: "inactive",
+        minPrice: 0.9,
+        maxPrice: 1.8,
+        startDate: "2024-05-12T13:00",
+        endDate: "2024-05-12T16:00",
+        linkedProductIds: [],
+    },
+];
 
-const readInitialTab = (): TabKey => {
-    if (typeof window === "undefined") return "users";
-    const value = new URLSearchParams(window.location.search).get("vm_tab");
-    return value === "veilingen" ? "auctions" : "users";
-};
+const seedProducts: Product[] = [
+    { id: 501, name: "Rode roos", status: "active", category: "Snijbloemen", minPrice: 1.1, maxPrice: 1.9, growerId: 2, linkedAuctionId: 201 },
+    { id: 502, name: "Gele tulp", status: "active", category: "Snijbloemen", minPrice: 0.8, maxPrice: 1.2, growerId: 2, linkedAuctionId: 201 },
+    { id: 503, name: "Orchidee mix", status: "inactive", category: "Planten", minPrice: 2.5, maxPrice: 3.4, growerId: 2 },
+    { id: 504, name: "Lavendel", status: "sold", category: "Planten", minPrice: 1.0, maxPrice: 1.6, growerId: 2 },
+];
 
-const updateTabUrl = (tab: TabKey) => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("vm_tab", tab === "auctions" ? "veilingen" : "gebruikers");
-    window.history.replaceState({}, "", url.toString());
-};
+const seedBids: Bid[] = [
+    { id: 1, userId: 3, auctionId: 201, amount: 1.6, quantity: 50, date: "2024-05-10T08:30", status: "active" },
+    { id: 2, userId: 3, auctionId: 201, amount: 1.7, quantity: 30, date: "2024-05-10T08:45", status: "sold" },
+];
+
+type TabKey = "users" | "auctions" | "products";
 
 export function Veilingmeester() {
     const offline = useOffline();
-    const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab());
-    const [selectedBidUser, setSelectedBidUser] = useState<UserRow | null>(null);
-    const [selectedGrower, setSelectedGrower] = useState<UserRow | null>(null);
-    const [selectedAuction, setSelectedAuction] = useState<VeilingRow | null>(null);
+    const [activeTab, setActiveTab] = useState<TabKey>("auctions");
+    const [users, setUsers] = useState<User[]>(seedUsers);
+    const [auctions, setAuctions] = useState<Auction[]>(seedAuctions);
+    const [products, setProducts] = useState<Product[]>(seedProducts);
+    const [bids] = useState<Bid[]>(seedBids);
+    const [activeModal, setActiveModal] = useState<ModalState | null>(null);
 
-    useEffect(() => updateTabUrl(activeTab), [activeTab]);
+    const activeAuction = useMemo(
+        () => (activeModal && "auctionId" in activeModal ? auctions.find((entry) => entry.id === activeModal.auctionId) ?? null : null),
+        [activeModal, auctions],
+    );
+    const activeUser = useMemo(
+        () => (activeModal && "userId" in activeModal ? users.find((entry) => entry.id === activeModal.userId) ?? null : null),
+        [activeModal, users],
+    );
+
+    const handleCreateAuction = (draft: { title: string; minPrice: number; maxPrice: number; startDate: string; endDate: string; status: Auction["status"] }) => {
+        const nextId = auctions.reduce((max, auction) => Math.max(max, auction.id), 0) + 1;
+        const newAuction: Auction = {
+            id: nextId,
+            title: draft.title || `Veiling ${nextId}`,
+            minPrice: draft.minPrice,
+            maxPrice: draft.maxPrice || draft.minPrice,
+            startDate: draft.startDate,
+            endDate: draft.endDate,
+            status: draft.status,
+            linkedProductIds: [],
+        };
+        setAuctions((prev) => [newAuction, ...prev]);
+        setActiveModal(null);
+    };
+
+    const handleLinkProducts = (auctionId: number, productIds: readonly number[]) => {
+        setAuctions((prev) => prev.map((auction) => (auction.id === auctionId ? { ...auction, linkedProductIds: productIds } : auction)));
+        setProducts((prev) =>
+            prev.map((product) =>
+                productIds.includes(product.id)
+                    ? { ...product, linkedAuctionId: auctionId }
+                    : product.linkedAuctionId === auctionId
+                    ? { ...product, linkedAuctionId: undefined }
+                    : product,
+            ),
+        );
+    };
+
+    const handleUpdateUser = (updated: User) => {
+        setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)));
+        setActiveModal(null);
+    };
 
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
+        {
+            key: "auctions",
+            label: "Veilingen",
+            render: () => (
+                <AuctionsTab
+                    auctions={auctions}
+                    onCreateRequested={() => setActiveModal({ key: "newAuction" })}
+                    onOpenDetails={(auctionId) => setActiveModal({ key: "auctionDetails", auctionId })}
+                    onOpenLinkProducts={(auctionId) => setActiveModal({ key: "linkProducts", auctionId })}
+                />
+            ),
+        },
+        {
+            key: "products",
+            label: "Producten",
+            render: () => <ProductsTab products={products} />,
+        },
         {
             key: "users",
             label: "Gebruikers",
             render: () => (
-                <UsersTab onSelectBidUser={setSelectedBidUser} onSelectGrower={setSelectedGrower} />
+                <UsersTab
+                    users={users}
+                    bids={bids}
+                    onEditUser={(user) => setActiveModal({ key: "editUser", userId: user.id })}
+                    onViewBids={(userId) => setActiveModal({ key: "userBids", userId })}
+                    onViewProducts={(userId) => setActiveModal({ key: "userProducts", userId })}
+                />
             ),
-        },
-        {
-            key: "auctions",
-            label: "Veilingen",
-            render: () => <AuctionsTab onSelectAuction={setSelectedAuction} />,
         },
     ];
 
@@ -55,27 +141,16 @@ export function Veilingmeester() {
             <div className="container py-4 py-lg-5 d-flex flex-column gap-4">
                 <nav className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4" aria-label="Hoofdnavigatie veilingmeester">
                     <span className="navbar-brand fw-semibold text-success">Veilingmeester</span>
-                    <div className="ms-auto text-muted small">Realtime beheer voor veilingen en gebruikers</div>
+                    <div className="ms-auto text-muted small">Simpel beheer voor veilingen, producten en gebruikers</div>
                 </nav>
 
-                <header className="bg-white border border-success-subtle rounded-4 shadow-sm p-4">
-                    <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-                        <div>
-                            <p className="text-uppercase text-success small fw-semibold mb-1">Dashboard</p>
-                            <h1 className="h3 fw-bold mb-2 text-success-emphasis">Overzicht veilingactiviteiten</h1>
-                            <p className="text-muted mb-0">Volg biedingen, producten en live klokken met één centraal beheerscherm.</p>
-                        </div>
-                        <span className="badge text-success-emphasis bg-success-subtle rounded-pill px-3 py-2 shadow-sm">
-                            Vertrouwde gegevens in realtime
-                        </span>
-                    </div>
-                </header>
-
                 {offline && (
-                    <InlineAlert variant="warning">Je bent offline. Gegevens verversen zodra de verbinding terug is.</InlineAlert>
+                    <div className="alert alert-warning border-0 rounded-4 shadow-sm mb-0" role="status">
+                        Je bent offline. Gegevens verversen zodra de verbinding terug is.
+                    </div>
                 )}
 
-                <DashboardMetrics />
+                <DashboardMetrics users={users} auctions={auctions} products={products} bids={bids} />
 
                 <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
                     <div className="card-body p-4 d-flex flex-column gap-3">
@@ -112,19 +187,43 @@ export function Veilingmeester() {
                         hidden={activeTab !== tab.key}
                         className="d-flex flex-column gap-3"
                     >
-                        {activeTab === tab.key && (
-                            <ErrorBoundary resetKey={tab.key}>
-                                <Suspense fallback={<LoadingPlaceholder />}>{tab.render()}</Suspense>
-                            </ErrorBoundary>
-                        )}
+                        {activeTab === tab.key && tab.render()}
                     </section>
                 ))}
 
-                <Suspense fallback={null}>
-                    {selectedBidUser && <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />}
-                    {selectedGrower && <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />}
-                    {selectedAuction && <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />}
-                </Suspense>
+                {activeModal?.key === "newAuction" && <NewAuctionModal onClose={() => setActiveModal(null)} onSave={handleCreateAuction} />}
+                {activeModal?.key === "auctionDetails" && activeAuction && (
+                    <AuctionDetailsModal auction={activeAuction} onClose={() => setActiveModal(null)} />
+                )}
+                {activeModal?.key === "linkProducts" && activeAuction && (
+                    <LinkProductsModal
+                        auction={activeAuction}
+                        products={products}
+                        onClose={() => setActiveModal(null)}
+                        onSave={(productIds) => handleLinkProducts(activeAuction.id, productIds)}
+                    />
+                )}
+                {activeModal?.key === "editUser" && activeUser && (
+                    <EditUserModal
+                        user={activeUser}
+                        onClose={() => setActiveModal(null)}
+                        onSave={(draft) => handleUpdateUser({ ...activeUser, ...draft })}
+                    />
+                )}
+                {activeModal?.key === "userBids" && activeUser && (
+                    <UserBidsModal
+                        user={activeUser}
+                        bids={bids.filter((bid) => bid.userId === activeUser.id)}
+                        onClose={() => setActiveModal(null)}
+                    />
+                )}
+                {activeModal?.key === "userProducts" && activeUser && (
+                    <UserProductsModal
+                        user={activeUser}
+                        products={products.filter((product) => product.growerId === activeUser.id)}
+                        onClose={() => setActiveModal(null)}
+                    />
+                )}
             </div>
         </div>
     );

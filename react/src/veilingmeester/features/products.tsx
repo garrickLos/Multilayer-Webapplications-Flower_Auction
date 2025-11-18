@@ -1,234 +1,122 @@
 import { useMemo, useState, type JSX } from "react";
-import {
-    DataTable,
-    EmptyState,
-    FilterChip,
-    InlineAlert,
-    LoadingPlaceholder,
-    Pager,
-    SearchField,
-    SmallSelectField,
-    StatusBadge,
-} from "../components/ui.tsx";
-import { appConfig } from "../config";
-import { Modal } from "../Modal";
-import { useProductCatalog, useProducts } from "../hooks";
-import type { UserRow, VeilingProductRow } from "../types";
+import { Table, type TableColumn } from "../components/Table";
+import { Chip, EmptyState, Input, Select, StatusBadge } from "../components/ui";
+import type { Product, Status } from "../types";
+import { filterRows } from "../types";
 import { formatCurrency } from "../utils";
 
-const statusOptions = [
-    { value: "alle", label: "Alle" },
-    { value: "actief", label: "Actief" },
-    { value: "inactief", label: "Inactief" },
+// Product listing with simple filters.
+const statusOptions: readonly { value: Status | "all"; label: string }[] = [
+    { value: "all", label: "Alle" },
+    { value: "active", label: "Actief" },
+    { value: "inactive", label: "Inactief" },
+    { value: "sold", label: "Verkocht" },
+    { value: "deleted", label: "Geannuleerd" },
 ];
 
-const productColumns = [
-    { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
-    {
-        key: "naam",
-        header: "Naam",
-        sortable: true,
-        render: (row: VeilingProductRow) => (
-            <div className="d-flex align-items-center gap-2">
-                {row.image && (
-                    <img
-                        src={row.image}
-                        alt=""
-                        width={appConfig.ui.productThumbnailSize}
-                        height={appConfig.ui.productThumbnailSize}
-                        className="rounded"
-                    />
-                )}
-                <div className="d-flex flex-column">
-                    <span className="fw-semibold text-break">{row.naam}</span>
-                    <span className="text-muted small">#{row.id}</span>
-                </div>
-            </div>
-        ),
-        getValue: (row: VeilingProductRow) => row.naam,
-    },
-    {
-        key: "minPrice",
-        header: "Prijs",
-        sortable: true,
-        render: (row: VeilingProductRow) => (
-            <div className="d-flex flex-column">
-                <span>{formatCurrency(row.minPrice)}</span>
-                <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
-            </div>
-        ),
-        getValue: (row: VeilingProductRow) => row.minPrice,
-    },
-    {
-        key: "voorraad",
-        header: "Voorraad",
-        sortable: true,
-        render: (row: VeilingProductRow) => (row.voorraad != null ? row.voorraad : "—"),
-        getValue: (row: VeilingProductRow) => row.voorraad ?? 0,
-    },
-    {
-        key: "status",
-        header: "Status",
-        sortable: true,
-        render: (row: VeilingProductRow) => <StatusBadge status={row.status} />,
-        getValue: (row: VeilingProductRow) => row.status,
-    },
-];
+const linkedOptions = [
+    { value: "all", label: "Alle" },
+    { value: "linked", label: "Gekoppeld" },
+    { value: "unlinked", label: "Niet gekoppeld" },
+] as const;
 
-export function ProductsModal({ user, onClose }: { readonly user: UserRow; readonly onClose: () => void }): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults } = useProducts(user.id);
-    const perPage = appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) }));
+const perPageOptions = [10, 25, 50];
+
+type ProductFilters = { status: Status | "all"; category: string; linkState: (typeof linkedOptions)[number]["value"] };
+
+type ProductsTabProps = { readonly products: readonly Product[] };
+
+export function ProductsTab({ products }: ProductsTabProps): JSX.Element {
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState<(typeof statusOptions)[number]["value"]>("alle");
+    const [filters, setFilters] = useState<ProductFilters>({ status: "all", category: "", linkState: "all" });
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(perPageOptions[0]);
 
-    const filteredRows = useMemo(() => {
-        return rows.filter((row) => {
-            const matchesStatus = status === "alle" || row.status === (status === "actief" ? "active" : "inactive");
-            const matchesSearch =
-                !search || row.naam.toLowerCase().includes(search.toLowerCase()) || String(row.id).includes(search.trim());
-            return matchesStatus && matchesSearch;
-        });
-    }, [rows, search, status]);
-
-    return (
-        <Modal
-            title={
-                <div>
-                    <div className="fw-semibold">Producten kweker {user.naam}</div>
-                    <div className="text-muted small">#{user.id}</div>
-                </div>
-            }
-            onClose={onClose}
-            size="xl"
-            searchLabel="Zoeken"
-            searchPlaceholder="Productnaam of nummer"
-            searchValue={search}
-            onSearchChange={setSearch}
-            filters={
-                <SmallSelectField
-                    label="Status"
-                    value={status}
-                    onChange={(value) => setStatus(value as (typeof statusOptions)[number]["value"])}
-                    options={statusOptions}
-                />
-            }
-            footer={
-                <button type="button" className="btn btn-success" onClick={onClose}>
-                    Sluiten
-                </button>
-            }
-        >
-            <div className="col-6 col-lg-3">
-                <SmallSelectField<number>
-                    label="Per pagina"
-                    value={pageSize}
-                    onChange={setPageSize}
-                    options={perPage}
-                    parse={(raw) => Number(raw)}
-                />
-            </div>
-
-            {error && <InlineAlert>{error}</InlineAlert>}
-
-            {loading && !rows.length ? (
-                <LoadingPlaceholder />
-            ) : filteredRows.length === 0 ? (
-                <EmptyState message="Geen producten gevonden." />
-            ) : (
-                <DataTable
-                    columns={productColumns}
-                    rows={filteredRows}
-                    totalResults={totalResults}
-                    empty={<EmptyState message="Geen producten gevonden." />}
-                    getRowKey={(row) => String(row.id)}
-                />
-            )}
-
-            <Pager
-                page={page}
-                pageSize={pageSize}
-                hasNext={hasNext}
-                onPrevious={() => setPage(Math.max(1, page - 1))}
-                onNext={() => setPage(page + 1)}
-                totalResults={totalResults}
-            />
-        </Modal>
+    const filteredRows = useMemo(
+        () =>
+            filterRows(products, search, filters, (row, term, currentFilters) => {
+                const matchesSearch = !term || row.name.toLowerCase().includes(term) || String(row.id).includes(term);
+                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                const matchesCategory = !currentFilters.category || row.category.toLowerCase().includes(currentFilters.category.toLowerCase());
+                const matchesLink =
+                    currentFilters.linkState === "all" ||
+                    (currentFilters.linkState === "linked" && Boolean(row.linkedAuctionId)) ||
+                    (currentFilters.linkState === "unlinked" && !row.linkedAuctionId);
+                return matchesSearch && matchesStatus && matchesCategory && matchesLink;
+            }),
+        [filters, products, search],
     );
-}
 
-export function ProductsTab(): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch } =
-        useProductCatalog();
-    const perPage = appConfig.pagination.table.map((size) => ({ value: size, label: String(size) }));
-    const [status, setStatus] = useState<(typeof statusOptions)[number]["value"]>("alle");
+    const columns: TableColumn<Product>[] = [
+        { key: "id", header: "#", sortable: true, render: (row) => <span className="fw-semibold">#{row.id}</span>, getValue: (row) => row.id },
+        { key: "name", header: "Naam", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
+        { key: "category", header: "Categorie", sortable: true, render: (row) => row.category, getValue: (row) => row.category },
+        {
+            key: "price",
+            header: "Prijs",
+            sortable: true,
+            render: (row) => (
+                <div className="d-flex flex-column">
+                    <span>{formatCurrency(row.minPrice)}</span>
+                    <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
+                </div>
+            ),
+            getValue: (row) => row.minPrice,
+        },
+        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+        {
+            key: "linked",
+            header: "Gekoppeld",
+            render: (row) => (row.linkedAuctionId ? `Veiling #${row.linkedAuctionId}` : "—"),
+            getValue: (row) => row.linkedAuctionId ?? 0,
+        },
+    ];
 
-    const filteredRows = useMemo(() => {
-        return rows.filter((row) => {
-            const matchesStatus = status === "alle" || row.status === (status === "actief" ? "active" : "inactive");
-            const matchesSearch =
-                !search || row.naam.toLowerCase().includes(search.toLowerCase()) || String(row.id).includes(search.trim());
-            return matchesStatus && matchesSearch;
-        });
-    }, [rows, search, status]);
+    const activeFilters = [
+        filters.status !== "all" && `Status: ${filters.status}`,
+        filters.category && `Categorie: ${filters.category}`,
+        filters.linkState !== "all" && `Koppeling: ${filters.linkState}`,
+        search && `Zoek: ${search}`,
+    ].filter(Boolean) as string[];
 
     return (
-        <section className="d-flex flex-column gap-3" aria-label="Productcatalogus">
-            <div className="card border-0 shadow-sm rounded-4">
-                <div className="card-body">
-                    <div className="row g-3 align-items-end">
-                        <div className="col-12 col-md-6 col-lg-4">
-                            <SearchField label="Zoeken" value={search} onChange={setSearch} placeholder="Productnaam" />
-                        </div>
-                        <div className="col-6 col-md-3 col-lg-2">
-                            <SmallSelectField
-                                label="Status"
-                                value={status}
-                                onChange={(value) => setStatus(value as (typeof statusOptions)[number]["value"])}
-                                options={statusOptions}
-                            />
-                        </div>
-                        <div className="col-6 col-md-3 col-lg-2">
-                            <SmallSelectField<number>
-                                label="Per pagina"
-                                value={pageSize}
-                                onChange={setPageSize}
-                                options={perPage}
-                                parse={(raw) => Number(raw)}
-                            />
-                        </div>
+        <section className="d-flex flex-column gap-3" aria-label="Producten">
+            <div className="d-flex flex-wrap align-items-center gap-2">
+                {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
+                {activeFilters.map((label) => (
+                    <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", category: "", linkState: "all" })} />
+                ))}
+            </div>
+
+            <Table
+                columns={columns}
+                rows={filteredRows}
+                getRowId={(row) => row.id}
+                search={{ value: search, onChange: setSearch, placeholder: "Naam of nummer" }}
+                filters={
+                    <div className="d-flex flex-wrap gap-2">
+                        <Select
+                            value={filters.status}
+                            options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, status: value as ProductFilters["status"] }))}
+                        />
+                        <Input value={filters.category} onChange={(value) => setFilters((prev) => ({ ...prev, category: value }))} placeholder="Categorie" />
+                        <Select
+                            value={filters.linkState}
+                            options={linkedOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, linkState: value as ProductFilters["linkState"] }))}
+                        />
                     </div>
-                </div>
-            </div>
-
-            <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
-                {status !== "alle" && <FilterChip label={`Status: ${status}`} onRemove={() => setStatus("alle")} />}
-                {search && <FilterChip label={`Zoek: ${search}`} onRemove={() => setSearch("")} />}
-                {status === "alle" && !search && <span className="text-muted small">Geen filters actief.</span>}
-            </div>
-
-            {error && <InlineAlert>{error}</InlineAlert>}
-
-            {loading && !rows.length ? (
-                <LoadingPlaceholder />
-            ) : filteredRows.length === 0 ? (
-                <EmptyState message="Geen producten gevonden." />
-            ) : (
-                <DataTable
-                    columns={productColumns}
-                    rows={filteredRows}
-                    totalResults={totalResults}
-                    empty={<EmptyState message="Geen producten gevonden." />}
-                    getRowKey={(row) => String(row.id)}
-                />
-            )}
-
-            <Pager
+                }
                 page={page}
                 pageSize={pageSize}
-                hasNext={hasNext}
-                onPrevious={() => setPage(Math.max(1, page - 1))}
-                onNext={() => setPage(page + 1)}
-                totalResults={totalResults}
+                pageSizeOptions={perPageOptions}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                }}
+                emptyMessage={<EmptyState message="Geen producten gevonden." />}
             />
         </section>
     );

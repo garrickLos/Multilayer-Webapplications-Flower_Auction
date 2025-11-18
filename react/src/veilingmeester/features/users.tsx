@@ -1,378 +1,150 @@
 import { useMemo, useState, type JSX } from "react";
-import {
-    DataTable,
-    EmptyState,
-    FilterChip,
-    InlineAlert,
-    LoadingPlaceholder,
-    Pager,
-    SearchField,
-    SmallSelectField,
-    StatusBadge,
-} from "../components/ui.tsx";
-import { appConfig } from "../config";
 import { Modal } from "../Modal";
-import { useUserBids, useUsers } from "../hooks";
-import type { UserRow, Status } from "../types";
-import { cx, formatCurrency, formatDateTime } from "../utils";
+import { Table, type TableColumn } from "../components/Table";
+import { Chip, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
+import type { Bid, Product, Status, User, UserRole } from "../types";
+import { filterRows } from "../types";
+import { formatCurrency, formatDateTime } from "../utils";
 
-export type UsersTabProps = {
-    readonly onSelectBidUser: (user: UserRow) => void;
-    readonly onSelectGrower: (user: UserRow) => void;
-};
-
-const soortClass: Record<UserRow["soort"], string> = {
-    koper: "text-bg-primary",
-    kweker: "text-bg-success",
-    veilingmeester: "text-bg-secondary",
-    onbekend: "text-bg-secondary",
-};
-
-const statusFilterOptions = [
-    { value: "alle", label: "Alle" },
+// User listing with simple modals.
+const statusOptions: readonly { value: Status | "all"; label: string }[] = [
+    { value: "all", label: "Alle" },
     { value: "active", label: "Actief" },
     { value: "inactive", label: "Inactief" },
 ];
 
-const roleOptions = [
-    { value: "alle", label: "Alle rollen" },
-    { value: "koper", label: "Koper" },
-    { value: "kweker", label: "Kweker" },
-    { value: "veilingmeester", label: "Veilingmeester" },
+const roleOptions: readonly { value: UserRole | "all"; label: string }[] = [
+    { value: "all", label: "Alle rollen" },
+    { value: "buyer", label: "Koper" },
+    { value: "grower", label: "Kweker" },
+    { value: "auctioneer", label: "Veilingmeester" },
 ];
 
-export function UsersTab({ onSelectBidUser, onSelectGrower }: UsersTabProps): JSX.Element {
-    const { rows, setRows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch } =
-        useUsers();
-    const perPage = appConfig.pagination.table.map((size) => ({ value: size, label: String(size) }));
+const perPageOptions = [10, 25, 50];
 
-    const [status, setStatus] = useState<(typeof statusFilterOptions)[number]["value"]>("alle");
-    const [role, setRole] = useState<(typeof roleOptions)[number]["value"]>("alle");
-    const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+type UserFilters = { status: Status | "all"; role: UserRole | "all" };
 
-    const filteredRows = useMemo(() => {
-        return rows.filter((row) => {
-            const matchesRole = role === "alle" || row.soort === role;
-            const matchesStatus = status === "alle" || row.status === status;
-            const matchesSearch =
-                !search ||
-                row.naam.toLowerCase().includes(search.toLowerCase()) ||
-                row.email?.toLowerCase().includes(search.toLowerCase()) ||
-                String(row.id).includes(search.trim());
-            return matchesRole && matchesStatus && matchesSearch;
-        });
-    }, [rows, role, status, search]);
+export type UsersTabProps = {
+    readonly users: readonly User[];
+    readonly bids: readonly Bid[];
+    readonly onEditUser: (user: User) => void;
+    readonly onViewBids: (userId: number) => void;
+    readonly onViewProducts: (userId: number) => void;
+};
 
-    const columns = [
-        { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
-        {
-            key: "naam",
-            header: "Naam",
-            sortable: true,
-            render: (row: UserRow) => (
-                <div className="d-flex flex-column">
-                    <span className="fw-semibold text-break">{row.naam}</span>
-                    <span className="text-muted small">#{row.id}</span>
-                </div>
-            ),
-            getValue: (row: UserRow) => row.naam,
-        },
-        {
-            key: "email",
-            header: "E-mail",
-            sortable: true,
-            render: (row: UserRow) => (row.email ? <span className="text-break">{row.email}</span> : <span className="text-muted">—</span>),
-            getValue: (row: UserRow) => row.email ?? "",
-        },
-        {
-            key: "kvk",
-            header: "KVK",
-            sortable: true,
-            render: (row: UserRow) => <span className="font-monospace">{row.kvk ?? "—"}</span>,
-            getValue: (row: UserRow) => row.kvk ?? "",
-        },
-        {
-            key: "soort",
-            header: "Rol",
-            sortable: true,
-            render: (row: UserRow) => <span className={cx("badge", "rounded-pill", soortClass[row.soort])}>{row.soort}</span>,
-            getValue: (row: UserRow) => row.soort,
-        },
-        {
-            key: "status",
-            header: "Status",
-            sortable: true,
-            render: (row: UserRow) => <StatusBadge status={row.status} />,
-            getValue: (row: UserRow) => row.status,
-        },
+export function UsersTab({ users, bids, onEditUser, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
+    const [search, setSearch] = useState("");
+    const [filters, setFilters] = useState<UserFilters>({ status: "all", role: "all" });
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+
+    const filteredRows = useMemo(
+        () =>
+            filterRows(users, search, filters, (row, term, currentFilters) => {
+                const matchesSearch = !term || row.name.toLowerCase().includes(term) || row.email.toLowerCase().includes(term);
+                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                const matchesRole = currentFilters.role === "all" || row.role === currentFilters.role;
+                return matchesSearch && matchesStatus && matchesRole;
+            }),
+        [filters, search, users],
+    );
+
+    const columns: TableColumn<User>[] = [
+        { key: "name", header: "Naam", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
+        { key: "email", header: "E-mail", sortable: true, render: (row) => row.email, getValue: (row) => row.email },
+        { key: "role", header: "Rol", sortable: true, render: (row) => <RoleBadge role={row.role} />, getValue: (row) => row.role },
+        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
         {
             key: "actions",
             header: "Acties",
-            cellClassName: "text-end",
-            render: (row: UserRow) => (
-                <div className="d-flex gap-2 justify-content-end flex-wrap">
-                    {row.soort === "koper" && (
-                        <button
-                            type="button"
-                            className="btn btn-outline-success btn-sm"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                onSelectBidUser(row);
-                            }}
-                        >
-                            Biedingen
-                        </button>
-                    )}
-                    {row.soort === "kweker" && (
-                        <button
-                            type="button"
-                            className="btn btn-outline-success btn-sm"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                onSelectGrower(row);
-                            }}
-                        >
-                            Producten
-                        </button>
-                    )}
+            render: (row) => (
+                <div className="d-flex justify-content-end gap-2">
                     <button
                         type="button"
-                        className="btn btn-success btn-sm"
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            setEditingUser(row);
-                        }}
+                        className="btn btn-outline-success btn-sm"
+                        onClick={() => onEditUser(row)}
                     >
                         Bewerk
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-outline-success btn-sm"
+                        onClick={() => onViewBids(row.id)}
+                    >
+                        Biedingen
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-outline-success btn-sm"
+                        onClick={() => onViewProducts(row.id)}
+                    >
+                        Producten
                     </button>
                 </div>
             ),
         },
     ];
 
-    const handleSave = (updated: UserRow) => {
-        setRows((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
-        setEditingUser(null);
-    };
+    const activeFilters = [
+        filters.status !== "all" && `Status: ${filters.status}`,
+        filters.role !== "all" && `Rol: ${filters.role}`,
+        search && `Zoek: ${search}`,
+    ].filter(Boolean) as string[];
 
     return (
-        <section className="d-flex flex-column gap-3" aria-label="Gebruikersbeheer">
-            <div className="card border-0 shadow-sm rounded-4">
-                <div className="card-body">
-                    <div className="row g-3 align-items-end">
-                        <div className="col-12 col-md-6 col-lg-4">
-                            <SearchField label="Zoeken" value={search} onChange={setSearch} placeholder="Naam of e-mail" />
-                        </div>
-                        <div className="col-6 col-md-3 col-lg-2">
-                            <SmallSelectField
-                                label="Rol"
-                                value={role}
-                                onChange={(value) => setRole(value as (typeof roleOptions)[number]["value"])}
-                                options={roleOptions}
-                            />
-                        </div>
-                        <div className="col-6 col-md-3 col-lg-2">
-                            <SmallSelectField
-                                label="Status"
-                                value={status}
-                                onChange={(value) => setStatus(value as (typeof statusFilterOptions)[number]["value"])}
-                                options={statusFilterOptions}
-                            />
-                        </div>
-                        <div className="col-6 col-md-3 col-lg-2">
-                            <SmallSelectField<number>
-                                label="Per pagina"
-                                value={pageSize}
-                                onChange={setPageSize}
-                                options={perPage}
-                                parse={(raw) => Number(raw)}
-                            />
-                        </div>
+        <section className="d-flex flex-column gap-3" aria-label="Gebruikers">
+            <div className="d-flex flex-wrap align-items-center gap-2">
+                {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
+                {activeFilters.map((label) => (
+                    <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", role: "all" })} />
+                ))}
+            </div>
+
+            <Table
+                columns={columns}
+                rows={filteredRows}
+                getRowId={(row) => row.id}
+                search={{ value: search, onChange: setSearch, placeholder: "Naam of e-mail" }}
+                filters={
+                    <div className="d-flex flex-wrap gap-2">
+                        <Select
+                            value={filters.status}
+                            options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, status: value as UserFilters["status"] }))}
+                        />
+                        <Select
+                            value={filters.role}
+                            options={roleOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, role: value as UserFilters["role"] }))}
+                        />
                     </div>
-                </div>
-            </div>
-
-            <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
-                {role !== "alle" && <FilterChip label={`Rol: ${role}`} onRemove={() => setRole("alle")} />}
-                {status !== "alle" && <FilterChip label={`Status: ${status}`} onRemove={() => setStatus("alle")} />}
-                {search && <FilterChip label={`Zoek: ${search}`} onRemove={() => setSearch("")} />}
-                {role === "alle" && status === "alle" && !search && <span className="text-muted small">Geen filters actief.</span>}
-            </div>
-
-            {error && <InlineAlert>{error}</InlineAlert>}
-
-            {loading && !rows.length ? (
-                <LoadingPlaceholder />
-            ) : filteredRows.length === 0 ? (
-                <EmptyState message="Geen gebruikers gevonden." />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    rows={filteredRows}
-                    totalResults={totalResults}
-                    empty={<EmptyState message="Geen gebruikers gevonden." />}
-                    getRowKey={(row) => String(row.id)}
-                    onRowClick={setEditingUser}
-                    isRowInteractive={() => true}
-                />
-            )}
-
-            <Pager
+                }
                 page={page}
                 pageSize={pageSize}
-                hasNext={hasNext}
-                onPrevious={() => setPage(Math.max(1, page - 1))}
-                onNext={() => setPage(page + 1)}
-                totalResults={totalResults}
+                pageSizeOptions={perPageOptions}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                }}
+                emptyMessage={<EmptyState message="Geen gebruikers gevonden." /> as unknown as string}
             />
-
-            {editingUser && <UserEditModal user={editingUser} onClose={() => setEditingUser(null)} onSave={handleSave} />}
         </section>
     );
 }
 
-export type BidsModalProps = { readonly user: UserRow; readonly onClose: () => void };
+type UserFormState = { name: string; email: string; role: UserRole; status: Status };
 
-export function BidsModal({ user, onClose }: BidsModalProps): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, from, setFrom, to, setTo } =
-        useUserBids(user.id);
-    const perPage = appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) }));
+type UserModalProps = { readonly user: User; readonly onClose: () => void; readonly onSave: (value: UserFormState) => void };
 
-    const columns = [
-        { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
-        {
-            key: "bedragPerFust",
-            header: "Bedrag per fust",
-            sortable: true,
-            render: (row: { bedragPerFust: number }) => formatCurrency(row.bedragPerFust),
-            getValue: (row: { bedragPerFust: number }) => row.bedragPerFust,
-        },
-        {
-            key: "aantalStuks",
-            header: "Stuks",
-            sortable: true,
-            render: (row: { aantalStuks: number }) => row.aantalStuks,
-            getValue: (row: { aantalStuks: number }) => row.aantalStuks,
-        },
-        {
-            key: "datumIso",
-            header: "Datum",
-            sortable: true,
-            render: (row: { datumIso?: string }) => formatDateTime(row.datumIso),
-            getValue: (row: { datumIso?: string }) => row.datumIso ?? "",
-        },
-        {
-            key: "status",
-            header: "Status",
-            sortable: true,
-            render: (row: { status: UserRow["status"] }) => <StatusBadge status={row.status} />,
-            getValue: (row: { status: UserRow["status"] }) => row.status,
-        },
-    ];
-
-    return (
-        <Modal
-            title={
-                <div>
-                    <div className="fw-semibold">Biedingen koper {user.naam}</div>
-                    <div className="text-muted small">#{user.id}</div>
-                </div>
-            }
-            onClose={onClose}
-            size="xl"
-            filters={
-                <div className="row g-3 align-items-end w-100">
-                    <div className="col-6 col-lg-3">
-                        <SmallSelectField<number>
-                            label="Per pagina"
-                            value={pageSize}
-                            onChange={setPageSize}
-                            options={perPage}
-                            parse={(raw) => Number(raw)}
-                        />
-                    </div>
-                    <div className="col-6 col-lg-3">
-                        <label htmlFor="bids-from" className="form-label small text-uppercase text-success-emphasis mb-1">
-                            Vanaf
-                        </label>
-                        <input
-                            id="bids-from"
-                            type="date"
-                            className="form-control form-control-sm border-success-subtle"
-                            value={from}
-                            onChange={(event) => setFrom(event.target.value)}
-                        />
-                    </div>
-                    <div className="col-6 col-lg-3">
-                        <label htmlFor="bids-to" className="form-label small text-uppercase text-success-emphasis mb-1">
-                            Tot en met
-                        </label>
-                        <input
-                            id="bids-to"
-                            type="date"
-                            className="form-control form-control-sm border-success-subtle"
-                            value={to}
-                            onChange={(event) => setTo(event.target.value)}
-                        />
-                    </div>
-                </div>
-            }
-            footer={
-                <button type="button" className="btn btn-success" onClick={onClose}>
-                    Sluiten
-                </button>
-            }
-        >
-            <div className="d-flex flex-wrap gap-2 mb-3" aria-label="Actieve filters">
-                {from && <FilterChip label={`Vanaf: ${from}`} onRemove={() => setFrom("")} />}
-                {to && <FilterChip label={`Tot: ${to}`} onRemove={() => setTo("")} />}
-                {!from && !to && <span className="text-muted small">Geen extra filters actief.</span>}
-            </div>
-
-            {error && <InlineAlert>{error}</InlineAlert>}
-
-            {loading && !rows.length ? (
-                <LoadingPlaceholder />
-            ) : rows.length === 0 ? (
-                <EmptyState message="Geen biedingen gevonden." />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    rows={rows}
-                    totalResults={totalResults}
-                    empty={<EmptyState message="Geen biedingen gevonden." />}
-                    getRowKey={(row) => String(row.id)}
-                />
-            )}
-
-            <Pager
-                page={page}
-                pageSize={pageSize}
-                hasNext={hasNext}
-                onPrevious={() => setPage(Math.max(1, page - 1))}
-                onNext={() => setPage(page + 1)}
-                totalResults={totalResults}
-            />
-        </Modal>
-    );
-}
-
-function UserEditModal({
-    user,
-    onClose,
-    onSave,
-}: {
-    readonly user: UserRow;
-    readonly onClose: () => void;
-    readonly onSave: (user: UserRow) => void;
-}): JSX.Element {
-    const [draft, setDraft] = useState<UserRow>(user);
-
-    const update = <K extends keyof UserRow>(key: K, value: UserRow[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
+export function EditUserModal({ user, onClose, onSave }: UserModalProps): JSX.Element {
+    const [draft, setDraft] = useState<UserFormState>({ name: user.name, email: user.email, role: user.role, status: user.status });
+    const update = <K extends keyof UserFormState>(key: K, value: UserFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
 
     return (
         <Modal
             title="Bewerk gebruiker"
+            subtitle={user.name}
             onClose={onClose}
             footer={
                 <div className="d-flex gap-2">
@@ -387,64 +159,153 @@ function UserEditModal({
         >
             <div className="row g-3">
                 <div className="col-12">
-                    <label htmlFor="user-name" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Naam
-                    </label>
-                    <input
-                        id="user-name"
-                        type="text"
-                        className="form-control border-success-subtle"
-                        value={draft.naam}
-                        onChange={(event) => update("naam", event.target.value)}
-                    />
+                    <Field label="Naam">
+                        <Input value={draft.name} onChange={(value) => update("name", value)} />
+                    </Field>
                 </div>
                 <div className="col-12">
-                    <label htmlFor="user-email" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        E-mail
-                    </label>
-                    <input
-                        id="user-email"
-                        type="email"
-                        className="form-control border-success-subtle"
-                        value={draft.email}
-                        onChange={(event) => update("email", event.target.value)}
-                    />
+                    <Field label="E-mail">
+                        <Input value={draft.email} onChange={(value) => update("email", value)} />
+                    </Field>
                 </div>
                 <div className="col-6">
-                    <label htmlFor="user-role" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Rol
-                    </label>
-                    <select
-                        id="user-role"
-                        className="form-select border-success-subtle"
-                        value={draft.soort}
-                        onChange={(event) => update("soort", event.target.value as UserRow["soort"])}
-                    >
-                        <option value="koper">Koper</option>
-                        <option value="kweker">Kweker</option>
-                        <option value="veilingmeester">Veilingmeester</option>
-                    </select>
+                    <Field label="Rol">
+                        <Select
+                            value={draft.role}
+                            options={roleOptions.filter((option) => option.value !== "all").map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => update("role", value as UserRole)}
+                        />
+                    </Field>
                 </div>
                 <div className="col-6">
-                    <label htmlFor="user-status" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Status
-                    </label>
-                    <select
-                        id="user-status"
-                        className="form-select border-success-subtle"
-                        value={draft.status}
-                        onChange={(event) => update("status", event.target.value as Status)}
-                    >
-                        <option value="active">Actief</option>
-                        <option value="inactive">Inactief</option>
-                        <option value="sold">Verkocht</option>
-                        <option value="deleted">Geannuleerd</option>
-                    </select>
-                </div>
-                <div className="col-12">
-                    <p className="text-muted small mb-0">Rol en status bepalen de beschikbare acties.</p>
+                    <Field label="Status">
+                        <Select
+                            value={draft.status}
+                            options={statusOptions.filter((option) => option.value !== "all").map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => update("status", value as Status)}
+                        />
+                    </Field>
                 </div>
             </div>
+        </Modal>
+    );
+}
+
+export function UserBidsModal({ user, bids, onClose }: { readonly user: User; readonly bids: readonly Bid[]; readonly onClose: () => void }): JSX.Element {
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+
+    const userBids = useMemo(
+        () =>
+            filterRows(bids, search, { status: statusFilter }, (row, term, currentFilters) => {
+                const matchesSearch = !term || String(row.auctionId).includes(term);
+                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                return matchesSearch && matchesStatus;
+            }),
+        [bids, search, statusFilter],
+    );
+
+    const columns: TableColumn<Bid>[] = [
+        { key: "auction", header: "Veiling", render: (row) => `#${row.auctionId}` },
+        { key: "amount", header: "Bedrag", sortable: true, render: (row) => formatCurrency(row.amount), getValue: (row) => row.amount },
+        { key: "quantity", header: "Aantal", sortable: true, render: (row) => row.quantity, getValue: (row) => row.quantity },
+        { key: "date", header: "Datum", sortable: true, render: (row) => formatDateTime(row.date), getValue: (row) => row.date },
+        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+    ];
+
+    return (
+        <Modal
+            title="Biedingen"
+            subtitle={user.name}
+            onClose={onClose}
+            size="lg"
+            controls={
+                <div className="d-flex flex-wrap gap-2">
+                    <Input value={search} onChange={setSearch} placeholder="Veilingnummer" />
+                    <Select
+                        value={statusFilter}
+                        options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                        onChange={(value) => setStatusFilter(value as Status | "all")}
+                    />
+                </div>
+            }
+            footer={
+                <button type="button" className="btn btn-success" onClick={onClose}>
+                    Sluiten
+                </button>
+            }
+        >
+            <Table
+                columns={columns}
+                rows={userBids}
+                getRowId={(row) => row.id}
+                page={page}
+                pageSize={pageSize}
+                pageSizeOptions={perPageOptions}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+            />
+        </Modal>
+    );
+}
+
+export function UserProductsModal({ user, products, onClose }: { readonly user: User; readonly products: readonly Product[]; readonly onClose: () => void }): JSX.Element {
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+
+    const growerProducts = useMemo(
+        () =>
+            filterRows(products, search, { status: statusFilter }, (row, term, currentFilters) => {
+                const matchesSearch = !term || row.name.toLowerCase().includes(term) || String(row.id).includes(term);
+                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                return matchesSearch && matchesStatus;
+            }),
+        [products, search, statusFilter],
+    );
+
+    const columns: TableColumn<Product>[] = [
+        { key: "id", header: "#", render: (row) => `#${row.id}` },
+        { key: "name", header: "Naam", render: (row) => row.name },
+        { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+        { key: "linked", header: "Veiling", render: (row) => (row.linkedAuctionId ? `#${row.linkedAuctionId}` : "—") },
+    ];
+
+    return (
+        <Modal
+            title="Producten"
+            subtitle={user.name}
+            onClose={onClose}
+            size="lg"
+            controls={
+                <div className="d-flex flex-wrap gap-2">
+                    <Input value={search} onChange={setSearch} placeholder="Naam of nummer" />
+                    <Select
+                        value={statusFilter}
+                        options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                        onChange={(value) => setStatusFilter(value as Status | "all")}
+                    />
+                </div>
+            }
+            footer={
+                <button type="button" className="btn btn-success" onClick={onClose}>
+                    Sluiten
+                </button>
+            }
+        >
+            <Table
+                columns={columns}
+                rows={growerProducts}
+                getRowId={(row) => row.id}
+                page={page}
+                pageSize={pageSize}
+                pageSizeOptions={perPageOptions}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+            />
         </Modal>
     );
 }
