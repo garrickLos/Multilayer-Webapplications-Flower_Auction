@@ -49,7 +49,7 @@ export default function AuctionScreen() {
                         price:
                     </div>
                     <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal:</label>
-                    <input type="number" id="aantalkopenstuks" name="aantalkopenstuls"/>
+                    <input type="number" id="aantalkopenstuks" name="aantalkopenstuks"/>
                     <div className="tekstVoorKopen">Je koopt x voor $y per stuk, in totaal $z.</div>
                     <button className="koopNu">Koop nu!</button>
                 </div>

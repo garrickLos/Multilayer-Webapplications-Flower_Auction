@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-// createPortal is verwijderd omdat het niet nodig is
+import { useState, useEffect } from 'react';
 
 import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
@@ -10,9 +10,21 @@ import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
 import { renderCards, type VeilingItem } from './RenderCards.tsx';
 
 export default function MainScreen() {
-    const { data, loading, error } = GetVeilingen<VeilingItem[]>('/api/Veiling');
+    const [refreshTimer, setRefreshTimer] = useState(Date.now());
+
+    const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling?refresh=${refreshTimer}`);
 
     const safeVeilingen = data || [];
+
+    useEffect(() => {
+        // 300000 milliseconden = 5 minuten (180000 = 3 minuten)
+        const intervalId = setInterval(() => {
+            setRefreshTimer(Date.now());
+        }, 180000);
+
+        // Ruim de timer op als de component verdwijnt
+        return () => clearInterval(intervalId);
+    }, []);
 
     const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
     const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
