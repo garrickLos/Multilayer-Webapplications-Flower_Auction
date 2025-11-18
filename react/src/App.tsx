@@ -7,6 +7,7 @@ import Registration from './Registration'
 import Login from './Login.tsx'
 import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
+import AuctionScreen from './schermen/AuctionScreen/AuctionScreen.tsx';
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
 
@@ -29,6 +30,7 @@ export default function App() {
                 <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
                 <Route path="/privacyBeleid" element={<PrivacyScherm />} />
+                <Route path='/Auction' element={<AuctionScreen />} />
 
                 <Route path='/404' element={<ErrorPage />} />
 

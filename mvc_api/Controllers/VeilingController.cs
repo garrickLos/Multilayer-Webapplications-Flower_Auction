@@ -39,7 +39,8 @@ public class VeilingController : ControllerBase
         string Naam,
         DateTime GeplaatstDatum, 
         decimal Startprijs, 
-        int Voorraad
+        int Voorraad,
+        string ImagePath
     );
 
     //record voor de biedingen. heb alleen de ID gepakt zodat de json niet te groot en onoverzichtelijk wordt
@@ -227,7 +228,8 @@ public class VeilingController : ControllerBase
                 p.Naam,
                 p.GeplaatstDatum,
                 p.Startprijs,
-                p.VoorraadBloemen
+                p.VoorraadBloemen,
+                p.ImagePath
             )),
             v.Biedingen.Select(b => new VBiedingen(
                 b.BiedNr
