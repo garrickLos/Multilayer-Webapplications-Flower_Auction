@@ -1,5 +1,3 @@
-import type { Dispatch, SetStateAction } from "react";
-
 export type Status = "active" | "inactive" | "sold" | "deleted";
 export type Soort = "koper" | "kweker" | "veilingmeester" | "onbekend";
 
@@ -74,7 +72,6 @@ export interface UserRow {
 
 export interface UserBidRow {
     readonly id: number;
-    readonly biedNr?: number;
     readonly veilingNr?: number;
     readonly bedragPerFust: number;
     readonly aantalStuks: number;
@@ -84,7 +81,6 @@ export interface UserBidRow {
 
 export interface VeilingRow {
     readonly id: number;
-    readonly veilingNr?: number;
     readonly titel: string;
     readonly startIso?: string;
     readonly endIso?: string;
@@ -96,7 +92,6 @@ export interface VeilingRow {
 
 export interface VeilingProductRow {
     readonly id: number;
-    readonly veilingProductNr?: number;
     readonly naam: string;
     readonly voorraad?: number;
     readonly fust?: number;
@@ -114,43 +109,28 @@ export interface HookResult<T> {
     readonly loading: boolean;
     readonly error?: string | null;
     readonly page: number;
-    readonly setPage: Dispatch<SetStateAction<number>>;
+    readonly setPage: (value: number | ((prev: number) => number)) => void;
     readonly pageSize: number;
-    readonly setPageSize: Dispatch<SetStateAction<number>>;
+    readonly setPageSize: (value: number) => void;
     readonly hasNext: boolean;
     readonly totalResults?: number;
-    readonly search?: string;
-    readonly setSearch?: (value: string) => void;
-    readonly status?: "alle" | "actief" | "inactief";
-    readonly setStatus?: (value: "alle" | "actief" | "inactief") => void;
-    readonly from?: string;
-    readonly setFrom?: (value: string) => void;
-    readonly to?: string;
-    readonly setTo?: (value: string) => void;
-    readonly reset?: () => void;
 }
 
-export const nlCollator = new Intl.Collator("nl-NL", {
-    numeric: true,
-    sensitivity: "base",
-});
+export const nlCollator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
 
-const knownSoorten = ["koper", "kweker", "veilingmeester"] as const;
-const isSoort = (s: string): s is Soort =>
-    (knownSoorten as readonly string[]).includes(s as (typeof knownSoorten)[number]);
+const STATUS_LABEL: Record<Status, string> = {
+    active: "Actief",
+    inactive: "Inactief",
+    sold: "Verkocht",
+    deleted: "Geannuleerd",
+};
 
-function sanitizeText(value: string | null | undefined): string {
-    return value?.trim() ?? "";
-}
-
-function toNumber(value: number | string | null | undefined): number | undefined {
-    if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
-    if (typeof value === "string" && value.trim()) {
-        const parsed = Number.parseFloat(value.replace(",", "."));
-        return Number.isFinite(parsed) ? parsed : undefined;
-    }
-    return undefined;
-}
+const STATUS_CLASS: Record<Status, string> = {
+    active: "text-bg-success",
+    inactive: "text-bg-secondary",
+    sold: "text-bg-info",
+    deleted: "text-bg-danger",
+};
 
 const STATUS_MAP: Record<string, Status> = {
     active: "active",
@@ -162,80 +142,65 @@ const STATUS_MAP: Record<string, Status> = {
     cancelled: "deleted",
 };
 
-export function normalizeStatus(value: string | null | undefined): Status {
-    const key = sanitizeText(value).toLowerCase();
+const clean = (value: string | null | undefined): string => value?.trim() ?? "";
+const knownSoorten = ["koper", "kweker", "veilingmeester"] as const;
+const isSoort = (value: string): value is Soort => (knownSoorten as readonly string[]).includes(value);
+
+export const normalizeStatus = (value: string | null | undefined): Status => {
+    const key = clean(value).toLowerCase();
     return STATUS_MAP[key] ?? "inactive";
-}
-
-const STATUS_LABEL: Record<Status, "Actief" | "Inactief" | "Verkocht" | "Geannuleerd"> = {
-    active: "Actief",
-    inactive: "Inactief",
-    sold: "Verkocht",
-    deleted: "Geannuleerd",
 };
-export function statusLabel(status: Status): "Actief" | "Inactief" | "Verkocht" | "Geannuleerd" {
-    return STATUS_LABEL[status];
-}
 
-const STATUS_BADGE: Record<Status, string> = {
-    active: "text-bg-success",
-    inactive: "text-bg-secondary",
-    sold: "text-bg-info",
-    deleted: "text-bg-danger",
+const toNumber = (value: number | string | null | undefined): number | undefined => {
+    if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+    if (typeof value === "string" && value.trim()) {
+        const parsed = Number.parseFloat(value.replace(",", "."));
+        return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
 };
-export function statusBadgeVariant(status: Status): string {
-    return STATUS_BADGE[status];
-}
 
-export function adaptPrice(
+export const adaptPrice = (
     auction: VeilingDto | VeilingDetailDto | null | undefined,
     product?: VeilingproductDto | null,
-): { minPrice: number; maxPrice: number } {
+): { minPrice: number; maxPrice: number } => {
     const auctionMin = toNumber(auction?.minimumprijs);
     const auctionMax = toNumber(auction?.maximumprijs);
-    const productMin = toNumber(product?.minimumprijs);
-    const productStart = toNumber(product?.startprijs);
+    const productMin = toNumber(product?.minimumprijs ?? product?.startprijs);
     const productMax = toNumber(product?.maximumprijs);
     const minPrice = productMin ?? auctionMin ?? 0;
-    const maxPrice = auctionMax ?? productStart ?? productMax ?? minPrice;
+    const maxPrice = auctionMax ?? productMax ?? minPrice;
     return { minPrice, maxPrice };
-}
+};
 
-export function adaptUser(dto: GebruikerDto): UserRow {
+export const adaptUser = (dto: GebruikerDto): UserRow => {
     const id = dto.gebruikerNr ?? 0;
-    const raw = sanitizeText(dto.soort).toLowerCase();
-    const soort: Soort = isSoort(raw) ? raw : "onbekend";
+    const soort = isSoort(clean(dto.soort).toLowerCase()) ? (clean(dto.soort).toLowerCase() as Soort) : "onbekend";
     return {
         id,
-        naam: sanitizeText(dto.naam) || `Gebruiker ${id}`,
-        email: sanitizeText(dto.email) || "",
-        kvk: sanitizeText(dto.kvk) || null,
+        naam: clean(dto.naam) || `Gebruiker ${id}`,
+        email: clean(dto.email) || "",
+        kvk: clean(dto.kvk) || null,
         soort,
         status: normalizeStatus(dto.status),
     };
-}
+};
 
-export function adaptBid(dto: BiedingDto): UserBidRow {
-    return {
-        id: dto.biedNr ?? 0,
-        biedNr: dto.biedNr,
-        veilingNr: dto.veilingNr,
-        bedragPerFust: toNumber(dto.bedragPerFust) ?? 0,
-        aantalStuks: dto.aantalStuks ?? 0,
-        datumIso: dto.datum ?? undefined,
-        status: normalizeStatus(dto.status),
-    };
-}
+export const adaptBid = (dto: BiedingDto): UserBidRow => ({
+    id: dto.biedNr ?? 0,
+    veilingNr: dto.veilingNr,
+    bedragPerFust: toNumber(dto.bedragPerFust) ?? 0,
+    aantalStuks: dto.aantalStuks ?? 0,
+    datumIso: dto.datum ?? undefined,
+    status: normalizeStatus(dto.status),
+});
 
-export function adaptAuction(dto: VeilingDto): VeilingRow {
+export const adaptAuction = (dto: VeilingDto): VeilingRow => {
     const id = dto.veilingNr ?? 0;
-    const title = sanitizeText(dto.veilingnaam ?? dto.titel);
     const { minPrice, maxPrice } = adaptPrice(dto);
     return {
         id,
-        veilingNr: dto.veilingNr,
-        titel: title || `Veiling ${id}`,
-        // Let op: bewust `?? undefined` om types netjes te houden (string | undefined)
+        titel: clean(dto.veilingnaam ?? dto.titel) || `Veiling ${id}`,
         startIso: dto.begintijd ?? undefined,
         endIso: dto.eindtijd ?? undefined,
         status: normalizeStatus(dto.status),
@@ -243,25 +208,18 @@ export function adaptAuction(dto: VeilingDto): VeilingRow {
         maxPrice,
         productCount: dto.producten?.length ?? 0,
     };
-}
+};
 
-export function adaptProduct(
-    dto: VeilingproductDto,
-    context?: VeilingDto | VeilingDetailDto | null,
-): VeilingProductRow {
+export const adaptProduct = (dto: VeilingproductDto, context?: VeilingDto | VeilingDetailDto | null): VeilingProductRow => {
     const id = dto.veilingProductNr ?? 0;
     const { minPrice, maxPrice } = adaptPrice(context, dto);
     const voorraad = dto.voorraad ?? undefined;
     const fust = dto.fust ?? undefined;
-    const piecesPerBundle =
-        voorraad != null && fust != null && voorraad > 0 && fust > 0
-            ? Math.floor(voorraad / fust)
-            : undefined;
+    const piecesPerBundle = voorraad && fust ? Math.floor(voorraad / fust) : undefined;
 
     return {
         id,
-        veilingProductNr: dto.veilingProductNr,
-        naam: sanitizeText(dto.naam) || `Product ${id}`,
+        naam: clean(dto.naam) || `Product ${id}`,
         voorraad,
         fust,
         piecesPerBundle,
@@ -270,15 +228,19 @@ export function adaptProduct(
         status: normalizeStatus(dto.status),
         image: dto.image ?? null,
         isDeleted: Boolean(dto.isDeleted),
-        categorie: sanitizeText(dto.categorie),
+        categorie: clean(dto.categorie),
     };
-}
+};
 
-export function splitProducts(
+export const splitProducts = (
     auction: VeilingDetailDto,
-): { active: readonly VeilingProductRow[]; inactive: readonly VeilingProductRow[] } {
+): { active: readonly VeilingProductRow[]; inactive: readonly VeilingProductRow[] } => {
     const rows = (auction.producten ?? []).map((p) => adaptProduct(p, auction));
-    const active = rows.filter((r) => r.status === "active" && !r.isDeleted);
-    const inactive = rows.filter((r) => r.status !== "active" || r.isDeleted);
-    return { active, inactive };
-}
+    return {
+        active: rows.filter((r) => r.status === "active" && !r.isDeleted),
+        inactive: rows.filter((r) => r.status !== "active" || r.isDeleted),
+    };
+};
+
+export const statusLabel = (status: Status): string => STATUS_LABEL[status];
+export const statusBadgeVariant = (status: Status): string => STATUS_CLASS[status];

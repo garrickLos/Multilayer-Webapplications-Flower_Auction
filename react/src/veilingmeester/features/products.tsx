@@ -1,117 +1,59 @@
-import { useMemo, type JSX } from "react";
-import {
-    DataTable,
-    EmptyState,
-    InlineAlert,
-    LoadingPlaceholder,
-    Pager,
-    SmallSelectField,
-    StatusBadge,
-} from "../components/ui.tsx";
+import type { JSX } from "react";
+import { DataTable, EmptyState, InlineAlert, LoadingPlaceholder, Pager, SearchField, SmallSelectField, StatusBadge } from "../components/ui.tsx";
 import { appConfig } from "../config";
 import { Modal } from "../Modal";
-import { useVeilingProductsByGrower } from "../hooks";
+import { useProductCatalog, useProducts } from "../hooks";
 import type { UserRow, VeilingProductRow } from "../types";
 import { formatCurrency } from "../utils";
 
-export type ProductsModalProps = {
-    readonly user: UserRow;
-    readonly onClose: () => void;
-};
+const productColumns = [
+    { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
+    {
+        key: "naam",
+        header: "Naam",
+        sortable: true,
+        render: (row: VeilingProductRow) => (
+            <div className="d-flex align-items-center gap-2">
+                {row.image && <img src={row.image} alt="" width={appConfig.ui.productThumbnailSize} height={appConfig.ui.productThumbnailSize} className="rounded" />}
+                <div className="d-flex flex-column">
+                    <span className="fw-semibold text-break">{row.naam}</span>
+                    <span className="text-muted small">#{row.id}</span>
+                </div>
+            </div>
+        ),
+        getValue: (row: VeilingProductRow) => row.naam,
+    },
+    {
+        key: "minPrice",
+        header: "Prijs",
+        sortable: true,
+        render: (row: VeilingProductRow) => (
+            <div className="d-flex flex-column">
+                <span>{formatCurrency(row.minPrice)}</span>
+                <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
+            </div>
+        ),
+        getValue: (row: VeilingProductRow) => row.minPrice,
+    },
+    {
+        key: "voorraad",
+        header: "Voorraad",
+        sortable: true,
+        render: (row: VeilingProductRow) => (row.voorraad != null ? row.voorraad : "—"),
+        getValue: (row: VeilingProductRow) => row.voorraad ?? 0,
+    },
+    {
+        key: "status",
+        header: "Status",
+        sortable: true,
+        render: (row: VeilingProductRow) => <StatusBadge status={row.status} />,
+        getValue: (row: VeilingProductRow) => row.status,
+    },
+];
 
-/**
- * Presents paginated products for a selected grower.
- */
-export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults } =
-        useVeilingProductsByGrower(user.id);
-
-    const perPageOptions = useMemo(
-        () => appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) })),
-        [],
-    );
-
-    const thumbnailSize = appConfig.ui.productThumbnailSize;
-
-    const columns = useMemo(
-        () => [
-            {
-                key: "id",
-                header: "#",
-                sortable: true,
-                headerClassName: "text-nowrap",
-                cellClassName: "text-nowrap",
-            },
-            {
-                key: "naam",
-                header: "Product",
-                sortable: true,
-                render: (row: VeilingProductRow) => (
-                    <div className="d-flex align-items-center gap-3">
-                        {row.image ? (
-                            <img
-                                src={row.image}
-                                alt=""
-                                width={thumbnailSize}
-                                height={thumbnailSize}
-                                className="rounded-3 border border-success-subtle object-fit-cover flex-shrink-0"
-                            />
-                        ) : (
-                            <span className="badge bg-success-subtle text-success-emphasis">Geen afbeelding</span>
-                        )}
-                        <div>
-                            <div className="fw-semibold text-break">{row.naam}</div>
-                            <div className="text-muted small">{row.categorie || "Categorie onbekend"}</div>
-                        </div>
-                    </div>
-                ),
-                getValue: (row: VeilingProductRow) => row.naam,
-            },
-            {
-                key: "voorraad",
-                header: "Voorraad (bloemen)",
-                sortable: true,
-                render: (row: VeilingProductRow) => (row.voorraad != null ? row.voorraad : "—"),
-                getValue: (row: VeilingProductRow) => row.voorraad ?? "",
-            },
-            {
-                key: "fust",
-                header: "Fust",
-                sortable: true,
-                render: (row: VeilingProductRow) => (row.fust != null ? row.fust : "—"),
-                getValue: (row: VeilingProductRow) => row.fust ?? "",
-            },
-            {
-                key: "piecesPerBundle",
-                header: "Stuks/bundel",
-                sortable: true,
-                render: (row: VeilingProductRow) => (row.piecesPerBundle != null ? row.piecesPerBundle : "—"),
-                getValue: (row: VeilingProductRow) => row.piecesPerBundle ?? "",
-            },
-            {
-                key: "minPrice",
-                header: "Min. prijs",
-                sortable: true,
-                render: (row: VeilingProductRow) => formatCurrency(row.minPrice),
-                getValue: (row: VeilingProductRow) => row.minPrice,
-            },
-            {
-                key: "maxPrice",
-                header: "Max. prijs",
-                sortable: true,
-                render: (row: VeilingProductRow) => formatCurrency(row.maxPrice),
-                getValue: (row: VeilingProductRow) => row.maxPrice,
-            },
-            {
-                key: "status",
-                header: "Status",
-                sortable: true,
-                render: (row: VeilingProductRow) => <StatusBadge status={row.status} />,
-                getValue: (row: VeilingProductRow) => row.status,
-            },
-        ],
-        [thumbnailSize],
-    );
+export function ProductsModal({ user, onClose }: { readonly user: UserRow; readonly onClose: () => void }): JSX.Element {
+    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults } = useProducts(user.id);
+    const perPage = appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) }));
 
     return (
         <Modal
@@ -129,21 +71,14 @@ export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Elemen
                 </button>
             }
         >
-            <div className="d-flex flex-column gap-2 mb-3">
-                <p className="text-uppercase text-success-emphasis small fw-semibold mb-0">Overzicht</p>
-                <p className="text-muted small mb-0">Selecteer het aantal resultaten per pagina.</p>
-            </div>
-
-            <div className="row g-3 align-items-end mb-3">
-                <div className="col-6 col-lg-2">
-                    <SmallSelectField<number>
-                        label="Per pagina"
-                        value={pageSize}
-                        onChange={setPageSize}
-                        options={perPageOptions}
-                        parse={(raw) => Number(raw)}
-                    />
-                </div>
+            <div className="col-6 col-lg-3 mb-3">
+                <SmallSelectField<number>
+                    label="Per pagina"
+                    value={pageSize}
+                    onChange={setPageSize}
+                    options={perPage}
+                    parse={(raw) => Number(raw)}
+                />
             </div>
 
             {error && <InlineAlert>{error}</InlineAlert>}
@@ -154,7 +89,7 @@ export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Elemen
                 <EmptyState message="Geen producten gevonden." />
             ) : (
                 <DataTable
-                    columns={columns}
+                    columns={productColumns}
                     rows={rows}
                     totalResults={totalResults}
                     empty={<EmptyState message="Geen producten gevonden." />}
@@ -166,10 +101,64 @@ export function ProductsModal({ user, onClose }: ProductsModalProps): JSX.Elemen
                 page={page}
                 pageSize={pageSize}
                 hasNext={hasNext}
-                onPrevious={() => setPage((prev) => Math.max(1, prev - 1))}
-                onNext={() => setPage((prev) => prev + 1)}
+                onPrevious={() => setPage(Math.max(1, page - 1))}
+                onNext={() => setPage(page + 1)}
                 totalResults={totalResults}
             />
         </Modal>
+    );
+}
+
+export function ProductsTab(): JSX.Element {
+    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch } = useProductCatalog();
+    const perPage = appConfig.pagination.table.map((size) => ({ value: size, label: String(size) }));
+
+    return (
+        <section className="d-flex flex-column gap-3" aria-label="Productcatalogus">
+            <div className="card border-0 shadow-sm rounded-4">
+                <div className="card-body">
+                    <div className="row g-3 align-items-end">
+                        <div className="col-12 col-md-6 col-lg-4">
+                            <SearchField label="Zoeken" value={search} onChange={setSearch} placeholder="Productnaam" />
+                        </div>
+                        <div className="col-6 col-md-3 col-lg-2">
+                            <SmallSelectField<number>
+                                label="Per pagina"
+                                value={pageSize}
+                                onChange={setPageSize}
+                                options={perPage}
+                                parse={(raw) => Number(raw)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {search && <span className="text-muted small">Filter: {search}</span>}
+            {error && <InlineAlert>{error}</InlineAlert>}
+
+            {loading && !rows.length ? (
+                <LoadingPlaceholder />
+            ) : rows.length === 0 ? (
+                <EmptyState message="Geen producten gevonden." />
+            ) : (
+                <DataTable
+                    columns={productColumns}
+                    rows={rows}
+                    totalResults={totalResults}
+                    empty={<EmptyState message="Geen producten gevonden." />}
+                    getRowKey={(row) => String(row.id)}
+                />
+            )}
+
+            <Pager
+                page={page}
+                pageSize={pageSize}
+                hasNext={hasNext}
+                onPrevious={() => setPage(Math.max(1, page - 1))}
+                onNext={() => setPage(page + 1)}
+                totalResults={totalResults}
+            />
+        </section>
     );
 }

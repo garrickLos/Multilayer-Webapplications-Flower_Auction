@@ -1,48 +1,31 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ErrorBoundary, InlineAlert, LoadingPlaceholder } from "./components/ui.tsx";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { DashboardMetrics } from "./features/dashboard";
+import { InlineAlert, LoadingPlaceholder, ErrorBoundary } from "./components/ui.tsx";
 import { useOffline } from "./hooks";
 import type { UserRow, VeilingRow } from "./types";
-import { DashboardMetrics } from "./features/dashboard";
 import { cx } from "./utils";
 
 const UsersTab = lazy(async () => import("./features/users").then((m) => ({ default: m.UsersTab })));
-const AuctionsTab = lazy(async () =>
-    import("./features/auctions").then((m) => ({ default: m.AuctionsTab })),
-);
+const AuctionsTab = lazy(async () => import("./features/auctions").then((m) => ({ default: m.AuctionsTab })));
 const BidsModal = lazy(async () => import("./features/users").then((m) => ({ default: m.BidsModal })));
-const ProductsModal = lazy(async () =>
-    import("./features/products").then((m) => ({ default: m.ProductsModal })),
-);
-const AuctionModal = lazy(async () =>
-    import("./features/auctions").then((m) => ({ default: m.AuctionModal })),
-);
+const ProductsModal = lazy(async () => import("./features/products").then((m) => ({ default: m.ProductsModal })));
+const AuctionModal = lazy(async () => import("./features/auctions").then((m) => ({ default: m.AuctionModal })));
 
 type TabKey = "users" | "auctions";
 
-type TabDefinition = {
-    readonly key: TabKey;
-    readonly label: string;
-    readonly render: () => ReactNode;
-};
-
-function readInitialTab(): TabKey {
+const readInitialTab = (): TabKey => {
     if (typeof window === "undefined") return "users";
     const value = new URLSearchParams(window.location.search).get("vm_tab");
     return value === "veilingen" ? "auctions" : "users";
-}
+};
 
-function updateTabUrl(tab: TabKey): void {
+const updateTabUrl = (tab: TabKey) => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     url.searchParams.set("vm_tab", tab === "auctions" ? "veilingen" : "gebruikers");
     window.history.replaceState({}, "", url.toString());
-}
+};
 
-/**
- * Hoofdscherm voor de veilingmeester met gebruikers- en veilingbeheer.
- *
- * @returns Het dashboard inclusief tabnavigatie en modals.
- */
 export function Veilingmeester() {
     const offline = useOffline();
     const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab());
@@ -50,86 +33,53 @@ export function Veilingmeester() {
     const [selectedGrower, setSelectedGrower] = useState<UserRow | null>(null);
     const [selectedAuction, setSelectedAuction] = useState<VeilingRow | null>(null);
 
-    useEffect(() => {
-        updateTabUrl(activeTab);
-    }, [activeTab]);
+    useEffect(() => updateTabUrl(activeTab), [activeTab]);
 
-    const tabs = useMemo<TabDefinition[]>(
-        () => [
-            {
-                key: "users",
-                label: "Gebruikers",
-                render: () => (
-                    <UsersTab
-                        onSelectBidUser={(user) => setSelectedBidUser(user)}
-                        onSelectGrower={(user) => setSelectedGrower(user)}
-                    />
-                ),
-            },
-            {
-                key: "auctions",
-                label: "Veilingen",
-                render: () => (
-                    <AuctionsTab onSelectAuction={(row) => setSelectedAuction(row)} />
-                ),
-            },
-        ],
-        [setSelectedBidUser, setSelectedGrower, setSelectedAuction],
-    );
+    const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
+        {
+            key: "users",
+            label: "Gebruikers",
+            render: () => (
+                <UsersTab onSelectBidUser={setSelectedBidUser} onSelectGrower={setSelectedGrower} />
+            ),
+        },
+        {
+            key: "auctions",
+            label: "Veilingen",
+            render: () => <AuctionsTab onSelectAuction={setSelectedAuction} />,
+        },
+    ];
 
     return (
         <div className="bg-body-tertiary min-vh-100">
             <div className="container py-4 py-lg-5 d-flex flex-column gap-4">
-                {/* Navbar */}
-                <nav
-                    className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4"
-                    aria-label="Hoofdnavigatie veilingmeester"
-                >
+                <nav className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4" aria-label="Hoofdnavigatie veilingmeester">
                     <span className="navbar-brand fw-semibold text-success">Veilingmeester</span>
-                    <div className="ms-auto text-muted small">
-                        Dagelijkse controle van gebruikers en veilingen
-                    </div>
+                    <div className="ms-auto text-muted small">Realtime beheer voor veilingen en gebruikers</div>
                 </nav>
 
-                {/* Header */}
                 <header className="bg-white border border-success-subtle rounded-4 shadow-sm p-4">
                     <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
                         <div>
                             <p className="text-uppercase text-success small fw-semibold mb-1">Dashboard</p>
                             <h1 className="h3 fw-bold mb-2 text-success-emphasis">Overzicht veilingactiviteiten</h1>
-                            <p className="text-muted mb-0">
-                                Volg biedingen, producten en live klokken met één centraal beheerscherm.
-                            </p>
+                            <p className="text-muted mb-0">Volg biedingen, producten en live klokken met één centraal beheerscherm.</p>
                         </div>
-                        <div className="text-center text-lg-end">
-              <span className="badge text-success-emphasis bg-success-subtle rounded-pill px-3 py-2 shadow-sm">
-                Vertrouwde gegevens in realtime
-              </span>
-                        </div>
+                        <span className="badge text-success-emphasis bg-success-subtle rounded-pill px-3 py-2 shadow-sm">
+                            Vertrouwde gegevens in realtime
+                        </span>
                     </div>
                 </header>
 
-                {/* Offline waarschuwing */}
                 {offline && (
-                    <InlineAlert variant="warning">
-                        Je bent offline. Gegevens verversen zodra de verbinding terug is.
-                    </InlineAlert>
+                    <InlineAlert variant="warning">Je bent offline. Gegevens verversen zodra de verbinding terug is.</InlineAlert>
                 )}
 
-                {/* Dashboard metrics */}
                 <DashboardMetrics />
 
-                {/* Tabs navigatie */}
                 <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
                     <div className="card-body p-4 d-flex flex-column gap-3">
-                        <div className="text-center">
-                            <p className="text-muted small mb-2">Kies een module om te beheren</p>
-                        </div>
-                        <div
-                            className="d-flex flex-wrap justify-content-center gap-2"
-                            role="tablist"
-                            aria-label="Veiling tabs"
-                        >
+                        <div className="d-flex flex-wrap justify-content-center gap-2" role="tablist" aria-label="Veiling tabs">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.key}
@@ -153,7 +103,6 @@ export function Veilingmeester() {
                     </div>
                 </section>
 
-                {/* Tab inhoud */}
                 {tabs.map((tab) => (
                     <section
                         key={tab.key}
@@ -171,17 +120,10 @@ export function Veilingmeester() {
                     </section>
                 ))}
 
-                {/* Modals */}
                 <Suspense fallback={null}>
-                    {selectedBidUser && (
-                        <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />
-                    )}
-                    {selectedGrower && (
-                        <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />
-                    )}
-                    {selectedAuction && (
-                        <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />
-                    )}
+                    {selectedBidUser && <BidsModal user={selectedBidUser} onClose={() => setSelectedBidUser(null)} />}
+                    {selectedGrower && <ProductsModal user={selectedGrower} onClose={() => setSelectedGrower(null)} />}
+                    {selectedAuction && <AuctionModal row={selectedAuction} onClose={() => setSelectedAuction(null)} />}
                 </Suspense>
             </div>
         </div>

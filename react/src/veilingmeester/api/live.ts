@@ -2,255 +2,140 @@ import { getAuctionDetail } from "../api";
 import { appConfig } from "../config";
 import { adaptAuction, type VeilingDetailDto, type VeilingRow } from "../types";
 
-type PatchHandler = (update: Partial<VeilingRow>) => void;
-type Cleanup = () => void;
+export type AuctionPatchHandler = (update: Partial<VeilingRow>) => void;
+export type Cleanup = () => void;
 
 const POLL_STEPS = appConfig.realtime.pollStepsMs;
 
-// Strip readonly only for internal construction
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-
-function shouldStop(row: VeilingRow): boolean {
-    if (row.status !== "active") return true;
-    if (!row.endIso) return false;
-
-    const end = Date.parse(row.endIso);
-    return Number.isFinite(end) && Date.now() >= end;
-}
-
-function createDiff(
-    previous: VeilingRow | null,
-    next: VeilingRow,
-): Partial<VeilingRow> | null {
+const diff = (previous: VeilingRow | null, next: VeilingRow): Partial<VeilingRow> | null => {
     if (!previous) return next;
-
-    const diff: Partial<VeilingRow> = {};
+    const patch: Partial<VeilingRow> = {};
     let changed = false;
-
-    const mutableDiff = diff as Mutable<Partial<VeilingRow>>;
-
-    for (const key of Object.keys(next) as (keyof VeilingRow)[]) {
+    (Object.keys(next) as (keyof VeilingRow)[]).forEach((key) => {
         if (!Object.is(previous[key], next[key])) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
-            mutableDiff[key] = next[key];
+            patch[key] = next[key];
             changed = true;
         }
-    }
+    });
+    return changed ? patch : null;
+};
 
-    return changed ? diff : null;
-}
+const finished = (row: VeilingRow): boolean => {
+    if (row.status !== "active") return true;
+    if (!row.endIso) return false;
+    const end = Date.parse(row.endIso);
+    return Number.isFinite(end) && Date.now() >= end;
+};
 
-async function pollOnce(
-    veilingId: number,
-    controller: AbortController,
-    apply: (row: VeilingRow) => void,
-): Promise<boolean> {
+const parseMessage = (payload: string): VeilingRow | null => {
+    if (!payload) return null;
     try {
-        const detail = await getAuctionDetail(veilingId, controller.signal);
-        const row = adaptAuction(detail as VeilingDetailDto);
-        apply(row);
-        return shouldStop(row);
-    } catch (error) {
-        return (
-            (error as { name?: string }).name === "AbortError" ||
-            controller.signal.aborted
-        );
+        const parsed = JSON.parse(payload) as VeilingDetailDto | VeilingRow;
+        return "titel" in parsed ? adaptAuction(parsed) : (parsed as VeilingRow);
+    } catch {
+        return null;
     }
-}
+};
 
-export function subscribeAuction(veilingId: number, onPatch: PatchHandler): Cleanup {
-    if (typeof window === "undefined" || Number.isNaN(veilingId)) {
-        return () => undefined;
-    }
+export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler): Cleanup {
+    if (typeof window === "undefined" || Number.isNaN(veilingId)) return () => undefined;
 
+    let last: VeilingRow | null = null;
     let disposed = false;
-    let lastRow: VeilingRow | null = null;
-    let pollTimer: ReturnType<typeof window.setTimeout> | undefined;
-    let eventSource: EventSource | null = null;
-    let socket: WebSocket | null = null;
-    let pollIndex = 0;
-
-    const hasDocument = typeof document !== "undefined";
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let sse: EventSource | null = null;
+    let ws: WebSocket | null = null;
     const controller = new AbortController();
 
-    let triedSse = false;
-    let triedWs = false;
+    const applyRow = (row: VeilingRow | null) => {
+        if (!row || disposed) return;
+        const patch = diff(last, row);
+        last = row;
+        if (patch) onPatch(patch);
+        if (finished(row)) cleanup();
+    };
 
-    const applyRow = (row: VeilingRow) => {
-        if (disposed) return;
-
-        const diff = createDiff(lastRow, row);
-        lastRow = row;
-
-        if (diff) {
-            onPatch(diff);
-        }
-
-        if (shouldStop(row)) {
-            dispose();
+    const fetchOnce = async () => {
+        try {
+            const detail = await getAuctionDetail(veilingId, controller.signal);
+            applyRow(adaptAuction(detail));
+        } catch (error) {
+            if ((error as { name?: string }).name === "AbortError") return;
+            fallbackToPolling();
         }
     };
 
-    const schedulePoll = (delay: number) => {
+    const schedule = (delay: number) => {
         if (disposed) return;
-
-        if (pollTimer) {
-            window.clearTimeout(pollTimer);
-        }
-
-        pollTimer = window.setTimeout(async () => {
-            if (disposed) return;
-
-            if (hasDocument && document.visibilityState === "hidden") {
-                schedulePoll(delay);
-                return;
-            }
-
-            if (!navigator.onLine) {
-                schedulePoll(delay);
-                return;
-            }
-
-            const stop = await pollOnce(veilingId, controller, applyRow);
-            if (!stop && !disposed) {
-                pollIndex = 0;
-                schedulePoll(POLL_STEPS[0]);
-            }
-        }, delay);
-    };
-
-    const closeRealtime = () => {
-        if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-        }
-        if (socket) {
-            socket.close();
-            socket = null;
-        }
+        clearTimeout(timer);
+        timer = setTimeout(fetchOnce, delay);
     };
 
     const fallbackToPolling = () => {
         if (disposed) return;
-
         closeRealtime();
-        const index = Math.min(pollIndex, POLL_STEPS.length - 1);
-        schedulePoll(POLL_STEPS[index]);
-        pollIndex = Math.min(pollIndex + 1, POLL_STEPS.length - 1);
+        schedule(POLL_STEPS[0]);
     };
 
-    const handleRealtimeMessage = (data: string) => {
-        if (!data) {
-            void pollOnce(veilingId, controller, applyRow);
-            return;
-        }
-
-        try {
-            const parsed = JSON.parse(data) as VeilingDetailDto | VeilingRow;
-            const row =
-                "titel" in parsed
-                    ? adaptAuction(parsed as VeilingDetailDto)
-                    : (parsed as VeilingRow);
-
-            applyRow(row);
-        } catch {
-            void pollOnce(veilingId, controller, applyRow);
-        }
+    const closeRealtime = () => {
+        sse?.close();
+        sse = null;
+        ws?.close();
+        ws = null;
     };
 
-    const initWebSocket = () => {
-        if (triedWs) return;
-        triedWs = true;
-
+    const initSse = () => {
         try {
-            const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-            socket = new WebSocket(
-                `${protocol}://${window.location.host}/api/Veiling/${veilingId}/ws`,
-            );
-
-            socket.onmessage = (event) => handleRealtimeMessage(event.data);
-            socket.onerror = fallbackToPolling;
-            socket.onclose = fallbackToPolling;
+            sse = new EventSource(`/api/Veiling/${veilingId}/stream`, { withCredentials: true });
+            sse.onmessage = (event) => {
+                const row = parseMessage(event.data);
+                if (row) applyRow(row);
+            };
+            sse.onerror = fallbackToPolling;
         } catch {
             fallbackToPolling();
         }
     };
 
-    const initSse = () => {
-        if (triedSse) return;
-        triedSse = true;
-
+    const initWebsocket = () => {
         try {
-            eventSource = new EventSource(`/api/Veiling/${veilingId}/stream`, {
-                withCredentials: true,
-            } as EventSourceInit);
-
-            eventSource.onmessage = (event) => handleRealtimeMessage(event.data);
-            eventSource.onerror = () => {
-                if (disposed) return;
-                closeRealtime();
-                initWebSocket();
-                if (!socket) {
-                    fallbackToPolling();
-                }
-            };
+            const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+            ws = new WebSocket(`${protocol}://${window.location.host}/api/Veiling/${veilingId}/ws`);
+            ws.onmessage = (event) => applyRow(parseMessage(String(event.data)));
+            ws.onclose = fallbackToPolling;
+            ws.onerror = fallbackToPolling;
         } catch {
-            initWebSocket();
-            if (!socket) {
-                fallbackToPolling();
-            }
+            fallbackToPolling();
         }
+    };
+
+    const cleanup = () => {
+        if (disposed) return;
+        disposed = true;
+        clearTimeout(timer);
+        closeRealtime();
+        controller.abort();
+        window.removeEventListener("online", onlineListener);
+        document.removeEventListener("visibilitychange", visibilityListener);
     };
 
     const onlineListener = () => {
-        if (disposed) return;
-        if (socket || eventSource) return;
-
-        pollIndex = 0;
-        schedulePoll(POLL_STEPS[0]);
+        if (disposed || ws || sse) return;
+        fetchOnce();
     };
 
     const visibilityListener = () => {
-        if (disposed || !hasDocument) return;
-        if (document.visibilityState === "visible") {
-            pollIndex = 0;
-            schedulePoll(POLL_STEPS[0]);
-        }
-    };
-
-    const dispose = () => {
-        if (disposed) return;
-        disposed = true;
-
-        closeRealtime();
-
-        if (pollTimer) {
-            window.clearTimeout(pollTimer);
-        }
-
-        controller.abort();
-        window.removeEventListener("online", onlineListener);
-
-        if (hasDocument) {
-            document.removeEventListener("visibilitychange", visibilityListener);
-        }
+        if (disposed || document.visibilityState === "hidden") return;
+        fetchOnce();
     };
 
     window.addEventListener("online", onlineListener);
-    if (hasDocument) {
-        document.addEventListener("visibilitychange", visibilityListener);
-    }
+    document.addEventListener("visibilitychange", visibilityListener);
 
     initSse();
-    if (!eventSource && !socket) {
-        initWebSocket();
-    }
-    if (!eventSource && !socket) {
-        schedulePoll(POLL_STEPS[0]);
-    }
+    if (!sse) initWebsocket();
+    if (!sse && !ws) schedule(POLL_STEPS[0]);
 
-    void pollOnce(veilingId, controller, applyRow);
-
-    return dispose;
+    void fetchOnce();
+    return cleanup;
 }

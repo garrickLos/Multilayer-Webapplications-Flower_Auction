@@ -1,148 +1,53 @@
-type EnvSource = Record<string, string | undefined>;
-
-type RuntimeEnv = {
-    readonly apiBaseUrl?: string;
-    readonly requestTimeoutMs?: number;
-    readonly pollIntervalMs?: number;
-    readonly pollBackoffDelays?: readonly number[];
-    readonly realtimePollSteps?: readonly number[];
-    readonly perPageOptions?: readonly number[];
-    readonly modalPerPageOptions?: readonly number[];
-    readonly productThumbnailSize?: number;
-    readonly dashboardSampleSize?: number;
-    readonly dashboardRefreshMs?: number;
+const readEnv = (key: string): string | undefined => {
+    if (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env?.[key]) {
+        return (import.meta as { env: Record<string, string> }).env[key];
+    }
+    if (typeof process !== "undefined" && (process as { env?: Record<string, string> }).env?.[key]) {
+        return (process as { env: Record<string, string> }).env![key];
+    }
+    return undefined;
 };
 
-type AppConfig = {
-    readonly api: {
-        readonly baseUrl: string;
-        readonly requestTimeoutMs: number;
-    };
-    readonly pagination: {
-        readonly table: readonly number[];
-        readonly modal: readonly number[];
-    };
-    readonly storageKeys: {
-        readonly users: string;
-        readonly auctions: string;
-        readonly bids: string;
-        readonly products: string;
-    };
-    readonly polling: {
-        readonly defaultIntervalMs: number;
-        readonly backoffDelaysMs: readonly number[];
-    };
-    readonly realtime: {
-        readonly pollStepsMs: readonly number[];
-    };
-    readonly ui: {
-        readonly productThumbnailSize: number;
-        readonly dashboardSampleSize: number;
-        readonly dashboardRefreshMs: number;
-    };
+const toNumber = (value: string | undefined, fallback: number): number => {
+    const parsed = value ? Number.parseInt(value, 10) : NaN;
+    return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-// Light-weight declaration to avoid needing @types/node
-declare const process:
-    | {
-    env?: EnvSource;
-}
-    | undefined;
-
-function readEnvSource(): EnvSource {
-    const sources: EnvSource[] = [];
-
-    if (typeof import.meta !== "undefined") {
-        const metaEnv = (import.meta as { env?: EnvSource }).env;
-        if (metaEnv && typeof metaEnv === "object") {
-            sources.push(metaEnv);
-        }
-    }
-
-    if (typeof process !== "undefined" && process.env && typeof process.env === "object") {
-        sources.push(process.env);
-    }
-
-    return Object.assign({}, ...sources);
-}
-
-function toNumber(value: string | undefined): number | undefined {
-    if (!value) return undefined;
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function toNumberList(value: string | undefined): readonly number[] | undefined {
-    if (!value) return undefined;
-    const parts = value
+const toNumberList = (value: string | undefined, fallback: readonly number[]): readonly number[] => {
+    if (!value) return fallback;
+    const numbers = value
         .split(",")
-        .map((part) => part.trim())
-        .filter((part) => part.length > 0);
-
-    if (!parts.length) return undefined;
-
-    const numbers = parts
-        .map((part) => Number.parseInt(part, 10))
+        .map((part) => Number.parseInt(part.trim(), 10))
         .filter((num) => Number.isFinite(num) && num > 0);
-
-    return numbers.length ? numbers : undefined;
-}
-
-const env = readEnvSource();
-
-const runtimeEnv: RuntimeEnv = {
-    apiBaseUrl:
-        env.VITE_VEILINGMEESTER_API_BASE_URL ??
-        env.REACT_APP_VEILINGMEESTER_API_BASE_URL ??
-        env.VEILINGMEESTER_API_BASE_URL,
-    requestTimeoutMs: toNumber(
-        env.VITE_VEILINGMEESTER_REQUEST_TIMEOUT_MS ?? env.REACT_APP_VEILINGMEESTER_REQUEST_TIMEOUT_MS,
-    ),
-    pollIntervalMs: toNumber(
-        env.VITE_VEILINGMEESTER_POLL_INTERVAL_MS ?? env.REACT_APP_VEILINGMEESTER_POLL_INTERVAL_MS,
-    ),
-    pollBackoffDelays: toNumberList(
-        env.VITE_VEILINGMEESTER_POLL_BACKOFF_MS ?? env.REACT_APP_VEILINGMEESTER_POLL_BACKOFF_MS,
-    ),
-    realtimePollSteps: toNumberList(
-        env.VITE_VEILINGMEESTER_REALTIME_STEPS_MS ?? env.REACT_APP_VEILINGMEESTER_REALTIME_STEPS_MS,
-    ),
-    perPageOptions: toNumberList(
-        env.VITE_VEILINGMEESTER_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_PER_PAGE_OPTIONS,
-    ),
-    modalPerPageOptions: toNumberList(
-        env.VITE_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS ?? env.REACT_APP_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS,
-    ),
-    productThumbnailSize: toNumber(
-        env.VITE_VEILINGMEESTER_PRODUCT_THUMBNAIL ?? env.REACT_APP_VEILINGMEESTER_PRODUCT_THUMBNAIL,
-    ),
-    dashboardSampleSize: toNumber(
-        env.VITE_VEILINGMEESTER_DASHBOARD_SAMPLE ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_SAMPLE,
-    ),
-    dashboardRefreshMs: toNumber(
-        env.VITE_VEILINGMEESTER_DASHBOARD_REFRESH_MS ?? env.REACT_APP_VEILINGMEESTER_DASHBOARD_REFRESH_MS,
-    ),
+    return numbers.length ? numbers : fallback;
 };
 
 const defaultBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-export const appConfig: AppConfig = {
+export const appConfig = {
     api: {
         baseUrl:
-            runtimeEnv.apiBaseUrl && runtimeEnv.apiBaseUrl.trim().length > 0
-                ? runtimeEnv.apiBaseUrl
-                : defaultBaseUrl,
-        requestTimeoutMs: runtimeEnv.requestTimeoutMs ?? 10000,
+            readEnv("VITE_VEILINGMEESTER_API_BASE_URL") ||
+            readEnv("REACT_APP_VEILINGMEESTER_API_BASE_URL") ||
+            readEnv("VEILINGMEESTER_API_BASE_URL") ||
+            defaultBaseUrl,
+        requestTimeoutMs: toNumber(readEnv("VITE_VEILINGMEESTER_REQUEST_TIMEOUT_MS"), 10000),
     },
     pagination: {
-        table:
-            runtimeEnv.perPageOptions && runtimeEnv.perPageOptions.length > 0
-                ? runtimeEnv.perPageOptions
-                : [10, 25, 50],
-        modal:
-            runtimeEnv.modalPerPageOptions && runtimeEnv.modalPerPageOptions.length > 0
-                ? runtimeEnv.modalPerPageOptions
-                : [10, 25, 50],
+        table: toNumberList(readEnv("VITE_VEILINGMEESTER_PER_PAGE_OPTIONS"), [10, 25, 50]),
+        modal: toNumberList(readEnv("VITE_VEILINGMEESTER_MODAL_PER_PAGE_OPTIONS"), [10, 25, 50]),
+    },
+    polling: {
+        intervalMs: toNumber(readEnv("VITE_VEILINGMEESTER_POLL_INTERVAL_MS"), 5000),
+        backoffMs: toNumberList(readEnv("VITE_VEILINGMEESTER_POLL_BACKOFF_MS"), [1000, 2000, 4000]),
+    },
+    realtime: {
+        pollStepsMs: toNumberList(readEnv("VITE_VEILINGMEESTER_REALTIME_STEPS_MS"), [2000, 4000, 8000, 15000]),
+    },
+    ui: {
+        productThumbnailSize: toNumber(readEnv("VITE_VEILINGMEESTER_PRODUCT_THUMBNAIL"), 48),
+        dashboardSampleSize: toNumber(readEnv("VITE_VEILINGMEESTER_DASHBOARD_SAMPLE"), 8),
+        dashboardRefreshMs: toNumber(readEnv("VITE_VEILINGMEESTER_DASHBOARD_REFRESH_MS"), 60000),
     },
     storageKeys: {
         users: "vm_users_filters",
@@ -150,22 +55,6 @@ export const appConfig: AppConfig = {
         bids: "vm_bids_filters",
         products: "vm_products_filters",
     },
-    polling: {
-        defaultIntervalMs: runtimeEnv.pollIntervalMs ?? 5000,
-        backoffDelaysMs:
-            runtimeEnv.pollBackoffDelays && runtimeEnv.pollBackoffDelays.length > 0
-                ? runtimeEnv.pollBackoffDelays
-                : [1000, 2000, 4000],
-    },
-    realtime: {
-        pollStepsMs:
-            runtimeEnv.realtimePollSteps && runtimeEnv.realtimePollSteps.length > 0
-                ? runtimeEnv.realtimePollSteps
-                : [2000, 4000, 8000, 15000],
-    },
-    ui: {
-        productThumbnailSize: runtimeEnv.productThumbnailSize ?? 48,
-        dashboardSampleSize: runtimeEnv.dashboardSampleSize ?? 8,
-        dashboardRefreshMs: runtimeEnv.dashboardRefreshMs ?? 60000,
-    },
-};
+} as const;
+
+export type AppConfig = typeof appConfig;
