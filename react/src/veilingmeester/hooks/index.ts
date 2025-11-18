@@ -100,18 +100,8 @@ export function useUserBids(userId: number): HookResult<UserBidRow> & { from: st
     };
 }
 
-export function useAuctions(): HookResult<VeilingRow> & {
-    status: "alle" | "actief" | "inactief";
-    setStatus: (value: "alle" | "actief" | "inactief") => void;
-    from: string;
-    setFrom: (value: string) => void;
-    to: string;
-    setTo: (value: string) => void;
-} {
+export function useAuctions(): HookResult<VeilingRow> {
     const state = usePagedState<VeilingRow>();
-    const [status, setStatus] = useState<"alle" | "actief" | "inactief">("alle");
-    const [from, setFrom] = useState("");
-    const [to, setTo] = useState("");
 
     useEffect(() => {
         const controller = new AbortController();
@@ -119,16 +109,7 @@ export function useAuctions(): HookResult<VeilingRow> & {
             try {
                 state.setLoading(true);
                 state.setError(null);
-                const result = await getAuctions(
-                    {
-                        from: from || undefined,
-                        to: to || undefined,
-                        status: status === "alle" ? undefined : status,
-                        page: state.page,
-                        pageSize: state.pageSize,
-                    },
-                    controller.signal,
-                );
+                const result = await getAuctions({ page: state.page, pageSize: state.pageSize }, controller.signal);
                 state.setRows(result.items.map(adaptAuction));
                 state.setHasNext(result.hasNext);
                 state.setTotalResults(result.totalResults);
@@ -142,16 +123,9 @@ export function useAuctions(): HookResult<VeilingRow> & {
         void load();
         return () => controller.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [status, from, to, state.page, state.pageSize]);
+    }, [state.page, state.pageSize]);
 
-    return { ...state, status, setStatus, from, setFrom, to, setTo } as HookResult<VeilingRow> & {
-        status: "alle" | "actief" | "inactief";
-        setStatus: (value: "alle" | "actief" | "inactief") => void;
-        from: string;
-        setFrom: (value: string) => void;
-        to: string;
-        setTo: (value: string) => void;
-    };
+    return state;
 }
 
 export function useProducts(growerId?: number): HookResult<VeilingProductRow> {

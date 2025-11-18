@@ -7,6 +7,11 @@ type ModalProps = {
     readonly onClose: () => void;
     readonly footer?: ReactNode;
     readonly size?: "sm" | "lg" | "xl";
+    readonly searchLabel?: string;
+    readonly searchPlaceholder?: string;
+    readonly searchValue?: string;
+    readonly onSearchChange?: (value: string) => void;
+    readonly filters?: ReactNode;
 };
 
 const focusableSelectors = [
@@ -24,7 +29,21 @@ const dialogSizes: Record<NonNullable<ModalProps["size"]>, string> = {
     xl: "modal-xl",
 };
 
-export function Modal({ title, children, onClose, footer, size = "lg" }: ModalProps): JSX.Element {
+const shouldRenderFilters = (filters?: ReactNode, onSearchChange?: ModalProps["onSearchChange"]): boolean =>
+    Boolean(filters || onSearchChange);
+
+export function Modal({
+    title,
+    children,
+    onClose,
+    footer,
+    size = "lg",
+    searchLabel = "Search",
+    searchPlaceholder = "Zoeken",
+    searchValue,
+    onSearchChange,
+    filters,
+}: ModalProps): JSX.Element {
     const dialogRef = useRef<HTMLDivElement | null>(null);
     const previousFocus = useRef<HTMLElement | null>(null);
     const headingId = useId();
@@ -90,7 +109,32 @@ export function Modal({ title, children, onClose, footer, size = "lg" }: ModalPr
                             <button type="button" className="btn-close" aria-label="Sluiten" onClick={onClose} />
                         </div>
 
-                        <div className="modal-body py-3">{children}</div>
+                        <div className="modal-body py-3">
+                            {shouldRenderFilters(filters, onSearchChange) && (
+                                <div className="d-flex flex-column gap-3 mb-3">
+                                    {onSearchChange && (
+                                        <div>
+                                            <label
+                                                htmlFor={`${headingId}-search`}
+                                                className="form-label small text-uppercase text-success-emphasis mb-1"
+                                            >
+                                                {searchLabel}
+                                            </label>
+                                            <input
+                                                id={`${headingId}-search`}
+                                                type="search"
+                                                className="form-control form-control-sm border-success-subtle"
+                                                placeholder={searchPlaceholder}
+                                                value={searchValue ?? ""}
+                                                onChange={(event) => onSearchChange(event.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                    {filters && <div className="d-flex flex-wrap gap-2">{filters}</div>}
+                                </div>
+                            )}
+                            <div className="d-flex flex-column gap-3">{children}</div>
+                        </div>
 
                         {footer && (
                             <div className="modal-footer bg-white position-sticky bottom-0 z-3 d-flex justify-content-end border-success-subtle">

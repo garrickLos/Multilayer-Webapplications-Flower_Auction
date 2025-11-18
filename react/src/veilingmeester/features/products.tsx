@@ -1,10 +1,26 @@
-import type { JSX } from "react";
-import { DataTable, EmptyState, InlineAlert, LoadingPlaceholder, Pager, SearchField, SmallSelectField, StatusBadge } from "../components/ui.tsx";
+import { useMemo, useState, type JSX } from "react";
+import {
+    DataTable,
+    EmptyState,
+    FilterChip,
+    InlineAlert,
+    LoadingPlaceholder,
+    Pager,
+    SearchField,
+    SmallSelectField,
+    StatusBadge,
+} from "../components/ui.tsx";
 import { appConfig } from "../config";
 import { Modal } from "../Modal";
 import { useProductCatalog, useProducts } from "../hooks";
 import type { UserRow, VeilingProductRow } from "../types";
 import { formatCurrency } from "../utils";
+
+const statusOptions = [
+    { value: "alle", label: "Alle" },
+    { value: "actief", label: "Actief" },
+    { value: "inactief", label: "Inactief" },
+];
 
 const productColumns = [
     { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
@@ -14,7 +30,15 @@ const productColumns = [
         sortable: true,
         render: (row: VeilingProductRow) => (
             <div className="d-flex align-items-center gap-2">
-                {row.image && <img src={row.image} alt="" width={appConfig.ui.productThumbnailSize} height={appConfig.ui.productThumbnailSize} className="rounded" />}
+                {row.image && (
+                    <img
+                        src={row.image}
+                        alt=""
+                        width={appConfig.ui.productThumbnailSize}
+                        height={appConfig.ui.productThumbnailSize}
+                        className="rounded"
+                    />
+                )}
                 <div className="d-flex flex-column">
                     <span className="fw-semibold text-break">{row.naam}</span>
                     <span className="text-muted small">#{row.id}</span>
@@ -54,6 +78,17 @@ const productColumns = [
 export function ProductsModal({ user, onClose }: { readonly user: UserRow; readonly onClose: () => void }): JSX.Element {
     const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults } = useProducts(user.id);
     const perPage = appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) }));
+    const [search, setSearch] = useState("");
+    const [status, setStatus] = useState<(typeof statusOptions)[number]["value"]>("alle");
+
+    const filteredRows = useMemo(() => {
+        return rows.filter((row) => {
+            const matchesStatus = status === "alle" || row.status === (status === "actief" ? "active" : "inactive");
+            const matchesSearch =
+                !search || row.naam.toLowerCase().includes(search.toLowerCase()) || String(row.id).includes(search.trim());
+            return matchesStatus && matchesSearch;
+        });
+    }, [rows, search, status]);
 
     return (
         <Modal
@@ -65,13 +100,25 @@ export function ProductsModal({ user, onClose }: { readonly user: UserRow; reado
             }
             onClose={onClose}
             size="xl"
+            searchLabel="Zoeken"
+            searchPlaceholder="Productnaam of nummer"
+            searchValue={search}
+            onSearchChange={setSearch}
+            filters={
+                <SmallSelectField
+                    label="Status"
+                    value={status}
+                    onChange={(value) => setStatus(value as (typeof statusOptions)[number]["value"])}
+                    options={statusOptions}
+                />
+            }
             footer={
                 <button type="button" className="btn btn-success" onClick={onClose}>
                     Sluiten
                 </button>
             }
         >
-            <div className="col-6 col-lg-3 mb-3">
+            <div className="col-6 col-lg-3">
                 <SmallSelectField<number>
                     label="Per pagina"
                     value={pageSize}
@@ -85,12 +132,12 @@ export function ProductsModal({ user, onClose }: { readonly user: UserRow; reado
 
             {loading && !rows.length ? (
                 <LoadingPlaceholder />
-            ) : rows.length === 0 ? (
+            ) : filteredRows.length === 0 ? (
                 <EmptyState message="Geen producten gevonden." />
             ) : (
                 <DataTable
                     columns={productColumns}
-                    rows={rows}
+                    rows={filteredRows}
                     totalResults={totalResults}
                     empty={<EmptyState message="Geen producten gevonden." />}
                     getRowKey={(row) => String(row.id)}
@@ -110,8 +157,19 @@ export function ProductsModal({ user, onClose }: { readonly user: UserRow; reado
 }
 
 export function ProductsTab(): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch } = useProductCatalog();
+    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch } =
+        useProductCatalog();
     const perPage = appConfig.pagination.table.map((size) => ({ value: size, label: String(size) }));
+    const [status, setStatus] = useState<(typeof statusOptions)[number]["value"]>("alle");
+
+    const filteredRows = useMemo(() => {
+        return rows.filter((row) => {
+            const matchesStatus = status === "alle" || row.status === (status === "actief" ? "active" : "inactive");
+            const matchesSearch =
+                !search || row.naam.toLowerCase().includes(search.toLowerCase()) || String(row.id).includes(search.trim());
+            return matchesStatus && matchesSearch;
+        });
+    }, [rows, search, status]);
 
     return (
         <section className="d-flex flex-column gap-3" aria-label="Productcatalogus">
@@ -120,6 +178,14 @@ export function ProductsTab(): JSX.Element {
                     <div className="row g-3 align-items-end">
                         <div className="col-12 col-md-6 col-lg-4">
                             <SearchField label="Zoeken" value={search} onChange={setSearch} placeholder="Productnaam" />
+                        </div>
+                        <div className="col-6 col-md-3 col-lg-2">
+                            <SmallSelectField
+                                label="Status"
+                                value={status}
+                                onChange={(value) => setStatus(value as (typeof statusOptions)[number]["value"])}
+                                options={statusOptions}
+                            />
                         </div>
                         <div className="col-6 col-md-3 col-lg-2">
                             <SmallSelectField<number>
@@ -134,17 +200,22 @@ export function ProductsTab(): JSX.Element {
                 </div>
             </div>
 
-            {search && <span className="text-muted small">Filter: {search}</span>}
+            <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
+                {status !== "alle" && <FilterChip label={`Status: ${status}`} onRemove={() => setStatus("alle")} />}
+                {search && <FilterChip label={`Zoek: ${search}`} onRemove={() => setSearch("")} />}
+                {status === "alle" && !search && <span className="text-muted small">Geen filters actief.</span>}
+            </div>
+
             {error && <InlineAlert>{error}</InlineAlert>}
 
             {loading && !rows.length ? (
                 <LoadingPlaceholder />
-            ) : rows.length === 0 ? (
+            ) : filteredRows.length === 0 ? (
                 <EmptyState message="Geen producten gevonden." />
             ) : (
                 <DataTable
                     columns={productColumns}
-                    rows={rows}
+                    rows={filteredRows}
                     totalResults={totalResults}
                     empty={<EmptyState message="Geen producten gevonden." />}
                     getRowKey={(row) => String(row.id)}
