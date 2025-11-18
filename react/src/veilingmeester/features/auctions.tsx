@@ -1,144 +1,88 @@
-import { useEffect, useMemo, useState, type JSX } from "react";
-import {
-    DataTable,
-    EmptyState,
-    FilterChip,
-    InlineAlert,
-    LoadingPlaceholder,
-    Pager,
-    SearchField,
-    SmallSelectField,
-    StatusBadge,
-} from "../components/ui.tsx";
-import { appConfig } from "../config";
+import { useMemo, useState, type JSX } from "react";
 import { Modal } from "../Modal";
-import { subscribeAuction } from "../api/live";
-import { useAuctions, useProductCatalog } from "../hooks";
-import type { VeilingProductRow, VeilingRow, Status } from "../types";
+import { Table, type TableColumn } from "../components/Table";
+import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
+import type { Auction, Product, Status } from "../types";
+import { filterRows } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
 
-const statusOptions: { value: "alle" | "actief" | "inactief"; label: string }[] = [
-    { value: "alle", label: "Alle" },
-    { value: "actief", label: "Actief" },
-    { value: "inactief", label: "Inactief" },
+// Auction list and related modals.
+const statusOptions: readonly { value: Status | "all"; label: string }[] = [
+    { value: "all", label: "Alle" },
+    { value: "active", label: "Actief" },
+    { value: "inactive", label: "Inactief" },
+    { value: "sold", label: "Verkocht" },
+    { value: "deleted", label: "Geannuleerd" },
 ];
 
-type AuctionFormState = {
-    readonly titel: string;
-    readonly minPrice: number;
-    readonly maxPrice: number;
-    readonly startIso: string;
-    readonly endIso: string;
-    readonly status: Status;
+const perPageOptions = [10, 25, 50];
+
+type AuctionFilters = { status: Status | "all"; from: string; to: string };
+
+export type AuctionsTabProps = {
+    readonly auctions: readonly Auction[];
+    readonly onCreateRequested: () => void;
+    readonly onOpenDetails: (auctionId: number) => void;
+    readonly onOpenLinkProducts: (auctionId: number) => void;
 };
 
-const createEmptyAuction = (): AuctionFormState => ({
-    titel: "Nieuwe veiling",
-    minPrice: 0,
-    maxPrice: 0,
-    startIso: "",
-    endIso: "",
-    status: "inactive",
-});
-
-type AuctionsTabProps = { readonly onSelectAuction: (row: VeilingRow) => void };
-
-type ProductLinkMap = Record<number, number[]>;
-
-export function AuctionsTab({ onSelectAuction }: AuctionsTabProps): JSX.Element {
-    const { rows, setRows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults } = useAuctions();
-    const perPage = appConfig.pagination.table.map((size) => ({ value: size, label: String(size) }));
-
+export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpenLinkProducts }: AuctionsTabProps): JSX.Element {
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState<(typeof statusOptions)[number]["value"]>("alle");
-    const [from, setFrom] = useState("");
-    const [to, setTo] = useState("");
-    const [creating, setCreating] = useState(false);
-    const [linkingAuction, setLinkingAuction] = useState<VeilingRow | null>(null);
-    const [linkedProducts, setLinkedProducts] = useState<ProductLinkMap>({});
+    const [filters, setFilters] = useState<AuctionFilters>({ status: "all", from: "", to: "" });
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(perPageOptions[0]);
 
-    const filteredRows = useMemo(() => {
-        return rows.filter((row) => {
-            const matchesSearch =
-                !search ||
-                row.titel.toLowerCase().includes(search.toLowerCase()) ||
-                String(row.id).includes(search.trim());
-            const matchesStatus = status === "alle" || row.status === (status === "actief" ? "active" : "inactive");
-            const startDate = row.startIso ? Date.parse(row.startIso) : null;
-            const fromDate = from ? Date.parse(from) : null;
-            const toDate = to ? Date.parse(to) : null;
-            const matchesFrom = !fromDate || (startDate != null && startDate >= fromDate);
-            const matchesTo = !toDate || (startDate != null && startDate <= toDate);
-            return matchesSearch && matchesStatus && matchesFrom && matchesTo;
-        });
-    }, [rows, search, status, from, to]);
+    const filteredRows = useMemo(
+        () =>
+            filterRows(auctions, search, filters, (row, term, currentFilters) => {
+                const matchesSearch = !term || row.title.toLowerCase().includes(term) || String(row.id).includes(term);
+                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                const start = Date.parse(row.startDate);
+                const from = currentFilters.from ? Date.parse(currentFilters.from) : Number.NEGATIVE_INFINITY;
+                const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
+                const matchesFrom = Number.isFinite(start) ? start >= from : true;
+                const matchesTo = Number.isFinite(start) ? start <= to : true;
+                return matchesSearch && matchesStatus && matchesFrom && matchesTo;
+            }),
+        [auctions, filters, search],
+    );
 
-    const columns = [
-        { key: "id", header: "#", sortable: true, headerClassName: "text-nowrap", cellClassName: "text-nowrap" },
+    const columns: TableColumn<Auction>[] = [
+        { key: "id", header: "#", sortable: true, render: (row) => <span className="fw-semibold">#{row.id}</span>, getValue: (row) => row.id },
+        { key: "title", header: "Titel", sortable: true, render: (row) => row.title, getValue: (row) => row.title },
         {
-            key: "titel",
-            header: "Titel",
-            sortable: true,
-            render: (row: VeilingRow) => (
-                <div className="d-flex flex-column">
-                    <span className="fw-semibold text-break">{row.titel}</span>
-                    <span className="text-muted small">#{row.id}</span>
-                </div>
-            ),
-            getValue: (row: VeilingRow) => row.titel,
-        },
-        {
-            key: "minPrice",
+            key: "price",
             header: "Prijs",
             sortable: true,
-            render: (row: VeilingRow) => (
+            render: (row) => (
                 <div className="d-flex flex-column">
                     <span>{formatCurrency(row.minPrice)}</span>
                     <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
                 </div>
             ),
-            getValue: (row: VeilingRow) => row.minPrice,
+            getValue: (row) => row.minPrice,
         },
+        { key: "startDate", header: "Start", sortable: true, render: (row) => formatDateTime(row.startDate), getValue: (row) => row.startDate },
+        { key: "endDate", header: "Einde", sortable: true, render: (row) => formatDateTime(row.endDate), getValue: (row) => row.endDate },
         {
-            key: "startIso",
-            header: "Start",
-            sortable: true,
-            render: (row: VeilingRow) => formatDateTime(row.startIso),
-            getValue: (row: VeilingRow) => row.startIso ?? "",
-        },
-        {
-            key: "endIso",
-            header: "Einde",
-            sortable: true,
-            render: (row: VeilingRow) => formatDateTime(row.endIso),
-            getValue: (row: VeilingRow) => row.endIso ?? "",
-        },
-        {
-            key: "productCount",
+            key: "products",
             header: "Producten",
             sortable: true,
-            render: (row: VeilingRow) => row.productCount + (linkedProducts[row.id]?.length ?? 0),
-            getValue: (row: VeilingRow) => row.productCount + (linkedProducts[row.id]?.length ?? 0),
+            render: (row) => row.linkedProductIds.length,
+            getValue: (row) => row.linkedProductIds.length,
         },
-        {
-            key: "status",
-            header: "Status",
-            sortable: true,
-            render: (row: VeilingRow) => <StatusBadge status={row.status} />,
-            getValue: (row: VeilingRow) => row.status,
-        },
+        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
         {
             key: "actions",
             header: "Acties",
-            cellClassName: "text-end",
-            render: (row: VeilingRow) => (
-                <div className="d-flex gap-2 justify-content-end">
+            render: (row) => (
+                <div className="d-flex justify-content-end gap-2">
                     <button
                         type="button"
                         className="btn btn-outline-success btn-sm"
                         onClick={(event) => {
                             event.stopPropagation();
-                            setLinkingAuction(row);
+                            onOpenLinkProducts(row.id);
                         }}
                     >
                         Koppel producten
@@ -148,204 +92,78 @@ export function AuctionsTab({ onSelectAuction }: AuctionsTabProps): JSX.Element 
         },
     ];
 
-    const handleCreate = (draft: AuctionFormState) => {
-        const nextId = rows.reduce((max, row) => Math.max(max, row.id), 0) + 1;
-        const newRow: VeilingRow = {
-            id: nextId,
-            titel: draft.titel || `Veiling ${nextId}`,
-            startIso: draft.startIso || undefined,
-            endIso: draft.endIso || undefined,
-            status: draft.status,
-            minPrice: draft.minPrice,
-            maxPrice: draft.maxPrice || draft.minPrice,
-            productCount: 0,
-        };
-        setRows((prev) => [newRow, ...prev]);
-    };
-
-    const handleLinkProducts = (auctionId: number, products: readonly VeilingProductRow[]) => {
-        setLinkedProducts((prev) => ({ ...prev, [auctionId]: products.map((product) => product.id) }));
-    };
+    const activeFilters = [
+        filters.status !== "all" && `Status: ${filters.status}`,
+        filters.from && `Vanaf: ${filters.from}`,
+        filters.to && `Tot: ${filters.to}`,
+        search && `Zoek: ${search}`,
+    ].filter(Boolean) as string[];
 
     return (
         <section className="d-flex flex-column gap-3" aria-label="Veilingen">
-            <div className="card border-0 shadow-sm rounded-4">
-                <div className="card-body">
-                    <div className="row g-3 align-items-end">
-                        <div className="col-12 col-lg-4">
-                            <SearchField label="Zoeken" value={search} onChange={setSearch} placeholder="Titel of nummer" />
-                        </div>
-                        <div className="col-6 col-lg-2">
-                            <SmallSelectField
-                                label="Status"
-                                value={status}
-                                onChange={(value) => setStatus(value as (typeof statusOptions)[number]["value"])}
-                                options={statusOptions}
-                            />
-                        </div>
-                        <div className="col-6 col-lg-2">
-                            <label htmlFor="from" className="form-label small text-uppercase text-success-emphasis mb-1">
-                                Vanaf
-                            </label>
-                            <input
-                                id="from"
-                                type="date"
-                                className="form-control form-control-sm border-success-subtle"
-                                value={from}
-                                onChange={(event) => setFrom(event.target.value)}
-                            />
-                        </div>
-                        <div className="col-6 col-lg-2">
-                            <label htmlFor="to" className="form-label small text-uppercase text-success-emphasis mb-1">
-                                Tot en met
-                            </label>
-                            <input
-                                id="to"
-                                type="date"
-                                className="form-control form-control-sm border-success-subtle"
-                                value={to}
-                                onChange={(event) => setTo(event.target.value)}
-                            />
-                        </div>
-                        <div className="col-6 col-lg-2">
-                            <SmallSelectField<number>
-                                label="Per pagina"
-                                value={pageSize}
-                                onChange={setPageSize}
-                                options={perPage}
-                                parse={(raw) => Number(raw)}
-                            />
-                        </div>
-                    </div>
-                    <div className="d-flex justify-content-end mt-3">
-                        <button type="button" className="btn btn-success" onClick={() => setCreating(true)}>
-                            Nieuwe veiling
-                        </button>
-                    </div>
+            <div className="d-flex justify-content-between flex-wrap gap-2">
+                <div className="d-flex flex-wrap align-items-center gap-2">
+                    {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
+                    {activeFilters.map((label) => (
+                        <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", from: "", to: "" })} />
+                    ))}
                 </div>
+                <button type="button" className="btn btn-success" onClick={onCreateRequested}>
+                    Nieuwe veiling
+                </button>
             </div>
 
-            <div className="d-flex flex-wrap gap-2" aria-label="Actieve filters">
-                {status !== "alle" && <FilterChip label={`Status: ${status}`} onRemove={() => setStatus("alle")} />}
-                {from && <FilterChip label={`Vanaf: ${from}`} onRemove={() => setFrom("")} />}
-                {to && <FilterChip label={`Tot: ${to}`} onRemove={() => setTo("")} />}
-                {search && <FilterChip label={`Zoek: ${search}`} onRemove={() => setSearch("")} />}
-                {status === "alle" && !from && !to && !search && (
-                    <span className="text-muted small">Geen filters actief.</span>
-                )}
-            </div>
-
-            {error && <InlineAlert>{error}</InlineAlert>}
-
-            {loading && !rows.length ? (
-                <LoadingPlaceholder />
-            ) : filteredRows.length === 0 ? (
-                <EmptyState message="Geen veilingen gevonden." />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    rows={filteredRows}
-                    totalResults={totalResults}
-                    empty={<EmptyState message="Geen veilingen gevonden." />}
-                    getRowKey={(row) => String(row.id)}
-                    onRowClick={onSelectAuction}
-                />
-            )}
-
-            <Pager
+            <Table
+                columns={columns}
+                rows={filteredRows}
+                getRowId={(row) => row.id}
+                onRowClick={(row) => onOpenDetails(row.id)}
+                search={{ value: search, onChange: setSearch, placeholder: "Titel of nummer" }}
+                filters={
+                    <div className="d-flex flex-wrap gap-2">
+                        <Select
+                            value={filters.status}
+                            options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, status: value as AuctionFilters["status"] }))}
+                        />
+                        <Input type="date" value={filters.from} onChange={(value) => setFilters((prev) => ({ ...prev, from: value }))} />
+                        <Input type="date" value={filters.to} onChange={(value) => setFilters((prev) => ({ ...prev, to: value }))} />
+                    </div>
+                }
                 page={page}
                 pageSize={pageSize}
-                hasNext={hasNext}
-                onPrevious={() => setPage(Math.max(1, page - 1))}
-                onNext={() => setPage(page + 1)}
-                totalResults={totalResults}
+                pageSizeOptions={perPageOptions}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                }}
+                emptyMessage={<EmptyState message="Geen veilingen gevonden." />}
             />
-
-            {creating && (
-                <AuctionCreateModal
-                    onClose={() => setCreating(false)}
-                    onCreate={(draft) => {
-                        handleCreate(draft);
-                        setCreating(false);
-                    }}
-                />
-            )}
-
-            {linkingAuction && (
-                <ProductLinkModal
-                    auction={linkingAuction}
-                    onClose={() => setLinkingAuction(null)}
-                    onSave={(products) => {
-                        handleLinkProducts(linkingAuction.id, products);
-                        setLinkingAuction(null);
-                    }}
-                    linkedMap={linkedProducts}
-                />
-            )}
         </section>
     );
 }
 
-export function AuctionModal({ row, onClose }: { readonly row: VeilingRow; readonly onClose: () => void }): JSX.Element {
-    const [current, setCurrent] = useState<VeilingRow>(row);
+type AuctionFormState = { title: string; minPrice: number; maxPrice: number; startDate: string; endDate: string; status: Status };
 
-    useEffect(() => {
-        const cleanup = subscribeAuction(row.id, (patch) => setCurrent((prev) => ({ ...prev, ...patch })));
-        return cleanup;
-    }, [row.id]);
+type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => void };
 
-    return (
-        <Modal
-            title={
-                <div className="d-flex flex-column">
-                    <span className="fw-semibold">{current.titel}</span>
-                    <span className="text-muted small">Veiling #{current.id}</span>
-                </div>
-            }
-            onClose={onClose}
-            footer={
-                <button type="button" className="btn btn-success" onClick={onClose}>
-                    Sluiten
-                </button>
-            }
-        >
-            <div className="row g-3 mb-3">
-                <Info label="Status">
-                    <StatusBadge status={current.status} />
-                </Info>
-                <Info label="Start">{formatDateTime(current.startIso)}</Info>
-                <Info label="Einde">{formatDateTime(current.endIso)}</Info>
-                <Info label="Prijsbereik">
-                    {formatCurrency(current.minPrice)} – {formatCurrency(current.maxPrice)}
-                </Info>
-                <Info label="Producten">{current.productCount}</Info>
-            </div>
-        </Modal>
-    );
-}
+export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Element {
+    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", minPrice: 0, maxPrice: 0, startDate: "", endDate: "", status: "inactive" });
 
-function AuctionCreateModal({
-    onClose,
-    onCreate,
-}: {
-    readonly onClose: () => void;
-    readonly onCreate: (draft: AuctionFormState) => void;
-}): JSX.Element {
-    const [draft, setDraft] = useState<AuctionFormState>(createEmptyAuction());
-
-    const update = <K extends keyof AuctionFormState>(key: K, value: AuctionFormState[K]) =>
-        setDraft((prev) => ({ ...prev, [key]: value }));
+    const update = <K extends keyof AuctionFormState>(key: K, value: AuctionFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
 
     return (
         <Modal
             title="Nieuwe veiling"
+            subtitle="Aanmaken"
             onClose={onClose}
             footer={
                 <div className="d-flex gap-2">
                     <button type="button" className="btn btn-outline-success" onClick={onClose}>
                         Annuleren
                     </button>
-                    <button type="button" className="btn btn-success" onClick={() => onCreate(draft)}>
+                    <button type="button" className="btn btn-success" onClick={() => onSave(draft)}>
                         Opslaan
                     </button>
                 </div>
@@ -353,242 +171,184 @@ function AuctionCreateModal({
         >
             <div className="row g-3">
                 <div className="col-12">
-                    <label htmlFor="auction-title" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Titel
-                    </label>
-                    <input
-                        id="auction-title"
-                        type="text"
-                        className="form-control border-success-subtle"
-                        value={draft.titel}
-                        onChange={(event) => update("titel", event.target.value)}
-                    />
+                    <Field label="Titel">
+                        <Input value={draft.title} onChange={(value) => update("title", value)} placeholder="Titel" />
+                    </Field>
                 </div>
                 <div className="col-6">
-                    <label htmlFor="auction-min" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Min. prijs
-                    </label>
-                    <input
-                        id="auction-min"
-                        type="number"
-                        className="form-control border-success-subtle"
-                        value={draft.minPrice}
-                        onChange={(event) => update("minPrice", Number(event.target.value))}
-                    />
+                    <Field label="Min. prijs">
+                        <Input type="number" value={draft.minPrice} onChange={(value) => update("minPrice", Number(value) || 0)} min={0} />
+                    </Field>
                 </div>
                 <div className="col-6">
-                    <label htmlFor="auction-max" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Max. prijs
-                    </label>
-                    <input
-                        id="auction-max"
-                        type="number"
-                        className="form-control border-success-subtle"
-                        value={draft.maxPrice}
-                        onChange={(event) => update("maxPrice", Number(event.target.value))}
-                    />
+                    <Field label="Max. prijs">
+                        <Input type="number" value={draft.maxPrice} onChange={(value) => update("maxPrice", Number(value) || 0)} min={0} />
+                    </Field>
                 </div>
                 <div className="col-6">
-                    <label htmlFor="auction-start" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Startdatum
-                    </label>
-                    <input
-                        id="auction-start"
-                        type="datetime-local"
-                        className="form-control border-success-subtle"
-                        value={draft.startIso}
-                        onChange={(event) => update("startIso", event.target.value)}
-                    />
+                    <Field label="Startdatum">
+                        <Input type="datetime-local" value={draft.startDate} onChange={(value) => update("startDate", value)} />
+                    </Field>
                 </div>
                 <div className="col-6">
-                    <label htmlFor="auction-end" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Einddatum
-                    </label>
-                    <input
-                        id="auction-end"
-                        type="datetime-local"
-                        className="form-control border-success-subtle"
-                        value={draft.endIso}
-                        onChange={(event) => update("endIso", event.target.value)}
-                    />
+                    <Field label="Einddatum">
+                        <Input type="datetime-local" value={draft.endDate} onChange={(value) => update("endDate", value)} />
+                    </Field>
                 </div>
                 <div className="col-12">
-                    <label htmlFor="auction-status" className="form-label small text-uppercase text-success-emphasis mb-1">
-                        Status
-                    </label>
-                    <select
-                        id="auction-status"
-                        className="form-select border-success-subtle"
-                        value={draft.status}
-                        onChange={(event) => update("status", event.target.value as Status)}
-                    >
-                        <option value="active">Actief</option>
-                        <option value="inactive">Inactief</option>
-                        <option value="sold">Verkocht</option>
-                        <option value="deleted">Geannuleerd</option>
-                    </select>
+                    <Field label="Status">
+                        <Select
+                            value={draft.status}
+                            options={statusOptions.filter((option) => option.value !== "all").map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => update("status", value as Status)}
+                        />
+                    </Field>
                 </div>
             </div>
         </Modal>
     );
 }
 
-function ProductLinkModal({
+export function AuctionDetailsModal({ auction, onClose }: { readonly auction: Auction; readonly onClose: () => void }): JSX.Element {
+    return (
+        <Modal
+            title={auction.title}
+            subtitle={`Veiling #${auction.id}`}
+            onClose={onClose}
+            footer={
+                <button type="button" className="btn btn-success" onClick={onClose}>
+                    Sluiten
+                </button>
+            }
+        >
+            <div className="row g-3">
+                <Info label="Status">
+                    <StatusBadge status={auction.status} />
+                </Info>
+                <Info label="Prijsbereik">{`${formatCurrency(auction.minPrice)} – ${formatCurrency(auction.maxPrice)}`}</Info>
+                <Info label="Start">{formatDateTime(auction.startDate)}</Info>
+                <Info label="Einde">{formatDateTime(auction.endDate)}</Info>
+                <Info label="Gekoppelde producten">{auction.linkedProductIds.length}</Info>
+            </div>
+        </Modal>
+    );
+}
+
+export function LinkProductsModal({
     auction,
+    products,
     onClose,
     onSave,
-    linkedMap,
 }: {
-    readonly auction: VeilingRow;
+    readonly auction: Auction;
+    readonly products: readonly Product[];
     readonly onClose: () => void;
-    readonly onSave: (products: readonly VeilingProductRow[]) => void;
-    readonly linkedMap: ProductLinkMap;
+    readonly onSave: (productIds: readonly number[]) => void;
 }): JSX.Element {
-    const { rows, loading, error, page, setPage, pageSize, setPageSize, hasNext, totalResults, search, setSearch } =
-        useProductCatalog();
-    const perPage = appConfig.pagination.modal.map((size) => ({ value: size, label: String(size) }));
-    const [status, setStatus] = useState<"alle" | "actief" | "inactief">("alle");
-    const preselected = linkedMap[auction.id] ?? [];
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(preselected));
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [selectedIds, setSelectedIds] = useState<readonly number[]>(auction.linkedProductIds);
 
-    useEffect(() => setSelectedIds(new Set(preselected)), [preselected]);
+    const availableProducts = useMemo(
+        () =>
+            filterRows(products, search, { status: statusFilter }, (product, term, currentFilters) => {
+                const notLinkedElsewhere = !product.linkedAuctionId || product.linkedAuctionId === auction.id;
+                const matchesSearch = !term || product.name.toLowerCase().includes(term) || String(product.id).includes(term);
+                const matchesStatus = currentFilters.status === "all" || product.status === currentFilters.status;
+                return notLinkedElsewhere && matchesSearch && matchesStatus;
+            }),
+        [auction.id, products, search, statusFilter],
+    );
 
-    const alreadyLinked = useMemo(() => new Set(Object.values(linkedMap).flat()), [linkedMap]);
-
-    const availableRows = useMemo(() => {
-        return rows.filter((row) => {
-            const reservedElsewhere = alreadyLinked.has(row.id) && !selectedIds.has(row.id);
-            if (reservedElsewhere) return false;
-            const matchesStatus = status === "alle" || row.status === (status === "actief" ? "active" : "inactive");
-            const matchesSearch =
-                !search || row.naam.toLowerCase().includes(search.toLowerCase()) || String(row.id).includes(search.trim());
-            return matchesStatus && matchesSearch;
-        });
-    }, [alreadyLinked, rows, search, selectedIds, status]);
-
-    const toggleSelection = (row: VeilingProductRow) => {
+    const toggleRow = (id: number) => setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
+    const togglePage = (ids: readonly (string | number)[], checked: boolean) => {
         setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(row.id)) next.delete(row.id);
-            else next.add(row.id);
-            return next;
+            const set = new Set(prev);
+            ids.forEach((id) => {
+                if (checked) set.add(Number(id));
+                else set.delete(Number(id));
+            });
+            return Array.from(set);
         });
+    };
+
+    const columns: TableColumn<Product>[] = [
+        { key: "id", header: "#", sortable: true, render: (row) => <span className="fw-semibold">#{row.id}</span>, getValue: (row) => row.id },
+        { key: "name", header: "Naam", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
+        {
+            key: "price",
+            header: "Prijs",
+            sortable: true,
+            render: (row) => (
+                <div className="d-flex flex-column">
+                    <span>{formatCurrency(row.minPrice)}</span>
+                    <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
+                </div>
+            ),
+            getValue: (row) => row.minPrice,
+        },
+        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+        { key: "category", header: "Categorie", sortable: true, render: (row) => row.category, getValue: (row) => row.category },
+    ];
+
+    const handleSave = () => {
+        onSave(selectedIds);
+        onClose();
+    };
+
+    const handleCancel = () => {
+        setSelectedIds([]);
+        onClose();
     };
 
     return (
         <Modal
-            title={
-                <div className="d-flex flex-column">
-                    <span className="fw-semibold">Koppel producten</span>
-                    <span className="text-muted small">Veiling #{auction.id}</span>
-                </div>
-            }
-            onClose={onClose}
+            title="Koppel producten"
+            subtitle={`Veiling #${auction.id}`}
+            onClose={handleCancel}
             size="xl"
-            searchLabel="Zoeken"
-            searchPlaceholder="Productnaam of nummer"
-            searchValue={search}
-            onSearchChange={setSearch}
-            filters={
-                <SmallSelectField
-                    label="Status"
-                    value={status}
-                    onChange={(value) => setStatus(value as "alle" | "actief" | "inactief")}
-                    options={statusOptions}
-                />
+            controls={
+                <div className="d-flex flex-wrap gap-2">
+                    <Input value={search} onChange={setSearch} placeholder="Productnaam of nummer" />
+                    <Select
+                        value={statusFilter}
+                        options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                        onChange={(value) => setStatusFilter(value as Status | "all")}
+                    />
+                    <span className="badge bg-success-subtle text-success-emphasis align-self-center">
+                        {selectedIds.length} geselecteerd
+                    </span>
+                </div>
             }
             footer={
                 <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-outline-success" onClick={onClose}>
+                    <button type="button" className="btn btn-outline-success" onClick={handleCancel}>
                         Annuleren
                     </button>
-                    <button
-                        type="button"
-                        className="btn btn-success"
-                        onClick={() =>
-                            onSave(availableRows.filter((row) => selectedIds.has(row.id)))
-                        }
-                    >
+                    <button type="button" className="btn btn-success" onClick={handleSave} disabled={selectedIds.length === 0}>
                         Koppel selectie
                     </button>
                 </div>
             }
         >
-            {error && <InlineAlert>{error}</InlineAlert>}
-
-            {loading && !rows.length ? (
-                <LoadingPlaceholder />
-            ) : availableRows.length === 0 ? (
-                <EmptyState message="Geen beschikbare producten." />
+            {availableProducts.length === 0 ? (
+                <EmptyState message="Geen beschikbare producten" />
             ) : (
-                <DataTable
-                    columns={[
-                        {
-                            key: "select",
-                            header: "",
-                            headerClassName: "text-center",
-                            cellClassName: "text-center",
-                            render: (row: VeilingProductRow) => (
-                                <input
-                                    type="checkbox"
-                                    className="form-check-input border-success-subtle"
-                                    checked={selectedIds.has(row.id)}
-                                    onChange={(event) => {
-                                        event.stopPropagation();
-                                        toggleSelection(row);
-                                    }}
-                                />
-                            ),
-                        },
-                        {
-                            key: "naam",
-                            header: "Naam",
-                            sortable: true,
-                            render: (row: VeilingProductRow) => (
-                                <div className="d-flex flex-column text-start">
-                                    <span className="fw-semibold">{row.naam}</span>
-                                    <span className="text-muted small">#{row.id}</span>
-                                </div>
-                            ),
-                            getValue: (row: VeilingProductRow) => row.naam,
-                        },
-                        {
-                            key: "minPrice",
-                            header: "Prijs",
-                            sortable: true,
-                            render: (row: VeilingProductRow) => (
-                                <div className="d-flex flex-column">
-                                    <span>{formatCurrency(row.minPrice)}</span>
-                                    <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
-                                </div>
-                            ),
-                            getValue: (row: VeilingProductRow) => row.minPrice,
-                        },
-                        {
-                            key: "status",
-                            header: "Status",
-                            sortable: true,
-                            render: (row: VeilingProductRow) => <StatusBadge status={row.status} />,
-                            getValue: (row: VeilingProductRow) => row.status,
-                        },
-                    ]}
-                    rows={availableRows}
-                    totalResults={totalResults}
-                    empty={<EmptyState message="Geen beschikbare producten." />}
-                    getRowKey={(row) => String(row.id)}
-                    onRowClick={toggleSelection}
-                    isRowInteractive={() => true}
+                <Table
+                    columns={columns}
+                    rows={availableProducts}
+                    getRowId={(row) => row.id}
+                    page={page}
+                    pageSize={pageSize}
+                    pageSizeOptions={perPageOptions}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    onRowClick={(row) => toggleRow(row.id)}
+                    selectable={{ selectedIds, onToggleRow: (id) => toggleRow(Number(id)), onTogglePage: togglePage }}
                 />
             )}
-
-            <Pager
-                page={page}
-                pageSize={pageSize}
-                hasNext={hasNext}
-                onPrevious={() => setPage(Math.max(1, page - 1))}
-                onNext={() => setPage(page + 1)}
-                totalResults={totalResults}
-            />
         </Modal>
     );
 }
