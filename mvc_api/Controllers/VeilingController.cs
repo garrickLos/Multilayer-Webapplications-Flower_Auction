@@ -182,6 +182,7 @@ public class VeilingController : ControllerBase
     }
 
     // DELETE: api/Veiling/{id}
+    //verwijderd ook alle producten die in de veiling zitten (mss handig om een softdelete te gebruiken)
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
