@@ -1,9 +1,20 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.Design;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using mvc_api.Data;
 using mvc_api.Models;
+using SQLitePCL;
 
 namespace mvc_api.Controllers;
+
+// Constants kunnen hier, of nog beter in een globale 'Constants.cs'
+    public static class VeilingStatus
+    {
+        public const string Active = "active";
+        public const string Inactive = "inactive";
+        public const string Sold = "sold";
+    }
 
 [ApiController]
 [Route("api/[controller]")]
@@ -11,46 +22,17 @@ namespace mvc_api.Controllers;
 public class VeilingController : ControllerBase
 {
     private readonly AppDbContext _db;
+
     public VeilingController(AppDbContext db) => _db = db;
-
-    private static class VeilingStatus
-    {
-        public const string Active   = "active";
-        public const string Inactive = "inactive";
-        public const string Sold     = "sold";
-    }
-
-    private const decimal MinToegestanePrijs = 0.01m;
-
-    //wat er wordt opgehaald dat gebruikt wordt in de json api van de veiling zelf
-    public sealed record VeilingDto(
-        int VeilingNr,
-        string VeilingNaam,
-        DateTime Begintijd,
-        DateTime Eindtijd,
-        string Status,
-        IEnumerable<VProd> Producten,
-        IEnumerable<VBiedingen> Biedingen
-    );
-    
-    //wat er wordt opgehaald van de api dat gebruikt kan worden voor de veilingproduct 
-    public sealed record VProd(
-        int VeilingProductNr, 
-        string Naam,
-        DateTime GeplaatstDatum, 
-        decimal Startprijs, 
-        int Voorraad,
-        string ImagePath
-    );
-
-    //record voor de biedingen. heb alleen de ID gepakt zodat de json niet te groot en onoverzichtelijk wordt
-    public record VBiedingen (
-        int Biedingnr
-    );
 
     // GET: api/Veiling
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<VeilingDto>>> GetAll(
+    public async Task<ActionResult<IEnumerable<VeilingMeester_VeilingDto>>> GetAll(
+        /* rol is tijdelijk, Zorgt ervoor dat we even makkelijk zonder het rollen systeem de api kunnen laten werken door 
+        bij de api een '?rol=VeilingMeester' of een andere rol te plaatsen om de goede data te krijgen
+        enige wat dan wel nog moet is dat die rol moet worden aangemaakt of het krijgt de standaar no rol info
+        */
+        [FromQuery] string? rol, // dit is tijdelijk om een rolsysteem erin te bouwen die verschillende dto's laat zien op basis van de rol
         [FromQuery] int? veilingProduct,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
@@ -59,123 +41,144 @@ public class VeilingController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
+        page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var now   = DateTime.UtcNow;
-        var query = _db.Veilingen.AsNoTracking().AsQueryable();
+        var query = _db.Veilingen.AsNoTracking()
+            .AsQueryable();
 
-        if (veilingProduct is not null)
-        {
-            int vpNr = veilingProduct.Value;
-            query = query.Where(v => v.Veilingproducten.Any(p => p.VeilingProductNr == vpNr));
-        }
+        var now = DateTime.UtcNow;
 
-        if (from is not null)
+        // --- Filtering ---
+        if (veilingProduct.HasValue)
+            query = query.Where(v => v.Veilingproducten.Any(p => p.VeilingProductNr == veilingProduct.Value));
+
+        if (from.HasValue)
             query = query.Where(v => v.Begintijd >= from.Value);
 
-        if (to is not null)
+        if (to.HasValue)
             query = query.Where(v => v.Eindtijd <= to.Value);
 
         if (onlyActive)
             query = query.Where(v => v.Status == VeilingStatus.Active && v.Eindtijd > now);
 
+        // --- Count & Paging ---
         var total = await query.CountAsync(ct);
+        
+        Response.Headers.Append("X-Total-Count", total.ToString());
+        Response.Headers.Append("X-Page", page.ToString());
+        Response.Headers.Append("X-Page-Size", pageSize.ToString());
 
-        var items = await ProjectToDto(
-                query.OrderBy(v => v.Begintijd)
-                     .ThenBy(v => v.VeilingNr)
-                     .Skip((page - 1) * pageSize)
-                     .Take(pageSize))
-            .ToListAsync(ct);
+        query = query
+                .OrderBy(v => v.Begintijd)
+                .ThenBy(v => v.VeilingNr)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
 
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+        if (rol == "VeilingMeester")
+        {
+            // --- Projectie & Execution ---
+            var items = await query
+                .ProjectToMeesterDto(now) // Roept de meester helper methode op zodat het de juiste gegevens laat zien
+                .ToListAsync(ct);
 
-        return Ok(items);
+            return Ok(items); 
+        } 
+        else
+        {
+            // --- Projectie & Execution ---
+            var items = await query
+                .ProjectToReadDto(now) // Roept de andere helper methode aan zodat het Alleen de basis laat zien
+                .ToListAsync(ct);
+
+            return Ok(items);
+        } 
     }
 
     // GET: api/Veiling/{id}
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<VeilingDto>> GetById(int id, CancellationToken ct = default)
+    public async Task<ActionResult<VeilingMeester_VeilingDto>> GetById(int id, CancellationToken ct = default)
     {
-        var dto = await ProjectToDto(
-                _db.Veilingen.AsNoTracking().Where(x => x.VeilingNr == id))
+        var now = DateTime.UtcNow;
+        
+        var dto = await _db.Veilingen.AsNoTracking()
+            .Where(x => x.VeilingNr == id)
+            .ProjectToReadDto(now)
             .FirstOrDefaultAsync(ct);
 
-        return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404))
-            : Ok(dto);
+        if (dto is null)
+        {
+            // Gebruik standaard ProblemDetails responses
+            return NotFound(Problem("Geen veiling gevonden met dit ID.", statusCode: 404, title: "Niet Gevonden"));
+        }
+
+        return Ok(dto);
     }
 
     // POST: api/Veiling
     [HttpPost]
-    public async Task<ActionResult<VeilingDto>> Create(
-        [FromBody] VeilingCreateDto dto,
-        CancellationToken ct = default)
+    public async Task<ActionResult<VeilingMeester_VeilingDto>> Create([FromBody] VeilingCreateDto dto, CancellationToken ct = default)
     {
-        // if (dto.Minimumprijs < MinToegestanePrijs)
-        //     return BadRequest(CreateProblemDetails(
-        //         "Ongeldige minimumprijs",
-        //         $"Minimumprijs moet minimaal {MinToegestanePrijs} zijn.",
-        //         400));
+        // Validatie van [Required] gebeurt automatisch door [ApiController]
 
-        var now    = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        
+        // Mapping DTO -> Entity
         var entity = new Veiling
         {
-            Begintijd    = dto.Begintijd,
-            Eindtijd     = dto.Eindtijd,
-            Status       = NormalizeStatus(dto.Status, fallback: VeilingStatus.Inactive)
+            VeilingNaam = dto.VeilingNaam, // Vergeet deze niet als hij in je input zit
+            Begintijd = dto.Begintijd,
+            Eindtijd = dto.Eindtijd,
+            Status = NormalizeStatus(dto.Status)
         };
 
+        // Business Logic
         if (entity.Eindtijd <= now && entity.Status == VeilingStatus.Active)
             entity.Status = VeilingStatus.Inactive;
 
         _db.Veilingen.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        var result = await ProjectToDto(
-                _db.Veilingen.AsNoTracking().Where(x => x.VeilingNr == entity.VeilingNr))
+        // Fetch fresh state for return (inclusief eventuele defaults)
+        var resultDto = await _db.Veilingen.AsNoTracking()
+            .Where(x => x.VeilingNr == entity.VeilingNr)
+            .ProjectToReadDto(now)
             .FirstAsync(ct);
 
-        return CreatedAtAction(nameof(GetById), new { id = entity.VeilingNr }, result);
+        return CreatedAtAction(nameof(GetById), new { id = entity.VeilingNr }, resultDto);
     }
 
     // PUT: api/Veiling/{id}
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<VeilingDto>> Update(
-        int id,
-        [FromBody] VeilingUpdateDto dto,
-        CancellationToken ct = default)
+    public async Task<ActionResult<VeilingMeester_VeilingDto>> Update(int id, [FromBody] VeilingUpdateDto dto, CancellationToken ct = default)
     {
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
+            return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
 
-        // if (dto.Minimumprijs < MinToegestanePrijs)
-        //     return BadRequest(CreateProblemDetails(
-        //         "Ongeldige minimumprijs",
-        //         $"Minimumprijs moet minimaal {MinToegestanePrijs} zijn.",
-        //         400));
-
-        entity.Begintijd    = dto.Begintijd;
-        entity.Eindtijd     = dto.Eindtijd;
+        // Update fields
+        entity.VeilingNaam = dto.VeilingNaam;
+        entity.Begintijd = dto.Begintijd;
+        entity.Eindtijd = dto.Eindtijd;
 
         if (!string.IsNullOrWhiteSpace(dto.Status))
             entity.Status = NormalizeStatus(dto.Status);
 
+        // Business Logic check
         var now = DateTime.UtcNow;
         if (entity.Eindtijd <= now && entity.Status == VeilingStatus.Active)
             entity.Status = VeilingStatus.Inactive;
 
         await _db.SaveChangesAsync(ct);
 
-        var result = await ProjectToDto(
-                _db.Veilingen.AsNoTracking().Where(x => x.VeilingNr == id))
+        // Return updated DTO
+        var resultDto = await _db.Veilingen.AsNoTracking()
+            .Where(x => x.VeilingNr == id)
+            .ProjectToReadDto(now)
             .FirstAsync(ct);
 
-        return Ok(result);
+        return Ok(resultDto);
     }
 
     // DELETE: api/Veiling/{id}
@@ -183,8 +186,9 @@ public class VeilingController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
+            return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
 
         _db.Veilingen.Remove(entity);
         await _db.SaveChangesAsync(ct);
@@ -192,57 +196,86 @@ public class VeilingController : ControllerBase
         return NoContent();
     }
 
-    // Helpers
-
-    private static string NormalizeStatus(string? status, string fallback = VeilingStatus.Inactive)
+    private static string NormalizeStatus(string? status)
     {
-        if (string.IsNullOrWhiteSpace(status))
-            return fallback;
+        if (string.IsNullOrWhiteSpace(status)) return VeilingStatus.Inactive;
 
         return status.Trim().ToLowerInvariant() switch
         {
-            VeilingStatus.Active   => VeilingStatus.Active,
-            VeilingStatus.Inactive => VeilingStatus.Inactive,
-            VeilingStatus.Sold     => VeilingStatus.Sold,
-            _                      => fallback
+            VeilingStatus.Active => VeilingStatus.Active,
+            VeilingStatus.Sold => VeilingStatus.Sold,
+            _ => VeilingStatus.Inactive
         };
     }
+}
 
-    private static IQueryable<VeilingDto> ProjectToDto(IQueryable<Veiling> query)
+// dit zijn de Dto projecties die worden opgehaald voor de data die nodig is. 
+// de ProjectToReadDto is voor de standaard en niet ingelogde gebruiker
+// de projectToMeesterDto is voor het ophalen van meerdere gegevens voor de veilingsMeester
+public static class VeilingExtensions
+{
+    // Projectie voor Gasten
+    public static IQueryable<Klant_VeilingDto> ProjectToReadDto(
+        this IQueryable<Veiling> query, DateTime now)
     {
-        var now = DateTime.UtcNow;
+        return query.Select(v => new Klant_VeilingDto
+        {
+            VeilingNr = v.VeilingNr,
+            VeilingNaam = v.VeilingNaam,
+            Begintijd = v.Begintijd,
+            Eindtijd = v.Eindtijd,
 
-        return query.Select(v => new VeilingDto(
-            v.VeilingNr,
-            v.VeilingNaam,
-            v.Begintijd,
-            v.Eindtijd,
-            v.Veilingproducten.Any() &&
-            v.Veilingproducten.All(p => p.VoorraadBloemen <= 0)
+            Status = (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
                 ? VeilingStatus.Sold
-                : (v.Eindtijd <= now && v.Status == VeilingStatus.Active
-                    ? VeilingStatus.Inactive
-                    : v.Status),
-            v.Veilingproducten.Select(p => new VProd(
+                : (v.Eindtijd <= now 
+                    ? VeilingStatus.Inactive 
+                    : (v.Begintijd <= now 
+                        ? VeilingStatus.Active
+                        : VeilingStatus.Inactive)),
+            
+            Producten = v.Veilingproducten.Select(p => new VeilingProductDto(
                 p.VeilingProductNr,
                 p.Naam,
-                p.GeplaatstDatum,
                 p.Startprijs,
                 p.VoorraadBloemen,
                 p.ImagePath
-            )),
-            v.Biedingen.Select(b => new VBiedingen(
-                b.BiedNr
             ))
-        ));
+        });
     }
 
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
+    // Projectie voor Veilingmeesters
+    public static IQueryable<VeilingMeester_VeilingDto> ProjectToMeesterDto(
+        this IQueryable<Veiling> query, DateTime now)
+    {
+        return query.Select(v => new VeilingMeester_VeilingDto
         {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
+            VeilingNr       = v.VeilingNr,
+            VeilingNaam     = v.VeilingNaam,
+            Begintijd       = v.Begintijd,
+            Eindtijd        = v.Eindtijd,
+
+            Status = (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
+                ? VeilingStatus.Sold
+                : (v.Eindtijd <= now 
+                    ? VeilingStatus.Inactive
+                    : (v.Begintijd <= now 
+                        ? VeilingStatus.Active
+                        : VeilingStatus.Inactive)),
+
+            // HIER ZIT DE FIX: Voeg .ToList() toe
+            Producten = v.Veilingproducten.Select(p => new VeilingProductDto(
+                p.VeilingProductNr,
+                p.Naam,
+                p.Startprijs,
+                p.VoorraadBloemen,
+                p.ImagePath
+            )).ToList(),
+
+            // EN HIER OOK:
+            Biedingen = v.Biedingen.Select(b => new VeilingBiedingVMDto(
+                b.BiedNr,
+                b.AantalStuks
+            )).ToList(),
+        });
+    }
 }
