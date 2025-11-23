@@ -9,6 +9,8 @@ import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
+import SellerScreenInfo from "./schermen/SellerScreenInfo.tsx";
+import CustomerScreenInfo from "./schermen/CustomerScreenInfo.tsx";
 
 
 export default function App() {
@@ -24,12 +26,11 @@ export default function App() {
                 <Route path="/veilingmeester" element={<Veilingmeester />} />
                 <Route path="/gegevens" element={<h2 className="h4">Gegevens pagina (coming soon)</h2>} />
                 <Route path="/veilingPlaatsen" element={<SellerScreenAdd />} />
-                {/* <Route path="/veilingBekijken" element={""} />
-                <Route path="/klantGegevens" element={""} /> */}
+                <Route path="/veilingBekijken" element={<SellerScreenInfo />} />
+                <Route path="/klantGegevens" element={<CustomerScreenInfo />} />/
                 <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
                 <Route path="/privacyBeleid" element={<PrivacyScherm />} />
-
                 <Route path='/404' element={<ErrorPage />} />
 
                 <Route path='*' element={<Navigate to="/404" replace />} />          

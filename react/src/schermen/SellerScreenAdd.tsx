@@ -10,8 +10,8 @@ export default function SellerScreenAdd() {
     const { ApiElement: Categorie} = GetCategorie('/api/Categorie');
     console.log(Categorie);
     
-    //const categorieNummer = Categorie.filter(v => v.CategorieNr);
-
+    
+    
     //Vaste data (voor nu)
     const Data = {
         GeplaatstDatum: "2025-11-17T10:16:37.880",
@@ -27,7 +27,7 @@ export default function SellerScreenAdd() {
         Naam: "",
         AantalFusten: 1,
         VoorraadBloemen: 1,
-        CategorieNr: "",
+        CategorieNr: 1,
         Plaats: "",
         Minimumprijs: 1,
         beginDatum: ""
@@ -36,11 +36,17 @@ export default function SellerScreenAdd() {
     //Kopieert de bestaande waardes en veranderd het
     const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value, type } = e.target;
+
         setProduct(prev => ({
             ...prev,
-            [id]: type === "number" ? Number(value) : value
+            [id]: id === "CategorieNr"
+                ? Number(value)              // CategorieNr altijd nummer
+                : type === "number"
+                    ? Number(value)          // andere number inputs
+                    : value                  // string inputs
         }));
     };
+
 
     const GegevensVersturen = async () => {
         //Voegt de 2 soorten waardes samen die worden meegegeven met POST
@@ -65,7 +71,7 @@ export default function SellerScreenAdd() {
          //Verstuurt een POST verzoek naar de API
         try {
             console.log(product.Plaats);
-            console.log(product.CategorieNr);
+            
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -116,6 +122,7 @@ export default function SellerScreenAdd() {
                                         <option value="">selecteer een categorie</option>
                                         {Categorie.map(c => (
                                             <option key={c.CategorieNr} value={c.CategorieNr}>{c.naam}</option>
+                                            
                                         ))}
                                     </select>
                                 </div>
