@@ -6,7 +6,6 @@ import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./fea
 import { useOffline } from "./hooks";
 import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, updateUser } from "./api";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
-import { adaptAuction, adaptBid, adaptProduct, adaptUser } from "./types";
 import { cx } from "./utils";
 
 type TabKey = "users" | "auctions" | "products";
@@ -37,10 +36,10 @@ export function Veilingmeester() {
                     fetchBids({ pageSize: 200 }, controller.signal),
                 ]);
 
-                setUsers(userResponse.items.map(adaptUser));
-                setAuctions(auctionResponse.items.map(adaptAuction));
-                setProducts(productResponse.items.map(adaptProduct));
-                setBids(bidResponse.items.map(adaptBid));
+                setUsers([...userResponse.items]);
+                setAuctions([...auctionResponse.items]);
+                setProducts([...productResponse.items]);
+                setBids([...bidResponse.items]);
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
                 setError((err as { message?: string }).message ?? "Kan gegevens niet laden");
@@ -77,7 +76,7 @@ export function Veilingmeester() {
                 eindtijd: draft.endDate,
                 status: draft.status,
             });
-            setAuctions((prev) => [adaptAuction(created), ...prev]);
+            setAuctions((prev) => [created, ...prev]);
             setActiveModal(null);
         } catch (err) {
             setError((err as { message?: string }).message ?? "Veiling kon niet worden aangemaakt");
@@ -108,8 +107,7 @@ export function Veilingmeester() {
                     kvk: updated.kvk,
                     wachtwoord: updated.password,
                 });
-                const mapped = adaptUser(response);
-                setUsers((prev) => prev.map((user) => (user.id === mapped.id ? mapped : user)));
+                setUsers((prev) => prev.map((user) => (user.id === response.id ? response : user)));
                 setActiveModal(null);
             } catch (err) {
                 const message = (err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt";

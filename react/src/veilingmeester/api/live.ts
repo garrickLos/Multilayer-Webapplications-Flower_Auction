@@ -1,6 +1,6 @@
 import { fetchAuctionDetail } from "../api";
 import { appConfig } from "../config";
-import { adaptAuction, type VeilingDetailDto, type VeilingRow } from "../types";
+import { DomainMapper, type VeilingDetailDto, type VeilingRow } from "../types";
 
 export type AuctionPatchHandler = (update: Partial<VeilingRow>) => void;
 export type Cleanup = () => void;
@@ -22,8 +22,7 @@ const diff = (previous: VeilingRow | null, next: VeilingRow): Partial<VeilingRow
 
 const finished = (row: VeilingRow): boolean => {
     if (row.status !== "active") return true;
-    if (!row.endIso) return false;
-    const end = Date.parse(row.endIso);
+    const end = Date.parse(row.endDate);
     return Number.isFinite(end) && Date.now() >= end;
 };
 
@@ -31,7 +30,7 @@ const parseMessage = (payload: string): VeilingRow | null => {
     if (!payload) return null;
     try {
         const parsed = JSON.parse(payload) as VeilingDetailDto | VeilingRow;
-        return "titel" in parsed ? adaptAuction(parsed) : (parsed as VeilingRow);
+        return "titel" in parsed ? DomainMapper.mapAuction(parsed) : (parsed as VeilingRow);
     } catch {
         return null;
     }
@@ -58,7 +57,7 @@ export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler
     const fetchOnce = async () => {
         try {
             const detail = await fetchAuctionDetail(veilingId, controller.signal);
-            applyRow(adaptAuction(detail));
+            applyRow(detail);
         } catch (error) {
             if ((error as { name?: string }).name === "AbortError") return;
             fallbackToPolling();

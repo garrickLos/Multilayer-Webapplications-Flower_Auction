@@ -1,18 +1,23 @@
 import { appConfig } from "./config";
-import type {
-    VeilingCreateDto,
-    BiedingCreateDto,
-    BiedingUpdateDto,
-    Category,
-    GebruikerDto,
-    GebruikerUpdateDto,
-    PaginatedList,
-    VeilingDetailDto,
-    VeilingDto,
-    VeilingMeester_BiedingDto,
-    VeilingProductDto,
-    VeilingUpdateDto,
-    VeilingproductUpdateDto,
+import {
+    DomainMapper,
+    type Auction,
+    type Bid,
+    type BiedingCreateDto,
+    type BiedingUpdateDto,
+    type Category,
+    type GebruikerDto,
+    type GebruikerUpdateDto,
+    type PaginatedList,
+    type Product,
+    type User,
+    type VeilingCreateDto,
+    type VeilingDetailDto,
+    type VeilingDto,
+    type VeilingMeester_BiedingDto,
+    type VeilingProductDto,
+    type VeilingUpdateDto,
+    type VeilingproductUpdateDto,
 } from "./types";
 
 export type ApiError = { status: number; message: string };
@@ -99,32 +104,38 @@ function buildQuery(params: Record<string, unknown>): string {
     return query ? `?${query}` : "";
 }
 
-function normaliseList<T>(result: ListResult<T>, page: number, pageSize: number): PaginatedList<T> {
-    const items = Array.isArray(result.data) ? [...result.data] : [];
+function normaliseList<TDto, TModel>(
+    result: ListResult<TDto>,
+    page: number,
+    pageSize: number,
+    map: (dto: TDto) => TModel,
+): PaginatedList<TModel> {
+    const items = Array.isArray(result.data) ? result.data.map(map) : [];
     const totalHeader = result.headers.get("X-Total-Count");
     const totalResults = totalHeader ? Number.parseInt(totalHeader, 10) : undefined;
     const hasNext = totalResults != null ? page * pageSize < totalResults : items.length > 0 && items.length === pageSize;
     return { items, page, pageSize, hasNext, totalResults };
 }
 
-async function fetchList<T>(
+async function fetchList<TDto, TModel>(
     path: string,
     params: { page?: number; pageSize?: number } & Record<string, unknown>,
+    map: (dto: TDto) => TModel,
     init?: FetchInit,
-): Promise<PaginatedList<T>> {
+): Promise<PaginatedList<TModel>> {
     const page = params.page ?? 1;
     const pageSize = params.pageSize ?? 25;
     const query = buildQuery(params);
-    const result = await request<readonly T[]>(`${path}${query}`, init);
-    return normaliseList(result, page, pageSize);
+    const result = await request<readonly TDto[]>(`${path}${query}`, init);
+    return normaliseList(result, page, pageSize, map);
 }
 
 /** Fetch gebruikers with search and pagination. */
 export async function fetchUsers(
     params: { q?: string; page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<GebruikerDto>> {
-    return fetchList("/api/Gebruiker", params, { signal });
+): Promise<PaginatedList<User>> {
+    return fetchList("/api/Gebruiker", params, DomainMapper.mapUser, { signal });
 }
 
 /** Fetch biedingen for a user or auction. */
@@ -138,8 +149,8 @@ export async function fetchBids(
         pageSize?: number;
     },
     signal?: AbortSignal,
-): Promise<PaginatedList<VeilingMeester_BiedingDto>> {
-    return fetchList("/api/Bieding", params, { signal });
+): Promise<PaginatedList<Bid>> {
+    return fetchList("/api/Bieding", params, DomainMapper.mapBid, { signal });
 }
 
 /** Fetch veilingen with filter support. */
@@ -156,28 +167,28 @@ export async function fetchAuctions(
         pageSize?: number;
     },
     signal?: AbortSignal,
-): Promise<PaginatedList<VeilingDto>> {
-    return fetchList("/api/Veiling", params, { signal });
+): Promise<PaginatedList<Auction>> {
+    return fetchList("/api/Veiling", params, DomainMapper.mapAuction, { signal });
 }
 
 /** Fetch a single veiling with products/bids. */
-export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Promise<VeilingDetailDto> {
+export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Promise<Auction> {
     const { data } = await request<VeilingDetailDto>(`/api/Veiling/${id}`, { signal });
-    return data;
+    return DomainMapper.mapAuction(data);
 }
 
 /** Fetch products with optional category filter. */
 export async function fetchProducts(
     params: { q?: string; categorieNr?: number | string; page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<VeilingProductDto>> {
-    return fetchList("/api/Veilingproduct", params, { signal });
+): Promise<PaginatedList<Product>> {
+    return fetchList("/api/Veilingproduct", params, DomainMapper.mapProduct, { signal });
 }
 
 /** Fetch all categories for filter dropdowns. */
 export async function fetchCategories(signal?: AbortSignal): Promise<readonly Category[]> {
     const { data } = await request<readonly { categorieNr: number; categorieNaam: string }[]>(`/api/Categorie`, { signal });
-    return data.map((entry) => ({ id: entry.categorieNr, name: entry.categorieNaam } satisfies Category));
+    return data.map(DomainMapper.mapCategory);
 }
 
 /** Fetch products for a specific grower (client-side filter fallback). */
@@ -185,16 +196,16 @@ export async function fetchProductsByGrower(
     growerId: number | string,
     params: { page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<VeilingProductDto>> {
+): Promise<PaginatedList<Product>> {
     const list = await fetchProducts({ ...params, pageSize: params.pageSize ?? 50 }, signal);
-    const items = list.items.filter((product) => String(product.kwekerNr ?? "") === String(growerId));
+    const items = list.items.filter((product) => String(product.growerId ?? "") === String(growerId));
     return { ...list, items };
 }
 
 /** Update a gebruiker. */
-export async function updateUser(id: number, payload: GebruikerUpdateDto, signal?: AbortSignal): Promise<GebruikerDto> {
+export async function updateUser(id: number, payload: GebruikerUpdateDto, signal?: AbortSignal): Promise<User> {
     const { data } = await request<GebruikerDto>(`/api/Gebruiker/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
-    return data;
+    return DomainMapper.mapUser(data);
 }
 
 /** Delete (hard for now) a gebruiker. */
@@ -203,15 +214,15 @@ export async function deleteUser(id: number, signal?: AbortSignal): Promise<void
 }
 
 /** Update a veiling. */
-export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<VeilingDto> {
+export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
     const { data } = await request<VeilingDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
-    return data;
+    return DomainMapper.mapAuction(data);
 }
 
 /** Create a new veiling. */
-export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<VeilingDto> {
+export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
     const { data } = await request<VeilingDto>(`/api/Veiling`, { method: "POST", body: JSON.stringify(payload), signal });
-    return data;
+    return DomainMapper.mapAuction(data);
 }
 
 /** Remove a veiling (soft-delete once backend supports it). */
@@ -224,13 +235,13 @@ export async function updateProduct(
     id: number,
     payload: VeilingproductUpdateDto,
     signal?: AbortSignal,
-): Promise<VeilingProductDto> {
+): Promise<Product> {
     const { data } = await request<VeilingProductDto>(`/api/Veilingproduct/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
         signal,
     });
-    return data;
+    return DomainMapper.mapProduct(data);
 }
 
 /** Delete (hard for now) a product. */
@@ -239,23 +250,23 @@ export async function deleteProduct(id: number, signal?: AbortSignal): Promise<v
 }
 
 /** Create a bieding for a product within a veiling. */
-export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<VeilingMeester_BiedingDto> {
+export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<Bid> {
     const { data } = await request<VeilingMeester_BiedingDto>("/api/Bieding", {
         method: "POST",
         body: JSON.stringify(payload),
         signal,
     });
-    return data;
+    return DomainMapper.mapBid(data);
 }
 
 /** Update an existing bieding. */
-export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<VeilingMeester_BiedingDto> {
+export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<Bid> {
     const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
         signal,
     });
-    return data;
+    return DomainMapper.mapBid(data);
 }
 
 /** Delete a bieding. */
