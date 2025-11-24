@@ -60,6 +60,7 @@ export interface VeilingDto {
 
 export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
 
+export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
 export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
 export type VeilingUpdateDto = Partial<Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd" | "status">> & {
     beschrijving?: string;

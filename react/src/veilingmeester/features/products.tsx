@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
-import { getAuctions, getCategories, getProducts } from "../api";
+import { fetchAuctions, fetchCategories, fetchProducts } from "../api";
 import type { Auction, Product, Status } from "../types";
-import { adaptAuction, adaptProduct, filterRows } from "../types";
-import { formatCurrency } from "../utils";
+import { adaptAuction, adaptProduct } from "../types";
+import { filterRows, formatCurrency } from "../utils";
 
 // Product listing with simple filters.
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
@@ -46,8 +46,8 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
             setError(null);
             try {
                 const [categoryResponse, auctionResponse] = await Promise.all([
-                    getCategories(controller.signal),
-                    auctions.length === 0 ? getAuctions({ pageSize: 200 }, controller.signal) : Promise.resolve(null),
+                    fetchCategories(controller.signal),
+                    auctions.length === 0 ? fetchAuctions({ pageSize: 200 }, controller.signal) : Promise.resolve(null),
                 ]);
                 setCategories(categoryResponse);
                 if (auctionResponse) {
@@ -70,7 +70,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
             setLoading(true);
             setError(null);
             try {
-                const response = await getProducts(
+                const response = await fetchProducts(
                     {
                         q: search || undefined,
                         categorieNr: filters.category ? Number(filters.category) : undefined,
