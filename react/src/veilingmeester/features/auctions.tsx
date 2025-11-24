@@ -3,8 +3,8 @@ import { deleteAuction, fetchAuctions } from "../api";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
+import { useTicker } from "../hooks";
 import type { Auction, Product, Status } from "../types";
-import { adaptAuction } from "../types";
 import { calculateClockPrice, deriveAuctionUiStatus, filterRows, formatCurrency, formatDateTime } from "../utils";
 
 const perPageOptions = [10, 25, 50];
@@ -30,12 +30,7 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
     const [filters, setFilters] = useState<AuctionFilters>({ status: "all", from: "", to: "" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(perPageOptions[0]);
-    const [now, setNow] = useState(() => new Date());
-
-    useEffect(() => {
-        const interval = window.setInterval(() => setNow(new Date()), 5000);
-        return () => window.clearInterval(interval);
-    }, []);
+    const now = useTicker(5000);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -54,9 +49,8 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                     },
                     controller.signal,
                 );
-                const items = response.items.map(adaptAuction);
-                setAuctions(items);
-                onAuctionsLoaded(items);
+                setAuctions(response.items);
+                onAuctionsLoaded(response.items as Auction[]);
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
                 setError((err as { message?: string }).message ?? "Kan veilingen niet laden.");

@@ -1,6 +1,18 @@
 // Pure helper functions for formatting and domain calculations.
 import type { Auction, AuctionStatus, Product, ProductStatus, UiStatus, UserRole } from "../types";
 
+type AuctionStatusStrategy = {
+    resolve: (auction: Auction, now: Date) => UiStatus;
+};
+
+type ProductStatusStrategy = {
+    resolve: (product: Product) => ProductStatus;
+};
+
+type PriceStrategy = {
+    calculate: (startPrice: number, minPrice: number, start: Date, end: Date, now: Date) => number;
+};
+
 const currencyFormatter = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
 const pad = (value: number): string => (value < 10 ? `0${value}` : String(value));
@@ -41,39 +53,68 @@ export const roleIsAdmin = (role: UserRole): boolean => role === "Admin" || role
 export const aggregateProductStock = (products?: readonly Product[]): number =>
     products?.reduce((sum, product) => sum + (product.stock ?? 0), 0) ?? 0;
 
-export const deriveProductStatus = (product: Product): ProductStatus => {
-    if (product.stock <= 0) return "Uitverkocht";
-    if (product.linkedAuctionId) return "Gekoppeld";
-    return "Beschikbaar";
+const productStatusStrategy: ProductStatusStrategy = {
+    resolve: (product: Product) => {
+        if (product.stock <= 0) return "Uitverkocht";
+        if (product.linkedAuctionId) return "Gekoppeld";
+        return "Beschikbaar";
+    },
 };
+
+const auctionStatusStrategy: AuctionStatusStrategy = {
+    resolve: (auction: Auction, now: Date) => {
+        const mappedStatus = auction.rawStatus ? mapAuctionStatusToBadge(auction.rawStatus) : auction.status;
+        if (mappedStatus === "deleted") return "deleted";
+
+        const start = new Date(auction.startDate);
+        const end = new Date(auction.endDate);
+        const totalStock = aggregateProductStock(auction.products);
+
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return mappedStatus;
+        if (now < start) return "inactive";
+        if (totalStock === 0 || mappedStatus === "sold") return "sold";
+        if (now >= start && now <= end) return "active";
+        return mappedStatus;
+    },
+};
+
+const linearPriceStrategy: PriceStrategy = {
+    calculate: (startPrice: number, minPrice: number, start: Date, end: Date, now: Date) => {
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice;
+        if (now <= start) return startPrice;
+        if (now >= end) return minPrice;
+        const total = end.getTime() - start.getTime();
+        const elapsed = now.getTime() - start.getTime();
+        const ratio = Math.min(Math.max(elapsed / total, 0), 1);
+        const price = startPrice - (startPrice - minPrice) * ratio;
+        return Math.max(price, minPrice);
+    },
+};
+
+export const statusStrategies = {
+    auction: auctionStatusStrategy,
+    product: productStatusStrategy,
+} as const;
+
+export const priceStrategies = {
+    linear: linearPriceStrategy,
+} as const;
+
+export const deriveProductStatus = (product: Product): ProductStatus => statusStrategies.product.resolve(product);
 
 /** Derive an auction UI status using timing, cancellation and stock. */
-export const deriveAuctionUiStatus = (auction: Auction, now: Date = new Date()): UiStatus => {
-    const mappedStatus = auction.rawStatus ? mapAuctionStatusToBadge(auction.rawStatus) : auction.status;
-    if (mappedStatus === "deleted") return "deleted";
-
-    const start = new Date(auction.startDate);
-    const end = new Date(auction.endDate);
-    const totalStock = aggregateProductStock(auction.products);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return mappedStatus;
-    if (now < start) return "inactive";
-    if (totalStock === 0 || mappedStatus === "sold") return "sold";
-    if (now >= start && now <= end) return "active";
-    return mappedStatus;
-};
+export const deriveAuctionUiStatus = (auction: Auction, now: Date = new Date()): UiStatus =>
+    statusStrategies.auction.resolve(auction, now);
 
 /** Calculate the current clock price between a start price and minimum price within a timeframe. */
-export const calculateClockPrice = (startPrice: number, minPrice: number, start: Date, end: Date, now: Date): number => {
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice;
-    if (now <= start) return startPrice;
-    if (now >= end) return minPrice;
-    const total = end.getTime() - start.getTime();
-    const elapsed = now.getTime() - start.getTime();
-    const ratio = Math.min(Math.max(elapsed / total, 0), 1);
-    const price = startPrice - (startPrice - minPrice) * ratio;
-    return Math.max(price, minPrice);
-};
+export const calculateClockPrice = (
+    startPrice: number,
+    minPrice: number,
+    start: Date,
+    end: Date,
+    now: Date,
+    strategy: PriceStrategy = priceStrategies.linear,
+): number => strategy.calculate(startPrice, minPrice, start, end, now);
 
 /** Helper to filter rows using a predicate with normalised search term. */
 export const filterRows = <T, F>(

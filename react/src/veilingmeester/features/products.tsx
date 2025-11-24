@@ -3,7 +3,6 @@ import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import { fetchAuctions, fetchCategories, fetchProducts } from "../api";
 import type { Auction, Product, Status } from "../types";
-import { adaptAuction, adaptProduct } from "../types";
 import { filterRows, formatCurrency } from "../utils";
 
 // Product listing with simple filters.
@@ -51,9 +50,8 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
                 ]);
                 setCategories(categoryResponse);
                 if (auctionResponse) {
-                    const mapped = auctionResponse.items.map(adaptAuction);
                     // keep local list for name lookup without overriding parent state
-                    setLocalAuctions(mapped);
+                    setLocalAuctions(auctionResponse.items as Auction[]);
                 }
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
@@ -79,7 +77,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
                     },
                     controller.signal,
                 );
-                setProducts(response.items.map(adaptProduct));
+                setProducts(response.items as Product[]);
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
                 setError((err as { message?: string }).message ?? "Producten konden niet worden geladen.");
