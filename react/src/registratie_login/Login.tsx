@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import '../css/MainScreenStyle.css';
+// import './css/MainScreenStyle.css';
 import './css/Registration.css';
 
 type LoginPayload = {
