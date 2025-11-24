@@ -1,90 +1,77 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
-import { GetDataApi as GetCategorie } from "../typeScript/ApiGetVeilingItems.tsx";
+import { UseDataApi as GetCategorie } from "../typeScript/ApiGet";
+
+// 1. We definiëren hoe een Categorie eruitziet
+interface CategorieType {
+    categorieNr: number; // Was CategorieNr
+    naam: string;
+}
 
 export default function SellerScreenAdd() {
-    // Lijst van mogelijke plaats opties
-    const MogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
+    const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
+    
+    // 2. We vertellen TypeScript dat 'data' een lijst van CategorieType is
+    const { data } = GetCategorie('/api/Categorie');
+    const categorieLijst = (data as CategorieType[]) || [];
 
-    // Categorieën ophalen
-    const { ApiElement: Categorie } = GetCategorie('/api/Categorie');
-    console.log(Categorie);
-
-    const bestandsPad = "../../src/assets/pictures/productBloemen/";
-
-    // Vaste data (voor nu)
-    const Data = {
+    const basisData = {
         GeplaatstDatum: "2025-11-17T10:16:37.880",
         VeilingNr: 201,
         Startprijs: 4,
         status: true,
         Kwekernr: 1,
-        ImagePath: "" // Leeg, wordt later ingevuld
-    };
-
-    // Data die verandert door input van de gebruiker
+        ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+    }
+    
     const [product, setProduct] = useState({
         Naam: "",
         AantalFusten: 1,
         VoorraadBloemen: 1,
-        CategorieNr: 1,
+        CategorieNr: "",
         Plaats: "",
         Minimumprijs: 1,
         beginDatum: ""
     });
-
-    // State voor de foto
-    const [imagePath, setImagePath] = useState(Data.ImagePath);
-
-    // Kopieert de bestaande waardes en verandert het
-    const GebruikerInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    
+    const verwerkInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value, type } = e.target;
+        
+        // We controleren of het veld een getal moet zijn.
+        // Een <select> heeft namelijk NIET type="number".
+        const isGetalVeld = type === "number" || id === "CategorieNr" || id === "AantalFusten" || id === "VoorraadBloemen";
 
         setProduct(prev => ({
             ...prev,
-            [id]: type === "number" ? Number(value) : value                  
+            // Als het een getalveld is en de waarde is niet leeg, converteer naar Number. Anders behoud value.
+            [id]: isGetalVeld && value !== "" ? Number(value) : value
         }));
     };
 
-    // Handelt file input
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!file.name.endsWith(".webp")) {
-            alert("Het bestand moet eindigen op '.webp'");
-            return;
+    const gegevensVersturen = async () => {
+        const alleGegevens = {
+            ...basisData,
+            ...product
         }
 
-        const volledigeBestand = bestandsPad + file.name;
-        setImagePath(volledigeBestand);
-        
-    };
-
-    const GegevensVersturen = async () => {
-        const AlleGegevens = {
-            ...Data,
-            ...product,
-            ImagePath: imagePath
-        };
-
-        // Verwijdert spaties
         const values = Object.values(product).map(value =>
             typeof value === "string" ? value.trim() : value
         );
-
-        // Controleert of een input leeg is
+       
         const isLeeg = values.some(v => v === "");
+        
         if (isLeeg) {
             alert("Een of meer velden zijn leeg!");
             return;
         }
-
+         
         try {
+            console.log(alleGegevens);
+
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(AlleGegevens),
+                body: JSON.stringify(alleGegevens),
             });
 
             if (response.ok) {
@@ -113,11 +100,7 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src={imagePath} alt="productfoto" className="grote-foto" />
-                            </div>
-                            <div className="ordenen">
-                                <label htmlFor="BestandPad" className="bestand"></label>
-                                <input type="file" id="BestandPad" accept=".webp" onChange={handleFileChange} />
+                                <img src="../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp" alt="productfoto" className="grote-foto" />
                             </div>
                         </section>
 
@@ -126,42 +109,43 @@ export default function SellerScreenAdd() {
                                 <div className="kopje">Product informatie</div>
                                 <div className="ordenen">
                                     <label htmlFor="Naam" className="name">Product naam:</label>
-                                    <input type="text" id="Naam" value={product.Naam} onChange={GebruikerInput}/>
+                                    <input type="text" id="Naam" value={product.Naam} onChange={verwerkInput}/>
                                 </div>
-
+                                
                                 <div className="ordenen">
                                     <label htmlFor="CategorieNr">Categorie:</label>
-                                    <select id="CategorieNr" value={product.CategorieNr} onChange={GebruikerInput}>
+                                    <select id="CategorieNr" value={product.CategorieNr} onChange={verwerkInput}>
                                         <option value="">selecteer een categorie</option>
-                                        {Categorie.map(c => (
-                                            <option key={c.CategorieNr} value={c.CategorieNr}>{c.naam}</option>
+                                        {/* Nu weet TypeScript dat categorieLijst een array is */}
+                                        {categorieLijst.map(c => (
+                                            <option key={c.categorieNr} value={c.categorieNr}>{c.naam}</option>
                                         ))}
                                     </select>
                                 </div>
-
+                                
                                 <div className="ordenen">
                                     <label htmlFor="VoorraadBloemen" className="amount">Voorraad:</label>
-                                    <input type="number" id="VoorraadBloemen" value={product.VoorraadBloemen} onChange={GebruikerInput}/>
+                                    <input type="number" id="VoorraadBloemen" value={product.VoorraadBloemen} onChange={verwerkInput}/>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
-                                    <input type="number" id="AantalFusten" min="1" value={product.AantalFusten} onChange={GebruikerInput}/>
+                                    <input type="number" id="AantalFusten" min="1" value={product.AantalFusten} onChange={verwerkInput}/>
                                 </div>
 
                                 <div className="ordenen">
                                     <label htmlFor="Plaats">Plaats:</label>
-                                    <select id="Plaats" value={product.Plaats} onChange={GebruikerInput}>
-                                        <option value="">selecteer een plaats</option>
-                                        {MogelijkePlaatsen.map((plaats, index) => (
+                                    <select id="Plaats" value={product.Plaats} onChange={verwerkInput}>
+                                        <option value="">selecteer een plaats</option> 
+                                        {mogelijkePlaatsen.map((plaats, index) => (
                                             <option key={index} value={plaats}>{plaats}</option>
                                         ))}
                                     </select>
                                 </div>
-
+                                
                                 <div className="ordenen">
                                     <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs:</label>
-                                    <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={GebruikerInput}/>
+                                    <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={verwerkInput}/>
                                 </div>
                             </div>
                         </section>
@@ -170,10 +154,10 @@ export default function SellerScreenAdd() {
                             <div className="scherm3Container">
                                 <div className="scherm3Ordenen">
                                     <label htmlFor="beginDatum" className="sDate">Begin datum:</label>
-                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={GebruikerInput} />
+                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={verwerkInput} />
                                 </div>
 
-                                <button className="placeProduct" onClick={GegevensVersturen}>
+                                <button className="placeProduct" onClick={gegevensVersturen}>
                                     Product Plaatsen
                                 </button>
                             </div>
