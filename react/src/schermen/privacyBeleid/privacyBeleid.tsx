@@ -3,9 +3,9 @@ import { useFetchDatajson } from '../../typeScript/jsonOphalen';
 
 import '../../css/privacybeleidStylesheet.css';
 
-const url = "src/resources/json/privacyBeleid.json"; 
+const url = "src/resources/json/privacyBeleid.json";
 
-export default function PrivacyScherm() { 
+export default function PrivacyScherm() {
     const [openItemId, setOpenItemId] = useState<string | null>(null);
 
     const algemeneDataState = useFetchDatajson<PrivacyItemProps>(
@@ -42,7 +42,7 @@ export default function PrivacyScherm() {
                             <div>
                                 {algemeneDataState.isLoading && <div>Laden van items...</div>}
                                 {algemeneDataState.error && <div>Fout: {algemeneDataState.error}</div>}
-                                {!algemeneDataState.isLoading && !algemeneDataState.error && renderContent(algemeneDataState.data)}
+                                {/*{!algemeneDataState.isLoading && !algemeneDataState.error && renderContent(algemeneDataState.data)}*/}
                             </div>
                         )}
 
@@ -57,12 +57,12 @@ export default function PrivacyScherm() {
                             <div>
                                 {persoonlijkeDataState.isLoading && <div>Laden van items...</div>}
                                 {persoonlijkeDataState.error && <div>Fout: {persoonlijkeDataState.error}</div>}
-                                {!persoonlijkeDataState.isLoading && !persoonlijkeDataState.error && renderContent(persoonlijkeDataState.data)}
+                                {/*{!persoonlijkeDataState.isLoading && !persoonlijkeDataState.error && renderContent(persoonlijkeDataState.data)}*/}
                             </div>
                         )}
-                        
+
                     </section>
-                    
+
                     {/* Item 3: Cookies */}
                     <section className={getItemClass('cookies')}>
                         <div className="item-header" onClick={() => handleHeaderClick('cookies')}>
@@ -72,7 +72,7 @@ export default function PrivacyScherm() {
                             <div>
                                 {cookiesDataState.isLoading && <div>Laden van items...</div>}
                                 {cookiesDataState.error && <div>Fout: {cookiesDataState.error}</div>}
-                                {!cookiesDataState.isLoading && !cookiesDataState.error && renderContent(cookiesDataState.data)}
+                                {/*{!cookiesDataState.isLoading && !cookiesDataState.error && renderContent(cookiesDataState.data)}*/}
                             </div>
                         )}
                     </section>
@@ -117,16 +117,16 @@ const renderContent = (items: ContentBlock[]) => {
         switch (item.type) {
             case 'paragraph':
                 return (
-                    <PrivacyItems 
-                        key={index} 
-                        paragraph={item.content as string} 
+                    <PrivacyItems
+                        key={index}
+                        paragraph={item.content as string}
                     />
                 );
             case 'list':
                 return (
-                    <PrivacyItems 
-                        key={index} 
-                        list={item.content as string[]} 
+                    <PrivacyItems
+                        key={index}
+                        list={item.content as string[]}
                     />
                 );
             default:

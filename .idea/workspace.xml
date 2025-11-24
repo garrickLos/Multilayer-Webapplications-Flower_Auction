@@ -28,7 +28,8 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "bayramm",
+    "git-widget-placeholder": "nieuw-bayram",
+    "junie.onboarding.icon.badge.shown": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -63,7 +64,12 @@
       <updated>1761734499517</updated>
       <workItem from="1761734502207" duration="4000" />
       <workItem from="1761816972213" duration="24000" />
+      <workItem from="1762941657253" duration="619000" />
+      <workItem from="1762975155679" duration="22000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
 </project>
