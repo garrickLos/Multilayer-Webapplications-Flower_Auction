@@ -7,6 +7,8 @@ interface CategorieType {
     naam: string;
 }
 
+//pushing this screen idk
+
 export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = "../../src/assets/pictures/productBloemen/";
