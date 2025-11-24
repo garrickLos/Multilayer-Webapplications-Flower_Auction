@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
-import { GetDataApi as GetCategorie } from "../typeScript/ApiGetVeilingItems.tsx";
+import { GetDataApi as GetCategorie } from "../typeScript/ApiGet.tsx";
 
 export default function SellerScreenAdd() {
     // Lijst van mogelijke plaats opties
