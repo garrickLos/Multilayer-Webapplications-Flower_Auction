@@ -1,6 +1,6 @@
 // Shared domain types for the Veilingmeester screens.
 export type Status = "active" | "inactive" | "sold" | "deleted";
-export type UserRole = "Veilingmeester" | "Kweker" | "Koper" | "Onbekend";
+export type UserRole = "Veilingmeester" | "Kweker" | "Koper" | "Admin" | "Onbekend";
 
 export interface PaginatedList<T> {
     readonly items: readonly T[];
@@ -142,6 +142,7 @@ export const roleLabels: Record<UserRole, string> = {
     Koper: "Koper",
     Kweker: "Kweker",
     Veilingmeester: "Veilingmeester",
+    Admin: "Admin",
     Onbekend: "Onbekend",
 };
 
@@ -165,6 +166,7 @@ export const toStatus = (value?: string | null): Status => {
 
 export const toRole = (value?: string | null): UserRole => {
     const normalised = (value ?? "").toLowerCase();
+    if (normalised === "admin") return "Admin";
     if (normalised === "veilingmeester") return "Veilingmeester";
     if (normalised === "kweker" || normalised === "grower") return "Kweker";
     if (normalised === "koper" || normalised === "buyer") return "Koper";
