@@ -32,16 +32,14 @@ namespace mvc_api.Migrations
                 {
                     GebruikerNr = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Naam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    BedrijfsNaam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Email = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Wachtwoord = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     LaatstIngelogd = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Soort = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     Kvk = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     StraatAdres = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    Postcode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
-                    Assortiment = table.Column<int>(type: "INTEGER", nullable: true),
-                    PersoneelsNr = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true)
+                    Postcode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -54,10 +52,10 @@ namespace mvc_api.Migrations
                 {
                     VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    VeilingNaam = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Begintijd = table.Column<DateTime>(type: "TEXT", nullable: false),
                     Eindtijd = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Minimumprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false)
+                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -100,11 +98,17 @@ namespace mvc_api.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Naam = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     GeplaatstDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Fust = table.Column<int>(type: "INTEGER", nullable: false),
-                    Voorraad = table.Column<int>(type: "INTEGER", nullable: false),
+                    AantalFusten = table.Column<int>(type: "INTEGER", nullable: false),
+                    VoorraadBloemen = table.Column<int>(type: "INTEGER", nullable: false),
                     Startprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     CategorieNr = table.Column<int>(type: "INTEGER", nullable: false),
-                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
+                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    Plaats = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Minimumprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    Kwekernr = table.Column<int>(type: "INTEGER", nullable: false),
+                    beginDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    status = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ImagePath = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -115,6 +119,12 @@ namespace mvc_api.Migrations
                         principalTable: "Categorie",
                         principalColumn: "CategorieNr",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Veilingproduct_Gebruiker_Kwekernr",
+                        column: x => x.Kwekernr,
+                        principalTable: "Gebruiker",
+                        principalColumn: "GebruikerNr",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Veilingproduct_Veiling_VeilingNr",
                         column: x => x.VeilingNr,
@@ -129,25 +139,29 @@ namespace mvc_api.Migrations
                 values: new object[,]
                 {
                     { 1, "Tulpen" },
-                    { 2, "Rozen" }
+                    { 2, "Rozen" },
+                    { 3, "Lelie" },
+                    { 4, "Zonnebloem" },
+                    { 5, "Chrysant" },
+                    { 6, "Pioenroos" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Gebruiker",
-                columns: new[] { "GebruikerNr", "Assortiment", "Email", "Kvk", "LaatstIngelogd", "Naam", "PersoneelsNr", "Postcode", "Soort", "StraatAdres", "Wachtwoord" },
+                columns: new[] { "GebruikerNr", "BedrijfsNaam", "Email", "Kvk", "LaatstIngelogd", "Postcode", "Soort", "StraatAdres", "Wachtwoord" },
                 values: new object[,]
                 {
-                    { 1, 12, "flora@example.nl", "12345678", new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc), "Flora BV", "P1001", "1234AB", "Bedrijf", "Bloemig 10", "***" },
-                    { 2, 0, "jan@example.nl", "00000000", new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc), "Jan Jansen", "P0000", "2345BC", "Koper", "Laan 5", "***" }
+                    { 1, "Flora BV", "flora@example.nl", "12345678", new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc), "1234AB", "Bedrijf", "Bloemig 10", "***" },
+                    { 2, "Jan Jansen", "jan@example.nl", "00000000", new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc), "2345BC", "Koper", "Laan 5", "***" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Veiling",
-                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "Minimumprijs", "Status" },
+                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "Status", "VeilingNaam" },
                 values: new object[,]
                 {
-                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), 10m, "active" },
-                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), 15m, "active" }
+                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), "active", "veiling001" },
+                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), "active", "veiling001" }
                 });
 
             migrationBuilder.InsertData(
@@ -161,11 +175,11 @@ namespace mvc_api.Migrations
 
             migrationBuilder.InsertData(
                 table: "Veilingproduct",
-                columns: new[] { "VeilingProductNr", "CategorieNr", "Fust", "GeplaatstDatum", "Naam", "Startprijs", "VeilingNr", "Voorraad" },
+                columns: new[] { "VeilingProductNr", "AantalFusten", "CategorieNr", "GeplaatstDatum", "ImagePath", "Kwekernr", "Minimumprijs", "Naam", "Plaats", "Startprijs", "VeilingNr", "VoorraadBloemen", "beginDatum", "status" },
                 values: new object[,]
                 {
-                    { 101, 1, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Tulp Mix", 12m, 201, 500 },
-                    { 102, 2, 10, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "Rode Roos", 20m, 202, 300 }
+                    { 101, 10, 1, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp", 1, 10m, "Tulp Mix", " Aalsmeer", 12m, 201, 500, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), false },
+                    { 102, 10, 2, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp", 1, 15m, "Rode Roos", "Eelde", 20m, 202, 300, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), false }
                 });
 
             migrationBuilder.CreateIndex(
@@ -190,6 +204,11 @@ namespace mvc_api.Migrations
                 columns: new[] { "CategorieNr", "Naam" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Veilingproduct_Kwekernr",
+                table: "Veilingproduct",
+                column: "Kwekernr");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Veilingproduct_VeilingNr",
                 table: "Veilingproduct",
                 column: "VeilingNr");
@@ -205,10 +224,10 @@ namespace mvc_api.Migrations
                 name: "Veilingproduct");
 
             migrationBuilder.DropTable(
-                name: "Gebruiker");
+                name: "Categorie");
 
             migrationBuilder.DropTable(
-                name: "Categorie");
+                name: "Gebruiker");
 
             migrationBuilder.DropTable(
                 name: "Veiling");

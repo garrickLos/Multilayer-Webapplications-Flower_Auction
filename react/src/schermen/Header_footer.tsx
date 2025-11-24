@@ -8,7 +8,7 @@ export default function Header() {
     <header>
         <div className="HoofschermContainer">
             <div className="logoTitel">
-                <NavLink to="/"><img src="/src/assets/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" className="floraLogo"></img></NavLink>
+                <NavLink to="/home"><img src="/src/assets/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" className="floraLogo"></img></NavLink>
                 <h1>Royal Flora Holland</h1>
             </div>
 

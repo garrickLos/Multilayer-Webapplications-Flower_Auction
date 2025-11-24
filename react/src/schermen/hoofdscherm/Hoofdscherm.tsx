@@ -1,14 +1,54 @@
-import {useState} from 'react';
-import {NavLink} from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
-import '../../css/MainScreenStyle.css';
-import '../../css/cookieOverlay.css';
+import '../../css/HoofdSchermStyle.css';
+import '../../css/cookieStylesheet.css';
+import '../../css/loadIcon.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { useFetchDatajson } from '../../typeScript/jsonOphalen.tsx';
+import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
+import { renderCards, type VeilingItem } from './RenderCards.tsx';
 
 export default function MainScreen() {
-    const url = "src/resources/json/HoofdschermMock.json";
+    const [refreshTimer, setRefreshTimer] = useState(Date.now());
+
+    const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling?refresh=${refreshTimer}`);
+
+    const safeVeilingen = data || [];
+
+    useEffect(() => {
+        // 300000 milliseconden = 5 minuten (180000 = 3 minuten)
+        const intervalId = setInterval(() => {
+            setRefreshTimer(Date.now());
+        }, 180000);
+
+        // Ruim de timer op als de component verdwijnt
+        return () => clearInterval(intervalId);
+    }, []);
+
+    const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
+    const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
+    const allDeals = safeVeilingen;
+
+    const renderSliderContent = (data: any[]) => {
+        if (loading) {
+            return (
+                <div className="state-container">
+                    <span className='loader'></span>
+                    <br></br>
+                    <p>Loading data</p>
+                </div>
+            );
+        }
+        if (error) {
+            return (
+                <div className="state-container">
+                    <p className='mainScreen_errorCode'>Error:  kon gegevens niet vinden of database connectie bestaat niet<br></br>{String(error)}</p>
+                </div>
+            );
+        }
+        return renderCards(data);
+    };
 
     return (
         <main className='MainScreen'>
@@ -18,29 +58,29 @@ export default function MainScreen() {
                     <h1>Royal Flora Holland - Veiling</h1>
                     <h2>Verkoop wereldwijd met Royal FloraHolland</h2>
                     <div className="registratie-knoppen">
-                        <NavLink to='/inloggen'> <button type="button" className="knop-inloggen" aria-label="knop voor het inloggen">inloggen &#10095; </button> </NavLink>
-                        <NavLink to='/registreren'> <button type="button" className="knop-registreren" aria-label="knop voor registreren van een account">registreren &#10095;</button> </NavLink>
+                        <NavLink to='/inloggen' className="knop-inloggen knoppen" aria-label="knop voor het inloggen bij de website">inloggen &#10095; </NavLink>
+                        <NavLink to='/registreren' className="knop-registreren knoppen" aria-label="knop voor registreren van een account">registreren &#10095; </NavLink>
                     </div>
                 </div>
             </div>
 
             <section>
-                <h2>Laatste kans!</h2>
+                <h2>Actieve veilingen</h2>
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('lastChance', -1)}>&#10094;</button>
                     <div className="slider" id="lastChance">
-                        {renderContent("alleDeals", url)}
+                        {renderSliderContent(actieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('lastChance', 1)}>&#10095;</button>
                 </div>
             </section>
 
             <section>
-                <h2>Aankomende veilingen!</h2>
+                <h2>Inactieve veilingen</h2>
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('upcoming', -1)}>&#10094;</button>
                     <div className="slider" id="upcoming">
-                        {renderContent("AankomendeVeilingen", url)}
+                        {renderSliderContent(inactieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('upcoming', 1)}>&#10095;</button>
                 </div>
@@ -51,7 +91,7 @@ export default function MainScreen() {
                 <div className="slider-container alle_deals ">
                     <button className="arrow" onClick={() => scrollSlider('alleDeals', -1)}>&#10094;</button>
                     <div className="slider" id="alleDeals">
-                        {renderContent("alleDeals", url)}
+                        {renderSliderContent(allDeals)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('alleDeals', 1)}>&#10095;</button>
                 </div>
@@ -75,88 +115,3 @@ export default function MainScreen() {
         </main>
     )
 }
-
-interface CardItems{
-    imagePath: string;
-    altText: string;
-    headerText: string;
-    paragraafText: string;
-}
-
-export interface AuctionItems {
-    imagePath?: string;
-    "afbeelding-alt"?: string;
-    header_info?: string;
-    paragraph?: string;
-}
-
-
-const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
-
-const AuctionCard: React.FC<CardItems> = ({ imagePath, altText, headerText, paragraafText }) => {
-
-    const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);
-
-    const [hasError, setHasError] = useState(false);
-
-    const handleError = () => {
-        setCurrentSrc(Default_ImagePlaceholder);
-
-        setHasError(true);
-    };
-
-    function imageError(hasError: boolean){
-        if (hasError){
-            return <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>
-        }
-    }
-
-    return (
-        <div className='card'>
-            <img
-                src={currentSrc}
-                alt={altText}
-                onError={handleError}
-            />
-            <div className='text-container'>
-                {imageError(hasError)}
-
-                <h3>{headerText}</h3>
-                <p>{paragraafText}</p>
-            </div>
-            <button className='auctionButton'>go to auction</button>
-        </div>
-    );
-};
-
-const renderContent = (item_key: string, url: string) => {
-    let { data, isLoading, error } = useFetchDatajson<AuctionItems>(item_key , url, );
-
-    if (isLoading) {
-        return <div key="loading">Laden van items...</div>;
-    }
-
-    if (error) {
-        return <div key="error">Fout: {error}</div>;
-    }
-
-    if (data.length === 0) {
-        return <div key="empty">Geen items gevonden.</div>;
-    }
-
-    return data.map((item, index) => {
-        const ImagePath = item.imagePath || Default_ImagePlaceholder;
-        const altText = item["afbeelding-alt"] || "Item afbeelding";
-        const headerText = item.header_info || "Geen Titel";
-        const paragraafTekst = item.paragraph || "Geen beschrijving beschikbaar.";
-
-        return (
-            <AuctionCard key={index}
-                         imagePath={ImagePath}
-                         altText={altText}
-                         headerText={headerText}
-                         paragraafText={paragraafTekst}
-            />
-        );
-    });
-};

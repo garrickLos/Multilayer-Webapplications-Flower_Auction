@@ -31,7 +31,7 @@ export default function PrivacyScherm() {
     return (
         <main className="privacyBeleid_main">
             <div className="background-left">
-                <h2>Privacy beleid</h2>
+                <h1>Privacy beleid</h1>
 
                 <div className="dropdown">
                     <section className={getItemClass('algemeen')} onClick={() => handleHeaderClick('algemeen')}>

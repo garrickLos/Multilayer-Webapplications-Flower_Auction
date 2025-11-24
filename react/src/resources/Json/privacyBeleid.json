@@ -1,20 +1,40 @@
 {
-    "algemene gegevens": [
-        { "type": "paragraph", "content": "we verzamelen je gegevens voor redenen" },
-        { "type": "paragraph", "content": "andere paragraaph" }
-    ],
-    "persoonlijke gegevens": [
-        { "type": "paragraph", "content": "we willen dit:" },
-        { 
-            "type": "list", 
-            "content": [
-                "verzamelen van de cookie",
-                "verzamelen van je email",
-                "verzamelen van je naam"
-            ]
-        }
-    ],
-    "cookies": [
-        { "type": "paragraph", "content": "Dit is ons cookie beleid" }
-    ]
+  "algemene gegevens": [
+    {
+      "type": "paragraph",
+      "content": "Wij verzamelen gegevens om onze diensten functioneel te houden, beveiliging te waarborgen en noodzakelijke bedrijfsprocessen te ondersteunen. De verzameling blijft beperkt tot informatie die direct bijdraagt aan deze doelen."
+    },
+    {
+      "type": "paragraph",
+      "content": "Alle gegevensverwerkingen worden uitgevoerd binnen een strikt afgebakend kader. De verwerking vindt uitsluitend plaats wanneer dit noodzakelijk is voor het functioneren van het platform of voor naleving van wettelijke verplichtingen."
+    }
+  ],
+  "persoonlijke gegevens": [
+    {
+      "type": "paragraph",
+      "content": "De onderstaande persoonsgegevens worden uitsluitend verwerkt wanneer ze nodig zijn voor authenticatie, communicatie of systeemoptimalisatie. Verwerking blijft doelgebonden en beperkt."
+    },
+    {
+      "type": "list",
+      "content": [
+        "Verzamelen van cookies: gebruikt om sessies te herkennen en technische stabiliteit te handhaven.",
+        "Verzamelen van je e-mail: gebruikt voor accountbeheer, essentiële meldingen en verificatie.",
+        "Verzamelen van je naam: gebruikt voor identificatie binnen accounts en transactieoverzichten."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": "Deze gegevens worden niet gedeeld met derden tenzij dit juridisch verplicht is of essentieel is voor basisfunctionaliteit. Er wordt geen verwerking uitgevoerd die buiten het strikt noodzakelijke kader valt."
+    }
+  ],
+  "cookies": [
+    {
+      "type": "paragraph",
+      "content": "Dit cookiebeleid beschrijft het gebruik van technische cookies die nodig zijn voor stabiliteit, beveiliging en het meten van basisfunctionaliteit. Er worden geen cookies gebruikt die gedragsprofielen opbouwen of commerciële doeleinden dienen."
+    },
+    {
+      "type": "paragraph",
+      "content": "Cookies worden geplaatst zodra dit noodzakelijk is voor het functioneren van het platform. De opslagduur wordt beperkt tot wat functioneel vereist is. Verzamelde cookie-informatie wordt niet samengevoegd met andere persoonsgegevens."
+    }
+  ]
 }

@@ -1,18 +1,16 @@
-/* Scope everything to the SellerScreenAdd root to avoid global leakage */
 .SellerScreenAdd .BODY {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     margin: 0;
 }
-
-/* Keep large commented blocks for reference */
-
-/* Scoped headings */
 .SellerScreenAdd h1 {
     font-size: 18px;
     color: green;
     margin: 0;
+}
+[type="file"] {
+    display: none; 
 }
 
 .SellerScreenAdd h2 {
@@ -28,8 +26,8 @@
 }
 
 .SellerScreenAdd h2,
-.SellerScreenAdd h3,
-.SellerScreenAdd .Container {
+.SellerScreenAdd h3
+{
     display: inline-block;
 }
 
@@ -37,7 +35,7 @@
     display: flex;
     gap: 35px;
     align-items: stretch;
-    max-width: 1200px;
+    max-width: 90%;
     margin: 20px auto 0 auto;
     padding-left: 10px;
     padding-right: 10px;
@@ -51,31 +49,20 @@
 .SellerScreenAdd .scherm2Container,
 .SellerScreenAdd .scherm3Container {
     outline: 1px solid saddlebrown;
-    outline-offset: 15px;
+    outline-offset: 10px;
     padding: 10px;
     margin-top: 15px;
 }
 
 .SellerScreenAdd .fotoContainer {
     max-width: 250px;
-    margin: 0 auto;
+    margin: 10px;
 }
-
+.SellerScreenAdd .schermDeel1, .schermDeel2 {
+    gap: 30px;
+}
 .SellerScreenAdd .grote-foto {
     width: 100%;
-    border: 1px solid saddlebrown;
-}
-
-.SellerScreenAdd .kleine-fotos {
-    display: flex;
-    justify-content: flex-start;
-    gap: 15px;
-}
-
-.SellerScreenAdd .kleine-foto {
-    width: calc((100% / 3) - 11px);
-    height: auto;
-    display: block;
     border: 1px solid saddlebrown;
 }
 
@@ -118,13 +105,18 @@
 }
 
 .SellerScreenAdd .placeProduct {
-    color: white;
-    background-color: blue;
+    color: var(--inverse-text);
+    background-color: var(--accent-light);
     display: block;
     margin: 10px auto 0 auto;
     padding: 5px 50px;
+    border-radius: 5px;
 }
-
+ .placeProduct:hover {
+    background-color: var(--accent-muted);
+    color: var(--ink-light);
+    border-radius: 5px;
+ }
 .SellerScreenAdd section{
     padding: 10px 0;
 }

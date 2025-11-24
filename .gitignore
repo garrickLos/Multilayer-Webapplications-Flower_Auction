@@ -1,0 +1,59 @@
+# Negeer bestanden gebaseerd op het besturingssysteem of de editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# ----------------------------------------------------------------
+# .NET / C#
+# ----------------------------------------------------------------
+# Negeer mappen voor build-artefacten (dekt alle 'obj' en 'bin' mappen)
+[Oo]bj/
+[Bb]in/
+
+# Negeer cache- en build-bestanden
+*.cache
+project.assets.json
+*.csproj.nuget.g.props
+*.csproj.nuget.dgspec.json
+
+# ----------------------------------------------------------------
+# Node.js / Vite
+# ----------------------------------------------------------------
+# De map met alle packages
+node_modules/
+
+# De map met de gebouwde applicatie
+dist/
+
+# Lokale omgevingsvariabelen (bevatten vaak geheimen)
+.env.local
+.env.*.local
+
+# Logbestanden
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ----------------------------------------------------------------
+# TypeScript
+# ----------------------------------------------------------------
+# TypeScript build-cache
+*.tsbuildinfo
+mvc_api/obj/project.nuget.cache
+mvc_api/obj/project.assets.json
+mvc_api/obj/mvc_api.csproj.nuget.g.props
+mvc_api/obj/mvc_api.csproj.nuget.dgspec.json
+mvc_api/obj/Debug/net9.0/mvc_api.GeneratedMSBuildEditorConfig.editorconfig
+mvc_api/obj/Debug/net9.0/mvc_api.csproj.AssemblyReference.cache
+mvc_api/obj/Debug/net9.0/mvc_api.assets.cache
+mvc_api/obj/Debug/net9.0/mvc_api.AssemblyInfoInputs.cache
+mvc_api/obj/Debug/net9.0/mvc_api.AssemblyInfo.cs
+mvc_api/obj/Debug/net9.0/apphost.exe
