@@ -1,17 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardMetrics } from "./features/dashboard";
 import { AuctionsTab, AuctionDetailsModal, LinkProductsModal, NewAuctionModal } from "./features/auctions";
 import { ProductsTab } from "./features/products";
 import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
+import { getAuctions, getProducts, getUsers } from "./api";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
+import { adaptAuction, adaptProduct, adaptUser } from "./types";
 import { cx } from "./utils";
 
 // Root container that holds all state and routes modals.
 const seedUsers: User[] = [
-    { id: 1, name: "Anke van Dijk", email: "anke@example.nl", role: "auctioneer", status: "active" },
-    { id: 2, name: "Bram de Boer", email: "bram@example.nl", role: "grower", status: "active" },
-    { id: 3, name: "Chantal Jansen", email: "chantal@example.nl", role: "buyer", status: "inactive" },
+    { id: 1, name: "Anke van Dijk", email: "anke@example.nl", role: "Veilingmeester", status: "active" },
+    { id: 2, name: "Bram de Boer", email: "bram@example.nl", role: "Kweker", status: "active" },
+    { id: 3, name: "Chantal Jansen", email: "chantal@example.nl", role: "Koper", status: "inactive" },
 ];
 
 const seedAuctions: Auction[] = [
@@ -38,15 +40,15 @@ const seedAuctions: Auction[] = [
 ];
 
 const seedProducts: Product[] = [
-    { id: 501, name: "Rode roos", status: "active", category: "Snijbloemen", minPrice: 1.1, maxPrice: 1.9, growerId: 2, linkedAuctionId: 201 },
-    { id: 502, name: "Gele tulp", status: "active", category: "Snijbloemen", minPrice: 0.8, maxPrice: 1.2, growerId: 2, linkedAuctionId: 201 },
-    { id: 503, name: "Orchidee mix", status: "inactive", category: "Planten", minPrice: 2.5, maxPrice: 3.4, growerId: 2 },
-    { id: 504, name: "Lavendel", status: "sold", category: "Planten", minPrice: 1.0, maxPrice: 1.6, growerId: 2 },
+    { id: 501, name: "Rode roos", status: "active", category: "Snijbloemen", startPrice: 1.1, stock: 20, fust: 1, growerId: 2, linkedAuctionId: 201 },
+    { id: 502, name: "Gele tulp", status: "active", category: "Snijbloemen", startPrice: 0.8, stock: 30, fust: 1, growerId: 2, linkedAuctionId: 201 },
+    { id: 503, name: "Orchidee mix", status: "inactive", category: "Planten", startPrice: 2.5, stock: 15, fust: 1, growerId: 2 },
+    { id: 504, name: "Lavendel", status: "sold", category: "Planten", startPrice: 1.0, stock: 10, fust: 1, growerId: 2 },
 ];
 
 const seedBids: Bid[] = [
-    { id: 1, userId: 3, auctionId: 201, amount: 1.6, quantity: 50, date: "2024-05-10T08:30", status: "active" },
-    { id: 2, userId: 3, auctionId: 201, amount: 1.7, quantity: 30, date: "2024-05-10T08:45", status: "sold" },
+    { id: 1, userId: 3, auctionId: 201, productId: 501, amount: 1.6, quantity: 50, date: "2024-05-10T08:30", status: "active" },
+    { id: 2, userId: 3, auctionId: 201, productId: 501, amount: 1.7, quantity: 30, date: "2024-05-10T08:45", status: "sold" },
 ];
 
 type TabKey = "users" | "auctions" | "products";
@@ -59,6 +61,35 @@ export function Veilingmeester() {
     const [products, setProducts] = useState<Product[]>(seedProducts);
     const [bids] = useState<Bid[]>(seedBids);
     const [activeModal, setActiveModal] = useState<ModalState | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const [userResponse, auctionResponse, productResponse] = await Promise.all([
+                    getUsers({ pageSize: 200 }, controller.signal),
+                    getAuctions({ pageSize: 200 }, controller.signal),
+                    getProducts({ pageSize: 200 }, controller.signal),
+                ]);
+
+                setUsers(userResponse.items.map(adaptUser));
+                setAuctions(auctionResponse.items.map(adaptAuction));
+                setProducts(productResponse.items.map(adaptProduct));
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") return;
+                setError((err as { message?: string }).message ?? "Kan gegevens niet laden");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void load();
+        return () => controller.abort();
+    }, []);
 
     const activeAuction = useMemo(
         () => (activeModal && "auctionId" in activeModal ? auctions.find((entry) => entry.id === activeModal.auctionId) ?? null : null),
@@ -149,8 +180,18 @@ export function Veilingmeester() {
                         Je bent offline. Gegevens verversen zodra de verbinding terug is.
                     </div>
                 )}
+                {error && (
+                    <div className="alert alert-danger border-0 rounded-4 shadow-sm mb-0" role="alert">
+                        {error}
+                    </div>
+                )}
+                {loading && !error && (
+                    <div className="alert alert-info border-0 rounded-4 shadow-sm mb-0" role="status">
+                        Gegevens worden geladen…
+                    </div>
+                )}
 
-                <DashboardMetrics users={users} auctions={auctions} products={products} bids={bids} />
+                <DashboardMetrics />
 
                 <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
                     <div className="card-body p-4 d-flex flex-column gap-3">
