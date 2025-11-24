@@ -3,6 +3,7 @@ import type {
     VeilingCreateDto,
     BiedingCreateDto,
     BiedingUpdateDto,
+    Category,
     GebruikerDto,
     GebruikerUpdateDto,
     PaginatedList,
@@ -174,9 +175,9 @@ export async function fetchProducts(
 }
 
 /** Fetch all categories for filter dropdowns. */
-export async function fetchCategories(signal?: AbortSignal): Promise<readonly { id: number; name: string }[]> {
+export async function fetchCategories(signal?: AbortSignal): Promise<readonly Category[]> {
     const { data } = await request<readonly { categorieNr: number; categorieNaam: string }[]>(`/api/Categorie`, { signal });
-    return data.map((entry) => ({ id: entry.categorieNr, name: entry.categorieNaam }));
+    return data.map((entry) => ({ id: entry.categorieNr, name: entry.categorieNaam } satisfies Category));
 }
 
 /** Fetch products for a specific grower (client-side filter fallback). */

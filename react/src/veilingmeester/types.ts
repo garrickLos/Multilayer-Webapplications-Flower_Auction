@@ -1,22 +1,21 @@
 /**
  * Domain types for the Veilingmeester dashboard.
- * These types aim to mirror the backend DTOs while offering friendly aliases for the UI.
+ * These types mirror backend DTOs and provide UI-friendly models.
  */
 
-// ---- Shared enums ----
+// ---- shared unions ----
 
-/** Auction lifecycle as returned by the API. */
+/** Lifecycle of an auction as delivered by the API. */
 export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd";
 
-/** Product lifecycle derived from stock and auction linkage. */
+/** Lifecycle of a product derived from stock and linkage. */
 export type ProductStatus = "Beschikbaar" | "Gekoppeld" | "Uitverkocht";
 
-/** Supported user roles normalised for the UI. */
+/** Supported user roles. */
 export type UserRole = "Koper" | "Kweker" | "Veilingmeester" | "Admin" | "Onbekend";
 
-/** Generic status token for UI elements such as badges. */
+/** Presentational status token used by badges. */
 export type UiStatus = "active" | "inactive" | "sold" | "deleted";
-/** Legacy alias used by existing components. */
 export type Status = UiStatus;
 
 /** Basic paginated list returned by API helpers. */
@@ -26,6 +25,12 @@ export interface PaginatedList<T> {
     readonly pageSize: number;
     readonly hasNext: boolean;
     readonly totalResults?: number;
+}
+
+/** Category metadata for filters and display. */
+export interface Category {
+    readonly id: number;
+    readonly name: string;
 }
 
 // ---- API DTOs ----
@@ -57,8 +62,6 @@ export interface VeilingDto {
     producten?: VeilingProductDto[];
     biedingen?: VeilingMeester_BiedingDto[];
 }
-
-export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
 
 export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
 export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
@@ -193,7 +196,7 @@ export const roleLabels: Record<UserRole, string> = {
 export const toUiStatus = (value?: AuctionStatus | string | null): UiStatus => {
     const normalised = (value ?? "").toLowerCase();
     if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht") return "sold";
+    if (normalised === "verkocht" || normalised === "afgesloten") return "sold";
     if (normalised === "geannuleerd") return "deleted";
     return "inactive";
 };
