@@ -28,13 +28,13 @@ const statusOptions: readonly { value: Status | "all"; label: string }[] = [
 
 function deriveStatus(auction: Auction, now: Date): Status {
     const totalStock = auction.products?.reduce((sum, product) => sum + (product.stock ?? 0), 0);
-    if (totalStock === 0) return "sold";
     if (auction.status === "deleted") return "deleted";
 
     const start = new Date(auction.startDate);
     const end = new Date(auction.endDate);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return auction.status;
     if (now < start) return "inactive";
+    if (totalStock === 0) return "sold";
     if (now >= start && now <= end) return "active";
     return "inactive";
 }
@@ -108,7 +108,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
                 return matchesSearch && matchesStatus && matchesFrom && matchesTo;
             }),
-        [auctions, filters, now, search],
+        [auctions, filters, now],
     );
 
     const handleCancel = async (auctionId: number) => {
@@ -281,12 +281,12 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
     );
 }
 
-type AuctionFormState = { title: string; minPrice: number; maxPrice: number; startDate: string; endDate: string; status: Status };
+type AuctionFormState = { title: string; maxPrice: number; startTime: string; endTime: string; status: Status };
 
 type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => void };
 
 export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Element {
-    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", minPrice: 0, maxPrice: 0, startDate: "", endDate: "", status: "inactive" });
+    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", maxPrice: 0, startTime: "", endTime: "", status: "inactive" });
 
     const update = <K extends keyof AuctionFormState>(key: K, value: AuctionFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
 
@@ -313,23 +313,18 @@ export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Ele
                     </Field>
                 </div>
                 <div className="col-6">
-                    <Field label="Min. prijs">
-                        <Input type="number" value={draft.minPrice} onChange={(value) => update("minPrice", Number(value) || 0)} min={0} />
-                    </Field>
-                </div>
-                <div className="col-6">
                     <Field label="Max. prijs">
                         <Input type="number" value={draft.maxPrice} onChange={(value) => update("maxPrice", Number(value) || 0)} min={0} />
                     </Field>
                 </div>
                 <div className="col-6">
-                    <Field label="Startdatum">
-                        <Input type="datetime-local" value={draft.startDate} onChange={(value) => update("startDate", value)} />
+                    <Field label="Starttijd">
+                        <Input type="time" value={draft.startTime} onChange={(value) => update("startTime", value)} />
                     </Field>
                 </div>
                 <div className="col-6">
-                    <Field label="Einddatum">
-                        <Input type="datetime-local" value={draft.endDate} onChange={(value) => update("endDate", value)} />
+                    <Field label="Eindtijd">
+                        <Input type="time" value={draft.endTime} onChange={(value) => update("endTime", value)} />
                     </Field>
                 </div>
                 <div className="col-12">

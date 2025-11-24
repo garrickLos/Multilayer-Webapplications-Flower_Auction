@@ -118,7 +118,6 @@ export function Veilingmeester() {
             label: "Veilingen",
             render: () => (
                 <AuctionsTab
-                    auctions={auctions}
                     onCreateRequested={() => setActiveModal({ key: "newAuction" })}
                     onOpenLinkProducts={(auctionId) => setActiveModal({ key: "linkProducts", auctionId })}
                     onAuctionsLoaded={(items) => setAuctions(items)}
@@ -128,7 +127,7 @@ export function Veilingmeester() {
         {
             key: "products",
             label: "Producten",
-            render: () => <ProductsTab products={products} />,
+            render: () => <ProductsTab auctions={auctions} />,
         },
         {
             key: "users",
