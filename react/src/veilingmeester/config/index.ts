@@ -32,6 +32,7 @@ export const appConfig = {
             readEnv("VEILINGMEESTER_API_BASE_URL") ||
             defaultBaseUrl,
         requestTimeoutMs: toNumber(readEnv("VITE_VEILINGMEESTER_REQUEST_TIMEOUT_MS"), 10000),
+        prefetchPageSize: toNumber(readEnv("VITE_VEILINGMEESTER_PREFETCH_PAGE_SIZE"), 200),
     },
     pagination: {
         table: toNumberList(readEnv("VITE_VEILINGMEESTER_PER_PAGE_OPTIONS"), [10, 25, 50]),

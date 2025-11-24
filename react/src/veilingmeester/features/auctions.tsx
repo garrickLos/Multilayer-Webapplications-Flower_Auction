@@ -4,10 +4,12 @@ import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import { useTicker } from "../hooks";
+import { appConfig } from "../config";
 import type { Auction, Product, Status } from "../types";
 import { calculateClockPrice, deriveAuctionUiStatus, filterRows, formatCurrency, formatDateTime } from "../utils";
 
-const perPageOptions = [10, 25, 50];
+const { table: tablePageSizeOptions, modal: modalPageSizeOptions } = appConfig.pagination;
+const { prefetchPageSize } = appConfig.api;
 
 // ---- filters & helpers ----
 
@@ -29,7 +31,7 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<AuctionFilters>({ status: "all", from: "", to: "" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
     const now = useTicker(5000);
 
     useEffect(() => {
@@ -45,7 +47,7 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                         status: filters.status === "all" ? undefined : filters.status,
                         q: search || undefined,
                         page: 1,
-                        pageSize: 200,
+                        pageSize: prefetchPageSize,
                     },
                     controller.signal,
                 );
@@ -277,7 +279,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
-                pageSizeOptions={perPageOptions}
+                pageSizeOptions={tablePageSizeOptions}
                 onPageChange={setPage}
                 onPageSizeChange={(size) => {
                     setPageSize(size);
@@ -360,7 +362,7 @@ export function LinkProductsModal({ auction, products, onClose, onSave }: LinkPr
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [pageSize, setPageSize] = useState(modalPageSizeOptions[0]);
     const [selectedIds, setSelectedIds] = useState<readonly number[]>(auction.linkedProductIds ?? []);
 
     const availableProducts = useMemo(
@@ -454,7 +456,7 @@ export function LinkProductsModal({ auction, products, onClose, onSave }: LinkPr
                     getRowId={(row) => row.id}
                     page={page}
                     pageSize={pageSize}
-                    pageSizeOptions={perPageOptions}
+                    pageSizeOptions={modalPageSizeOptions}
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                     onRowClick={(row) => toggleRow(row.id)}

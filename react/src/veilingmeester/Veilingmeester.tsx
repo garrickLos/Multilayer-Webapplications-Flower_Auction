@@ -5,10 +5,13 @@ import { ProductsTab } from "./features/products";
 import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
 import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, updateUser } from "./api";
+import { appConfig } from "./config";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
 import { cx } from "./utils";
 
 type TabKey = "users" | "auctions" | "products";
+
+const { prefetchPageSize } = appConfig.api;
 
 export function Veilingmeester() {
     const offline = useOffline();
@@ -30,10 +33,10 @@ export function Veilingmeester() {
             setError(null);
             try {
                 const [userResponse, auctionResponse, productResponse, bidResponse] = await Promise.all([
-                    fetchUsers({ pageSize: 200 }, controller.signal),
-                    fetchAuctions({ pageSize: 200 }, controller.signal),
-                    fetchProducts({ pageSize: 200 }, controller.signal),
-                    fetchBids({ pageSize: 200 }, controller.signal),
+                    fetchUsers({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchAuctions({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchProducts({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchBids({ pageSize: prefetchPageSize }, controller.signal),
                 ]);
 
                 setUsers([...userResponse.items]);

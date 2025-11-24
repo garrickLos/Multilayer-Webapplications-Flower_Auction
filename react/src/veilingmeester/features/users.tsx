@@ -2,6 +2,7 @@ import { useMemo, useState, type JSX } from "react";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
+import { appConfig } from "../config";
 import type { Bid, Product, Status, User, UserRole } from "../types";
 import { filterRows, roleLabels } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
@@ -20,8 +21,7 @@ const roleOptions: readonly { value: UserRole | "all"; label: string }[] = [
     { value: "Veilingmeester", label: "Veilingmeester" },
     { value: "Admin", label: "Admin" },
 ];
-
-const perPageOptions = [10, 25, 50];
+const { table: tablePageSizeOptions, modal: modalPageSizeOptions } = appConfig.pagination;
 
 type UserFilters = { status: Status | "all"; role: UserRole | "all" };
 
@@ -37,7 +37,7 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<UserFilters>({ status: "all", role: "all" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
 
     const filteredRows = useMemo(
         () =>
@@ -151,7 +151,7 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
                 getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
-                pageSizeOptions={perPageOptions}
+                pageSizeOptions={tablePageSizeOptions}
                 onPageChange={setPage}
                 onPageSizeChange={(size) => {
                     setPageSize(size);
@@ -264,7 +264,7 @@ export function UserBidsModal({ user, bids, onClose }: { readonly user: User; re
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [pageSize, setPageSize] = useState(modalPageSizeOptions[0]);
 
     const userBids = useMemo(
         () =>
@@ -312,7 +312,7 @@ export function UserBidsModal({ user, bids, onClose }: { readonly user: User; re
                 getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
-                pageSizeOptions={perPageOptions}
+                pageSizeOptions={modalPageSizeOptions}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
             />
@@ -324,7 +324,7 @@ export function UserProductsModal({ user, products, onClose }: { readonly user: 
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [pageSize, setPageSize] = useState(modalPageSizeOptions[0]);
 
     const growerProducts = useMemo(
         () =>
@@ -371,7 +371,7 @@ export function UserProductsModal({ user, products, onClose }: { readonly user: 
                 getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
-                pageSizeOptions={perPageOptions}
+                pageSizeOptions={modalPageSizeOptions}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
             />

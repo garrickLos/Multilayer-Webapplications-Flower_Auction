@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type JSX } from "react";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import { fetchAuctions, fetchCategories, fetchProducts } from "../api";
+import { appConfig } from "../config";
 import type { Auction, Product, Status } from "../types";
 import { filterRows, formatCurrency } from "../utils";
 
@@ -20,7 +21,8 @@ const linkedOptions = [
     { value: "unlinked", label: "Niet gekoppeld" },
 ] as const;
 
-const perPageOptions = [10, 25, 50];
+const { table: tablePageSizeOptions } = appConfig.pagination;
+const { prefetchPageSize } = appConfig.api;
 
 type ProductFilters = { status: Status | "all"; category: string; linkState: (typeof linkedOptions)[number]["value"] };
 
@@ -30,7 +32,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<ProductFilters>({ status: "all", category: "", linkState: "all" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
     const [products, setProducts] = useState<readonly Product[]>([]);
     const [categories, setCategories] = useState<readonly { id: number; name: string }[]>([]);
     const [localAuctions, setLocalAuctions] = useState<readonly Auction[]>(auctions);
@@ -46,7 +48,9 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
             try {
                 const [categoryResponse, auctionResponse] = await Promise.all([
                     fetchCategories(controller.signal),
-                    auctions.length === 0 ? fetchAuctions({ pageSize: 200 }, controller.signal) : Promise.resolve(null),
+                    auctions.length === 0
+                        ? fetchAuctions({ pageSize: prefetchPageSize }, controller.signal)
+                        : Promise.resolve(null),
                 ]);
                 setCategories(categoryResponse);
                 if (auctionResponse) {
@@ -219,7 +223,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
                 getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
-                pageSizeOptions={perPageOptions}
+                pageSizeOptions={tablePageSizeOptions}
                 onPageChange={setPage}
                 onPageSizeChange={(size) => {
                     setPageSize(size);
