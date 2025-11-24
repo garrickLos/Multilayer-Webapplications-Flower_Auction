@@ -57,11 +57,11 @@ export function ProductsTab({ products }: ProductsTabProps): JSX.Element {
             sortable: true,
             render: (row) => (
                 <div className="d-flex flex-column">
-                    <span>{formatCurrency(row.minPrice)}</span>
-                    <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
+                    <span>{formatCurrency(row.startPrice)}</span>
+                    <small className="text-muted">Voorraad {row.stock}</small>
                 </div>
             ),
-            getValue: (row) => row.minPrice,
+            getValue: (row) => row.startPrice,
         },
         { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
         {

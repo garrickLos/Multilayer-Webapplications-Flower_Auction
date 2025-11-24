@@ -1,6 +1,15 @@
 // General utilities for formatting and simple helpers.
 const currencyFormatter = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
-const dateFormatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium", timeStyle: "short" });
+
+const pad = (value: number): string => (value < 10 ? `0${value}` : String(value));
+const formatDateParts = (date: Date): string => {
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+};
 
 export const formatCurrency = (value?: number | null): string =>
     currencyFormatter.format(typeof value === "number" && Number.isFinite(value) ? value : 0);
@@ -8,7 +17,7 @@ export const formatCurrency = (value?: number | null): string =>
 export const formatDateTime = (value?: string | Date | null): string => {
     if (!value) return "—";
     const date = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
+    return Number.isNaN(date.getTime()) ? "—" : formatDateParts(date);
 };
 
 export const paginate = <T,>(rows: readonly T[], page: number, pageSize: number): readonly T[] => {

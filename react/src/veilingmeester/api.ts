@@ -1,11 +1,16 @@
 import { appConfig } from "./config";
 import type {
-    BiedingDto,
+    BiedingCreateDto,
+    BiedingUpdateDto,
     GebruikerDto,
+    GebruikerUpdateDto,
     PaginatedList,
     VeilingDetailDto,
     VeilingDto,
-    VeilingproductDto,
+    VeilingMeester_BiedingDto,
+    VeilingProductDto,
+    VeilingUpdateDto,
+    VeilingproductUpdateDto,
 } from "./types";
 
 export type ApiError = { status: number; message: string };
@@ -125,7 +130,7 @@ export async function getBids(
         pageSize?: number;
     },
     signal?: AbortSignal,
-): Promise<PaginatedList<BiedingDto>> {
+): Promise<PaginatedList<VeilingMeester_BiedingDto>> {
     return fetchList("/api/Bieding", params, { signal });
 }
 
@@ -144,7 +149,7 @@ export async function getAuctionDetail(id: number, signal?: AbortSignal): Promis
 export async function getProducts(
     params: { q?: string; categorieNr?: number | string; page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<VeilingproductDto>> {
+): Promise<PaginatedList<VeilingProductDto>> {
     return fetchList("/api/Veilingproduct", params, { signal });
 }
 
@@ -152,8 +157,69 @@ export async function getProductsByGrower(
     growerId: number | string,
     params: { page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<VeilingproductDto>> {
+): Promise<PaginatedList<VeilingProductDto>> {
+    // TODO: zodra de API kwekernr ondersteunt in de query, deze filter laten uitvoeren op de backend.
     const list = await getProducts({ ...params, pageSize: params.pageSize ?? 50 }, signal);
     const items = list.items.filter((product) => String(product.kwekerNr ?? "") === String(growerId));
     return { ...list, items };
+}
+
+export async function updateUser(id: number, payload: GebruikerUpdateDto, signal?: AbortSignal): Promise<GebruikerDto> {
+    const { data } = await request<GebruikerDto>(`/api/Gebruiker/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    return data;
+}
+
+export async function deleteUserSoft(id: number, signal?: AbortSignal): Promise<void> {
+    // TODO: zodra de backend soft-delete ondersteunt, vervangen door een archief endpoint.
+    await request(`/api/Gebruiker/${id}`, { method: "DELETE", signal });
+}
+
+export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<VeilingDto> {
+    const { data } = await request<VeilingDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    return data;
+}
+
+export async function deleteAuctionSoft(id: number, signal?: AbortSignal): Promise<void> {
+    // TODO: backend soft delete zodra status veld beschikbaar is.
+    await request(`/api/Veiling/${id}`, { method: "DELETE", signal });
+}
+
+export async function updateProduct(
+    id: number,
+    payload: VeilingproductUpdateDto,
+    signal?: AbortSignal,
+): Promise<VeilingProductDto> {
+    const { data } = await request<VeilingProductDto>(`/api/Veilingproduct/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        signal,
+    });
+    return data;
+}
+
+export async function deleteProductSoft(id: number, signal?: AbortSignal): Promise<void> {
+    // TODO: vervangen door soft delete zodra beschikbaar.
+    await request(`/api/Veilingproduct/${id}`, { method: "DELETE", signal });
+}
+
+export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<VeilingMeester_BiedingDto> {
+    const { data } = await request<VeilingMeester_BiedingDto>("/api/Bieding", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        signal,
+    });
+    return data;
+}
+
+export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<VeilingMeester_BiedingDto> {
+    const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        signal,
+    });
+    return data;
+}
+
+export async function deleteBid(id: number, signal?: AbortSignal): Promise<void> {
+    await request(`/api/Bieding/${id}`, { method: "DELETE", signal });
 }

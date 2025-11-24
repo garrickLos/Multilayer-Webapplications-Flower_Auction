@@ -68,8 +68,8 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
             key: "products",
             header: "Producten",
             sortable: true,
-            render: (row) => row.linkedProductIds.length,
-            getValue: (row) => row.linkedProductIds.length,
+            render: (row) => row.linkedProductIds?.length ?? row.products?.length ?? 0,
+            getValue: (row) => row.linkedProductIds?.length ?? row.products?.length ?? 0,
         },
         { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
         {
@@ -228,7 +228,7 @@ export function AuctionDetailsModal({ auction, onClose }: { readonly auction: Au
                 <Info label="Prijsbereik">{`${formatCurrency(auction.minPrice)} – ${formatCurrency(auction.maxPrice)}`}</Info>
                 <Info label="Start">{formatDateTime(auction.startDate)}</Info>
                 <Info label="Einde">{formatDateTime(auction.endDate)}</Info>
-                <Info label="Gekoppelde producten">{auction.linkedProductIds.length}</Info>
+                <Info label="Gekoppelde producten">{auction.linkedProductIds?.length ?? auction.products?.length ?? 0}</Info>
             </div>
         </Modal>
     );
@@ -249,7 +249,7 @@ export function LinkProductsModal({
     const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(perPageOptions[0]);
-    const [selectedIds, setSelectedIds] = useState<readonly number[]>(auction.linkedProductIds);
+    const [selectedIds, setSelectedIds] = useState<readonly number[]>(auction.linkedProductIds ?? []);
 
     const availableProducts = useMemo(
         () =>
