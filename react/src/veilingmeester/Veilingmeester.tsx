@@ -60,25 +60,19 @@ export function Veilingmeester() {
         [activeModal, users],
     );
 
-    const composeDateTime = (time: string) => {
-        const today = new Date();
-        const [hours, minutes] = time.split(":");
-        today.setHours(Number(hours ?? 0), Number(minutes ?? 0), 0, 0);
-        return today.toISOString();
-    };
-
     const handleCreateAuction = async (draft: {
         title: string;
+        minPrice: number;
         maxPrice: number;
-        startTime: string;
-        endTime: string;
+        startDate: string;
+        endDate: string;
         status: Auction["status"];
     }) => {
         try {
             const created = await createAuction({
                 veilingNaam: draft.title,
-                begintijd: composeDateTime(draft.startTime),
-                eindtijd: composeDateTime(draft.endTime),
+                begintijd: draft.startDate,
+                eindtijd: draft.endDate,
                 status: draft.status,
             });
             setAuctions((prev) => [adaptAuction(created), ...prev]);

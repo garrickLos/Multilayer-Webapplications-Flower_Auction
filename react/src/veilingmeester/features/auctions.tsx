@@ -8,9 +8,9 @@ import { adaptAuction, filterRows } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
 
 function calculateClockPrice(startPrice: number, minPrice: number, start: Date, end: Date, now: Date): number {
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice || minPrice;
-    if (now <= start) return startPrice || minPrice;
-    if (now >= end) return minPrice || startPrice;
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice;
+    if (now <= start) return startPrice;
+    if (now >= end) return minPrice;
     const total = end.getTime() - start.getTime();
     const elapsed = now.getTime() - start.getTime();
     const ratio = Math.min(Math.max(elapsed / total, 0), 1);
@@ -105,7 +105,8 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
                 const matchesFrom = Number.isFinite(start) ? start >= from : true;
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
-                return matchesStatus && matchesFrom && matchesTo;
+                const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
+                return matchesSearch && matchesStatus && matchesFrom && matchesTo;
             }),
         [auctions, filters, now],
     );
@@ -130,9 +131,8 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
             header: "Klokprijs",
             sortable: true,
             render: (row) => {
-                const priceCandidates = row.products?.map((product) => product.startPrice) ?? [];
-                const startPrice = row.maxPrice ?? Math.max(...priceCandidates, 0);
-                const minPrice = row.minPrice ?? Math.min(...priceCandidates, startPrice || 0);
+                const startPrice = row.maxPrice ?? row.minPrice ?? 0;
+                const minPrice = row.minPrice ?? 0;
                 const current = calculateClockPrice(startPrice, minPrice, new Date(row.startDate), new Date(row.endDate), now);
                 return (
                     <div className="d-flex flex-column">
