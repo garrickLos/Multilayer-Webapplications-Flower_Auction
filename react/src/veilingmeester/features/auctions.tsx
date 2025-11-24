@@ -1,10 +1,20 @@
-import { useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import type { Auction, Product, Status } from "../types";
 import { filterRows } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
+
+function calculateClockPrice(startPrice: number, minPrice: number, start: Date, end: Date, now: Date): number {
+    if (now <= start) return startPrice;
+    if (now >= end) return minPrice;
+    const total = end.getTime() - start.getTime();
+    const elapsed = now.getTime() - start.getTime();
+    const ratio = Math.min(Math.max(elapsed / total, 0), 1);
+    const price = startPrice - (startPrice - minPrice) * ratio;
+    return Math.max(price, minPrice);
+}
 
 // Auction list and related modals.
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
@@ -14,6 +24,19 @@ const statusOptions: readonly { value: Status | "all"; label: string }[] = [
     { value: "sold", label: "Verkocht" },
     { value: "deleted", label: "Geannuleerd" },
 ];
+
+function deriveStatus(auction: Auction, now: Date): Status {
+    const totalStock = auction.products?.reduce((sum, product) => sum + (product.stock ?? 0), 0);
+    if (totalStock === 0) return "sold";
+    if (auction.status === "deleted") return "deleted";
+
+    const start = new Date(auction.startDate);
+    const end = new Date(auction.endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return auction.status;
+    if (now < start) return "inactive";
+    if (now >= start && now <= end) return "active";
+    return "inactive";
+}
 
 const perPageOptions = [10, 25, 50];
 
@@ -31,12 +54,19 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
     const [filters, setFilters] = useState<AuctionFilters>({ status: "all", from: "", to: "" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(perPageOptions[0]);
+    const [now, setNow] = useState(() => new Date());
+
+    useEffect(() => {
+        const interval = window.setInterval(() => setNow(new Date()), 5000);
+        return () => window.clearInterval(interval);
+    }, []);
 
     const filteredRows = useMemo(
         () =>
             filterRows(auctions, search, filters, (row, term, currentFilters) => {
-                const matchesSearch = !term || row.title.toLowerCase().includes(term) || String(row.id).includes(term);
-                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                const matchesSearch = !term || row.title.toLowerCase().includes(term);
+                const computedStatus = deriveStatus(row, now);
+                const matchesStatus = currentFilters.status === "all" || computedStatus === currentFilters.status;
                 const start = Date.parse(row.startDate);
                 const from = currentFilters.from ? Date.parse(currentFilters.from) : Number.NEGATIVE_INFINITY;
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
@@ -44,11 +74,10 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
                 return matchesSearch && matchesStatus && matchesFrom && matchesTo;
             }),
-        [auctions, filters, search],
+        [auctions, filters, now, search],
     );
 
     const columns: TableColumn<Auction>[] = [
-        { key: "id", header: "#", sortable: true, render: (row) => <span className="fw-semibold">#{row.id}</span>, getValue: (row) => row.id },
         { key: "title", header: "Titel", sortable: true, render: (row) => row.title, getValue: (row) => row.title },
         {
             key: "price",
@@ -56,8 +85,17 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
             sortable: true,
             render: (row) => (
                 <div className="d-flex flex-column">
-                    <span>{formatCurrency(row.minPrice)}</span>
-                    <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
+                    <span>
+                        €{" "}
+                        {calculateClockPrice(
+                            row.minPrice ?? 0,
+                            0,
+                            new Date(row.startDate),
+                            new Date(row.endDate),
+                            now,
+                        ).toFixed(2)}
+                    </span>
+                    <small className="text-muted">Start {formatCurrency(row.minPrice ?? 0)}</small>
                 </div>
             ),
             getValue: (row) => row.minPrice,
@@ -71,7 +109,13 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
             render: (row) => row.linkedProductIds?.length ?? row.products?.length ?? 0,
             getValue: (row) => row.linkedProductIds?.length ?? row.products?.length ?? 0,
         },
-        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+        {
+            key: "status",
+            header: "Status",
+            sortable: true,
+            render: (row) => <StatusBadge status={deriveStatus(row, now)} />,
+            getValue: (row) => deriveStatus(row, now),
+        },
         {
             key: "actions",
             header: "Acties",
@@ -113,23 +157,51 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
                 </button>
             </div>
 
-            <Table
-                columns={columns}
-                rows={filteredRows}
-                getRowId={(row) => row.id}
-                onRowClick={(row) => onOpenDetails(row.id)}
-                search={{ value: search, onChange: setSearch, placeholder: "Titel of nummer" }}
-                filters={
-                    <div className="d-flex flex-wrap gap-2">
+            <div className="row g-3">
+                <div className="col-12 col-lg-3">
+                    <Field label="Status">
                         <Select
                             value={filters.status}
                             options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
                             onChange={(value) => setFilters((prev) => ({ ...prev, status: value as AuctionFilters["status"] }))}
                         />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Startdatum">
                         <Input type="date" value={filters.from} onChange={(value) => setFilters((prev) => ({ ...prev, from: value }))} />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Einddatum">
                         <Input type="date" value={filters.to} onChange={(value) => setFilters((prev) => ({ ...prev, to: value }))} />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <label className="w-100 form-label text-success-emphasis fw-semibold small text-uppercase" htmlFor="auction-search">
+                        Zoeken
+                    </label>
+                    <div className="input-group">
+                        <span className="input-group-text bg-white text-success-emphasis border-success-subtle">
+                            <i className="bi bi-search" aria-hidden="true" />
+                        </span>
+                        <input
+                            id="auction-search"
+                            type="search"
+                            className="form-control border-success-subtle"
+                            value={search}
+                            placeholder="Titel"
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
                     </div>
-                }
+                </div>
+            </div>
+
+            <Table
+                columns={columns}
+                rows={filteredRows}
+                getRowId={(row) => row.id}
+                onRowClick={(row) => onOpenDetails(row.id)}
                 page={page}
                 pageSize={pageSize}
                 pageSizeOptions={perPageOptions}
