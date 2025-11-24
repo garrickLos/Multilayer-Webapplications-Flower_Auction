@@ -157,7 +157,7 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
                     setPageSize(size);
                     setPage(1);
                 }}
-                emptyMessage={<EmptyState message="Geen gebruikers gevonden." /> as unknown as string}
+                emptyMessage={<EmptyState message="Geen gebruikers gevonden." />}
             />
         </section>
     );

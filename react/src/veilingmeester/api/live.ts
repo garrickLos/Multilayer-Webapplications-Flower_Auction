@@ -1,4 +1,4 @@
-import { getAuctionDetail } from "../api";
+import { fetchAuctionDetail } from "../api";
 import { appConfig } from "../config";
 import { adaptAuction, type VeilingDetailDto, type VeilingRow } from "../types";
 
@@ -57,7 +57,7 @@ export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler
 
     const fetchOnce = async () => {
         try {
-            const detail = await getAuctionDetail(veilingId, controller.signal);
+            const detail = await fetchAuctionDetail(veilingId, controller.signal);
             applyRow(adaptAuction(detail));
         } catch (error) {
             if ((error as { name?: string }).name === "AbortError") return;

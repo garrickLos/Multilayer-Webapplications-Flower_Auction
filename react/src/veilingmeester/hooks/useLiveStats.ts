@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAuctions, getBids, getProducts, getUsers } from "../api";
+import { fetchAuctions, fetchBids, fetchProducts, fetchUsers } from "../api";
 
 export type LiveStats = { users: number; activeAuctions: number; products: number; bids: number };
 
@@ -16,10 +16,10 @@ export function useLiveStats() {
             setError(null);
             try {
                 const [usersResponse, activeAuctionsResponse, productsResponse, bidsResponse] = await Promise.all([
-                    getUsers({ pageSize: 200 }, controller.signal),
-                    getAuctions({ onlyActive: true, pageSize: 200 }, controller.signal),
-                    getProducts({ pageSize: 200 }, controller.signal),
-                    getBids({ pageSize: 200 }, controller.signal),
+                    fetchUsers({ pageSize: 200 }, controller.signal),
+                    fetchAuctions({ onlyActive: true, pageSize: 200 }, controller.signal),
+                    fetchProducts({ pageSize: 200 }, controller.signal),
+                    fetchBids({ pageSize: 200 }, controller.signal),
                 ]);
 
                 setStats({

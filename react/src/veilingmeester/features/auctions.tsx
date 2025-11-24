@@ -1,22 +1,17 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
-import { deleteAuctionSoft, getAuctions } from "../api";
+import { deleteAuction, fetchAuctions } from "../api";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import type { Auction, Product, Status } from "../types";
-import { adaptAuction, filterRows } from "../types";
-import { formatCurrency, formatDateTime } from "../utils";
+import { adaptAuction } from "../types";
+import { calculateClockPrice, deriveAuctionUiStatus, filterRows, formatCurrency, formatDateTime } from "../utils";
 
-function calculateClockPrice(startPrice: number, minPrice: number, start: Date, end: Date, now: Date): number {
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice;
-    if (now <= start) return startPrice;
-    if (now >= end) return minPrice;
-    const total = end.getTime() - start.getTime();
-    const elapsed = now.getTime() - start.getTime();
-    const ratio = Math.min(Math.max(elapsed / total, 0), 1);
-    const price = startPrice - (startPrice - minPrice) * ratio;
-    return Math.max(price, minPrice);
-}
+const perPageOptions = [10, 25, 50];
+
+// ---- filters & helpers ----
+
+type AuctionFilters = { status: Status | "all"; from: string; to: string };
 
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
     { value: "all", label: "Alle" },
@@ -26,30 +21,8 @@ const statusOptions: readonly { value: Status | "all"; label: string }[] = [
     { value: "deleted", label: "Geannuleerd" },
 ];
 
-function deriveStatus(auction: Auction, now: Date): Status {
-    const totalStock = auction.products?.reduce((sum, product) => sum + (product.stock ?? 0), 0);
-    if (auction.status === "deleted") return "deleted";
-
-    const start = new Date(auction.startDate);
-    const end = new Date(auction.endDate);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return auction.status;
-    if (now < start) return "inactive";
-    if (totalStock === 0) return "sold";
-    if (now >= start && now <= end) return "active";
-    return "inactive";
-}
-
-const perPageOptions = [10, 25, 50];
-
-type AuctionFilters = { status: Status | "all"; from: string; to: string };
-
-type AuctionsTabProps = {
-    readonly onCreateRequested: () => void;
-    readonly onOpenLinkProducts: (auctionId: number) => void;
-    readonly onAuctionsLoaded: (auctions: Auction[]) => void;
-};
-
-export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsLoaded }: AuctionsTabProps): JSX.Element {
+/** Keep local state for auction list, filters, and clock updates. */
+function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
     const [auctions, setAuctions] = useState<readonly Auction[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -70,12 +43,13 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
             setLoading(true);
             setError(null);
             try {
-                const response = await getAuctions(
+                const response = await fetchAuctions(
                     {
                         from: filters.from || undefined,
                         to: filters.to || undefined,
                         status: filters.status === "all" ? undefined : filters.status,
                         q: search || undefined,
+                        page: 1,
                         pageSize: 200,
                     },
                     controller.signal,
@@ -98,7 +72,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
     const filteredRows = useMemo(
         () =>
             filterRows(auctions, "", filters, (row, _term, currentFilters) => {
-                const computedStatus = deriveStatus(row, now);
+                const computedStatus = deriveAuctionUiStatus(row, now);
                 const matchesStatus = currentFilters.status === "all" || computedStatus === currentFilters.status;
                 const start = Date.parse(row.startDate);
                 const from = currentFilters.from ? Date.parse(currentFilters.from) : Number.NEGATIVE_INFINITY;
@@ -113,7 +87,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
 
     const handleCancel = async (auctionId: number) => {
         try {
-            await deleteAuctionSoft(auctionId);
+            await deleteAuction(auctionId);
             setAuctions((prev) => {
                 const next = prev.filter((auction) => auction.id !== auctionId);
                 onAuctionsLoaded([...next]);
@@ -123,6 +97,48 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
             setError((err as { message?: string }).message ?? "Veiling kon niet worden geannuleerd.");
         }
     };
+
+    return {
+        auctions: filteredRows,
+        loading,
+        error,
+        search,
+        filters,
+        now,
+        page,
+        pageSize,
+        setSearch,
+        setFilters,
+        setPage,
+        setPageSize,
+        handleCancel,
+    };
+}
+
+// ---- Screens & modals ----
+
+type AuctionsTabProps = {
+    readonly onCreateRequested: () => void;
+    readonly onOpenLinkProducts: (auctionId: number) => void;
+    readonly onAuctionsLoaded: (auctions: Auction[]) => void;
+};
+
+export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsLoaded }: AuctionsTabProps): JSX.Element {
+    const {
+        auctions,
+        loading,
+        error,
+        search,
+        filters,
+        now,
+        page,
+        pageSize,
+        setSearch,
+        setFilters,
+        setPage,
+        setPageSize,
+        handleCancel,
+    } = useAuctionsPage(onAuctionsLoaded);
 
     const columns: TableColumn<Auction>[] = [
         { key: "title", header: "Titel", sortable: true, render: (row) => row.title, getValue: (row) => row.title },
@@ -136,9 +152,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 const current = calculateClockPrice(startPrice, minPrice, new Date(row.startDate), new Date(row.endDate), now);
                 return (
                     <div className="d-flex flex-column">
-                        <span>
-                            € {current.toFixed(2)}
-                        </span>
+                        <span>{formatCurrency(current)}</span>
                         <small className="text-muted">Start {formatCurrency(startPrice)}</small>
                     </div>
                 );
@@ -158,8 +172,8 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
             key: "status",
             header: "Status",
             sortable: true,
-            render: (row) => <StatusBadge status={deriveStatus(row, now)} />,
-            getValue: (row) => deriveStatus(row, now),
+            render: (row) => <StatusBadge status={deriveAuctionUiStatus(row, now)} />,
+            getValue: (row) => deriveAuctionUiStatus(row, now),
         },
         {
             key: "actions",
@@ -265,7 +279,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
 
             <Table
                 columns={columns}
-                rows={filteredRows}
+                rows={auctions}
                 getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
@@ -341,17 +355,14 @@ export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Ele
     );
 }
 
-export function LinkProductsModal({
-    auction,
-    products,
-    onClose,
-    onSave,
-}: {
+type LinkProductsProps = {
     readonly auction: Auction;
     readonly products: readonly Product[];
     readonly onClose: () => void;
     readonly onSave: (productIds: readonly number[]) => void;
-}): JSX.Element {
+};
+
+export function LinkProductsModal({ auction, products, onClose, onSave }: LinkProductsProps): JSX.Element {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
     const [page, setPage] = useState(1);

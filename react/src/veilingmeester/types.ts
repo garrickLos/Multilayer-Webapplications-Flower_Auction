@@ -1,7 +1,25 @@
-// Shared domain types for the Veilingmeester screens.
-export type Status = "active" | "inactive" | "sold" | "deleted";
-export type UserRole = "Veilingmeester" | "Kweker" | "Koper" | "Admin" | "Onbekend";
+/**
+ * Domain and DTO types for the Veilingmeester dashboard.
+ * Central place for consistent shapes used by the API layer and UI components.
+ */
 
+// ---- Status & role enums ----
+
+/** Auction lifecycle as exposed by the backend. */
+export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd";
+
+/** Product lifecycle derived from stock and auction linkage. */
+export type ProductStatus = "Beschikbaar" | "Gekoppeld" | "Uitverkocht";
+
+/** Normalised roles used throughout the UI. */
+export type UserRole = "Koper" | "Kweker" | "Veilingmeester" | "Admin" | "Onbekend";
+
+/** Generic UI status token for badges and table styling. */
+export type UiStatus = "active" | "inactive" | "sold" | "deleted";
+/** Legacy alias used by existing components. */
+export type Status = UiStatus;
+
+/** Basic paginated list returned by API helpers. */
 export interface PaginatedList<T> {
     readonly items: readonly T[];
     readonly page: number;
@@ -10,8 +28,10 @@ export interface PaginatedList<T> {
     readonly totalResults?: number;
 }
 
-// API DTOs
-export type GebruikerDto = {
+// ---- API DTOs ----
+
+/** Raw gebruiker payload from the backend. */
+export interface GebruikerDto {
     gebruikerNr: number;
     bedrijfsNaam: string;
     email: string;
@@ -21,28 +41,35 @@ export type GebruikerDto = {
     straatAdres?: string;
     postcode?: string;
     biedingen?: VeilingMeester_BiedingDto[];
-};
+}
 
-export type GebruikerUpdateDto = Partial<Pick<GebruikerDto, "bedrijfsNaam" | "email" | "soort" | "straatAdres" | "postcode" | "kvk">> & {
-    wachtwoord?: string;
-};
+/**
+ * Partial payload for updating a gebruiker.
+ * Wachtwoord is optional and only sent when changed.
+ */
+export type GebruikerUpdateDto = Partial<
+    Pick<GebruikerDto, "bedrijfsNaam" | "email" | "soort" | "straatAdres" | "postcode" | "kvk"> & { wachtwoord?: string }
+>;
 
-export type VeilingDto = {
+/** Raw veiling payload from the backend. */
+export interface VeilingDto {
     veilingNr: number;
     veilingNaam: string;
     begintijd: string;
     eindtijd: string;
-    status?: string;
+    status?: AuctionStatus | string;
     producten?: VeilingProductDto[];
     biedingen?: VeilingMeester_BiedingDto[];
+}
+
+export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
+export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
+export type VeilingUpdateDto = Partial<Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd" | "status">> & {
+    beschrijving?: string;
 };
 
-export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: string };
-
-export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
-export type VeilingUpdateDto = Partial<Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd" | "status">> & { beschrijving?: string };
-
-export type VeilingProductDto = {
+/** Raw product payload from the backend. */
+export interface VeilingProductDto {
     veilingProductNr: number;
     naam?: string;
     geplaatstDatum: string;
@@ -53,23 +80,34 @@ export type VeilingProductDto = {
     veilingNr: number;
     imagePath?: string;
     kwekerNr?: number;
-};
+}
 
-export type VeilingproductUpdateDto = Partial<Pick<VeilingProductDto, "naam" | "startprijs" | "voorraad" | "categorie" | "veilingNr" | "imagePath">>;
+export type VeilingproductUpdateDto = Partial<
+    Pick<VeilingProductDto, "naam" | "startprijs" | "voorraad" | "categorie" | "veilingNr" | "imagePath">
+>;
 
-export type VeilingMeester_BiedingDto = {
+/** Raw bieding payload from the backend. */
+export interface VeilingMeester_BiedingDto {
     biedingNr: number;
     veilingNr: number;
     veilingProductNr: number;
     gebruikerNr: number;
     bedragPerFust: number;
     aantalStuks: number;
-};
+}
 
 export type BiedingCreateDto = Omit<VeilingMeester_BiedingDto, "biedingNr">;
 export type BiedingUpdateDto = Partial<BiedingCreateDto>;
 
-// UI models
+/** Raw categorie payload from the backend. */
+export interface CategorieDto {
+    categorieNr: number;
+    categorieNaam: string;
+}
+
+// ---- Domain models used in the UI ----
+
+/** Simplified user model consumed by UI components. */
 export interface User {
     readonly id: number;
     readonly name: string;
@@ -78,14 +116,15 @@ export interface User {
     readonly lastLogin?: string;
     readonly kvk?: string;
     readonly address?: string;
-    readonly status?: Status;
     readonly bids?: readonly Bid[];
 }
 
+/** Auction enriched with derived fields. */
 export interface Auction {
     readonly id: number;
     readonly title: string;
-    readonly status: Status;
+    readonly status: UiStatus;
+    readonly rawStatus?: AuctionStatus;
     readonly startDate: string;
     readonly endDate: string;
     readonly minPrice?: number;
@@ -95,10 +134,11 @@ export interface Auction {
     readonly bids?: readonly Bid[];
 }
 
+/** Product shown in auction/product screens. */
 export interface Product {
     readonly id: number;
     readonly name: string;
-    readonly status: Status;
+    readonly status: ProductStatus;
     readonly category: string;
     readonly startPrice: number;
     readonly stock: number;
@@ -109,6 +149,7 @@ export interface Product {
     readonly linkedAuctionId?: number;
 }
 
+/** Bid information mapped to UI friendly shape. */
 export interface Bid {
     readonly id: number;
     readonly userId: number;
@@ -116,8 +157,14 @@ export interface Bid {
     readonly productId: number;
     readonly amount: number;
     readonly quantity: number;
-    readonly status: Status;
-    readonly date?: string;
+}
+
+/** Dashboard counters for live statistics. */
+export interface DashboardStats {
+    readonly activeAuctions: number;
+    readonly activeProducts: number;
+    readonly activeUsers: number;
+    readonly bidsToday: number;
 }
 
 export type ModalKey = "newAuction" | "linkProducts" | "editUser" | "userBids" | "userProducts";
@@ -131,7 +178,9 @@ export type ModalState =
 
 export type FilterState<T> = { readonly search: string; readonly filters: T };
 
-export const statusLabels: Record<Status, string> = {
+// ---- label helpers ----
+
+export const statusLabels: Record<UiStatus, string> = {
     active: "Actief",
     inactive: "Inactief",
     sold: "Verkocht",
@@ -146,24 +195,18 @@ export const roleLabels: Record<UserRole, string> = {
     Onbekend: "Onbekend",
 };
 
-export const filterRows = <T, F>(
-    rows: readonly T[],
-    search: string,
-    filters: F,
-    predicate: (row: T, term: string, filters: F) => boolean,
-): readonly T[] => {
-    const term = search.trim().toLowerCase();
-    return rows.filter((row) => predicate(row, term, filters));
-};
+// ---- adapters ----
 
-export const toStatus = (value?: string | null): Status => {
+/** Map API status strings to UI friendly values. */
+export const toUiStatus = (value?: AuctionStatus | string | null): UiStatus => {
     const normalised = (value ?? "").toLowerCase();
     if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht" || normalised === "sold") return "sold";
-    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
+    if (normalised === "verkocht" || normalised === "afgesloten") return "sold";
+    if (normalised === "geannuleerd") return "deleted";
     return "inactive";
 };
 
+/** Normalize role coming from API into a controlled union. */
 export const toRole = (value?: string | null): UserRole => {
     const normalised = (value ?? "").toLowerCase();
     if (normalised === "admin") return "Admin";
@@ -173,6 +216,7 @@ export const toRole = (value?: string | null): UserRole => {
     return "Onbekend";
 };
 
+/** Adapt bieding DTO to UI model. */
 export const adaptBid = (dto: VeilingMeester_BiedingDto): Bid => ({
     id: dto.biedingNr,
     auctionId: dto.veilingNr,
@@ -180,14 +224,13 @@ export const adaptBid = (dto: VeilingMeester_BiedingDto): Bid => ({
     userId: dto.gebruikerNr,
     amount: dto.bedragPerFust,
     quantity: dto.aantalStuks,
-    status: "active",
-    date: undefined,
 });
 
+/** Adapt product DTO to UI model. */
 export const adaptProduct = (dto: VeilingProductDto): Product => ({
     id: dto.veilingProductNr,
     name: dto.naam ?? "Onbekend product",
-    status: dto.voorraad <= 0 ? "sold" : dto.veilingNr ? "active" : "inactive",
+    status: dto.voorraad <= 0 ? "Uitverkocht" : dto.veilingNr ? "Gekoppeld" : "Beschikbaar",
     category: dto.categorie ?? "Onbekend",
     startPrice: dto.startprijs,
     stock: dto.voorraad,
@@ -198,6 +241,7 @@ export const adaptProduct = (dto: VeilingProductDto): Product => ({
     imagePath: dto.imagePath,
 });
 
+/** Adapt gebruiker DTO to UI model. */
 export const adaptUser = (dto: GebruikerDto): User => ({
     id: dto.gebruikerNr,
     name: dto.bedrijfsNaam || dto.email,
@@ -206,24 +250,19 @@ export const adaptUser = (dto: GebruikerDto): User => ({
     lastLogin: dto.laatstIngelogd,
     kvk: dto.kvk,
     address: dto.straatAdres ? `${dto.straatAdres}${dto.postcode ? `, ${dto.postcode}` : ""}` : undefined,
-    status: "active",
     bids: dto.biedingen?.map(adaptBid),
 });
 
+/** Adapt veiling DTO to UI model. */
 export const adaptAuction = (dto: VeilingDto): Auction => ({
     id: dto.veilingNr,
     title: dto.veilingNaam,
     startDate: dto.begintijd,
     endDate: dto.eindtijd,
-    status: toStatus(dto.status ?? "Actief"),
-    minPrice:
-        dto.producten && dto.producten.length > 0
-            ? Math.min(...dto.producten.map((product) => product.startprijs))
-            : undefined,
-    maxPrice:
-        dto.producten && dto.producten.length > 0
-            ? Math.max(...dto.producten.map((product) => product.startprijs))
-            : undefined,
+    status: toUiStatus(dto.status),
+    rawStatus: dto.status as AuctionStatus | undefined,
+    minPrice: dto.producten && dto.producten.length > 0 ? Math.min(...dto.producten.map((product) => product.startprijs)) : undefined,
+    maxPrice: dto.producten && dto.producten.length > 0 ? Math.max(...dto.producten.map((product) => product.startprijs)) : undefined,
     linkedProductIds: dto.producten?.map((product) => product.veilingProductNr),
     products: dto.producten?.map(adaptProduct),
     bids: dto.biedingen?.map(adaptBid),

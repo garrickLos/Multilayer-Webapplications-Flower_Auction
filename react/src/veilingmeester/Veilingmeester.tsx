@@ -4,7 +4,7 @@ import { AuctionsTab, LinkProductsModal, NewAuctionModal } from "./features/auct
 import { ProductsTab } from "./features/products";
 import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
-import { createAuction, getAuctions, getBids, getProducts, getUsers, updateUser } from "./api";
+import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, updateUser } from "./api";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
 import { adaptAuction, adaptBid, adaptProduct, adaptUser } from "./types";
 import { cx } from "./utils";
@@ -31,10 +31,10 @@ export function Veilingmeester() {
             setError(null);
             try {
                 const [userResponse, auctionResponse, productResponse, bidResponse] = await Promise.all([
-                    getUsers({ pageSize: 200 }, controller.signal),
-                    getAuctions({ pageSize: 200 }, controller.signal),
-                    getProducts({ pageSize: 200 }, controller.signal),
-                    getBids({ pageSize: 200 }, controller.signal),
+                    fetchUsers({ pageSize: 200 }, controller.signal),
+                    fetchAuctions({ pageSize: 200 }, controller.signal),
+                    fetchProducts({ pageSize: 200 }, controller.signal),
+                    fetchBids({ pageSize: 200 }, controller.signal),
                 ]);
 
                 setUsers(userResponse.items.map(adaptUser));
