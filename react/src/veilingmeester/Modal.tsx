@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, type JSX, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, type JSX, type MouseEvent, type ReactNode } from "react";
 import { cx } from "./utils";
 
 // Base modal used across all Veilingmeester flows.
@@ -78,7 +78,7 @@ export function Modal({
         };
     }, [onClose]);
 
-    const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
         if (!allowBackdropClose) return;
         if (event.target === event.currentTarget) onClose();
     };

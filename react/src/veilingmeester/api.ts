@@ -3,8 +3,6 @@ import {
     DomainMapper,
     type Auction,
     type Bid,
-    type BiedingCreateDto,
-    type BiedingUpdateDto,
     type Category,
     type GebruikerDto,
     type GebruikerUpdateDto,
@@ -14,10 +12,6 @@ import {
     type VeilingCreateDto,
     type VeilingDetailDto,
     type VeilingDto,
-    type VeilingMeester_BiedingDto,
-    type VeilingProductDto,
-    type VeilingUpdateDto,
-    type VeilingproductUpdateDto,
 } from "./types";
 
 export type ApiError = { status: number; message: string };
@@ -191,32 +185,10 @@ export async function fetchCategories(signal?: AbortSignal): Promise<readonly Ca
     return data.map(DomainMapper.mapCategory);
 }
 
-/** Fetch products for a specific grower (client-side filter fallback). */
-export async function fetchProductsByGrower(
-    growerId: number | string,
-    params: { page?: number; pageSize?: number },
-    signal?: AbortSignal,
-): Promise<PaginatedList<Product>> {
-    const list = await fetchProducts({ ...params, pageSize: params.pageSize ?? 50 }, signal);
-    const items = list.items.filter((product) => String(product.growerId ?? "") === String(growerId));
-    return { ...list, items };
-}
-
 /** Update a gebruiker. */
 export async function updateUser(id: number, payload: GebruikerUpdateDto, signal?: AbortSignal): Promise<User> {
     const { data } = await request<GebruikerDto>(`/api/Gebruiker/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
     return DomainMapper.mapUser(data);
-}
-
-/** Delete (hard for now) a gebruiker. */
-export async function deleteUser(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Gebruiker/${id}`, { method: "DELETE", signal });
-}
-
-/** Update a veiling. */
-export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
-    return DomainMapper.mapAuction(data);
 }
 
 /** Create a new veiling. */
@@ -228,48 +200,4 @@ export async function createAuction(payload: VeilingCreateDto, signal?: AbortSig
 /** Remove a veiling (soft-delete once backend supports it). */
 export async function deleteAuction(id: number, signal?: AbortSignal): Promise<void> {
     await request(`/api/Veiling/${id}`, { method: "DELETE", signal });
-}
-
-/** Update a product. */
-export async function updateProduct(
-    id: number,
-    payload: VeilingproductUpdateDto,
-    signal?: AbortSignal,
-): Promise<Product> {
-    const { data } = await request<VeilingProductDto>(`/api/Veilingproduct/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapProduct(data);
-}
-
-/** Delete (hard for now) a product. */
-export async function deleteProduct(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Veilingproduct/${id}`, { method: "DELETE", signal });
-}
-
-/** Create a bieding for a product within a veiling. */
-export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<Bid> {
-    const { data } = await request<VeilingMeester_BiedingDto>("/api/Bieding", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapBid(data);
-}
-
-/** Update an existing bieding. */
-export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<Bid> {
-    const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapBid(data);
-}
-
-/** Delete a bieding. */
-export async function deleteBid(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Bieding/${id}`, { method: "DELETE", signal });
 }

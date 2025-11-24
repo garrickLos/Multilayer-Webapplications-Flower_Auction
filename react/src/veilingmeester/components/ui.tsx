@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from "react";
-import { cx, formatCurrency } from "../utils";
+import { cx } from "../utils";
 import type { UiStatus, UserRole } from "../types";
 
 /** Small helper input components used across the dashboard. */
@@ -9,34 +9,6 @@ export function Field({ label, children }: { readonly label: string; readonly ch
             <span className="small text-uppercase text-success-emphasis fw-semibold">{label}</span>
             {children}
         </label>
-    );
-}
-
-export function SearchInput({
-    id,
-    value,
-    placeholder,
-    onChange,
-}: {
-    readonly id: string;
-    readonly value: string;
-    readonly placeholder?: string;
-    readonly onChange: (value: string) => void;
-}): JSX.Element {
-    return (
-        <div className="input-group">
-            <span className="input-group-text bg-white text-success-emphasis border-success-subtle">
-                <i className="bi bi-search" aria-hidden="true" />
-            </span>
-            <input
-                id={id}
-                type="search"
-                className="form-control border-success-subtle"
-                value={value}
-                placeholder={placeholder}
-                onChange={(event) => onChange(event.target.value)}
-            />
-        </div>
     );
 }
 
@@ -119,27 +91,4 @@ export function Chip({ label, onRemove }: { readonly label: string; readonly onR
 
 export function EmptyState({ message }: { readonly message: string }): JSX.Element {
     return <div className="text-center text-muted py-4">{message}</div>;
-}
-
-export function StatCard({ label, value, icon }: { readonly label: string; readonly value: number | string; readonly icon: string }): JSX.Element {
-    return (
-        <div className="card border-0 shadow-sm h-100">
-            <div className="card-body d-flex align-items-center justify-content-between">
-                <div>
-                    <div className="small text-muted text-uppercase fw-semibold">{label}</div>
-                    <div className="fs-4 fw-bold text-success-emphasis">{typeof value === "number" ? value.toLocaleString("nl-NL") : value}</div>
-                </div>
-                <i className={`bi ${icon} fs-3 text-success`} aria-hidden="true" />
-            </div>
-        </div>
-    );
-}
-
-export function PriceCell({ value, hint }: { readonly value: number; readonly hint?: string }): JSX.Element {
-    return (
-        <div className="d-flex flex-column">
-            <span>{formatCurrency(value)}</span>
-            {hint && <small className="text-muted">{hint}</small>}
-        </div>
-    );
 }

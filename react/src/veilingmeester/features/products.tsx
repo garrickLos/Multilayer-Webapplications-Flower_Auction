@@ -3,8 +3,8 @@ import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import { fetchAuctions, fetchCategories, fetchProducts } from "../api";
 import { appConfig } from "../config";
-import type { Auction, Product, Status } from "../types";
-import { filterRows, formatCurrency } from "../utils";
+import type { Auction, Product, Status, UiStatus } from "../types";
+import { deriveProductStatus, filterRows, formatCurrency, mapProductStatusToUiStatus } from "../utils";
 
 // Product listing with simple filters.
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
@@ -24,7 +24,7 @@ const linkedOptions = [
 const { table: tablePageSizeOptions } = appConfig.pagination;
 const { prefetchPageSize } = appConfig.api;
 
-type ProductFilters = { status: Status | "all"; category: string; linkState: (typeof linkedOptions)[number]["value"] };
+type ProductFilters = { status: UiStatus | "all"; category: string; linkState: (typeof linkedOptions)[number]["value"] };
 
 type ProductsTabProps = { readonly auctions: readonly Auction[] };
 
@@ -103,7 +103,8 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
         () =>
             filterRows(products, "", filters, (row, _term, currentFilters) => {
                 const selectedCategory = categories.find((category) => String(category.id) === currentFilters.category)?.name;
-                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
+                const uiStatus = mapProductStatusToUiStatus(deriveProductStatus(row));
+                const matchesStatus = currentFilters.status === "all" || uiStatus === currentFilters.status;
                 const matchesCategory = !currentFilters.category || row.category === selectedCategory;
                 const matchesLink =
                     currentFilters.linkState === "all" ||
@@ -129,7 +130,13 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
             ),
             getValue: (row) => row.startPrice,
         },
-        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+        {
+            key: "status",
+            header: "Status",
+            sortable: true,
+            render: (row) => <StatusBadge status={mapProductStatusToUiStatus(row.status)} />,
+            getValue: (row) => mapProductStatusToUiStatus(row.status),
+        },
         {
             key: "linked",
             header: "Gekoppeld",

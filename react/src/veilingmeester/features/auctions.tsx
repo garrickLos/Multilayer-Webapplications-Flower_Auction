@@ -291,9 +291,9 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
     );
 }
 
-type AuctionFormState = { title: string; maxPrice: number; startTime: string; endTime: string; status: Status };
+export type AuctionFormState = { title: string; maxPrice: number; startTime: string; endTime: string; status: Status };
 
-type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => void };
+type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => Promise<void> | void };
 
 export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Element {
     const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", maxPrice: 0, startTime: "", endTime: "", status: "inactive" });
