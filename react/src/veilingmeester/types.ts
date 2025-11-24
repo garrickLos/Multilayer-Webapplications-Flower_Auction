@@ -37,6 +37,8 @@ export type VeilingDto = {
     biedingen?: VeilingMeester_BiedingDto[];
 };
 
+export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: string };
+
 export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
 export type VeilingUpdateDto = Partial<Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd" | "status">> & { beschrijving?: string };
 

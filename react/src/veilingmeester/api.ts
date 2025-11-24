@@ -1,5 +1,6 @@
 import { appConfig } from "./config";
 import type {
+    VeilingCreateDto,
     BiedingCreateDto,
     BiedingUpdateDto,
     GebruikerDto,
@@ -135,7 +136,7 @@ export async function getBids(
 }
 
 export async function getAuctions(
-    params: { from?: string; to?: string; onlyActive?: boolean; status?: string; page?: number; pageSize?: number },
+    params: { from?: string; to?: string; onlyActive?: boolean; status?: string; rol?: string; veilingProduct?: number | string; page?: number; pageSize?: number },
     signal?: AbortSignal,
 ): Promise<PaginatedList<VeilingDto>> {
     return fetchList("/api/Veiling", params, { signal });
@@ -176,6 +177,11 @@ export async function deleteUserSoft(id: number, signal?: AbortSignal): Promise<
 
 export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<VeilingDto> {
     const { data } = await request<VeilingDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    return data;
+}
+
+export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<VeilingDto> {
+    const { data } = await request<VeilingDto>(`/api/Veiling`, { method: "POST", body: JSON.stringify(payload), signal });
     return data;
 }
 
