@@ -261,9 +261,9 @@ namespace mvc_api.Migrations
                     b.Property<int>("Kwekernr")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("Minimumprijs")
+                    b.Property<int>("Minimumprijs")
                         .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Naam")
                         .IsRequired()
@@ -310,7 +310,7 @@ namespace mvc_api.Migrations
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             ImagePath = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp",
                             Kwekernr = 1,
-                            Minimumprijs = 10m,
+                            Minimumprijs = 10,
                             Naam = "Tulp Mix",
                             Plaats = " Aalsmeer",
                             Startprijs = 12m,
@@ -327,7 +327,7 @@ namespace mvc_api.Migrations
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             ImagePath = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp",
                             Kwekernr = 1,
-                            Minimumprijs = 15m,
+                            Minimumprijs = 15,
                             Naam = "Rode Roos",
                             Plaats = "Eelde",
                             Startprijs = 20m,

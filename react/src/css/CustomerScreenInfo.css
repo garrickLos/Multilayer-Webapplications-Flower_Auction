@@ -6,7 +6,7 @@
     gap: 30px;
 }
 
-h1 {
+.CustomerScreenInfo h1 {
     font-size: 18px;
     color: green;
     margin: 0;

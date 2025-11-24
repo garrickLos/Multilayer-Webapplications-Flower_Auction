@@ -12,6 +12,11 @@
 [type="file"] {
     display: none; 
 }
+.SellerScreenAdd .error {
+    color: red;
+    font-size: 0.9rem;
+    
+}
 
 .SellerScreenAdd h2 {
     font-size: 20px;
@@ -61,6 +66,11 @@
 .SellerScreenAdd .schermDeel1, .schermDeel2 {
     gap: 30px;
 }
+.SellerScreenAdd .scherm2Container, .schermDeel3 {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
 .SellerScreenAdd .grote-foto {
     width: 100%;
     border: 1px solid saddlebrown;
@@ -86,16 +96,6 @@
     font-size: 12px;
     color: saddlebrown;
 }
-
-.SellerScreenAdd .name,
-.SellerScreenAdd .category,
-.SellerScreenAdd .amount,
-.SellerScreenAdd .place,
-.SellerScreenAdd .minimumPrice {
-    font-size: 8px;
-    color: black;
-}
-
 .SellerScreenAdd .scherm3Container input {
     border: 1px solid lightgray;
 }
