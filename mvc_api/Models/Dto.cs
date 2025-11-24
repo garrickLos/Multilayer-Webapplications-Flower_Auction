@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace mvc_api.Models;
 
@@ -42,49 +43,137 @@ public record VeilingproductUpdateDto(
 );
 
 // Bieding CRUD
-public record BiedingCreateDto(
-    [Range(typeof(int), "1", "9999999")] int BedragPerFust,
-    [Range(1, int.MaxValue)] int AantalStuks,
-    [Range(1, int.MaxValue)] int GebruikerNr,
-    [Range(1, int.MaxValue)] int VeilingNr
-);
 
-public record BiedingUpdateDto(
-    [Range(typeof(int), "1", "9999999")] int BedragPerFust,
-    [Range(1, int.MaxValue)] int AantalStuks
-);
+public abstract record BaseBieding_Dto
+{
+
+    [Range(typeof(int), "1", "9999999")] 
+    public Decimal BedragPerFust { get; set; }
+    
+    [Range(1, int.MaxValue)] 
+    public int AantalStuks { get; set; }
+    
+    [Range(1, int.MaxValue)] 
+    public int GebruikerNr { get; set; }
+}
+
+public record VeilingMeester_BiedingDto : BaseBieding_Dto
+{
+    public int BiedingNr { get; set; }
+
+    [Range(1, int.MaxValue)]
+    [Required] 
+    public int VeilingNr { get; set; }
+    
+    [Required]
+    public int VeilingProductNr { get; set; }
+}
+
+public record BiedingCreateDto : BaseBieding_Dto
+{
+    public int BiedingNr { get; set; }
+    
+    public int VeilingNr { get; set; } 
+    public int VeilingproductNr { get; set; }
+}
+
+public record BiedingUpdateDto : BaseBieding_Dto;
+
+// public record BiedingUpdateDto(
+//     [Range(typeof(int), "1", "9999999")] int BedragPerFust,
+//     [Range(1, int.MaxValue)] int AantalStuks
+// );
 
 // Gebruiker CRUD
-public record GebruikerCreateDto(
-    [Required, StringLength(200)] string BedrijfsNaam,
-    [Required, EmailAddress, StringLength(200)] string Email,
-    [Required, StringLength(200)] string Wachtwoord,
-    [Required, StringLength(50)] string Soort,
-    [StringLength(20)] string? Kvk,
-    [StringLength(200)] string? StraatAdres,
-    [StringLength(10)] string? Postcode
-);
+public abstract record BaseGebruiker
+{
 
-public record GebruikerUpdateDto(
-    [Required, StringLength(200)] string BedrijfsNaam,
-    [Required, EmailAddress, StringLength(200)] string Email,
-    [Required, StringLength(50)] string Soort,
-    [StringLength(20)] string? Kvk,
-    [StringLength(200)] string? StraatAdres,
-    [StringLength(10)] string? Postcode
-);
+    [Required, StringLength(200)] 
+    public string BedrijfsNaam { get; set; }
+    
+    [Required, EmailAddress, StringLength(200)] 
+    public string Email { get; set; }
+    
+    [Required, StringLength(200)] 
+    public string Wachtwoord { get; set; }
+
+    public DateTime LaatstIngelogd { get; set; }
+    
+    [Required, StringLength(50)] 
+    public string Soort { get; set; }
+    
+    [StringLength(20)] 
+    public string? Kvk { get; set; }
+    
+    [StringLength(200)] 
+    public string? StraatAdres { get; set; }
+    
+    [StringLength(10)] 
+    public string? Postcode { get; set; }
+}
+
+public record GebruikerCreateDto : BaseGebruiker;
+
+public record GebruikerUpdateDto : BaseGebruiker;
+
+public record Klant_GebruikerDto : BaseGebruiker
+{
+    public int GebruikerNr { get; set; }
+    
+    public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = Enumerable.Empty<VeilingMeester_BiedingDto>();
+}
+
 
 // Veiling CRUD
-public record VeilingCreateDto(
-    [Required] DateTime Begintijd,
-    [Required] DateTime Eindtijd,
-    [Range(typeof(int), "1", "9999999")] int Minimumprijs,
-    [StringLength(20)] string? Status
-);
+public abstract record BaseVeiling_Dto {
 
-public record VeilingUpdateDto(
-    [Required] DateTime Begintijd,
-    [Required] DateTime Eindtijd,
-    [Range(typeof(int), "1", "9999999")] int Minimumprijs,
-    [StringLength(20)] string? Status
+    [Required]
+    [StringLength(100)]
+    public string VeilingNaam { get; set; }
+    
+    [Required] 
+    public DateTime Begintijd { get; set; }
+    
+    [Required] 
+    public DateTime Eindtijd { get; set; }
+    
+}
+
+public record Klant_VeilingDto : BaseVeiling_Dto
+{
+    public int VeilingNr { get; set; }
+    
+    [StringLength(20)] 
+    public string Status { get; set; }
+
+    public IEnumerable<VeilingProductDto>? Producten { get; init; } = Enumerable.Empty<VeilingProductDto>();
+}
+
+public record VeilingCreateDto : BaseVeiling_Dto
+{
+
+    [StringLength(20)] 
+    public string Status { get; set; }
+}
+
+public record VeilingUpdateDto : BaseVeiling_Dto; 
+
+public record VeilingMeester_VeilingDto : BaseVeiling_Dto
+{
+    [StringLength(20)] 
+    public string Status { get; set; }
+    public int VeilingNr { get; init; }
+    public IEnumerable<VeilingProductDto> Producten { get; init; } = Enumerable.Empty<VeilingProductDto>();
+    public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = Enumerable.Empty<VeilingMeester_BiedingDto>();
+}
+
+/* deze 2 is er om te zorgen dat er zeker een producten en biedingen gekozen zijn die getoond worden
+    Mss handig deze te vervangen in de toekomst door een andere abstracte dto van de biedingen en producten zodat we niet teveel dubbel hebben
+*/
+public record VeilingProductDto(
+    int VeilingProductNr,
+    string Naam,
+    decimal Startprijs,
+    int Voorraad,
+    string ImagePath
 );

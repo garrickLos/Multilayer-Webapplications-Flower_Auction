@@ -12,30 +12,14 @@ public class BiedingController : ControllerBase
 {
     private readonly AppDbContext _db;
 
+    public BiedingController(AppDbContext db) => _db = db;
+
     // afgestemd op VeilingController
     private const string StatusActive = "active";
 
-    public BiedingController(AppDbContext db) => _db = db;
-
-    public sealed record BList(
-        int BiedNr,
-        decimal BedragPerFust,
-        int AantalStuks,
-        int GebruikerNr,
-        int VeilingNr
-    );
-
-    public sealed record BDetail(
-        int BiedNr,
-        decimal BedragPerFust,
-        int AantalStuks,
-        int GebruikerNr,
-        int VeilingNr
-    );
-
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BList>>> GetAll(
+    public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetAll(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingNr,
         [FromQuery] int page = 1,
@@ -45,7 +29,8 @@ public class BiedingController : ControllerBase
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var query = _db.Biedingen.AsNoTracking().AsQueryable();
+        var query = _db.Biedingen.AsNoTracking()
+                                 .AsQueryable();
 
         if (gebruikerNr is int gNr)
             query = query.Where(b => b.GebruikerNr == gNr);
@@ -59,13 +44,7 @@ public class BiedingController : ControllerBase
             .OrderByDescending(b => b.BiedNr)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(b => new BList(
-                b.BiedNr,
-                b.BedragPerFust,
-                b.AantalStuks,
-                b.GebruikerNr,
-                b.VeilingNr
-            ))
+            .ProjectToBieding_VeilingMeester()
             .ToListAsync(ct);
 
         Response.Headers["X-Total-Count"] = total.ToString();
@@ -77,17 +56,11 @@ public class BiedingController : ControllerBase
 
     // GET: api/Bieding/1001
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<BDetail>> GetById(int id, CancellationToken ct = default)
+    public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(int id, CancellationToken ct = default)
     {
         var dto = await _db.Biedingen.AsNoTracking()
             .Where(x => x.BiedNr == id)
-            .Select(x => new BDetail(
-                x.BiedNr,
-                x.BedragPerFust,
-                x.AantalStuks,
-                x.GebruikerNr,
-                x.VeilingNr
-            ))
+            .ProjectToBieding_VeilingMeester()
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -97,7 +70,7 @@ public class BiedingController : ControllerBase
 
     // POST: api/Bieding
     [HttpPost]
-    public async Task<ActionResult<BDetail>> Create(
+    public async Task<ActionResult<VeilingMeester_BiedingDto>> Create(
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
     {
@@ -128,10 +101,12 @@ public class BiedingController : ControllerBase
 
         var entity = new Bieding
         {
-            BedragPerFust = dto.BedragPerFust,
-            AantalStuks   = dto.AantalStuks,
-            GebruikerNr   = dto.GebruikerNr,
-            VeilingNr     = dto.VeilingNr
+            BiedNr           = dto.BiedingNr,
+            BedragPerFust    = dto.BedragPerFust,
+            AantalStuks      = dto.AantalStuks,
+            GebruikerNr      = dto.GebruikerNr,
+            VeilingNr        = dto.VeilingNr,
+            VeilingproductNr = dto.VeilingproductNr
         };
 
         _db.Biedingen.Add(entity);
@@ -150,20 +125,23 @@ public class BiedingController : ControllerBase
                 500));
         }
 
-        var result = new BDetail(
-            entity.BiedNr,
-            entity.BedragPerFust,
-            entity.AantalStuks,
-            entity.GebruikerNr,
-            entity.VeilingNr
-        );
+        // wat je uiteindelijk in swagger wilt zien dat terugkomt in het beeld van wat er veranderd is en de nieuwe waardes
+        var result = new BiedingCreateDto
+        { 
+            BiedingNr        = entity.BiedNr,
+            BedragPerFust    = entity.BedragPerFust,
+            AantalStuks      = entity.AantalStuks,
+            GebruikerNr      = entity.GebruikerNr,
+            VeilingNr        = entity.VeilingNr,
+            VeilingproductNr = entity.VeilingproductNr,
+        };
 
         return CreatedAtAction(nameof(GetById), new { id = entity.BiedNr }, result);
     }
 
     // PUT: api/Bieding/1001
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<BDetail>> Update(
+    public async Task<ActionResult<VeilingMeester_BiedingDto>> Update(
         int id,
         [FromBody] BiedingUpdateDto dto,
         CancellationToken ct = default)
@@ -180,13 +158,11 @@ public class BiedingController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new BDetail(
-            entity.BiedNr,
-            entity.BedragPerFust,
-            entity.AantalStuks,
-            entity.GebruikerNr,
-            entity.VeilingNr
-        ));
+        return Ok(new BiedingUpdateDto
+        {
+            BedragPerFust = entity.BedragPerFust,
+            AantalStuks = entity.AantalStuks,
+        });
     }
 
     // DELETE: api/Bieding/1001
@@ -210,4 +186,25 @@ public class BiedingController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
+}
+
+// dit zijn de Dto projecties die worden opgehaald voor de data die nodig is. 
+// de projectToMeesterDto is voor het ophalen van meerdere gegevens voor de veilingsMeester
+public static class BiedingExtensions
+{
+    // Projectie voor Veilingmeesters
+    public static IQueryable<VeilingMeester_BiedingDto> ProjectToBieding_VeilingMeester(
+        this IQueryable<Bieding> query)
+    {
+        return query.Select(b => new VeilingMeester_BiedingDto
+        {   // Eigen properties van VeilingMeester_BiedingDto
+            BiedingNr = b.BiedNr,
+            VeilingNr = b.VeilingNr,
+            VeilingProductNr = b.VeilingproductNr,
+
+            // Properties geërfd van BaseBieding_Dto
+            AantalStuks = b.AantalStuks,
+            GebruikerNr = b.GebruikerNr
+        });
+    }
 }

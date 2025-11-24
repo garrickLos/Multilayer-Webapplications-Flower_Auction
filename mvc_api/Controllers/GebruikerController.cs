@@ -14,24 +14,9 @@ public class GebruikerController : ControllerBase
     private readonly AppDbContext _db;
     public GebruikerController(AppDbContext db) => _db = db;
 
-    // Response DTO's
-    public sealed record GList(int GebruikerNr, string Naam, string Email, string Soort);
-    public sealed record GBid(int BiedNr, decimal BedragPerFust, int AantalStuks, int VeilingNr);
-    public sealed record GDetail(
-        int GebruikerNr,
-        string Naam,
-        string Email,
-        string Soort,
-        DateTime? LaatstIngelogd,
-        string? Kvk,
-        string? StraatAdres,
-        string? Postcode,
-        IEnumerable<GBid> Biedingen
-    );
-
     // GET: api/Gebruiker?q=jan&page=1&pageSize=50
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GList>>> GetAll(
+    public async Task<ActionResult<IEnumerable<Klant_GebruikerDto>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -56,7 +41,7 @@ public class GebruikerController : ControllerBase
             .OrderBy(g => g.BedrijfsNaam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(g => new GList(g.GebruikerNr, g.BedrijfsNaam, g.Email, g.Soort))
+            .Projectgebruiker_Klant()
             .ToListAsync(ct);
 
         Response.Headers["X-Total-Count"] = total.ToString();
@@ -68,10 +53,13 @@ public class GebruikerController : ControllerBase
 
     // GET: api/Gebruiker/{id}
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<GDetail>> GetById(int id, CancellationToken ct = default)
+    public async Task<ActionResult<Klant_GebruikerDto>> GetById(
+        int id, 
+        CancellationToken ct = default)
     {
-        var dto = await ProjectToDetail(
-                _db.Gebruikers.AsNoTracking().Where(x => x.GebruikerNr == id))
+        var dto = await _db.Gebruikers.AsNoTracking()
+            .Where(x => x.GebruikerNr == id)
+            .Projectgebruiker_Klant()
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -81,7 +69,7 @@ public class GebruikerController : ControllerBase
 
     // POST: api/Gebruiker
     [HttpPost]
-    public async Task<ActionResult<GDetail>> Create(
+    public async Task<ActionResult<GebruikerCreateDto>> Create(
         [FromBody] GebruikerCreateDto dto,
         CancellationToken ct = default)
     {
@@ -102,16 +90,21 @@ public class GebruikerController : ControllerBase
         _db.Gebruikers.Add(e);
         await _db.SaveChangesAsync(ct);
 
-        var r = await ProjectToDetail(
-                _db.Gebruikers.AsNoTracking().Where(x => x.GebruikerNr == e.GebruikerNr))
-            .FirstAsync(ct);
+        var result = new GebruikerCreateDto
+        {
+            Email = e.Email,
+            Soort = e.Soort,
+            Kvk = e.Kvk,
+            StraatAdres = e.StraatAdres,
+            Postcode = e.Postcode  
+        };
 
-        return CreatedAtAction(nameof(GetById), new { id = e.GebruikerNr }, r);
+        return CreatedAtAction(nameof(GetById), new { id = e.GebruikerNr }, result);
     }
 
     // PUT: api/Gebruiker/{id}
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<GDetail>> Update(
+    public async Task<ActionResult<Klant_GebruikerDto>> Update(
         int id,
         [FromBody] GebruikerUpdateDto dto,
         CancellationToken ct = default)
@@ -132,16 +125,16 @@ public class GebruikerController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
-        var r = await ProjectToDetail(
-                _db.Gebruikers.AsNoTracking().Where(x => x.GebruikerNr == id))
-            .FirstAsync(ct);
+        var resultDto = new GebruikerUpdateDto();
 
-        return Ok(r);
+        return Ok(resultDto);
     }
 
     // DELETE: api/Gebruiker/{id}
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
+    public async Task<IActionResult> Delete(
+        int id, 
+        CancellationToken ct = default)
     {
         var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
         if (e is null)
@@ -152,22 +145,8 @@ public class GebruikerController : ControllerBase
         return NoContent();
     }
 
-    // Helpers
 
-    private static IQueryable<GDetail> ProjectToDetail(IQueryable<Gebruiker> query) =>
-        query.Select(g => new GDetail(
-            g.GebruikerNr,
-            g.BedrijfsNaam,
-            g.Email,
-            g.Soort,
-            g.LaatstIngelogd,
-            g.Kvk,
-            g.StraatAdres,
-            g.Postcode,
-            g.Biedingen
-                .OrderByDescending(b => b.BiedNr)
-                .Select(b => new GBid(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.VeilingNr))
-        ));
+    // Helpers
 
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
@@ -177,4 +156,37 @@ public class GebruikerController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
+}
+
+public static class GebruikerExtensions
+{
+    // Projectie voor Veilingmeesters
+    public static IQueryable<Klant_GebruikerDto> Projectgebruiker_Klant(
+        this IQueryable<Gebruiker> query)
+    {
+        return query.Select(g => new Klant_GebruikerDto
+        {   // Eigen properties van Klant_gebruikerDto
+            GebruikerNr = g.GebruikerNr,
+            BedrijfsNaam = g.BedrijfsNaam,
+            Email = g.Email,
+            Wachtwoord = g.Wachtwoord,
+            Soort = g.Soort,
+            Kvk = g.Kvk,
+            StraatAdres = g.StraatAdres,
+            Postcode = g.Postcode,
+
+            Biedingen = g.Biedingen.Select(b => new VeilingMeester_BiedingDto
+            {
+                // Eigen properties van VeilingMeester_BiedingDto
+                BiedingNr = b.BiedNr,
+                VeilingNr = b.VeilingNr, // Of v.VeilingNr, afhankelijk van je database relatie
+                VeilingProductNr = b.VeilingproductNr,
+
+                // Properties geërfd van BaseBieding_Dto
+                AantalStuks = b.AantalStuks,
+                GebruikerNr = b.GebruikerNr,
+                BedragPerFust = b.BedragPerFust
+            }).ToList(),
+        });
+    }
 }

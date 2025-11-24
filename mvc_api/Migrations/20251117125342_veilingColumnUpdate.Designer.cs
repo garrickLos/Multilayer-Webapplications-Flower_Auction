@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using mvc_api.Data;
 
@@ -10,9 +11,11 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117125342_veilingColumnUpdate")]
+    partial class veilingColumnUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -36,7 +39,7 @@ namespace mvc_api.Migrations
                     b.Property<int>("VeilingNr")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("VeilingproductNr")
+                    b.Property<int?>("VeilingproductNr")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("BiedNr");
@@ -56,8 +59,7 @@ namespace mvc_api.Migrations
                             AantalStuks = 5,
                             BedragPerFust = 13.50m,
                             GebruikerNr = 2,
-                            VeilingNr = 201,
-                            VeilingproductNr = 0
+                            VeilingNr = 201
                         },
                         new
                         {
@@ -65,8 +67,7 @@ namespace mvc_api.Migrations
                             AantalStuks = 3,
                             BedragPerFust = 21.00m,
                             GebruikerNr = 2,
-                            VeilingNr = 202,
-                            VeilingproductNr = 0
+                            VeilingNr = 202
                         });
                 });
 
@@ -285,7 +286,7 @@ namespace mvc_api.Migrations
                     b.Property<int>("VoorraadBloemen")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateOnly>("beginDatum")
+                    b.Property<DateTime>("beginDatum")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("status")
@@ -316,7 +317,7 @@ namespace mvc_api.Migrations
                             Startprijs = 12m,
                             VeilingNr = 201,
                             VoorraadBloemen = 500,
-                            beginDatum = new DateOnly(1, 1, 1),
+                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             status = false
                         },
                         new
@@ -333,7 +334,7 @@ namespace mvc_api.Migrations
                             Startprijs = 20m,
                             VeilingNr = 202,
                             VoorraadBloemen = 300,
-                            beginDatum = new DateOnly(1, 1, 1),
+                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             status = false
                         });
                 });
@@ -354,9 +355,7 @@ namespace mvc_api.Migrations
 
                     b.HasOne("mvc_api.Models.Veilingproduct", "Veilingproduct")
                         .WithMany()
-                        .HasForeignKey("VeilingproductNr")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("VeilingproductNr");
 
                     b.Navigation("Gebruiker");
 

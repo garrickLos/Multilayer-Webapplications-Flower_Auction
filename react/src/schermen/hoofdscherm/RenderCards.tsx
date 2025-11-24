@@ -33,7 +33,7 @@ export const renderCards = (items: VeilingItem[]) =>
         item.producten.map((product: Producten, index: number) => (
             <AuctionCard
                 key={`${veilingIndex}-${index}`}
-                imagePath={product.imagePath || Default_ImagePlaceholder}
+                imagePath={product.imagePath}
                 headerText={product.naam || 'Geen Titel'}
                 paragraafText={beschrijving(product, item)}
                 veilingnr={item.veilingNr} 

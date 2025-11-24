@@ -1,29 +1,54 @@
 import { NavLink } from 'react-router-dom';
-import { createPortal } from 'react-dom';
+import { useState, useEffect } from 'react';
 
 import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
+import '../../css/loadIcon.css';
 
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { GetDataApi as GetVeilingen } from '../../typeScript/ApiGetVeilingItems.tsx';
-import { renderCards } from './RenderCards.tsx';
+import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
+import { renderCards, type VeilingItem } from './RenderCards.tsx';
 
 export default function MainScreen() {
-    const { ApiElement: veilingen, loading, error } = GetVeilingen('/api/Veiling');
+    const [refreshTimer, setRefreshTimer] = useState(Date.now());
 
-    if (loading) {
-        StateComponent({ component: loading });
-    }
+    const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling?refresh=${refreshTimer}`);
 
-    if (error) {
-        StateComponent({ component: error });
-    }
+    const safeVeilingen = data || [];
 
-    //maakt het mogelijk om de data op te delen op basis van een item en de inhoud (actief en inactief om te laten zien)
-    const actieveVeilingen = veilingen.filter(v => v.status == 'active');
-    const inactieveVeilingen = veilingen.filter(v => v.status == 'inactive');
-    // voor het laten zien van alle veilingen
-    const allDeals = veilingen;
+    useEffect(() => {
+        // 300000 milliseconden = 5 minuten (180000 = 3 minuten)
+        const intervalId = setInterval(() => {
+            setRefreshTimer(Date.now());
+        }, 180000);
+
+        // Ruim de timer op als de component verdwijnt
+        return () => clearInterval(intervalId);
+    }, []);
+
+    const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
+    const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
+    const allDeals = safeVeilingen;
+
+    const renderSliderContent = (data: any[]) => {
+        if (loading) {
+            return (
+                <div className="state-container">
+                    <span className='loader'></span>
+                    <br></br>
+                    <p>Loading data</p>
+                </div>
+            );
+        }
+        if (error) {
+            return (
+                <div className="state-container">
+                    <p className='mainScreen_errorCode'>Error:  kon gegevens niet vinden of database connectie bestaat niet<br></br>{String(error)}</p>
+                </div>
+            );
+        }
+        return renderCards(data);
+    };
 
     return (
         <main className='MainScreen'>
@@ -44,7 +69,7 @@ export default function MainScreen() {
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('lastChance', -1)}>&#10094;</button>
                     <div className="slider" id="lastChance">
-                        {renderCards(actieveVeilingen)}
+                        {renderSliderContent(actieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('lastChance', 1)}>&#10095;</button>
                 </div>
@@ -55,7 +80,7 @@ export default function MainScreen() {
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('upcoming', -1)}>&#10094;</button>
                     <div className="slider" id="upcoming">
-                        {renderCards(inactieveVeilingen)}
+                        {renderSliderContent(inactieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('upcoming', 1)}>&#10095;</button>
                 </div>
@@ -66,7 +91,7 @@ export default function MainScreen() {
                 <div className="slider-container alle_deals ">
                     <button className="arrow" onClick={() => scrollSlider('alleDeals', -1)}>&#10094;</button>
                     <div className="slider" id="alleDeals">
-                        {renderCards(allDeals)}
+                        {renderSliderContent(allDeals)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('alleDeals', 1)}>&#10095;</button>
                 </div>
@@ -89,19 +114,4 @@ export default function MainScreen() {
             </aside> */}
         </main>
     )
-}
-interface StateComponentProps {
-    component: string | boolean;
-}
-
-function StateComponent({ component }: StateComponentProps): React.ReactElement | null {
-    const container = document.querySelector('.slider');
-
-    return (
-        <>
-            {component &&
-                container &&
-                createPortal(<div>{component}</div>, container)}
-        </>
-    );
 }

@@ -230,3 +230,19 @@
     border: none;
     cursor: pointer;
 }
+
+.state-container {
+    position: absolute;
+    display: flexbox;
+
+    color: var(--error);
+
+    align-self: center;
+
+    text-align: center;
+
+    left: 34%;
+    right: 34%;
+
+    z-index: 1;
+}
