@@ -1,5 +1,5 @@
-// Pure helper functions for formatting and small domain calculations.
-import type { Auction, AuctionStatus, Product, ProductStatus, UiStatus } from "../types";
+// Pure helper functions for formatting and domain calculations.
+import type { Auction, AuctionStatus, Product, ProductStatus, UiStatus, UserRole } from "../types";
 
 const currencyFormatter = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
@@ -29,34 +29,41 @@ export const paginate = <T,>(rows: readonly T[], page: number, pageSize: number)
 
 export const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
 
-/**
- * Derive an auction UI status using timing and stock.
- */
-export const deriveAuctionUiStatus = (auction: Auction, now: Date): UiStatus => {
-    const start = new Date(auction.startDate);
-    const end = new Date(auction.endDate);
-    const totalStock = auction.products?.reduce((sum, product) => sum + (product.stock ?? 0), 0);
-
-    if (auction.status === "Geannuleerd") return "deleted";
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "inactive";
-    if (now < start) return "inactive";
-    if (totalStock === 0) return "sold";
-    if (now >= start && now <= end) return "active";
+export const mapAuctionStatusToBadge = (status: AuctionStatus): UiStatus => {
+    if (status === "Actief") return "active";
+    if (status === "Verkocht" || status === "Afgesloten") return "sold";
+    if (status === "Geannuleerd") return "deleted";
     return "inactive";
 };
 
-/**
- * Derive product status based on stock and auction linkage.
- */
+export const roleIsAdmin = (role: UserRole): boolean => role === "Admin" || role === "Veilingmeester";
+
+export const aggregateProductStock = (products?: readonly Product[]): number =>
+    products?.reduce((sum, product) => sum + (product.stock ?? 0), 0) ?? 0;
+
 export const deriveProductStatus = (product: Product): ProductStatus => {
     if (product.stock <= 0) return "Uitverkocht";
     if (product.linkedAuctionId) return "Gekoppeld";
     return "Beschikbaar";
 };
 
-/**
- * Calculate the current clock price between a start price and minimum price within a timeframe.
- */
+/** Derive an auction UI status using timing, cancellation and stock. */
+export const deriveAuctionUiStatus = (auction: Auction, now: Date = new Date()): UiStatus => {
+    const mappedStatus = auction.rawStatus ? mapAuctionStatusToBadge(auction.rawStatus) : auction.status;
+    if (mappedStatus === "deleted") return "deleted";
+
+    const start = new Date(auction.startDate);
+    const end = new Date(auction.endDate);
+    const totalStock = aggregateProductStock(auction.products);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return mappedStatus;
+    if (now < start) return "inactive";
+    if (totalStock === 0 || mappedStatus === "sold") return "sold";
+    if (now >= start && now <= end) return "active";
+    return mappedStatus;
+};
+
+/** Calculate the current clock price between a start price and minimum price within a timeframe. */
 export const calculateClockPrice = (startPrice: number, minPrice: number, start: Date, end: Date, now: Date): number => {
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice;
     if (now <= start) return startPrice;
@@ -68,9 +75,7 @@ export const calculateClockPrice = (startPrice: number, minPrice: number, start:
     return Math.max(price, minPrice);
 };
 
-/**
- * Helper to filter rows using a predicate with normalised search term.
- */
+/** Helper to filter rows using a predicate with normalised search term. */
 export const filterRows = <T, F>(
     rows: readonly T[],
     search: string,
@@ -79,14 +84,4 @@ export const filterRows = <T, F>(
 ): readonly T[] => {
     const term = search.trim().toLowerCase();
     return rows.filter((row) => predicate(row, term, filters));
-};
-
-/**
- * Map API status to a presentational badge variant.
- */
-export const mapAuctionStatusToBadge = (status: AuctionStatus): UiStatus => {
-    if (status === "Actief") return "active";
-    if (status === "Verkocht" || status === "Afgesloten") return "sold";
-    if (status === "Geannuleerd") return "deleted";
-    return "inactive";
 };
