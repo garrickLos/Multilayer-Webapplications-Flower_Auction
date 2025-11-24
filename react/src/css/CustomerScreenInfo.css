@@ -1,0 +1,51 @@
+.SellerScreenInfo {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    gap: 30px;
+}
+
+h1 {
+    font-size: 18px;
+    color: green;
+    margin: 0;
+}
+.rij {
+    display: flex;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.kolomLinks {
+    flex: 1;
+}
+
+.kolomRechts {
+    outline: 1px solid saddlebrown;
+    outline-offset: 0;
+    width: 60%;
+    padding-right: 30px;
+    display: flex;
+    flex-direction: column;
+}
+.fotoProduct {
+    width: 30%;
+    height: auto;
+}
+.linkerHelft, .rechterHelft {
+    display: flex;
+    justify-content: space-between;
+}
+
+.SellerScreenInfo .productNaam, .productCategorie, .hoeveelheid, .aantalFusten, .plaats{
+    outline: 1px solid lightgray;
+    outline-offset: 0;
+}
+.SellerScreenInfo .plaats{
+    align-self: flex-start;
+}

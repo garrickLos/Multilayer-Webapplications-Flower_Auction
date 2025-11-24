@@ -2,76 +2,84 @@ import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGet";
 
-// 1. We definiëren hoe een Categorie eruitziet
 interface CategorieType {
-    categorieNr: number; // Was CategorieNr
+    categorieNr: number;
     naam: string;
 }
 
 export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
-    
-    // 2. We vertellen TypeScript dat 'data' een lijst van CategorieType is
+    const bestandsPad = "../../src/assets/pictures/productBloemen/";
+
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
 
-    const basisData = {
+    const Data = {
         GeplaatstDatum: "2025-11-17T10:16:37.880",
         VeilingNr: 201,
         Startprijs: 4,
         status: true,
         Kwekernr: 1,
-        ImagePath: "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
-    }
-    
+        ImagePath: ""
+    };
+
     const [product, setProduct] = useState({
         Naam: "",
         AantalFusten: 1,
         VoorraadBloemen: 1,
-        CategorieNr: "",
+        CategorieNr: 1,
         Plaats: "",
         Minimumprijs: 1,
         beginDatum: ""
     });
+
+    const [imagePath, setImagePath] = useState(Data.ImagePath);
     
     const verwerkInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value, type } = e.target;
         
-        // We controleren of het veld een getal moet zijn.
-        // Een <select> heeft namelijk NIET type="number".
         const isGetalVeld = type === "number" || id === "CategorieNr" || id === "AantalFusten" || id === "VoorraadBloemen";
 
         setProduct(prev => ({
             ...prev,
-            // Als het een getalveld is en de waarde is niet leeg, converteer naar Number. Anders behoud value.
             [id]: isGetalVeld && value !== "" ? Number(value) : value
         }));
     };
 
-    const gegevensVersturen = async () => {
-        const alleGegevens = {
-            ...basisData,
-            ...product
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.name.endsWith(".webp")) {
+            alert("Het bestand moet eindigen op '.webp'");
+            return;
         }
+
+        const volledigeBestand = bestandsPad + file.name;
+        setImagePath(volledigeBestand);
+    };
+
+    const GegevensVersturen = async () => {
+        const AlleGegevens = {
+            ...Data,
+            ...product,
+            ImagePath: imagePath
+        };
 
         const values = Object.values(product).map(value =>
             typeof value === "string" ? value.trim() : value
         );
-       
+
         const isLeeg = values.some(v => v === "");
-        
         if (isLeeg) {
             alert("Een of meer velden zijn leeg!");
             return;
         }
-         
         try {
-            console.log(alleGegevens);
-
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(alleGegevens),
+                body: JSON.stringify(AlleGegevens),
             });
 
             if (response.ok) {
@@ -100,7 +108,11 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src="../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp" alt="productfoto" className="grote-foto" />
+                                <img src={imagePath} alt="productfoto" className="grote-foto" />
+                            </div>
+                            <div className="ordenen">
+                                <label htmlFor="BestandPad" className="bestand"></label>
+                                <input type="file" id="BestandPad" accept=".webp" onChange={handleFileChange} />
                             </div>
                         </section>
 
@@ -111,18 +123,17 @@ export default function SellerScreenAdd() {
                                     <label htmlFor="Naam" className="name">Product naam:</label>
                                     <input type="text" id="Naam" value={product.Naam} onChange={verwerkInput}/>
                                 </div>
-                                
+
                                 <div className="ordenen">
                                     <label htmlFor="CategorieNr">Categorie:</label>
                                     <select id="CategorieNr" value={product.CategorieNr} onChange={verwerkInput}>
                                         <option value="">selecteer een categorie</option>
-                                        {/* Nu weet TypeScript dat categorieLijst een array is */}
                                         {categorieLijst.map(c => (
                                             <option key={c.categorieNr} value={c.categorieNr}>{c.naam}</option>
                                         ))}
                                     </select>
                                 </div>
-                                
+
                                 <div className="ordenen">
                                     <label htmlFor="VoorraadBloemen" className="amount">Voorraad:</label>
                                     <input type="number" id="VoorraadBloemen" value={product.VoorraadBloemen} onChange={verwerkInput}/>
@@ -142,7 +153,7 @@ export default function SellerScreenAdd() {
                                         ))}
                                     </select>
                                 </div>
-                                
+
                                 <div className="ordenen">
                                     <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs:</label>
                                     <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={verwerkInput}/>
@@ -157,7 +168,7 @@ export default function SellerScreenAdd() {
                                     <input type="date" id="beginDatum" value={product.beginDatum} onChange={verwerkInput} />
                                 </div>
 
-                                <button className="placeProduct" onClick={gegevensVersturen}>
+                                <button className="placeProduct" onClick={GegevensVersturen}>
                                     Product Plaatsen
                                 </button>
                             </div>
