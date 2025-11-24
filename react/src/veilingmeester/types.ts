@@ -1,20 +1,20 @@
 /**
- * Domain and DTO types for the Veilingmeester dashboard.
- * Central place for consistent shapes used by the API layer and UI components.
+ * Domain types for the Veilingmeester dashboard.
+ * These types aim to mirror the backend DTOs while offering friendly aliases for the UI.
  */
 
-// ---- Status & role enums ----
+// ---- Shared enums ----
 
-/** Auction lifecycle as exposed by the backend. */
+/** Auction lifecycle as returned by the API. */
 export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd";
 
 /** Product lifecycle derived from stock and auction linkage. */
 export type ProductStatus = "Beschikbaar" | "Gekoppeld" | "Uitverkocht";
 
-/** Normalised roles used throughout the UI. */
+/** Supported user roles normalised for the UI. */
 export type UserRole = "Koper" | "Kweker" | "Veilingmeester" | "Admin" | "Onbekend";
 
-/** Generic UI status token for badges and table styling. */
+/** Generic status token for UI elements such as badges. */
 export type UiStatus = "active" | "inactive" | "sold" | "deleted";
 /** Legacy alias used by existing components. */
 export type Status = UiStatus;
@@ -43,10 +43,6 @@ export interface GebruikerDto {
     biedingen?: VeilingMeester_BiedingDto[];
 }
 
-/**
- * Partial payload for updating a gebruiker.
- * Wachtwoord is optional and only sent when changed.
- */
 export type GebruikerUpdateDto = Partial<
     Pick<GebruikerDto, "bedrijfsNaam" | "email" | "soort" | "straatAdres" | "postcode" | "kvk"> & { wachtwoord?: string }
 >;
@@ -61,6 +57,8 @@ export interface VeilingDto {
     producten?: VeilingProductDto[];
     biedingen?: VeilingMeester_BiedingDto[];
 }
+
+export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
 
 export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
 export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
@@ -98,12 +96,6 @@ export interface VeilingMeester_BiedingDto {
 
 export type BiedingCreateDto = Omit<VeilingMeester_BiedingDto, "biedingNr">;
 export type BiedingUpdateDto = Partial<BiedingCreateDto>;
-
-/** Raw categorie payload from the backend. */
-export interface CategorieDto {
-    categorieNr: number;
-    categorieNaam: string;
-}
 
 // ---- Domain models used in the UI ----
 
@@ -201,7 +193,7 @@ export const roleLabels: Record<UserRole, string> = {
 export const toUiStatus = (value?: AuctionStatus | string | null): UiStatus => {
     const normalised = (value ?? "").toLowerCase();
     if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht" || normalised === "afgesloten") return "sold";
+    if (normalised === "verkocht") return "sold";
     if (normalised === "geannuleerd") return "deleted";
     return "inactive";
 };
