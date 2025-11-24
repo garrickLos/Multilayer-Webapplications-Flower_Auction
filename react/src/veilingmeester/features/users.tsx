@@ -59,27 +59,19 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
             header: "Acties",
             render: (row) => (
                 <div className="d-flex justify-content-end gap-2">
-                    <button
-                        type="button"
-                        className="btn btn-outline-success btn-sm"
-                        onClick={() => onEditUser(row)}
-                    >
+                    <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onEditUser(row)}>
                         Bewerk
                     </button>
-                    <button
-                        type="button"
-                        className="btn btn-outline-success btn-sm"
-                        onClick={() => onViewBids(row.id)}
-                    >
-                        Biedingen
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-outline-success btn-sm"
-                        onClick={() => onViewProducts(row.id)}
-                    >
-                        Producten
-                    </button>
+                    {row.role === "Koper" && (
+                        <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewBids(row.id)}>
+                            Biedingen
+                        </button>
+                    )}
+                    {row.role === "Kweker" && (
+                        <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewProducts(row.id)}>
+                            Producten
+                        </button>
+                    )}
                 </div>
             ),
         },
@@ -100,25 +92,62 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
                 ))}
             </div>
 
-            <Table
-                columns={columns}
-                rows={filteredRows}
-                getRowId={(row) => row.id}
-                search={{ value: search, onChange: setSearch, placeholder: "Naam of e-mail" }}
-                filters={
-                    <div className="d-flex flex-wrap gap-2">
+            <div className="row g-3">
+                <div className="col-12 col-lg-4">
+                    <label className="w-100 form-label text-success-emphasis fw-semibold small text-uppercase" htmlFor="user-search">
+                        Zoeken
+                    </label>
+                    <div className="input-group">
+                        <span className="input-group-text bg-white text-success-emphasis border-success-subtle">
+                            <i className="bi bi-search" aria-hidden="true" />
+                        </span>
+                        <input
+                            id="user-search"
+                            type="search"
+                            className="form-control border-success-subtle"
+                            value={search}
+                            placeholder="Naam of e-mail"
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Status">
                         <Select
                             value={filters.status}
                             options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
                             onChange={(value) => setFilters((prev) => ({ ...prev, status: value as UserFilters["status"] }))}
                         />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Rol">
                         <Select
                             value={filters.role}
                             options={roleOptions.map((option) => ({ value: option.value, label: option.label }))}
                             onChange={(value) => setFilters((prev) => ({ ...prev, role: value as UserFilters["role"] }))}
                         />
-                    </div>
-                }
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-2 d-flex align-items-end">
+                    <button
+                        type="button"
+                        className="btn btn-outline-success w-100"
+                        onClick={() => {
+                            setSearch("");
+                            setFilters({ status: "all", role: "all" });
+                            setPage(1);
+                        }}
+                    >
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <Table
+                columns={columns}
+                rows={filteredRows}
+                getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
                 pageSizeOptions={perPageOptions}

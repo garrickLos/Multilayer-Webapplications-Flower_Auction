@@ -120,17 +120,10 @@ export interface Bid {
     readonly date?: string;
 }
 
-export type ModalKey =
-    | "newAuction"
-    | "auctionDetails"
-    | "linkProducts"
-    | "editUser"
-    | "userBids"
-    | "userProducts";
+export type ModalKey = "newAuction" | "linkProducts" | "editUser" | "userBids" | "userProducts";
 
 export type ModalState =
     | { key: "newAuction" }
-    | { key: "auctionDetails"; auctionId: number }
     | { key: "linkProducts"; auctionId: number }
     | { key: "editUser"; userId: number }
     | { key: "userBids"; userId: number }
@@ -171,7 +164,10 @@ export const toStatus = (value?: string | null): Status => {
 };
 
 export const toRole = (value?: string | null): UserRole => {
-    if (value === "Veilingmeester" || value === "Kweker" || value === "Koper") return value;
+    const normalised = (value ?? "").toLowerCase();
+    if (normalised === "veilingmeester") return "Veilingmeester";
+    if (normalised === "kweker" || normalised === "grower") return "Kweker";
+    if (normalised === "koper" || normalised === "buyer") return "Koper";
     return "Onbekend";
 };
 
@@ -189,7 +185,7 @@ export const adaptBid = (dto: VeilingMeester_BiedingDto): Bid => ({
 export const adaptProduct = (dto: VeilingProductDto): Product => ({
     id: dto.veilingProductNr,
     name: dto.naam ?? "Onbekend product",
-    status: toStatus(dto.veilingNr ? "Actief" : "Inactief"),
+    status: dto.voorraad <= 0 ? "sold" : dto.veilingNr ? "active" : "inactive",
     category: dto.categorie ?? "Onbekend",
     startPrice: dto.startprijs,
     stock: dto.voorraad,

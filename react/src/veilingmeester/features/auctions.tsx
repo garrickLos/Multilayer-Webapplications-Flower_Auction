@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState, type JSX } from "react";
+import { deleteAuctionSoft, getAuctions } from "../api";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import type { Auction, Product, Status } from "../types";
-import { filterRows } from "../types";
+import { adaptAuction, filterRows } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
 
 function calculateClockPrice(startPrice: number, minPrice: number, start: Date, end: Date, now: Date): number {
-    if (now <= start) return startPrice;
-    if (now >= end) return minPrice;
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice || minPrice;
+    if (now <= start) return startPrice || minPrice;
+    if (now >= end) return minPrice || startPrice;
     const total = end.getTime() - start.getTime();
     const elapsed = now.getTime() - start.getTime();
     const ratio = Math.min(Math.max(elapsed / total, 0), 1);
@@ -16,7 +18,6 @@ function calculateClockPrice(startPrice: number, minPrice: number, start: Date, 
     return Math.max(price, minPrice);
 }
 
-// Auction list and related modals.
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
     { value: "all", label: "Alle" },
     { value: "active", label: "Actief" },
@@ -27,13 +28,13 @@ const statusOptions: readonly { value: Status | "all"; label: string }[] = [
 
 function deriveStatus(auction: Auction, now: Date): Status {
     const totalStock = auction.products?.reduce((sum, product) => sum + (product.stock ?? 0), 0);
-    if (totalStock === 0) return "sold";
     if (auction.status === "deleted") return "deleted";
 
     const start = new Date(auction.startDate);
     const end = new Date(auction.endDate);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return auction.status;
     if (now < start) return "inactive";
+    if (totalStock === 0) return "sold";
     if (now >= start && now <= end) return "active";
     return "inactive";
 }
@@ -42,14 +43,16 @@ const perPageOptions = [10, 25, 50];
 
 type AuctionFilters = { status: Status | "all"; from: string; to: string };
 
-export type AuctionsTabProps = {
-    readonly auctions: readonly Auction[];
+type AuctionsTabProps = {
     readonly onCreateRequested: () => void;
-    readonly onOpenDetails: (auctionId: number) => void;
     readonly onOpenLinkProducts: (auctionId: number) => void;
+    readonly onAuctionsLoaded: (auctions: Auction[]) => void;
 };
 
-export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpenLinkProducts }: AuctionsTabProps): JSX.Element {
+export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsLoaded }: AuctionsTabProps): JSX.Element {
+    const [auctions, setAuctions] = useState<readonly Auction[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<AuctionFilters>({ status: "all", from: "", to: "" });
     const [page, setPage] = useState(1);
@@ -61,10 +64,40 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
         return () => window.clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await getAuctions(
+                    {
+                        from: filters.from || undefined,
+                        to: filters.to || undefined,
+                        status: filters.status === "all" ? undefined : filters.status,
+                        q: search || undefined,
+                        pageSize: 200,
+                    },
+                    controller.signal,
+                );
+                const items = response.items.map(adaptAuction);
+                setAuctions(items);
+                onAuctionsLoaded(items);
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") return;
+                setError((err as { message?: string }).message ?? "Kan veilingen niet laden.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void load();
+        return () => controller.abort();
+    }, [filters.from, filters.status, filters.to, onAuctionsLoaded, search]);
+
     const filteredRows = useMemo(
         () =>
-            filterRows(auctions, search, filters, (row, term, currentFilters) => {
-                const matchesSearch = !term || row.title.toLowerCase().includes(term);
+            filterRows(auctions, "", filters, (row, _term, currentFilters) => {
                 const computedStatus = deriveStatus(row, now);
                 const matchesStatus = currentFilters.status === "all" || computedStatus === currentFilters.status;
                 const start = Date.parse(row.startDate);
@@ -72,33 +105,45 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
                 const matchesFrom = Number.isFinite(start) ? start >= from : true;
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
-                return matchesSearch && matchesStatus && matchesFrom && matchesTo;
+                return matchesStatus && matchesFrom && matchesTo;
             }),
-        [auctions, filters, now, search],
+        [auctions, filters, now],
     );
+
+    const handleCancel = async (auctionId: number) => {
+        try {
+            await deleteAuctionSoft(auctionId);
+            setAuctions((prev) => {
+                const next = prev.filter((auction) => auction.id !== auctionId);
+                onAuctionsLoaded([...next]);
+                return next;
+            });
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Veiling kon niet worden geannuleerd.");
+        }
+    };
 
     const columns: TableColumn<Auction>[] = [
         { key: "title", header: "Titel", sortable: true, render: (row) => row.title, getValue: (row) => row.title },
         {
             key: "price",
-            header: "Prijs",
+            header: "Klokprijs",
             sortable: true,
-            render: (row) => (
-                <div className="d-flex flex-column">
-                    <span>
-                        €{" "}
-                        {calculateClockPrice(
-                            row.minPrice ?? 0,
-                            0,
-                            new Date(row.startDate),
-                            new Date(row.endDate),
-                            now,
-                        ).toFixed(2)}
-                    </span>
-                    <small className="text-muted">Start {formatCurrency(row.minPrice ?? 0)}</small>
-                </div>
-            ),
-            getValue: (row) => row.minPrice,
+            render: (row) => {
+                const priceCandidates = row.products?.map((product) => product.startPrice) ?? [];
+                const startPrice = row.maxPrice ?? Math.max(...priceCandidates, 0);
+                const minPrice = row.minPrice ?? Math.min(...priceCandidates, startPrice || 0);
+                const current = calculateClockPrice(startPrice, minPrice, new Date(row.startDate), new Date(row.endDate), now);
+                return (
+                    <div className="d-flex flex-column">
+                        <span>
+                            € {current.toFixed(2)}
+                        </span>
+                        <small className="text-muted">Start {formatCurrency(startPrice)}</small>
+                    </div>
+                );
+            },
+            getValue: (row) => row.minPrice ?? 0,
         },
         { key: "startDate", header: "Start", sortable: true, render: (row) => formatDateTime(row.startDate), getValue: (row) => row.startDate },
         { key: "endDate", header: "Einde", sortable: true, render: (row) => formatDateTime(row.endDate), getValue: (row) => row.endDate },
@@ -131,6 +176,16 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
                     >
                         Koppel producten
                     </button>
+                    <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            void handleCancel(row.id);
+                        }}
+                    >
+                        Annuleer
+                    </button>
                 </div>
             ),
         },
@@ -156,6 +211,17 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
                     Nieuwe veiling
                 </button>
             </div>
+
+            {error && (
+                <div className="alert alert-danger" role="alert">
+                    {error}
+                </div>
+            )}
+            {loading && (
+                <div className="alert alert-info" role="status">
+                    Veilingen laden…
+                </div>
+            )}
 
             <div className="row g-3">
                 <div className="col-12 col-lg-3">
@@ -201,7 +267,6 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
                 columns={columns}
                 rows={filteredRows}
                 getRowId={(row) => row.id}
-                onRowClick={(row) => onOpenDetails(row.id)}
                 page={page}
                 pageSize={pageSize}
                 pageSizeOptions={perPageOptions}
@@ -216,12 +281,12 @@ export function AuctionsTab({ auctions, onCreateRequested, onOpenDetails, onOpen
     );
 }
 
-type AuctionFormState = { title: string; minPrice: number; maxPrice: number; startDate: string; endDate: string; status: Status };
+type AuctionFormState = { title: string; maxPrice: number; startTime: string; endTime: string; status: Status };
 
 type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => void };
 
 export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Element {
-    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", minPrice: 0, maxPrice: 0, startDate: "", endDate: "", status: "inactive" });
+    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", maxPrice: 0, startTime: "", endTime: "", status: "inactive" });
 
     const update = <K extends keyof AuctionFormState>(key: K, value: AuctionFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
 
@@ -248,23 +313,18 @@ export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Ele
                     </Field>
                 </div>
                 <div className="col-6">
-                    <Field label="Min. prijs">
-                        <Input type="number" value={draft.minPrice} onChange={(value) => update("minPrice", Number(value) || 0)} min={0} />
-                    </Field>
-                </div>
-                <div className="col-6">
                     <Field label="Max. prijs">
                         <Input type="number" value={draft.maxPrice} onChange={(value) => update("maxPrice", Number(value) || 0)} min={0} />
                     </Field>
                 </div>
                 <div className="col-6">
-                    <Field label="Startdatum">
-                        <Input type="datetime-local" value={draft.startDate} onChange={(value) => update("startDate", value)} />
+                    <Field label="Starttijd">
+                        <Input type="time" value={draft.startTime} onChange={(value) => update("startTime", value)} />
                     </Field>
                 </div>
                 <div className="col-6">
-                    <Field label="Einddatum">
-                        <Input type="datetime-local" value={draft.endDate} onChange={(value) => update("endDate", value)} />
+                    <Field label="Eindtijd">
+                        <Input type="time" value={draft.endTime} onChange={(value) => update("endTime", value)} />
                     </Field>
                 </div>
                 <div className="col-12">
@@ -276,31 +336,6 @@ export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Ele
                         />
                     </Field>
                 </div>
-            </div>
-        </Modal>
-    );
-}
-
-export function AuctionDetailsModal({ auction, onClose }: { readonly auction: Auction; readonly onClose: () => void }): JSX.Element {
-    return (
-        <Modal
-            title={auction.title}
-            subtitle={`Veiling #${auction.id}`}
-            onClose={onClose}
-            footer={
-                <button type="button" className="btn btn-success" onClick={onClose}>
-                    Sluiten
-                </button>
-            }
-        >
-            <div className="row g-3">
-                <Info label="Status">
-                    <StatusBadge status={auction.status} />
-                </Info>
-                <Info label="Prijsbereik">{`${formatCurrency(auction.minPrice)} – ${formatCurrency(auction.maxPrice)}`}</Info>
-                <Info label="Start">{formatDateTime(auction.startDate)}</Info>
-                <Info label="Einde">{formatDateTime(auction.endDate)}</Info>
-                <Info label="Gekoppelde producten">{auction.linkedProductIds?.length ?? auction.products?.length ?? 0}</Info>
             </div>
         </Modal>
     );
@@ -355,11 +390,11 @@ export function LinkProductsModal({
             sortable: true,
             render: (row) => (
                 <div className="d-flex flex-column">
-                    <span>{formatCurrency(row.minPrice)}</span>
-                    <small className="text-muted">Max {formatCurrency(row.maxPrice)}</small>
+                    <span>{formatCurrency(row.startPrice)}</span>
+                    <small className="text-muted">Voorraad {row.stock}</small>
                 </div>
             ),
-            getValue: (row) => row.minPrice,
+            getValue: (row) => row.startPrice,
         },
         { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
         { key: "category", header: "Categorie", sortable: true, render: (row) => row.category, getValue: (row) => row.category },
@@ -424,12 +459,3 @@ export function LinkProductsModal({
         </Modal>
     );
 }
-
-const Info = ({ label, children }: { readonly label: string; readonly children: JSX.Element | string | number }): JSX.Element => (
-    <div className="col-12 col-md-6">
-        <div className="p-3 rounded-3 bg-success-subtle border border-success-subtle h-100">
-            <p className="text-uppercase small text-success-emphasis mb-1">{label}</p>
-            <div className="fw-semibold text-success-emphasis">{children}</div>
-        </div>
-    </div>
-);
