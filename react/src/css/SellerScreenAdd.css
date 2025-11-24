@@ -9,6 +9,9 @@
     color: green;
     margin: 0;
 }
+[type="file"] {
+    display: none; 
+}
 
 .SellerScreenAdd h2 {
     font-size: 20px;
