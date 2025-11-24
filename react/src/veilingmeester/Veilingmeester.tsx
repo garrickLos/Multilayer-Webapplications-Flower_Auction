@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardMetrics } from "./features/dashboard";
-import { AuctionsTab, LinkProductsModal, NewAuctionModal } from "./features/auctions";
+import { AuctionsTab, LinkProductsModal, NewAuctionModal, type AuctionFormState } from "./features/auctions";
 import { ProductsTab } from "./features/products";
 import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
 import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, updateUser } from "./api";
 import { appConfig } from "./config";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
-import { cx } from "./utils";
+import { cx, uiStatusToAuctionStatus } from "./utils";
 
 type TabKey = "users" | "auctions" | "products";
 
@@ -64,20 +64,13 @@ export function Veilingmeester() {
         [activeModal, users],
     );
 
-    const handleCreateAuction = async (draft: {
-        title: string;
-        minPrice: number;
-        maxPrice: number;
-        startDate: string;
-        endDate: string;
-        status: Auction["status"];
-    }) => {
+    const handleCreateAuction = async (draft: AuctionFormState) => {
         try {
             const created = await createAuction({
                 veilingNaam: draft.title,
-                begintijd: draft.startDate,
-                eindtijd: draft.endDate,
-                status: draft.status,
+                begintijd: draft.startTime,
+                eindtijd: draft.endTime,
+                status: uiStatusToAuctionStatus(draft.status),
             });
             setAuctions((prev) => [created, ...prev]);
             setActiveModal(null);

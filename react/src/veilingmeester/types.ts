@@ -64,7 +64,7 @@ export interface VeilingDto {
 }
 
 export type VeilingCreateDto = Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd"> & { status?: AuctionStatus };
-export type VeilingDetailDto = VeilingDto & { beschrijving?: string };
+export type VeilingDetailDto = VeilingDto & { beschrijving?: string; titel?: string };
 export type VeilingUpdateDto = Partial<Pick<VeilingDto, "veilingNaam" | "begintijd" | "eindtijd" | "status">> & {
     beschrijving?: string;
 };
@@ -108,6 +108,7 @@ export interface User {
     readonly name: string;
     readonly email: string;
     readonly role: UserRole;
+    readonly status: UiStatus;
     readonly lastLogin?: string;
     readonly kvk?: string;
     readonly address?: string;
@@ -155,35 +156,17 @@ export interface Bid {
     readonly productId: number;
     readonly amount: number;
     readonly quantity: number;
+    readonly status?: UiStatus;
+    readonly date?: string;
 }
 
 /** Dashboard counters for live statistics. */
-export interface DashboardStats {
-    readonly activeAuctions: number;
-    readonly activeProducts: number;
-    readonly activeUsers: number;
-    readonly bidsToday: number;
-}
-
-export type ModalKey = "newAuction" | "linkProducts" | "editUser" | "userBids" | "userProducts";
-
 export type ModalState =
     | { key: "newAuction" }
     | { key: "linkProducts"; auctionId: number }
     | { key: "editUser"; userId: number }
     | { key: "userBids"; userId: number }
     | { key: "userProducts"; userId: number };
-
-export type FilterState<T> = { readonly search: string; readonly filters: T };
-
-// ---- label helpers ----
-
-export const statusLabels: Record<UiStatus, string> = {
-    active: "Actief",
-    inactive: "Inactief",
-    sold: "Verkocht",
-    deleted: "Geannuleerd",
-};
 
 export const roleLabels: Record<UserRole, string> = {
     Koper: "Koper",
@@ -224,6 +207,7 @@ export class DomainMapper {
             userId: dto.gebruikerNr,
             amount: dto.bedragPerFust,
             quantity: dto.aantalStuks,
+            status: "active",
         } satisfies Bid;
     }
 
@@ -252,6 +236,7 @@ export class DomainMapper {
             name: dto.bedrijfsNaam || dto.email,
             email: dto.email,
             role: toRole(dto.soort),
+            status: "active",
             lastLogin: dto.laatstIngelogd,
             kvk: dto.kvk,
             address: dto.straatAdres ? `${dto.straatAdres}${dto.postcode ? `, ${dto.postcode}` : ""}` : undefined,
@@ -259,7 +244,7 @@ export class DomainMapper {
         } satisfies User;
     }
 
-    static mapAuction(dto: VeilingDto): Auction {
+    static mapAuction(dto: VeilingDto | VeilingDetailDto): Auction {
         const products = dto.producten?.map(DomainMapper.mapProduct);
         const bids = dto.biedingen?.map(DomainMapper.mapBid);
 
@@ -269,7 +254,7 @@ export class DomainMapper {
 
         return {
             id: dto.veilingNr,
-            title: dto.veilingNaam,
+            title: (dto as VeilingDetailDto).titel ?? dto.veilingNaam,
             startDate: dto.begintijd,
             endDate: dto.eindtijd,
             status: toUiStatus(dto.status),

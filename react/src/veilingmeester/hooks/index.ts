@@ -70,3 +70,4 @@ export function useTicker(stepMs = 1000): Date {
 }
 
 export { useLiveStats } from "./useLiveStats";
+export type { LiveStats } from "./useLiveStats";

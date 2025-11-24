@@ -48,7 +48,18 @@ export const mapAuctionStatusToBadge = (status: AuctionStatus): UiStatus => {
     return "inactive";
 };
 
-export const roleIsAdmin = (role: UserRole): boolean => role === "Admin" || role === "Veilingmeester";
+export const uiStatusToAuctionStatus = (status: UiStatus): AuctionStatus => {
+    if (status === "active") return "Actief";
+    if (status === "sold") return "Verkocht";
+    if (status === "deleted") return "Geannuleerd";
+    return "NogNietGestart";
+};
+
+export const mapProductStatusToUiStatus = (status: ProductStatus): UiStatus => {
+    if (status === "Uitverkocht") return "sold";
+    if (status === "Gekoppeld") return "inactive";
+    return "active";
+};
 
 export const aggregateProductStock = (products?: readonly Product[]): number =>
     products?.reduce((sum, product) => sum + (product.stock ?? 0), 0) ?? 0;

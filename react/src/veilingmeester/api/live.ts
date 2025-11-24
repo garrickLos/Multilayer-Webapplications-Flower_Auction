@@ -1,17 +1,20 @@
 import { fetchAuctionDetail } from "../api";
 import { appConfig } from "../config";
-import { DomainMapper, type VeilingDetailDto, type VeilingRow } from "../types";
+import { DomainMapper, type VeilingDetailDto, type VeilingDto, type VeilingRow } from "../types";
+
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type MutableVeilingRow = Mutable<VeilingRow>;
 
 export type AuctionPatchHandler = (update: Partial<VeilingRow>) => void;
 export type Cleanup = () => void;
 
 const POLL_STEPS = appConfig.realtime.pollStepsMs;
 
-const diff = (previous: VeilingRow | null, next: VeilingRow): Partial<VeilingRow> | null => {
+const diff = (previous: MutableVeilingRow | null, next: MutableVeilingRow): Partial<MutableVeilingRow> | null => {
     if (!previous) return next;
-    const patch: Partial<VeilingRow> = {};
+    const patch: Partial<MutableVeilingRow> = {};
     let changed = false;
-    (Object.keys(next) as (keyof VeilingRow)[]).forEach((key) => {
+    (Object.keys(next) as (keyof MutableVeilingRow)[]).forEach((key) => {
         if (!Object.is(previous[key], next[key])) {
             patch[key] = next[key];
             changed = true;
@@ -29,8 +32,8 @@ const finished = (row: VeilingRow): boolean => {
 const parseMessage = (payload: string): VeilingRow | null => {
     if (!payload) return null;
     try {
-        const parsed = JSON.parse(payload) as VeilingDetailDto | VeilingRow;
-        return "titel" in parsed ? DomainMapper.mapAuction(parsed) : (parsed as VeilingRow);
+        const parsed = JSON.parse(payload) as VeilingDetailDto | VeilingDto | VeilingRow;
+        return "titel" in parsed || "veilingNaam" in parsed ? DomainMapper.mapAuction(parsed) : (parsed as VeilingRow);
     } catch {
         return null;
     }
@@ -39,7 +42,7 @@ const parseMessage = (payload: string): VeilingRow | null => {
 export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler): Cleanup {
     if (typeof window === "undefined" || Number.isNaN(veilingId)) return () => undefined;
 
-    let last: VeilingRow | null = null;
+    let last: MutableVeilingRow | null = null;
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let sse: EventSource | null = null;
@@ -48,8 +51,9 @@ export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler
 
     const applyRow = (row: VeilingRow | null) => {
         if (!row || disposed) return;
-        const patch = diff(last, row);
-        last = row;
+        const mutableRow: MutableVeilingRow = { ...row };
+        const patch = diff(last, mutableRow);
+        last = mutableRow;
         if (patch) onPatch(patch);
         if (finished(row)) cleanup();
     };
@@ -67,7 +71,9 @@ export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler
     const schedule = (delay: number) => {
         if (disposed) return;
         clearTimeout(timer);
-        timer = setTimeout(fetchOnce, delay);
+        timer = setTimeout(() => {
+            void fetchOnce();
+        }, delay);
     };
 
     const fallbackToPolling = () => {
@@ -120,12 +126,12 @@ export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler
 
     const onlineListener = () => {
         if (disposed || ws || sse) return;
-        fetchOnce();
+        void fetchOnce();
     };
 
     const visibilityListener = () => {
         if (disposed || document.visibilityState === "hidden") return;
-        fetchOnce();
+        void fetchOnce();
     };
 
     window.addEventListener("online", onlineListener);

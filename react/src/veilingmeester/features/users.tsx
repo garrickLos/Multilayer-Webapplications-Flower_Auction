@@ -4,8 +4,8 @@ import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
 import { appConfig } from "../config";
 import type { Bid, Product, Status, User, UserRole } from "../types";
-import { filterRows, roleLabels } from "../types";
-import { formatCurrency, formatDateTime } from "../utils";
+import { roleLabels } from "../types";
+import { filterRows, formatCurrency, formatDateTime } from "../utils";
 
 // User listing with simple modals.
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
