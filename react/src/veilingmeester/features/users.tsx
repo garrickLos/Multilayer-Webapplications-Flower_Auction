@@ -3,7 +3,7 @@ import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
 import type { Bid, Product, Status, User, UserRole } from "../types";
-import { filterRows } from "../types";
+import { filterRows, roleLabels } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
 
 // User listing with simple modals.
@@ -15,9 +15,10 @@ const statusOptions: readonly { value: Status | "all"; label: string }[] = [
 
 const roleOptions: readonly { value: UserRole | "all"; label: string }[] = [
     { value: "all", label: "Alle rollen" },
-    { value: "buyer", label: "Koper" },
-    { value: "grower", label: "Kweker" },
-    { value: "auctioneer", label: "Veilingmeester" },
+    { value: "Koper", label: "Koper" },
+    { value: "Kweker", label: "Kweker" },
+    { value: "Veilingmeester", label: "Veilingmeester" },
+    { value: "Admin", label: "Admin" },
 ];
 
 const perPageOptions = [10, 25, 50];
@@ -79,7 +80,7 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
 
     const activeFilters = [
         filters.status !== "all" && `Status: ${filters.status}`,
-        filters.role !== "all" && `Rol: ${filters.role}`,
+        filters.role !== "all" && `Rol: ${roleLabels[filters.role]}`,
         search && `Zoek: ${search}`,
     ].filter(Boolean) as string[];
 
@@ -162,13 +163,42 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
     );
 }
 
-type UserFormState = { name: string; email: string; role: UserRole; status: Status };
+type UserFormState = { name: string; email: string; role: UserRole; status: Status; password: string };
 
-type UserModalProps = { readonly user: User; readonly onClose: () => void; readonly onSave: (value: UserFormState) => void };
+type UserModalProps = {
+    readonly user: User;
+    readonly onClose: () => void;
+    readonly onSave: (value: UserFormState) => Promise<void> | void;
+};
 
 export function EditUserModal({ user, onClose, onSave }: UserModalProps): JSX.Element {
-    const [draft, setDraft] = useState<UserFormState>({ name: user.name, email: user.email, role: user.role, status: user.status });
+    const [draft, setDraft] = useState<UserFormState>({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        password: "",
+    });
+    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
     const update = <K extends keyof UserFormState>(key: K, value: UserFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
+
+    const handleSubmit = async () => {
+        if (!draft.name.trim() || !draft.email.trim() || !draft.password.trim() || !draft.role) {
+            setError("Bedrijfsnaam, e-mail, wachtwoord en rol zijn verplicht.");
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        try {
+            await onSave(draft);
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     return (
         <Modal
@@ -177,15 +207,20 @@ export function EditUserModal({ user, onClose, onSave }: UserModalProps): JSX.El
             onClose={onClose}
             footer={
                 <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-outline-success" onClick={onClose}>
+                    <button type="button" className="btn btn-outline-success" onClick={onClose} disabled={saving}>
                         Annuleren
                     </button>
-                    <button type="button" className="btn btn-success" onClick={() => onSave(draft)}>
+                    <button type="button" className="btn btn-success" onClick={handleSubmit} disabled={saving}>
                         Opslaan
                     </button>
                 </div>
             }
         >
+            {error && (
+                <div className="alert alert-danger" role="alert">
+                    {error}
+                </div>
+            )}
             <div className="row g-3">
                 <div className="col-12">
                     <Field label="Naam">
@@ -195,6 +230,11 @@ export function EditUserModal({ user, onClose, onSave }: UserModalProps): JSX.El
                 <div className="col-12">
                     <Field label="E-mail">
                         <Input value={draft.email} onChange={(value) => update("email", value)} />
+                    </Field>
+                </div>
+                <div className="col-12">
+                    <Field label="Wachtwoord">
+                        <Input type="password" value={draft.password} onChange={(value) => update("password", value)} />
                     </Field>
                 </div>
                 <div className="col-6">

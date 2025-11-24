@@ -108,7 +108,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
                 return matchesSearch && matchesStatus && matchesFrom && matchesTo;
             }),
-        [auctions, filters, now],
+        [auctions, filters, now, search],
     );
 
     const handleCancel = async (auctionId: number) => {

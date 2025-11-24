@@ -43,12 +43,13 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
     useEffect(() => {
         const controller = new AbortController();
         const load = async () => {
+            setError(null);
             try {
                 const [categoryResponse, auctionResponse] = await Promise.all([
                     getCategories(controller.signal),
                     auctions.length === 0 ? getAuctions({ pageSize: 200 }, controller.signal) : Promise.resolve(null),
                 ]);
-                setCategories(categoryResponse ?? []);
+                setCategories(categoryResponse);
                 if (auctionResponse) {
                     const mapped = auctionResponse.items.map(adaptAuction);
                     // keep local list for name lookup without overriding parent state
@@ -61,7 +62,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
         };
         void load();
         return () => controller.abort();
-    }, [auctions]);
+    }, [auctions.length]);
 
     useEffect(() => {
         const controller = new AbortController();

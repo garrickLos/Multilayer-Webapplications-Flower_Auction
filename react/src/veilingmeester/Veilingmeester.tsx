@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardMetrics } from "./features/dashboard";
 import { AuctionsTab, LinkProductsModal, NewAuctionModal } from "./features/auctions";
 import { ProductsTab } from "./features/products";
@@ -21,6 +21,8 @@ export function Veilingmeester() {
     const [activeModal, setActiveModal] = useState<ModalState | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const handleAuctionsLoaded = useCallback((items: Auction[]) => setAuctions(items), []);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -95,22 +97,28 @@ export function Veilingmeester() {
         );
     };
 
-    const handleUpdateUser = async (updated: User) => {
-        try {
-            const response = await updateUser(updated.id, {
-                bedrijfsNaam: updated.name,
-                email: updated.email,
-                soort: updated.role,
-                straatAdres: updated.address,
-                kvk: updated.kvk,
-            });
-            const mapped = adaptUser(response);
-            setUsers((prev) => prev.map((user) => (user.id === mapped.id ? mapped : user)));
-            setActiveModal(null);
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt");
-        }
-    };
+    const handleUpdateUser = useCallback(
+        async (updated: User & { password?: string }) => {
+            try {
+                const response = await updateUser(updated.id, {
+                    bedrijfsNaam: updated.name,
+                    email: updated.email,
+                    soort: updated.role,
+                    straatAdres: updated.address,
+                    kvk: updated.kvk,
+                    wachtwoord: updated.password,
+                });
+                const mapped = adaptUser(response);
+                setUsers((prev) => prev.map((user) => (user.id === mapped.id ? mapped : user)));
+                setActiveModal(null);
+            } catch (err) {
+                const message = (err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt";
+                setError(message);
+                throw new Error(message);
+            }
+        },
+        [],
+    );
 
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
         {
@@ -120,7 +128,7 @@ export function Veilingmeester() {
                 <AuctionsTab
                     onCreateRequested={() => setActiveModal({ key: "newAuction" })}
                     onOpenLinkProducts={(auctionId) => setActiveModal({ key: "linkProducts", auctionId })}
-                    onAuctionsLoaded={(items) => setAuctions(items)}
+                    onAuctionsLoaded={handleAuctionsLoaded}
                 />
             ),
         },
