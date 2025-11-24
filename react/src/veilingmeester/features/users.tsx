@@ -1,7 +1,7 @@
 import { useMemo, useState, type JSX } from "react";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
-import { Chip, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
+import { Chip, EmptyState, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
 import type { Bid, Product, Status, User, UserRole } from "../types";
 import { filterRows } from "../types";
 import { formatCurrency, formatDateTime } from "../utils";
@@ -32,7 +32,7 @@ export type UsersTabProps = {
     readonly onViewProducts: (userId: number) => void;
 };
 
-export function UsersTab({ users, bids, onEditUser, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
+export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<UserFilters>({ status: "all", role: "all" });
     const [page, setPage] = useState(1);
