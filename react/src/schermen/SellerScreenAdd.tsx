@@ -12,6 +12,7 @@ interface CategorieType {
 export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = "../../src/assets/pictures/productBloemen/";
+    const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
@@ -110,7 +111,7 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src={imagePath} alt="productfoto" className="grote-foto" />
+                                <img src={imagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
                             </div>
                             <div className="ordenen">
                                 <label htmlFor="BestandPad" className="bestand"></label>
@@ -123,7 +124,7 @@ export default function SellerScreenAdd() {
                                 <div className="kopje">Product informatie</div>
                                 <div className="ordenen">
                                     <label htmlFor="Naam" className="name">Product naam:</label>
-                                    <input type="text" id="Naam" value={product.Naam} onChange={verwerkInput}/>
+                                    <input type="text" id="Naam" value={product.Naam} onChange={verwerkInput} required placeholder={"Product naam"} />
                                 </div>
 
                                 <div className="ordenen">
