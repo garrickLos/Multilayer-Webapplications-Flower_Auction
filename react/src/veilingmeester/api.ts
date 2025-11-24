@@ -136,7 +136,7 @@ export async function getBids(
 }
 
 export async function getAuctions(
-    params: { from?: string; to?: string; onlyActive?: boolean; status?: string; rol?: string; veilingProduct?: number | string; page?: number; pageSize?: number },
+    params: { from?: string; to?: string; onlyActive?: boolean; status?: string; rol?: string; veilingProduct?: number | string; q?: string; page?: number; pageSize?: number },
     signal?: AbortSignal,
 ): Promise<PaginatedList<VeilingDto>> {
     return fetchList("/api/Veiling", params, { signal });
@@ -152,6 +152,11 @@ export async function getProducts(
     signal?: AbortSignal,
 ): Promise<PaginatedList<VeilingProductDto>> {
     return fetchList("/api/Veilingproduct", params, { signal });
+}
+
+export async function getCategories(signal?: AbortSignal): Promise<readonly { id: number; name: string }[]> {
+    const { data } = await request<readonly { categorieNr: number; categorieNaam: string }[]>(`/api/Categorie`, { signal });
+    return data.map((entry) => ({ id: entry.categorieNr, name: entry.categorieNaam }));
 }
 
 export async function getProductsByGrower(
