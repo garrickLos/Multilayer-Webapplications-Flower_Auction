@@ -120,17 +120,10 @@ export interface Bid {
     readonly date?: string;
 }
 
-export type ModalKey =
-    | "newAuction"
-    | "auctionDetails"
-    | "linkProducts"
-    | "editUser"
-    | "userBids"
-    | "userProducts";
+export type ModalKey = "newAuction" | "linkProducts" | "editUser" | "userBids" | "userProducts";
 
 export type ModalState =
     | { key: "newAuction" }
-    | { key: "auctionDetails"; auctionId: number }
     | { key: "linkProducts"; auctionId: number }
     | { key: "editUser"; userId: number }
     | { key: "userBids"; userId: number }
