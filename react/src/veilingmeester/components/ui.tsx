@@ -1,94 +1,76 @@
-import type { JSX, ReactNode } from "react";
-import { cx } from "../utils";
-import type { UiStatus, UserRole } from "../types";
+import type { ChangeEvent, HTMLInputTypeAttribute, PropsWithChildren } from "react";
 
-/** Small helper input components used across the dashboard. */
-export function Field({ label, children }: { readonly label: string; readonly children: ReactNode }): JSX.Element {
+export type InputProps = {
+    id: string;
+    label: string;
+    value: string | number | undefined;
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    type?: HTMLInputTypeAttribute;
+    placeholder?: string;
+};
+
+export function InputField({ id, label, value, onChange, type = "text", placeholder }: InputProps) {
     return (
-        <label className="w-100 d-flex flex-column gap-1">
-            <span className="small text-uppercase text-success-emphasis fw-semibold">{label}</span>
-            {children}
+        <label className="form-label w-100" htmlFor={id}>
+            <span className="fw-semibold">{label}</span>
+            <input
+                id={id}
+                type={type}
+                className="form-control"
+                value={value ?? ""}
+                onChange={onChange}
+                placeholder={placeholder}
+            />
         </label>
     );
 }
 
-export function Select<T extends string | number>({
-    value,
-    options,
-    onChange,
-}: {
-    readonly value: T;
-    readonly options: readonly { value: T; label: string }[];
-    readonly onChange: (value: T) => void;
-}): JSX.Element {
+export type TextAreaProps = {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+    placeholder?: string;
+};
+
+export function TextAreaField({ id, label, value, onChange, placeholder }: TextAreaProps) {
     return (
-        <select className="form-select border-success-subtle" value={String(value)} onChange={(event) => onChange(event.target.value as T)}>
-            {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                    {option.label}
-                </option>
-            ))}
-        </select>
+        <label className="form-label w-100" htmlFor={id}>
+            <span className="fw-semibold">{label}</span>
+            <textarea id={id} className="form-control" value={value} onChange={onChange} placeholder={placeholder} />
+        </label>
     );
 }
 
-export function Input({
-    value,
-    type = "text",
-    placeholder,
-    min,
-    onChange,
-}: {
-    readonly value: string | number;
-    readonly type?: string;
-    readonly placeholder?: string;
-    readonly min?: number;
-    readonly onChange: (value: string) => void;
-}): JSX.Element {
+export function FormRow({ children }: PropsWithChildren) {
+    return <div className="d-flex flex-wrap gap-3">{children}</div>;
+}
+
+export function Section({ title, children }: PropsWithChildren<{ title: string }>) {
     return (
-        <input
-            type={type}
-            className="form-control border-success-subtle"
-            value={value}
-            placeholder={placeholder}
-            min={min}
-            onChange={(event) => onChange(event.target.value)}
-        />
+        <section className="card border-0 shadow-sm rounded-4">
+            <div className="card-body d-flex flex-column gap-3">
+                <div className="d-flex align-items-center justify-content-between">
+                    <h2 className="h5 m-0">{title}</h2>
+                </div>
+                {children}
+            </div>
+        </section>
     );
 }
 
-export function StatusBadge({ status }: { readonly status: UiStatus }): JSX.Element {
-    const variants: Record<UiStatus, string> = {
-        active: "bg-success-subtle text-success-emphasis",
-        inactive: "bg-secondary-subtle text-secondary-emphasis",
-        sold: "bg-warning-subtle text-warning-emphasis",
-        deleted: "bg-danger-subtle text-danger-emphasis",
-    };
-    const labels: Record<UiStatus, string> = {
-        active: "Actief",
-        inactive: "Inactief",
-        sold: "Verkocht",
-        deleted: "Geannuleerd",
-    };
-    return <span className={cx("badge rounded-pill", variants[status])}>{labels[status]}</span>;
-}
-
-export function RoleBadge({ role }: { readonly role: UserRole }): JSX.Element {
-    const variant = role === "Admin" || role === "Veilingmeester" ? "success" : role === "Kweker" ? "primary" : "secondary";
-    return <span className={`badge bg-${variant}-subtle text-${variant}-emphasis`}>{role}</span>;
-}
-
-export function Chip({ label, onRemove }: { readonly label: string; readonly onRemove?: () => void }): JSX.Element {
+export function ErrorNotice({ message }: { message: string }) {
     return (
-        <span className="badge bg-success-subtle text-success-emphasis d-inline-flex align-items-center gap-1">
-            {label}
-            {onRemove && (
-                <button type="button" className="btn-close btn-close-sm" aria-label="Verwijder filter" onClick={onRemove} />
-            )}
-        </span>
+        <div className="alert alert-danger mb-0" role="alert">
+            {message}
+        </div>
     );
 }
 
-export function EmptyState({ message }: { readonly message: string }): JSX.Element {
-    return <div className="text-center text-muted py-4">{message}</div>;
+export function SuccessNotice({ message }: { message: string }) {
+    return (
+        <div className="alert alert-success mb-0" role="status">
+            {message}
+        </div>
+    );
 }
