@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -11,15 +11,12 @@ namespace mvc_api.Controllers;
 public class CategorieController : ControllerBase
 {
     private readonly AppDbContext _db;
-    public CategorieController(AppDbContext db) => _db = db;
 
-    // DTO's voor responses
-    public sealed record CList(int CategorieNr, string Naam);
-    public sealed record CDetail(int CategorieNr, string Naam);
+    public CategorieController(AppDbContext db) => _db = db;
 
     // GET: api/Categorie?q=roos&page=1&pageSize=50
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CList>>> GetAll(
+    public async Task<ActionResult<IEnumerable<CategorieListDto>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
@@ -42,23 +39,21 @@ public class CategorieController : ControllerBase
             .OrderBy(c => c.Naam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new CList(c.CategorieNr, c.Naam))
+            .Select(c => new CategorieListDto { CategorieNr = c.CategorieNr, Naam = c.Naam })
             .ToListAsync(ct);
 
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+        SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
 
     // GET: api/Categorie/123
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<CDetail>> GetById(int id, CancellationToken ct = default)
+    public async Task<ActionResult<CategorieDetailDto>> GetById(int id, CancellationToken ct = default)
     {
         var dto = await _db.Categorieen.AsNoTracking()
             .Where(c => c.CategorieNr == id)
-            .Select(c => new CDetail(c.CategorieNr, c.Naam))
+            .Select(c => new CategorieDetailDto { CategorieNr = c.CategorieNr, Naam = c.Naam })
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -68,25 +63,25 @@ public class CategorieController : ControllerBase
 
     // POST: api/Categorie
     [HttpPost]
-    public async Task<ActionResult<CDetail>> Create(
+    public async Task<ActionResult<CategorieDetailDto>> Create(
         [FromBody] CategorieCreateDto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = new Categorie { Naam = dto.Naam.Trim() };
+        var entity = new Categorie { Naam = dto.Naam.Trim() };
 
-        _db.Categorieen.Add(e);
+        _db.Categorieen.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        var r = new CDetail(e.CategorieNr, e.Naam);
-        return CreatedAtAction(nameof(GetById), new { id = e.CategorieNr }, r);
+        var result = new CategorieDetailDto { CategorieNr = entity.CategorieNr, Naam = entity.Naam };
+        return CreatedAtAction(nameof(GetById), new { id = entity.CategorieNr }, result);
     }
 
     // PUT: api/Categorie/123
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<CDetail>> Update(
+    public async Task<ActionResult<CategorieDetailDto>> Update(
         int id,
         [FromBody] CategorieUpdateDto dto,
         CancellationToken ct = default)
@@ -94,25 +89,25 @@ public class CategorieController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = await _db.Categorieen.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var entity = await _db.Categorieen.FindAsync(new object[] { id }, ct);
+        if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
 
-        e.Naam = dto.Naam.Trim();
+        entity.Naam = dto.Naam.Trim();
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new CDetail(e.CategorieNr, e.Naam));
+        return Ok(new CategorieDetailDto { CategorieNr = entity.CategorieNr, Naam = entity.Naam });
     }
 
     // DELETE: api/Categorie/123
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await _db.Categorieen.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var entity = await _db.Categorieen.FindAsync(new object[] { id }, ct);
+        if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
 
-        _db.Categorieen.Remove(e);
+        _db.Categorieen.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
@@ -125,4 +120,23 @@ public class CategorieController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
+
+    private void SetPaginationHeaders(int total, int page, int pageSize)
+    {
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+    }
+}
+
+public sealed class CategorieListDto
+{
+    public int CategorieNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+}
+
+public sealed class CategorieDetailDto
+{
+    public int CategorieNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
 }

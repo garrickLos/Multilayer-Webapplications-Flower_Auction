@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -12,76 +14,12 @@ namespace mvc_api.Controllers;
 public class VeilingproductController : ControllerBase
 {
     private readonly AppDbContext _db;
+
     public VeilingproductController(AppDbContext db) => _db = db;
-
-    // Request DTO's (Create/Update)
-    public sealed record VeilingproductCreateDto(
-        [Required, StringLength(200)] string Naam,
-        DateTime? GeplaatstDatum,
-        [Range(1, int.MaxValue)] int AantalFusten,
-        [Range(0, int.MaxValue)] int VoorraadBloemen,
-        [Range(typeof(int), "1", "999999999")] int Startprijs,
-        [Range(1, int.MaxValue)] int CategorieNr,
-        [Range(1, int.MaxValue)] int VeilingNr,
-        [Required, StringLength(200)] string Plaats,
-        [Range(typeof(int), "1", "999999999")] int Minimumprijs,
-        [Range(1, int.MaxValue)] int Kwekernr,
-        DateOnly beginDatum,
-        bool status,
-        [Required, StringLength(200)] string ImagePath
-    );
-
-    public sealed record VeilingproductUpdateDto(
-        [Required, StringLength(200)] string Naam,
-        DateTime? GeplaatstDatum,
-        [Range(1, int.MaxValue)] int Fust,
-        [Range(0, int.MaxValue)] int Voorraad,
-        [Range(typeof(int), "1", "999999999")] int Startprijs,
-        [Range(1, int.MaxValue)] int CategorieNr,
-        [Range(1, int.MaxValue)] int VeilingNr,
-        [Range(1, int.MaxValue)] int Kwekernr,
-        [Required, StringLength(200)] string ImagePath
-    );
-
-    // Response DTO's
-
-    // Lijstweergave
-    public sealed record VpList(
-        int VeilingProductNr,
-        string Naam,
-        DateTime GeplaatstDatum,
-        int Fust,
-        int Voorraad,
-        decimal Startprijs,
-        string? Categorie,
-        int VeilingNr,
-        string ImagePath
-    );
-    
-    // Biedingen bij detailweergave
-    public sealed record VBList(
-        int BiedNr, 
-        decimal BedragPerFust, 
-        int AantalStuks, 
-        int GebruikerNr
-    );
-
-    public sealed record VpDetail(
-        int VeilingProductNr,
-        string Naam,
-        DateTime GeplaatstDatum,
-        int Fust,
-        int Voorraad,
-        decimal Startprijs,
-        string? Categorie,
-        int VeilingNr,
-        string ImagePath,
-        IEnumerable<VBList> Biedingen
-    );
 
     // GET: api/Veilingproduct?q=tulp&categorieNr=1&page=1&pageSize=50
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<VpList>>> GetAll(
+    public async Task<ActionResult<IEnumerable<VeilingproductListDto>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
         [FromQuery] int page = 1,
@@ -108,32 +46,30 @@ public class VeilingproductController : ControllerBase
             .OrderBy(vp => vp.Naam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(v => new VpList(
-                v.VeilingProductNr,
-                v.Naam,
-                v.GeplaatstDatum,
-                v.AantalFusten,
-                v.VoorraadBloemen,
-                v.Startprijs,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.VeilingNr,
-                v.ImagePath
-            ))
+            .Select(v => new VeilingproductListDto
+            {
+                VeilingProductNr = v.VeilingProductNr,
+                Naam             = v.Naam,
+                GeplaatstDatum   = v.GeplaatstDatum,
+                Fust             = v.AantalFusten,
+                Voorraad         = v.VoorraadBloemen,
+                Startprijs       = v.Startprijs,
+                Categorie        = v.Categorie == null ? null : v.Categorie.Naam,
+                VeilingNr        = v.VeilingNr,
+                ImagePath        = v.ImagePath
+            })
             .ToListAsync(ct);
 
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+        SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
 
     // GET: api/Veilingproduct/101
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<VpDetail>> GetById(int id, CancellationToken ct = default)
+    public async Task<ActionResult<VeilingproductDetailDto>> GetById(int id, CancellationToken ct = default)
     {
-        var dto = await ProjectToDetail(
-                _db.Veilingproducten.AsNoTracking().Where(v => v.VeilingProductNr == id))
+        var dto = await ProjectToDetail(_db.Veilingproducten.AsNoTracking().Where(v => v.VeilingProductNr == id))
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -143,29 +79,23 @@ public class VeilingproductController : ControllerBase
 
     // POST: api/Veilingproduct
     [HttpPost]
-    public async Task<ActionResult<VpDetail>> Create(
-        [FromBody] VeilingproductCreateDto dto,
+    public async Task<ActionResult<VeilingproductDetailDto>> Create(
+        [FromBody] VeilingproductCreateRequest dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var categorieBestaat = await _db.Categorieen
-            .AnyAsync(c => c.CategorieNr == dto.CategorieNr, ct);
-        if (!categorieBestaat)
+        if (!await ReferenceExists(_db.Categorieen, c => c.CategorieNr == dto.CategorieNr, ct))
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
-        var veilingBestaat = await _db.Veilingen
-            .AnyAsync(v => v.VeilingNr == dto.VeilingNr, ct);
-        if (!veilingBestaat)
+        if (!await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
-        var kwekerBestaat = await _db.Gebruikers
-            .AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct);
-        if (!kwekerBestaat)
+        if (!await ReferenceExists(_db.Gebruikers, g => g.GebruikerNr == dto.Kwekernr, ct))
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
 
-        var e = new Veilingproduct
+        var entity = new Veilingproduct
         {
             Naam            = dto.Naam.Trim(),
             GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
@@ -177,99 +107,98 @@ public class VeilingproductController : ControllerBase
             Plaats          = dto.Plaats,
             Minimumprijs    = dto.Minimumprijs,
             Kwekernr        = dto.Kwekernr,
-            beginDatum      = dto.beginDatum,
-            status          = dto.status,
+            BeginDatum      = dto.BeginDatum,
+            Status          = dto.Status,
             ImagePath       = dto.ImagePath
         };
 
-        _db.Veilingproducten.Add(e);
+        _db.Veilingproducten.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        var r = await ProjectToDetail(
-                _db.Veilingproducten.AsNoTracking().Where(v => v.VeilingProductNr == e.VeilingProductNr))
+        var result = await ProjectToDetail(_db.Veilingproducten.AsNoTracking().Where(v => v.VeilingProductNr == entity.VeilingProductNr))
             .FirstAsync(ct);
 
-        return CreatedAtAction(nameof(GetById), new { id = e.VeilingProductNr }, r);
+        return CreatedAtAction(nameof(GetById), new { id = entity.VeilingProductNr }, result);
     }
 
     // PUT: api/Veilingproduct/1234
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<VpDetail>> Update(
+    public async Task<ActionResult<VeilingproductDetailDto>> Update(
         int id,
-        [FromBody] VeilingproductUpdateDto dto,
+        [FromBody] VeilingproductUpdateRequest dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
+        if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
 
-        var categorieBestaat = await _db.Categorieen
-            .AnyAsync(c => c.CategorieNr == dto.CategorieNr, ct);
-        if (!categorieBestaat)
+        if (!await ReferenceExists(_db.Categorieen, c => c.CategorieNr == dto.CategorieNr, ct))
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
-        var veilingBestaat = await _db.Veilingen
-            .AnyAsync(v => v.VeilingNr == dto.VeilingNr, ct);
-        if (!veilingBestaat)
+        if (!await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
-        var kwekerBestaat = await _db.Gebruikers
-            .AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct);
-        if (!kwekerBestaat)
+        if (!await ReferenceExists(_db.Gebruikers, g => g.GebruikerNr == dto.Kwekernr, ct))
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
 
-        e.Naam            = dto.Naam.Trim();
-        e.GeplaatstDatum  = dto.GeplaatstDatum ?? e.GeplaatstDatum;
-        e.AantalFusten    = dto.Fust;
-        e.VoorraadBloemen = dto.Voorraad;
-        e.Startprijs      = dto.Startprijs;
-        e.CategorieNr     = dto.CategorieNr;
-        e.VeilingNr       = dto.VeilingNr;
-        e.Kwekernr        = dto.Kwekernr;
-        e.ImagePath       = dto.ImagePath;
+        entity.Naam            = dto.Naam.Trim();
+        entity.GeplaatstDatum  = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
+        entity.AantalFusten    = dto.Fust;
+        entity.VoorraadBloemen = dto.Voorraad;
+        entity.Startprijs      = dto.Startprijs;
+        entity.CategorieNr     = dto.CategorieNr;
+        entity.VeilingNr       = dto.VeilingNr;
+        entity.Kwekernr        = dto.Kwekernr;
+        entity.ImagePath       = dto.ImagePath;
 
         await _db.SaveChangesAsync(ct);
 
-        var r = await ProjectToDetail(
-                _db.Veilingproducten.AsNoTracking().Where(v => v.VeilingProductNr == id))
+        var result = await ProjectToDetail(_db.Veilingproducten.AsNoTracking().Where(v => v.VeilingProductNr == id))
             .FirstAsync(ct);
 
-        return Ok(r);
+        return Ok(result);
     }
 
     // DELETE: api/Veilingproduct/1234
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var e = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
+        if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
 
-        _db.Veilingproducten.Remove(e);
+        _db.Veilingproducten.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
 
-    // Helpers
-
-    private static IQueryable<VpDetail> ProjectToDetail(IQueryable<Veilingproduct> query) =>
-        query.Select(v => new VpDetail(
-            v.VeilingProductNr,
-            v.Naam,
-            v.GeplaatstDatum,
-            v.AantalFusten,
-            v.VoorraadBloemen,
-            v.Startprijs,
-            v.Categorie == null ? null : v.Categorie.Naam,
-            v.VeilingNr,
-            v.ImagePath,
-            v.Veiling.Biedingen
-                .OrderByDescending(b => b.BiedNr)
-                .Select(b => new VBList(b.BiedNr, b.BedragPerFust, b.AantalStuks, b.GebruikerNr))
-        ));
+    private static IQueryable<VeilingproductDetailDto> ProjectToDetail(IQueryable<Veilingproduct> query) =>
+        query.Select(v => new VeilingproductDetailDto
+        {
+            VeilingProductNr = v.VeilingProductNr,
+            Naam             = v.Naam,
+            GeplaatstDatum   = v.GeplaatstDatum,
+            Fust             = v.AantalFusten,
+            Voorraad         = v.VoorraadBloemen,
+            Startprijs       = v.Startprijs,
+            Categorie        = v.Categorie == null ? null : v.Categorie.Naam,
+            VeilingNr        = v.VeilingNr,
+            ImagePath        = v.ImagePath,
+            Biedingen        = v.Veiling != null
+                ? v.Veiling.Biedingen
+                    .OrderByDescending(b => b.BiedNr)
+                    .Select(b => new VeilingproductBidListItem
+                    {
+                        BiedNr        = b.BiedNr,
+                        BedragPerFust = b.BedragPerFust,
+                        AantalStuks   = b.AantalStuks,
+                        GebruikerNr   = b.GebruikerNr
+                    })
+                : Enumerable.Empty<VeilingproductBidListItem>()
+        });
 
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
@@ -279,4 +208,117 @@ public class VeilingproductController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
+
+    private void SetPaginationHeaders(int total, int page, int pageSize)
+    {
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+    }
+
+    private static Task<bool> ReferenceExists<T>(DbSet<T> set, Expression<Func<T, bool>> predicate, CancellationToken ct)
+        where T : class => set.AsNoTracking().AnyAsync(predicate, ct);
+}
+
+public sealed class VeilingproductCreateRequest
+{
+    [Required, StringLength(200)]
+    public string Naam { get; init; } = string.Empty;
+
+    public DateTime? GeplaatstDatum { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int AantalFusten { get; init; }
+
+    [Range(0, int.MaxValue)]
+    public int VoorraadBloemen { get; init; }
+
+    [Range(typeof(int), "1", "999999999")]
+    public int Startprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int CategorieNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int VeilingNr { get; init; }
+
+    [Required, StringLength(200)]
+    public string Plaats { get; init; } = string.Empty;
+
+    [Range(typeof(int), "1", "999999999")]
+    public int Minimumprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Kwekernr { get; init; }
+
+    public DateOnly BeginDatum { get; init; }
+
+    public bool Status { get; init; }
+
+    [Required, StringLength(200)]
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+public sealed class VeilingproductUpdateRequest
+{
+    [Required, StringLength(200)]
+    public string Naam { get; init; } = string.Empty;
+
+    public DateTime? GeplaatstDatum { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Fust { get; init; }
+
+    [Range(0, int.MaxValue)]
+    public int Voorraad { get; init; }
+
+    [Range(typeof(int), "1", "999999999")]
+    public int Startprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int CategorieNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int VeilingNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Kwekernr { get; init; }
+
+    [Required, StringLength(200)]
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+public sealed class VeilingproductListDto
+{
+    public int VeilingProductNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+    public DateTime GeplaatstDatum { get; init; }
+    public int Fust { get; init; }
+    public int Voorraad { get; init; }
+    public decimal Startprijs { get; init; }
+    public string? Categorie { get; init; }
+    public int VeilingNr { get; init; }
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+public sealed class VeilingproductBidListItem
+{
+    public int BiedNr { get; init; }
+    public decimal BedragPerFust { get; init; }
+    public int AantalStuks { get; init; }
+    public int GebruikerNr { get; init; }
+}
+
+public sealed class VeilingproductDetailDto
+{
+    public int VeilingProductNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+    public DateTime GeplaatstDatum { get; init; }
+    public int Fust { get; init; }
+    public int Voorraad { get; init; }
+    public decimal Startprijs { get; init; }
+    public string? Categorie { get; init; }
+    public int VeilingNr { get; init; }
+    public string ImagePath { get; init; } = string.Empty;
+    public IEnumerable<VeilingproductBidListItem> Biedingen { get; init; } = Enumerable.Empty<VeilingproductBidListItem>();
 }

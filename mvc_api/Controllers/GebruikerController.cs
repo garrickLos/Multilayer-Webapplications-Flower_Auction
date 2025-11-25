@@ -1,4 +1,3 @@
-﻿using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -12,6 +11,7 @@ namespace mvc_api.Controllers;
 public class GebruikerController : ControllerBase
 {
     private readonly AppDbContext _db;
+
     public GebruikerController(AppDbContext db) => _db = db;
 
     // GET: api/Gebruiker?q=jan&page=1&pageSize=50
@@ -30,9 +30,7 @@ public class GebruikerController : ControllerBase
         if (!string.IsNullOrWhiteSpace(q))
         {
             var term = q.Trim();
-            query = query.Where(g =>
-                g.BedrijfsNaam.Contains(term) ||
-                g.Email.Contains(term));
+            query = query.Where(g => g.BedrijfsNaam.Contains(term) || g.Email.Contains(term));
         }
 
         var total = await query.CountAsync(ct);
@@ -41,12 +39,10 @@ public class GebruikerController : ControllerBase
             .OrderBy(g => g.BedrijfsNaam)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Projectgebruiker_Klant()
+            .ProjectGebruikerKlant()
             .ToListAsync(ct);
 
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+        SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
@@ -54,12 +50,12 @@ public class GebruikerController : ControllerBase
     // GET: api/Gebruiker/{id}
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Klant_GebruikerDto>> GetById(
-        int id, 
+        int id,
         CancellationToken ct = default)
     {
         var dto = await _db.Gebruikers.AsNoTracking()
             .Where(x => x.GebruikerNr == id)
-            .Projectgebruiker_Klant()
+            .ProjectGebruikerKlant()
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -76,7 +72,7 @@ public class GebruikerController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = new Gebruiker
+        var entity = new Gebruiker
         {
             BedrijfsNaam = dto.BedrijfsNaam.Trim(),
             Email        = dto.Email.Trim(),
@@ -87,19 +83,22 @@ public class GebruikerController : ControllerBase
             Postcode     = dto.Postcode,
         };
 
-        _db.Gebruikers.Add(e);
+        _db.Gebruikers.Add(entity);
         await _db.SaveChangesAsync(ct);
 
         var result = new GebruikerCreateDto
         {
-            Email = e.Email,
-            Soort = e.Soort,
-            Kvk = e.Kvk,
-            StraatAdres = e.StraatAdres,
-            Postcode = e.Postcode  
+            BedrijfsNaam = entity.BedrijfsNaam,
+            Email        = entity.Email,
+            Wachtwoord   = entity.Wachtwoord,
+            Soort        = entity.Soort,
+            Kvk          = entity.Kvk,
+            StraatAdres  = entity.StraatAdres,
+            Postcode     = entity.Postcode,
+            LaatstIngelogd = entity.LaatstIngelogd ?? default
         };
 
-        return CreatedAtAction(nameof(GetById), new { id = e.GebruikerNr }, result);
+        return CreatedAtAction(nameof(GetById), new { id = entity.GebruikerNr }, result);
     }
 
     // PUT: api/Gebruiker/{id}
@@ -112,20 +111,30 @@ public class GebruikerController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var entity = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        e.BedrijfsNaam = dto.BedrijfsNaam.Trim();
-        e.Email        = dto.Email.Trim();
-        e.Soort        = dto.Soort;
-        e.Kvk          = dto.Kvk;
-        e.StraatAdres  = dto.StraatAdres;
-        e.Postcode     = dto.Postcode;
+        entity.BedrijfsNaam = dto.BedrijfsNaam.Trim();
+        entity.Email        = dto.Email.Trim();
+        entity.Soort        = dto.Soort;
+        entity.Kvk          = dto.Kvk;
+        entity.StraatAdres  = dto.StraatAdres;
+        entity.Postcode     = dto.Postcode;
 
         await _db.SaveChangesAsync(ct);
 
-        var resultDto = new GebruikerUpdateDto();
+        var resultDto = new Klant_GebruikerDto
+        {
+            GebruikerNr  = entity.GebruikerNr,
+            BedrijfsNaam = entity.BedrijfsNaam,
+            Email        = entity.Email,
+            Wachtwoord   = entity.Wachtwoord,
+            Soort        = entity.Soort,
+            Kvk          = entity.Kvk,
+            StraatAdres  = entity.StraatAdres,
+            Postcode     = entity.Postcode
+        };
 
         return Ok(resultDto);
     }
@@ -133,20 +142,17 @@ public class GebruikerController : ControllerBase
     // DELETE: api/Gebruiker/{id}
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(
-        int id, 
+        int id,
         CancellationToken ct = default)
     {
-        var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var entity = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        _db.Gebruikers.Remove(e);
+        _db.Gebruikers.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
-
-
-    // Helpers
 
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
@@ -156,37 +162,36 @@ public class GebruikerController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
+
+    private void SetPaginationHeaders(int total, int page, int pageSize)
+    {
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+    }
 }
 
 public static class GebruikerExtensions
 {
-    // Projectie voor Veilingmeesters
-    public static IQueryable<Klant_GebruikerDto> Projectgebruiker_Klant(
-        this IQueryable<Gebruiker> query)
-    {
-        return query.Select(g => new Klant_GebruikerDto
-        {   // Eigen properties van Klant_gebruikerDto
-            GebruikerNr = g.GebruikerNr,
+    public static IQueryable<Klant_GebruikerDto> ProjectGebruikerKlant(this IQueryable<Gebruiker> query) =>
+        query.Select(g => new Klant_GebruikerDto
+        {
+            GebruikerNr  = g.GebruikerNr,
             BedrijfsNaam = g.BedrijfsNaam,
-            Email = g.Email,
-            Wachtwoord = g.Wachtwoord,
-            Soort = g.Soort,
-            Kvk = g.Kvk,
-            StraatAdres = g.StraatAdres,
-            Postcode = g.Postcode,
-
-            Biedingen = g.Biedingen.Select(b => new VeilingMeester_BiedingDto
+            Email        = g.Email,
+            Wachtwoord   = g.Wachtwoord,
+            Soort        = g.Soort,
+            Kvk          = g.Kvk,
+            StraatAdres  = g.StraatAdres,
+            Postcode     = g.Postcode,
+            Biedingen    = g.Biedingen.Select(b => new VeilingMeester_BiedingDto
             {
-                // Eigen properties van VeilingMeester_BiedingDto
-                BiedingNr = b.BiedNr,
-                VeilingNr = b.VeilingNr, // Of v.VeilingNr, afhankelijk van je database relatie
+                BiedingNr        = b.BiedNr,
+                VeilingNr        = b.VeilingNr,
                 VeilingProductNr = b.VeilingproductNr,
-
-                // Properties geërfd van BaseBieding_Dto
-                AantalStuks = b.AantalStuks,
-                GebruikerNr = b.GebruikerNr,
-                BedragPerFust = b.BedragPerFust
+                AantalStuks      = b.AantalStuks,
+                GebruikerNr      = b.GebruikerNr,
+                BedragPerFust    = b.BedragPerFust
             }).ToList(),
         });
-    }
 }
