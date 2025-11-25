@@ -67,10 +67,10 @@ export function Veilingmeester() {
     const handleCreateAuction = async (draft: AuctionFormState) => {
         try {
             const created = await createAuction({
-                VeilingNaam: draft.title,
-                Begintijd: draft.startTime,
-                Eindtijd: draft.endTime,
-                Status: uiStatusToAuctionStatus(draft.status) ?? "",
+                veilingNaam: draft.title,
+                begintijd: draft.startTime,
+                eindtijd: draft.endTime,
+                status: uiStatusToAuctionStatus(draft.status) ?? "",
             });
             setAuctions((prev) => [created, ...prev]);
             setActiveModal(null);
@@ -96,14 +96,14 @@ export function Veilingmeester() {
         async (updated: User & { password?: string }) => {
             try {
                 const response = await updateUser(updated.id, {
-                    BedrijfsNaam: updated.name,
-                    Email: updated.email,
-                    Wachtwoord: updated.password ?? "",
-                    Soort: updated.role,
-                    StraatAdres: updated.address ?? null,
-                    Postcode: null,
-                    Kvk: updated.kvk ?? null,
-                    LaatstIngelogd: updated.lastLogin ?? null,
+                    bedrijfsNaam: updated.name,
+                    email: updated.email,
+                    wachtwoord: updated.password ?? "",
+                    soort: updated.role,
+                    straatAdres: updated.address ?? null,
+                    postcode: null,
+                    kvk: updated.kvk ?? null,
+                    laatstIngelogd: updated.lastLogin ?? null,
                 });
                 setUsers((prev) => prev.map((user) => (user.id === response.id ? response : user)));
                 setActiveModal(null);
