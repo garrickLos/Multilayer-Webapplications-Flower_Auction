@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { listGebruikers, listVeilingen, listVeilingproducten } from "../api";
+import { fetchAuctions, fetchBids, fetchProducts, fetchUsers } from "../api";
 import { appConfig } from "../config";
 
-export type LiveStats = { users: number; activeAuctions: number; products: number };
+export type LiveStats = { users: number; activeAuctions: number; products: number; bids: number };
 
 const { prefetchPageSize } = appConfig.api;
 
@@ -18,16 +18,18 @@ export function useLiveStats() {
             setLoading(true);
             setError(null);
             try {
-                const [usersResult, auctionsResult, productsResult] = await Promise.all([
-                    listGebruikers({ page: 1, pageSize: prefetchPageSize, signal: controller.signal }),
-                    listVeilingen({ onlyActive: true, page: 1, pageSize: prefetchPageSize, signal: controller.signal }),
-                    listVeilingproducten({ page: 1, pageSize: prefetchPageSize, signal: controller.signal }),
+                const [usersResponse, activeAuctionsResponse, productsResponse, bidsResponse] = await Promise.all([
+                    fetchUsers({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchAuctions({ onlyActive: true, pageSize: prefetchPageSize }, controller.signal),
+                    fetchProducts({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchBids({ pageSize: prefetchPageSize }, controller.signal),
                 ]);
 
                 setStats({
-                    users: usersResult.totalCount ?? usersResult.items.length,
-                    activeAuctions: auctionsResult.totalCount ?? auctionsResult.items.length,
-                    products: productsResult.totalCount ?? productsResult.items.length,
+                    users: usersResponse.items.length,
+                    activeAuctions: activeAuctionsResponse.items.length,
+                    products: productsResponse.items.length,
+                    bids: bidsResponse.items.length, // TODO: filter laatste 24u zodra de backend een timestamp exposeert.
                 });
                 setLastUpdated(new Date());
             } catch (err) {

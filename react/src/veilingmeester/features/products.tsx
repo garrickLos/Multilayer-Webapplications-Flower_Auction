@@ -1,54 +1,70 @@
-import { useEffect, useState, type JSX } from "react";
-import {
-    createVeilingproduct,
-    deleteVeilingproduct,
-    listCategorieen,
-    listVeilingproducten,
-    updateVeilingproduct,
-} from "../api";
-import { Modal } from "../Modal";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { Table, type TableColumn } from "../components/Table";
-import { EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
+import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
+import { fetchAuctions, fetchCategories, fetchProducts } from "../api";
 import { appConfig } from "../config";
-import type {
-    CategorieListDto,
-    StatusLabel,
-    VeilingproductCreateDto,
-    VeilingproductListDto,
-    VeilingproductUpdateDto,
-} from "../types";
-import { formatCurrency, formatDate, normaliseStatus, toDateInputValue, toDateTimeLocalValue } from "../utils";
+import type { Auction, Product, Status, UiStatus } from "../types";
+import { deriveProductStatus, filterRows, formatCurrency, mapProductStatusToUiStatus } from "../utils";
+
+// Product listing with simple filters.
+const statusOptions: readonly { value: Status | "all"; label: string }[] = [
+    { value: "all", label: "Alle" },
+    { value: "active", label: "Actief" },
+    { value: "inactive", label: "Inactief" },
+    { value: "sold", label: "Verkocht" },
+    { value: "deleted", label: "Geannuleerd" },
+];
+
+const linkedOptions = [
+    { value: "all", label: "Alle" },
+    { value: "linked", label: "Gekoppeld" },
+    { value: "unlinked", label: "Niet gekoppeld" },
+] as const;
 
 const { table: tablePageSizeOptions } = appConfig.pagination;
+const { prefetchPageSize } = appConfig.api;
 
-const emptyForm: VeilingproductCreateDto = {
-    Naam: "",
-    GeplaatstDatum: "",
-    Fust: 1,
-    Voorraad: 0,
-    Startprijs: 0,
-    CategorieNr: 0,
-    VeilingNr: null,
-    Plaats: "",
-    Minimumprijs: 1,
-    Kwekernr: 1,
-    BeginDatum: "",
-    Status: true,
-    ImagePath: "",
-};
+type ProductFilters = { status: UiStatus | "all"; category: string; linkState: (typeof linkedOptions)[number]["value"] };
 
-export function ProductsTab(): JSX.Element {
-    const [rows, setRows] = useState<VeilingproductListDto[]>([]);
-    const [categories, setCategories] = useState<CategorieListDto[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+type ProductsTabProps = { readonly auctions: readonly Auction[] };
+
+export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
+    const [search, setSearch] = useState("");
+    const [filters, setFilters] = useState<ProductFilters>({ status: "all", category: "", linkState: "all" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
-    const [total, setTotal] = useState<number | undefined>();
-    const [search, setSearch] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState<number | "">("");
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [modalState, setModalState] = useState<{ mode: "create" | "edit"; product?: VeilingproductListDto } | null>(null);
+    const [products, setProducts] = useState<readonly Product[]>([]);
+    const [categories, setCategories] = useState<readonly { id: number; name: string }[]>([]);
+    const [localAuctions, setLocalAuctions] = useState<readonly Auction[]>(auctions);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => setLocalAuctions(auctions), [auctions]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            setError(null);
+            try {
+                const [categoryResponse, auctionResponse] = await Promise.all([
+                    fetchCategories(controller.signal),
+                    auctions.length === 0
+                        ? fetchAuctions({ pageSize: prefetchPageSize }, controller.signal)
+                        : Promise.resolve(null),
+                ]);
+                setCategories(categoryResponse);
+                if (auctionResponse) {
+                    // keep local list for name lookup without overriding parent state
+                    setLocalAuctions(auctionResponse.items as Auction[]);
+                }
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") return;
+                setError((err as { message?: string }).message ?? "Filters konden niet laden.");
+            }
+        };
+        void load();
+        return () => controller.abort();
+    }, [auctions.length]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -56,291 +72,172 @@ export function ProductsTab(): JSX.Element {
             setLoading(true);
             setError(null);
             try {
-                const [productResult, categoryResult] = await Promise.all([
-                    listVeilingproducten({
+                const response = await fetchProducts(
+                    {
+                        q: search || undefined,
+                        categorieNr: filters.category ? Number(filters.category) : undefined,
                         page,
                         pageSize,
-                        q: search || undefined,
-                        categorieNr: categoryFilter === "" ? undefined : Number(categoryFilter),
-                        signal: controller.signal,
-                    }),
-                    listCategorieen(controller.signal),
-                ]);
-                setRows(productResult.items);
-                setTotal(productResult.totalCount);
-                setCategories(categoryResult);
+                    },
+                    controller.signal,
+                );
+                setProducts(response.items as Product[]);
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
-                setError((err as { message?: string }).message ?? "Kon producten niet laden");
+                setError((err as { message?: string }).message ?? "Producten konden niet worden geladen.");
             } finally {
                 setLoading(false);
             }
         };
+
         void load();
         return () => controller.abort();
-    }, [categoryFilter, page, pageSize, refreshKey, search]);
+    }, [filters.category, page, pageSize, search]);
 
-    const columns: TableColumn<VeilingproductListDto>[] = [
-        { key: "VeilingProductNr", header: "#", render: (row) => row.VeilingProductNr },
-        { key: "Naam", header: "Naam", sortable: true },
-        { key: "Startprijs", header: "Startprijs", render: (row) => formatCurrency(row.Startprijs) },
-        { key: "Voorraad", header: "Voorraad", render: (row) => row.Voorraad },
-        { key: "Minimumprijs", header: "Minimum", render: (row) => formatCurrency(row.Minimumprijs) },
-        { key: "Categorie", header: "Categorie", render: (row) => row.Categorie ?? "—" },
-        { key: "VeilingNr", header: "Veiling", render: (row) => row.VeilingNr ?? "—" },
-        { key: "Kwekernr", header: "Kwekernr", render: (row) => row.Kwekernr },
-        { key: "BeginDatum", header: "Begin", render: (row) => formatDate(row.BeginDatum) },
+    const auctionNameMap = useMemo(() => {
+        const source = localAuctions.length > 0 ? localAuctions : auctions;
+        return new Map(source.map((auction) => [auction.id, auction.title]));
+    }, [auctions, localAuctions]);
+
+    const filteredRows = useMemo(
+        () =>
+            filterRows(products, "", filters, (row, _term, currentFilters) => {
+                const selectedCategory = categories.find((category) => String(category.id) === currentFilters.category)?.name;
+                const uiStatus = mapProductStatusToUiStatus(deriveProductStatus(row));
+                const matchesStatus = currentFilters.status === "all" || uiStatus === currentFilters.status;
+                const matchesCategory = !currentFilters.category || row.category === selectedCategory;
+                const matchesLink =
+                    currentFilters.linkState === "all" ||
+                    (currentFilters.linkState === "linked" && Boolean(row.linkedAuctionId)) ||
+                    (currentFilters.linkState === "unlinked" && !row.linkedAuctionId);
+                return matchesStatus && matchesCategory && matchesLink;
+            }),
+        [categories, filters, products],
+    );
+
+    const columns: TableColumn<Product>[] = [
+        { key: "name", header: "Naam", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
+        { key: "category", header: "Categorie", sortable: true, render: (row) => row.category, getValue: (row) => row.category },
         {
-            key: "Status",
-            header: "Status",
-            render: (row) => <StatusBadge status={normaliseStatus(row.Status ? "active" : "inactive")} />,
-        },
-        {
-            key: "actions",
-            header: "Acties",
+            key: "price",
+            header: "Prijs",
+            sortable: true,
             render: (row) => (
-                <div className="d-flex gap-2 justify-content-end">
-                    <button type="button" className="btn btn-outline-success btn-sm" onClick={() => setModalState({ mode: "edit", product: row })}>
-                        Bewerken
-                    </button>
-                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleDelete(row.VeilingProductNr)}>
-                        Verwijderen
-                    </button>
+                <div className="d-flex flex-column">
+                    <span>{formatCurrency(row.startPrice)}</span>
+                    <small className="text-muted">Voorraad {row.stock}</small>
                 </div>
             ),
+            getValue: (row) => row.startPrice,
+        },
+        {
+            key: "status",
+            header: "Status",
+            sortable: true,
+            render: (row) => <StatusBadge status={mapProductStatusToUiStatus(row.status)} />,
+            getValue: (row) => mapProductStatusToUiStatus(row.status),
+        },
+        {
+            key: "linked",
+            header: "Gekoppeld",
+            render: (row) => (row.linkedAuctionId ? auctionNameMap.get(row.linkedAuctionId) ?? "—" : "—"),
+            getValue: (row) => (row.linkedAuctionId ? auctionNameMap.get(row.linkedAuctionId) ?? "" : ""),
         },
     ];
 
-    const handleSave = async (draft: VeilingproductCreateDto | VeilingproductUpdateDto, id?: number) => {
-        try {
-            if (id) await updateVeilingproduct(id, draft as VeilingproductUpdateDto);
-            else await createVeilingproduct(draft as VeilingproductCreateDto);
-            setModalState(null);
-            setPage(1);
-            setRefreshKey((value) => value + 1);
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Opslaan mislukt");
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        if (!window.confirm("Verwijder dit product?")) return;
-        try {
-            await deleteVeilingproduct(id);
-            setRows((prev) => prev.filter((row) => row.VeilingProductNr !== id));
-            setTotal((prev) => (prev ? Math.max(prev - 1, 0) : prev));
-            setRefreshKey((value) => value + 1);
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Verwijderen mislukt");
-        }
-    };
-
-    const filters = (
-        <div className="d-flex gap-3 flex-wrap">
-            <Field label="Categorie">
-                <select
-                    className="form-select border-success-subtle"
-                    value={categoryFilter}
-                    onChange={(event) => setCategoryFilter(event.target.value === "" ? "" : Number(event.target.value))}
-                >
-                    <option value="">Alle</option>
-                    {categories.map((cat) => (
-                        <option key={cat.CategorieNr} value={cat.CategorieNr}>
-                            {cat.Naam}
-                        </option>
-                    ))}
-                </select>
-            </Field>
-        </div>
-    );
+    const selectedCategoryLabel = categories.find((category) => String(category.id) === filters.category)?.name;
+    const activeFilters = [
+        filters.status !== "all" && `Status: ${filters.status}`,
+        selectedCategoryLabel && `Categorie: ${selectedCategoryLabel}`,
+        filters.linkState !== "all" && `Koppeling: ${filters.linkState}`,
+        search && `Zoek: ${search}`,
+    ].filter(Boolean) as string[];
 
     return (
         <section className="d-flex flex-column gap-3" aria-label="Producten">
-            <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                <div className="flex-grow-1">
-                    <Field label="Zoeken">
-                        <Input value={search} onChange={setSearch} placeholder="Productnaam" />
-                    </Field>
-                </div>
-                <button type="button" className="btn btn-success" onClick={() => setModalState({ mode: "create" })}>
-                    Nieuw product
-                </button>
+            <div className="d-flex flex-wrap align-items-center gap-2">
+                {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
+                {activeFilters.map((label) => (
+                    <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", category: "", linkState: "all" })} />
+                ))}
             </div>
 
-            {error && <div className="alert alert-danger mb-0">{error}</div>}
-            {loading && <div className="alert alert-info mb-0">Laden…</div>}
+            {error && (
+                <div className="alert alert-danger" role="alert">
+                    {error}
+                </div>
+            )}
+            {loading && !error && (
+                <div className="alert alert-info" role="status">
+                    Producten laden…
+                </div>
+            )}
+
+            <div className="row g-3">
+                <div className="col-12 col-lg-4">
+                    <label className="w-100 form-label text-success-emphasis fw-semibold small text-uppercase" htmlFor="product-search">
+                        Zoeken
+                    </label>
+                    <div className="input-group">
+                        <span className="input-group-text bg-white text-success-emphasis border-success-subtle">
+                            <i className="bi bi-search" aria-hidden="true" />
+                        </span>
+                        <input
+                            id="product-search"
+                            type="search"
+                            className="form-control border-success-subtle"
+                            value={search}
+                            placeholder="Naam"
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Status">
+                        <Select
+                            value={filters.status}
+                            options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, status: value as ProductFilters["status"] }))}
+                        />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Categorie">
+                        <Select
+                            value={filters.category}
+                            options={[{ value: "", label: "Alle" }, ...categories.map((category) => ({ value: String(category.id), label: category.name }))]}
+                            onChange={(value) => {
+                                setFilters((prev) => ({ ...prev, category: value }));
+                                setPage(1);
+                            }}
+                        />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-2">
+                    <Field label="Koppeling">
+                        <Select
+                            value={filters.linkState}
+                            options={linkedOptions.map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, linkState: value as ProductFilters["linkState"] }))}
+                        />
+                    </Field>
+                </div>
+            </div>
 
             <Table
                 columns={columns}
-                rows={rows}
-                getRowId={(row) => row.VeilingProductNr}
-                filters={filters}
+                rows={filteredRows}
+                getRowId={(row) => row.id}
                 page={page}
                 pageSize={pageSize}
-                totalCount={total}
-                serverPaginated
                 pageSizeOptions={tablePageSizeOptions}
                 onPageChange={setPage}
-                onPageSizeChange={(value) => {
-                    setPageSize(value);
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
                     setPage(1);
                 }}
-                emptyMessage={<EmptyState message="Geen producten" />}
+                emptyMessage={<EmptyState message="Geen producten gevonden." />}
             />
-
-            {modalState && (
-                <ProductModal
-                    categories={categories}
-                    mode={modalState.mode}
-                    product={modalState.product}
-                    onClose={() => setModalState(null)}
-                    onSave={handleSave}
-                />
-            )}
         </section>
-    );
-}
-
-type ProductModalProps = {
-    mode: "create" | "edit";
-    product?: VeilingproductListDto;
-    categories: CategorieListDto[];
-    onClose: () => void;
-    onSave: (draft: VeilingproductCreateDto | VeilingproductUpdateDto, id?: number) => void;
-};
-
-function ProductModal({ mode, product, categories, onClose, onSave }: ProductModalProps): JSX.Element {
-    const [form, setForm] = useState<VeilingproductCreateDto | VeilingproductUpdateDto>(() =>
-        product
-            ? {
-                  Naam: product.Naam,
-                  GeplaatstDatum: toDateTimeLocalValue(product.GeplaatstDatum),
-                  Fust: product.Fust,
-                  Voorraad: product.Voorraad,
-                  Startprijs: product.Startprijs,
-                  CategorieNr: categories.find((c) => c.Naam === product.Categorie)?.CategorieNr ?? 0,
-                  VeilingNr: product.VeilingNr ?? null,
-                  Plaats: product.Plaats,
-                  Minimumprijs: product.Minimumprijs,
-                  Kwekernr: product.Kwekernr,
-                  BeginDatum: toDateInputValue(product.BeginDatum),
-                  Status: product.Status,
-                  ImagePath: product.ImagePath,
-              }
-            : emptyForm,
-    );
-
-    const update = <K extends keyof (VeilingproductCreateDto & VeilingproductUpdateDto)>(key: K, value: (VeilingproductCreateDto & VeilingproductUpdateDto)[K]) =>
-        setForm((prev) => ({ ...prev, [key]: value }));
-
-    return (
-        <Modal
-            title={mode === "create" ? "Nieuw product" : `Product #${product?.VeilingProductNr}`}
-            onClose={onClose}
-            footer={
-                <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-outline-success" onClick={onClose}>
-                        Annuleren
-                    </button>
-                    <button type="button" className="btn btn-success" onClick={() => onSave(form, product?.VeilingProductNr)}>
-                        Opslaan
-                    </button>
-                </div>
-            }
-        >
-            <div className="row g-3">
-                <div className="col-12">
-                    <Field label="Naam">
-                        <Input value={form.Naam} onChange={(value) => update("Naam", value)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Fust">
-                        <Input type="number" value={form.Fust} min={1} onChange={(value) => update("Fust", Number(value) || 0)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Voorraad">
-                        <Input type="number" value={form.Voorraad} min={0} onChange={(value) => update("Voorraad", Number(value) || 0)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Startprijs">
-                        <Input type="number" value={form.Startprijs} min={0} onChange={(value) => update("Startprijs", Number(value) || 0)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Minimumprijs">
-                        <Input type="number" value={form.Minimumprijs} min={1} onChange={(value) => update("Minimumprijs", Number(value) || 0)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Categorie">
-                        <select
-                            className="form-select border-success-subtle"
-                            value={form.CategorieNr}
-                            onChange={(event) => update("CategorieNr", Number(event.target.value))}
-                        >
-                            <option value={0}>Selecteer</option>
-                            {categories.map((cat) => (
-                                <option key={cat.CategorieNr} value={cat.CategorieNr}>
-                                    {cat.Naam}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="VeilingNr (optioneel)">
-                        <Input
-                            type="number"
-                            value={form.VeilingNr ?? ""}
-                            onChange={(value) => update("VeilingNr", value === "" ? null : Number(value))}
-                        />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Kwekernr">
-                        <Input type="number" value={form.Kwekernr} min={1} onChange={(value) => update("Kwekernr", Number(value) || 0)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Plaats">
-                        <Input value={form.Plaats} onChange={(value) => update("Plaats", value)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Begin datum">
-                        <Input type="date" value={form.BeginDatum} onChange={(value) => update("BeginDatum", value)} />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Geplaatst datum">
-                        <Input
-                            type="datetime-local"
-                            value={form.GeplaatstDatum ?? ""}
-                            onChange={(value) => update("GeplaatstDatum", value)}
-                        />
-                    </Field>
-                </div>
-                <div className="col-12 col-md-6">
-                    <Field label="Status">
-                        <select
-                            className="form-select border-success-subtle"
-                            value={form.Status ? "true" : "false"}
-                            onChange={(event) => update("Status", event.target.value === "true")}
-                        >
-                            <option value="true">Actief</option>
-                            <option value="false">Inactief</option>
-                        </select>
-                    </Field>
-                </div>
-                <div className="col-12">
-                    <Field label="Afbeelding pad">
-                        <Input value={form.ImagePath} onChange={(value) => update("ImagePath", value)} />
-                    </Field>
-                </div>
-            </div>
-        </Modal>
     );
 }
