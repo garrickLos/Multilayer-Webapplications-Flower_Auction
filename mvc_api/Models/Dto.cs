@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace mvc_api.Models;
 
-// Categorie CRUD
+// Categorie DTO's
 public sealed class CategorieCreateDto
 {
     [Required, StringLength(200)]
@@ -18,43 +17,59 @@ public sealed class CategorieUpdateDto
     public string Naam { get; init; } = string.Empty;
 }
 
-// Bieding CRUD
-public abstract record BaseBiedingDto
+public sealed class CategorieListDto
+{
+    public int CategorieNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+}
+
+public sealed class CategorieDetailDto
+{
+    public int CategorieNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+}
+
+// Bieding DTO's
+public abstract class BiedingBaseAmountDto
 {
     [Range(typeof(decimal), "0.01", "9999999")]
     public decimal BedragPerFust { get; init; }
 
     [Range(1, int.MaxValue)]
     public int AantalStuks { get; init; }
+}
+
+public sealed class BiedingCreateDto : BiedingBaseAmountDto
+{
+    public int BiedingNr { get; init; }
 
     [Range(1, int.MaxValue)]
     public int GebruikerNr { get; init; }
-}
-
-public sealed record VeilingMeester_BiedingDto : BaseBiedingDto
-{
-    public int BiedingNr { get; init; }
 
     [Range(1, int.MaxValue)]
-    [Required]
     public int VeilingNr { get; init; }
 
-    [Required]
-    public int VeilingProductNr { get; init; }
-}
-
-public sealed record BiedingCreateDto : BaseBiedingDto
-{
-    public int BiedingNr { get; init; }
-
-    public int VeilingNr { get; init; }
+    [Range(1, int.MaxValue)]
     public int VeilingproductNr { get; init; }
 }
 
-public sealed record BiedingUpdateDto : BaseBiedingDto;
+public sealed class BiedingUpdateDto : BiedingBaseAmountDto
+{
+}
 
-// Gebruiker CRUD
-public abstract record BaseGebruiker
+public sealed class VeilingMeester_BiedingDto : BiedingBaseAmountDto
+{
+    public int BiedingNr { get; init; }
+
+    public int GebruikerNr { get; init; }
+
+    public int VeilingNr { get; init; }
+
+    public int VeilingProductNr { get; init; }
+}
+
+// Gebruiker DTO's
+public abstract class BaseGebruiker
 {
     [Required, StringLength(200)]
     public string BedrijfsNaam { get; init; } = string.Empty;
@@ -80,19 +95,23 @@ public abstract record BaseGebruiker
     public string? Postcode { get; init; }
 }
 
-public sealed record GebruikerCreateDto : BaseGebruiker;
+public sealed class GebruikerCreateDto : BaseGebruiker
+{
+}
 
-public sealed record GebruikerUpdateDto : BaseGebruiker;
+public sealed class GebruikerUpdateDto : BaseGebruiker
+{
+}
 
-public sealed record Klant_GebruikerDto : BaseGebruiker
+public sealed class Klant_GebruikerDto : BaseGebruiker
 {
     public int GebruikerNr { get; init; }
 
-    public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = Enumerable.Empty<VeilingMeester_BiedingDto>();
+    public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = new List<VeilingMeester_BiedingDto>();
 }
 
-// Veiling CRUD
-public abstract record BaseVeilingDto
+// Veiling DTO's
+public abstract class BaseVeilingDto
 {
     [Required]
     [StringLength(100)]
@@ -105,37 +124,167 @@ public abstract record BaseVeilingDto
     public DateTime Eindtijd { get; init; }
 }
 
-public sealed record Klant_VeilingDto : BaseVeilingDto
+public sealed class Klant_VeilingDto : BaseVeilingDto
 {
     public int VeilingNr { get; init; }
 
     [StringLength(20)]
     public string Status { get; init; } = string.Empty;
 
-    public IEnumerable<VeilingProductDto>? Producten { get; init; } = Enumerable.Empty<VeilingProductDto>();
+    public IEnumerable<VeilingProductDto> Producten { get; init; } = new List<VeilingProductDto>();
 }
 
-public sealed record VeilingCreateDto : BaseVeilingDto
+public sealed class VeilingCreateDto : BaseVeilingDto
 {
     [StringLength(20)]
     public string Status { get; init; } = string.Empty;
 }
 
-public sealed record VeilingUpdateDto : BaseVeilingDto;
+public sealed class VeilingUpdateDto : BaseVeilingDto
+{
+}
 
-public sealed record VeilingMeester_VeilingDto : BaseVeilingDto
+public sealed class VeilingMeester_VeilingDto : BaseVeilingDto
 {
     [StringLength(20)]
     public string Status { get; init; } = string.Empty;
+
     public int VeilingNr { get; init; }
-    public IEnumerable<VeilingProductDto> Producten { get; init; } = Enumerable.Empty<VeilingProductDto>();
-    public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = Enumerable.Empty<VeilingMeester_BiedingDto>();
+
+    public IEnumerable<VeilingProductDto> Producten { get; init; } = new List<VeilingProductDto>();
+
+    public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = new List<VeilingMeester_BiedingDto>();
 }
 
-public sealed record VeilingProductDto(
-    int VeilingProductNr,
-    string Naam,
-    decimal Startprijs,
-    int Voorraad,
-    string ImagePath
-);
+public sealed class VeilingProductDto
+{
+    public int VeilingProductNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+    public decimal Startprijs { get; init; }
+    public int Voorraad { get; init; }
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+// Veilingproduct DTO's
+public sealed class VeilingproductCreateDto
+{
+    [Required, StringLength(200)]
+    public string Naam { get; init; } = string.Empty;
+
+    public DateTime? GeplaatstDatum { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Fust { get; init; }
+
+    [Range(0, int.MaxValue)]
+    public int Voorraad { get; init; }
+
+    [Range(typeof(decimal), "0.01", "999999999")]
+    public decimal Startprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int CategorieNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int VeilingNr { get; init; }
+
+    [Required, StringLength(200)]
+    public string Plaats { get; init; } = string.Empty;
+
+    [Range(1, int.MaxValue)]
+    public int Minimumprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Kwekernr { get; init; }
+
+    public DateOnly BeginDatum { get; init; }
+
+    public bool Status { get; init; }
+
+    [Required, StringLength(200)]
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+public sealed class VeilingproductUpdateDto
+{
+    [Required, StringLength(200)]
+    public string Naam { get; init; } = string.Empty;
+
+    public DateTime? GeplaatstDatum { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Fust { get; init; }
+
+    [Range(0, int.MaxValue)]
+    public int Voorraad { get; init; }
+
+    [Range(typeof(decimal), "0.01", "999999999")]
+    public decimal Startprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int CategorieNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int VeilingNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Kwekernr { get; init; }
+
+    [Required, StringLength(200)]
+    public string Plaats { get; init; } = string.Empty;
+
+    [Range(1, int.MaxValue)]
+    public int Minimumprijs { get; init; }
+
+    public DateOnly BeginDatum { get; init; }
+
+    public bool Status { get; init; }
+
+    [Required, StringLength(200)]
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+public sealed class VeilingproductListDto
+{
+    public int VeilingProductNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+    public DateTime GeplaatstDatum { get; init; }
+    public int Fust { get; init; }
+    public int Voorraad { get; init; }
+    public decimal Startprijs { get; init; }
+    public int Minimumprijs { get; init; }
+    public string Plaats { get; init; } = string.Empty;
+    public string? Categorie { get; init; }
+    public int VeilingNr { get; init; }
+    public int Kwekernr { get; init; }
+    public DateOnly BeginDatum { get; init; }
+    public bool Status { get; init; }
+    public string ImagePath { get; init; } = string.Empty;
+}
+
+public sealed class VeilingproductBidListItem
+{
+    public int BiedNr { get; init; }
+    public decimal BedragPerFust { get; init; }
+    public int AantalStuks { get; init; }
+    public int GebruikerNr { get; init; }
+}
+
+public sealed class VeilingproductDetailDto
+{
+    public int VeilingProductNr { get; init; }
+    public string Naam { get; init; } = string.Empty;
+    public DateTime GeplaatstDatum { get; init; }
+    public int Fust { get; init; }
+    public int Voorraad { get; init; }
+    public decimal Startprijs { get; init; }
+    public int Minimumprijs { get; init; }
+    public string Plaats { get; init; } = string.Empty;
+    public string? Categorie { get; init; }
+    public int VeilingNr { get; init; }
+    public int Kwekernr { get; init; }
+    public DateOnly BeginDatum { get; init; }
+    public bool Status { get; init; }
+    public string ImagePath { get; init; } = string.Empty;
+    public IEnumerable<VeilingproductBidListItem> Biedingen { get; init; } = new List<VeilingproductBidListItem>();
+}
