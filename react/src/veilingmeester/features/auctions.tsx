@@ -13,7 +13,7 @@ const { prefetchPageSize } = appConfig.api;
 
 // ---- filters & helpers ----
 
-type AuctionFilters = { status: Status | "all"; from: string; to: string };
+type AuctionFilters = { onlyActive: boolean; from: string; to: string; rol: string; veilingProduct: string };
 
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
     { value: "all", label: "Alle" },
@@ -29,7 +29,7 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-    const [filters, setFilters] = useState<AuctionFilters>({ status: "all", from: "", to: "" });
+    const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", rol: "", veilingProduct: "" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
     const now = useTicker(5000);
@@ -44,8 +44,9 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                     {
                         from: filters.from || undefined,
                         to: filters.to || undefined,
-                        status: filters.status === "all" ? undefined : filters.status,
-                        q: search || undefined,
+                        onlyActive: filters.onlyActive || undefined,
+                        rol: filters.rol || undefined,
+                        veilingProduct: filters.veilingProduct ? Number(filters.veilingProduct) : undefined,
                         page: 1,
                         pageSize: prefetchPageSize,
                     },
@@ -63,20 +64,23 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
 
         void load();
         return () => controller.abort();
-    }, [filters.from, filters.status, filters.to, onAuctionsLoaded, search]);
+    }, [filters.from, filters.onlyActive, filters.rol, filters.to, filters.veilingProduct, onAuctionsLoaded]);
 
     const filteredRows = useMemo(
         () =>
             filterRows(auctions, "", filters, (row, _term, currentFilters) => {
                 const computedStatus = deriveAuctionUiStatus(row, now);
-                const matchesStatus = currentFilters.status === "all" || computedStatus === currentFilters.status;
+                const matchesStatus = !currentFilters.onlyActive || computedStatus === "active";
                 const start = Date.parse(row.startDate);
                 const from = currentFilters.from ? Date.parse(currentFilters.from) : Number.NEGATIVE_INFINITY;
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
                 const matchesFrom = Number.isFinite(start) ? start >= from : true;
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
                 const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
-                return matchesSearch && matchesStatus && matchesFrom && matchesTo;
+                const matchesRol = !currentFilters.rol || (row.rawStatus ?? "").toLowerCase().includes(currentFilters.rol.toLowerCase());
+                const matchesVeilingProduct =
+                    !currentFilters.veilingProduct || row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
+                return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesRol && matchesVeilingProduct;
             }),
         [auctions, filters, now, search],
     );
@@ -202,9 +206,11 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
     ];
 
     const activeFilters = [
-        filters.status !== "all" && `Status: ${filters.status}`,
+        filters.onlyActive && "Alleen actieve veilingen",
         filters.from && `Vanaf: ${filters.from}`,
         filters.to && `Tot: ${filters.to}`,
+        filters.rol && `Rol: ${filters.rol}`,
+        filters.veilingProduct && `Veilingproduct: ${filters.veilingProduct}`,
         search && `Zoek: ${search}`,
     ].filter(Boolean) as string[];
 
@@ -214,7 +220,7 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 <div className="d-flex flex-wrap align-items-center gap-2">
                     {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
                     {activeFilters.map((label) => (
-                        <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", from: "", to: "" })} />
+                        <Chip key={label} label={label} onRemove={() => setFilters({ onlyActive: false, from: "", to: "", rol: "", veilingProduct: "" })} />
                     ))}
                 </div>
                 <button type="button" className="btn btn-success" onClick={onCreateRequested}>
@@ -235,11 +241,33 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
 
             <div className="row g-3">
                 <div className="col-12 col-lg-3">
-                    <Field label="Status">
-                        <Select
-                            value={filters.status}
-                            options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
-                            onChange={(value) => setFilters((prev) => ({ ...prev, status: value as AuctionFilters["status"] }))}
+                    <Field label="Alleen actieve veilingen">
+                        <div className="form-check form-switch">
+                            <input
+                                id="onlyActive"
+                                type="checkbox"
+                                className="form-check-input"
+                                checked={filters.onlyActive}
+                                onChange={(event) => setFilters((prev) => ({ ...prev, onlyActive: event.target.checked }))}
+                            />
+                            <label className="form-check-label" htmlFor="onlyActive">
+                                Alleen actieve
+                            </label>
+                        </div>
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Rol">
+                        <Input value={filters.rol} onChange={(value) => setFilters((prev) => ({ ...prev, rol: value }))} placeholder="Rol" />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Veilingproduct #">
+                        <Input
+                            type="number"
+                            value={filters.veilingProduct}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, veilingProduct: value }))}
+                            placeholder="Productnummer"
                         />
                     </Field>
                 </div>
@@ -296,7 +324,10 @@ export type AuctionFormState = { title: string; maxPrice: number; startTime: str
 type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => Promise<void> | void };
 
 export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Element {
-    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", maxPrice: 0, startTime: "", endTime: "", status: "inactive" });
+    const now = new Date();
+    const defaultStart = new Date(now.getTime() + 30 * 60 * 1000).toISOString().slice(0, 16);
+    const defaultEnd = new Date(now.getTime() + 90 * 60 * 1000).toISOString().slice(0, 16);
+    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", maxPrice: 0, startTime: defaultStart, endTime: defaultEnd, status: "inactive" });
 
     const update = <K extends keyof AuctionFormState>(key: K, value: AuctionFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
 
@@ -329,12 +360,12 @@ export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Ele
                 </div>
                 <div className="col-6">
                     <Field label="Starttijd">
-                        <Input type="time" value={draft.startTime} onChange={(value) => update("startTime", value)} />
+                        <Input type="datetime-local" value={draft.startTime} onChange={(value) => update("startTime", value)} />
                     </Field>
                 </div>
                 <div className="col-6">
                     <Field label="Eindtijd">
-                        <Input type="time" value={draft.endTime} onChange={(value) => update("endTime", value)} />
+                        <Input type="datetime-local" value={draft.endTime} onChange={(value) => update("endTime", value)} />
                     </Field>
                 </div>
                 <div className="col-12">
