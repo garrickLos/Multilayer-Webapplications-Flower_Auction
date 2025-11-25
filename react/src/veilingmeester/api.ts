@@ -1,74 +1,43 @@
-import {
-    type BiedingCreateDto,
-    type BiedingUpdateDto,
-    type CategorieCreateDto,
-    type CategorieDetailDto,
-    type CategorieListDto,
-    type CategorieUpdateDto,
-    type GebruikerCreateDto,
-    type GebruikerUpdateDto,
-    type Klant_GebruikerDto,
-    type VeilingCreateDto,
-    type VeilingMeester_BiedingDto,
-    type VeilingMeester_VeilingDto,
-    type VeilingUpdateDto,
-    type VeilingproductCreateDto,
-    type VeilingproductDetailDto,
-    type VeilingproductListDto,
-    type VeilingproductUpdateDto,
+import type {
+    BiedingCreateDto,
+    BiedingUpdateDto,
+    CategorieCreateDto,
+    CategorieDetailDto,
+    CategorieListDto,
+    CategorieUpdateDto,
+    GebruikerCreateDto,
+    GebruikerUpdateDto,
+    Klant_GebruikerDto,
+    VeilingCreateDto,
+    VeilingMeester_BiedingDto,
+    VeilingMeester_VeilingDto,
+    VeilingUpdateDto,
+    VeilingproductCreateDto,
+    VeilingproductDetailDto,
+    VeilingproductListDto,
+    VeilingproductUpdateDto,
 } from "../api/dtos";
 import { appConfig } from "./config";
-import { DomainMapper, type Auction, type Bid, type Category, type PaginatedList, type Product, type User } from "./types";
+import type { PaginatedResult } from "./types";
 
 export type ApiError = { status: number; message: string };
 
-type FetchInit = RequestInit & { signal?: AbortSignal };
-type ListResult<T> = { data: readonly T[]; headers: Headers };
-
 const { baseUrl, requestTimeoutMs } = appConfig.api;
+const jsonHeaders = { "Content-Type": "application/json", Accept: "application/json" };
 
-const jsonHeaders = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
+type FetchInit = RequestInit & { signal?: AbortSignal };
+
+type ListResponse<T> = { data: T[]; headers: Headers };
+
+const buildQuery = (params: Record<string, unknown>): string => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        search.append(key, String(value));
+    });
+    const query = search.toString();
+    return query ? `?${query}` : "";
 };
-
-async function request<T>(path: string, init?: FetchInit): Promise<{ data: T; headers: Headers }> {
-    const controller = new AbortController();
-    const linked = init?.signal;
-    const timeout = window.setTimeout(() => controller.abort(), requestTimeoutMs);
-
-    if (linked) {
-        const abort = () => controller.abort();
-        if (linked.aborted) abort();
-        linked.addEventListener("abort", abort, { once: true });
-        controller.signal.addEventListener(
-            "abort",
-            () => linked.removeEventListener("abort", abort),
-            { once: true },
-        );
-    }
-
-    try {
-        const response = await fetch(`${baseUrl}${path}`, {
-            credentials: "include",
-            ...init,
-            headers: { ...jsonHeaders, ...(init?.headers ?? {}) },
-            signal: controller.signal,
-        });
-
-        if (!response.ok) throw await normaliseError(response);
-        if (response.status === 204) return { data: undefined as T, headers: response.headers };
-
-        const data = (await response.json()) as T;
-        return { data, headers: response.headers };
-    } catch (error) {
-        if ((error as { name?: string }).name === "AbortError") throw error;
-        if ((error as ApiError).message) throw error;
-        throw { status: 0, message: "Kan geen verbinding maken met de server." } satisfies ApiError;
-    } finally {
-        clearTimeout(timeout);
-    }
-}
 
 async function normaliseError(response: Response): Promise<ApiError> {
     let message = response.statusText || "Onbekende fout";
@@ -76,80 +45,118 @@ async function normaliseError(response: Response): Promise<ApiError> {
         const contentType = response.headers.get("content-type") ?? "";
         if (contentType.includes("application/json")) {
             const body = (await response.clone().json()) as { detail?: string; title?: string; message?: string };
-            message = body.detail || body.title || body.message || message;
+            message = body.detail ?? body.title ?? body.message ?? message;
         } else {
             const text = (await response.clone().text()).trim();
             if (text) message = text;
         }
     } catch {
-        // ignore parse errors
+        // ignore parsing errors
     }
     return { status: response.status, message };
 }
 
-function buildQuery(params: Record<string, unknown>): string {
-    const search = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-        if (value === undefined || value === null || value === "") continue;
-        if (typeof value === "boolean") {
-            if (value) search.append(key, "true");
-            continue;
-        }
-        search.append(key, String(value));
+async function request<T>(path: string, init?: FetchInit): Promise<{ data: T; headers: Headers }> {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), requestTimeoutMs);
+
+    const signal = init?.signal;
+    if (signal) {
+        const abort = () => controller.abort();
+        if (signal.aborted) abort();
+        signal.addEventListener("abort", abort, { once: true });
+        controller.signal.addEventListener("abort", () => signal.removeEventListener("abort", abort), { once: true });
     }
-    const query = search.toString();
-    return query ? `?${query}` : "";
+
+    try {
+        const response = await fetch(`${baseUrl}${path}`, {
+            ...init,
+            signal: controller.signal,
+            headers: { ...jsonHeaders, ...(init?.headers ?? {}) },
+        });
+
+        if (!response.ok) throw await normaliseError(response);
+        if (response.status === 204) return { data: undefined as T, headers: response.headers };
+        const data = (await response.json()) as T;
+        return { data, headers: response.headers };
+    } finally {
+        clearTimeout(timeout);
+    }
 }
 
-function normaliseList<TDto, TModel>(
-    result: ListResult<TDto>,
-    page: number,
-    pageSize: number,
-    map: (dto: TDto) => TModel,
-): PaginatedList<TModel> {
-    const items = Array.isArray(result.data) ? result.data.map(map) : [];
+const normaliseList = <T,>(result: ListResponse<T>, page: number, pageSize: number): PaginatedResult<T> => {
     const totalHeader = result.headers.get("X-Total-Count");
-    const totalResults = totalHeader ? Number.parseInt(totalHeader, 10) : undefined;
-    const hasNext = totalResults != null ? page * pageSize < totalResults : items.length > 0 && items.length === pageSize;
-    return { items, page, pageSize, hasNext, totalResults };
-}
+    const totalCount = totalHeader ? Number.parseInt(totalHeader, 10) : undefined;
+    const hasNext = totalCount != null ? page * pageSize < totalCount : result.data.length === pageSize;
+    return { items: result.data, page, pageSize, totalCount, hasNext };
+};
 
-async function fetchList<TDto, TModel>(
+const fetchList = async <T,>(
     path: string,
     params: { page?: number; pageSize?: number } & Record<string, unknown>,
-    map: (dto: TDto) => TModel,
     init?: FetchInit,
-): Promise<PaginatedList<TModel>> {
+): Promise<PaginatedResult<T>> => {
     const page = params.page ?? 1;
     const pageSize = params.pageSize ?? 50;
     const query = buildQuery(params);
-    const result = await request<readonly TDto[]>(`${path}${query}`, init);
-    return normaliseList(result, page, pageSize, map);
-}
+    const result = await request<T[]>(`${path}${query}`, init);
+    return normaliseList(result, page, pageSize);
+};
 
-export async function fetchUsers(
+// Biedingen
+export const listBids = (
+    params: { gebruikerNr?: number; veilingNr?: number; page?: number; pageSize?: number },
+    signal?: AbortSignal,
+) => fetchList<VeilingMeester_BiedingDto>("/api/Bieding", params, { signal });
+
+export const getBid = (id: number, signal?: AbortSignal) => request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, { signal }).then((r) => r.data);
+
+export const createBid = (payload: BiedingCreateDto, signal?: AbortSignal) =>
+    request<VeilingMeester_BiedingDto>("/api/Bieding", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const updateBid = (id: number, payload: BiedingUpdateDto, signal?: AbortSignal) =>
+    request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const deleteBid = (id: number, signal?: AbortSignal) => request<void>(`/api/Bieding/${id}`, { method: "DELETE", signal }).then(() => undefined);
+
+// Categorie
+export const listCategories = (
     params: { q?: string; page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<User>> {
-    return fetchList("/api/Gebruiker", params, DomainMapper.mapUser, { signal });
-}
+) => fetchList<CategorieListDto>("/api/Categorie", params, { signal });
 
-export async function fetchBids(
-    params: {
-        gebruikerNr?: number | string;
-        veilingNr?: number | string;
-        page?: number;
-        pageSize?: number;
-    },
+export const getCategory = (id: number, signal?: AbortSignal) => request<CategorieDetailDto>(`/api/Categorie/${id}`, { signal }).then((r) => r.data);
+
+export const createCategory = (payload: CategorieCreateDto, signal?: AbortSignal) =>
+    request<CategorieDetailDto>("/api/Categorie", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const updateCategory = (id: number, payload: CategorieUpdateDto, signal?: AbortSignal) =>
+    request<CategorieDetailDto>(`/api/Categorie/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const deleteCategory = (id: number, signal?: AbortSignal) =>
+    request<void>(`/api/Categorie/${id}`, { method: "DELETE", signal }).then(() => undefined);
+
+// Gebruiker
+export const listUsers = (
+    params: { q?: string; page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<Bid>> {
-    return fetchList("/api/Bieding", params, DomainMapper.mapBid, { signal });
-}
+) => fetchList<Klant_GebruikerDto>("/api/Gebruiker", params, { signal });
 
-export async function fetchAuctions(
+export const getUser = (id: number, signal?: AbortSignal) => request<Klant_GebruikerDto>(`/api/Gebruiker/${id}`, { signal }).then((r) => r.data);
+
+export const createUser = (payload: GebruikerCreateDto, signal?: AbortSignal) =>
+    request<Klant_GebruikerDto>("/api/Gebruiker", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const updateUser = (id: number, payload: GebruikerUpdateDto, signal?: AbortSignal) =>
+    request<Klant_GebruikerDto>(`/api/Gebruiker/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const deleteUser = (id: number, signal?: AbortSignal) => request<void>(`/api/Gebruiker/${id}`, { method: "DELETE", signal }).then(() => undefined);
+
+// Veiling
+export const listAuctions = (
     params: {
         rol?: string;
-        veilingProduct?: number | string;
+        veilingProduct?: number;
         from?: string;
         to?: string;
         onlyActive?: boolean;
@@ -157,146 +164,33 @@ export async function fetchAuctions(
         pageSize?: number;
     },
     signal?: AbortSignal,
-): Promise<PaginatedList<Auction>> {
-    const queryParams = {
-        rol: params.rol,
-        veilingProduct: params.veilingProduct,
-        from: params.from,
-        to: params.to,
-        onlyActive: params.onlyActive,
-        page: params.page,
-        pageSize: params.pageSize,
-    };
-    return fetchList("/api/Veiling", queryParams, DomainMapper.mapAuction, { signal });
-}
+) => fetchList<VeilingMeester_VeilingDto>("/api/Veiling", params, { signal });
 
-export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, { signal });
-    return DomainMapper.mapAuction(data);
-}
+export const getAuction = (id: number, signal?: AbortSignal) => request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, { signal }).then((r) => r.data);
 
-export async function fetchProducts(
-    params: { q?: string; categorieNr?: number | string; page?: number; pageSize?: number },
+export const createAuction = (payload: VeilingCreateDto, signal?: AbortSignal) =>
+    request<VeilingMeester_VeilingDto>("/api/Veiling", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const updateAuction = (id: number, payload: VeilingUpdateDto, signal?: AbortSignal) =>
+    request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
+
+export const deleteAuction = (id: number, signal?: AbortSignal) =>
+    request<void>(`/api/Veiling/${id}`, { method: "DELETE", signal }).then(() => undefined);
+
+// Veilingproduct
+export const listProducts = (
+    params: { q?: string; categorieNr?: number; page?: number; pageSize?: number },
     signal?: AbortSignal,
-): Promise<PaginatedList<Product>> {
-    return fetchList("/api/Veilingproduct", params, DomainMapper.mapProduct, { signal });
-}
+) => fetchList<VeilingproductListDto>("/api/Veilingproduct", params, { signal });
 
-export async function fetchProductDetail(id: number, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductDetailDto>(`/api/Veilingproduct/${id}`, { signal });
-    return DomainMapper.mapProduct(data);
-}
+export const getProduct = (id: number, signal?: AbortSignal) =>
+    request<VeilingproductDetailDto>(`/api/Veilingproduct/${id}`, { signal }).then((r) => r.data);
 
-export async function fetchCategories(
-    params: { q?: string; page?: number; pageSize?: number } = {},
-    signal?: AbortSignal,
-): Promise<PaginatedList<Category>> {
-    return fetchList("/api/Categorie", params, DomainMapper.mapCategory, { signal });
-}
+export const createProduct = (payload: VeilingproductCreateDto, signal?: AbortSignal) =>
+    request<VeilingproductDetailDto>("/api/Veilingproduct", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
 
-export async function fetchCategoryDetail(id: number, signal?: AbortSignal): Promise<Category> {
-    const { data } = await request<CategorieDetailDto>(`/api/Categorie/${id}`, { signal });
-    return DomainMapper.mapCategory(data);
-}
+export const updateProduct = (id: number, payload: VeilingproductUpdateDto, signal?: AbortSignal) =>
+    request<VeilingproductDetailDto>(`/api/Veilingproduct/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
 
-export async function updateUser(id: number, payload: GebruikerUpdateDto, signal?: AbortSignal): Promise<User> {
-    const { data } = await request<Klant_GebruikerDto>(`/api/Gebruiker/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapUser(data);
-}
-
-export async function createUser(payload: GebruikerCreateDto, signal?: AbortSignal): Promise<User> {
-    const { data } = await request<Klant_GebruikerDto>(`/api/Gebruiker`, { method: "POST", body: JSON.stringify(payload), signal });
-    return DomainMapper.mapUser(data);
-}
-
-export async function deleteUser(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Gebruiker/${id}`, { method: "DELETE", signal });
-}
-
-export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingMeester_VeilingDto>(`/api/Veiling`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapAuction(data);
-}
-
-export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapAuction(data);
-}
-
-export async function deleteAuction(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Veiling/${id}`, { method: "DELETE", signal });
-}
-
-export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<Bid> {
-    const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapBid(data);
-}
-
-export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<Bid> {
-    const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapBid(data);
-}
-
-export async function deleteBid(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Bieding/${id}`, { method: "DELETE", signal });
-}
-
-export async function createCategory(payload: CategorieCreateDto, signal?: AbortSignal): Promise<Category> {
-    const { data } = await request<CategorieDetailDto>(`/api/Categorie`, { method: "POST", body: JSON.stringify(payload), signal });
-    return DomainMapper.mapCategory(data);
-}
-
-export async function updateCategory(id: number, payload: CategorieUpdateDto, signal?: AbortSignal): Promise<Category> {
-    const { data } = await request<CategorieDetailDto>(`/api/Categorie/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapCategory(data);
-}
-
-export async function deleteCategory(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Categorie/${id}`, { method: "DELETE", signal });
-}
-
-export async function createProduct(payload: VeilingproductCreateDto, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductDetailDto>(`/api/Veilingproduct`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapProduct(data);
-}
-
-export async function updateProduct(id: number, payload: VeilingproductUpdateDto, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductDetailDto>(`/api/Veilingproduct/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapProduct(data);
-}
-
-export async function deleteProduct(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Veilingproduct/${id}`, { method: "DELETE", signal });
-}
+export const deleteProduct = (id: number, signal?: AbortSignal) =>
+    request<void>(`/api/Veilingproduct/${id}`, { method: "DELETE", signal }).then(() => undefined);

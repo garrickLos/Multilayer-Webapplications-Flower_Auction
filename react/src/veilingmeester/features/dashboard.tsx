@@ -1,52 +1,34 @@
-import { useMemo, type JSX } from "react";
+import type { JSX } from "react";
 import { useLiveStats } from "../hooks";
-import { formatDateTime } from "../utils";
+import { Section } from "../components/ui";
 
 export function DashboardMetrics(): JSX.Element {
     const { stats, loading, error, lastUpdated } = useLiveStats();
 
-    const metrics = useMemo(
-        () => [
-            { id: "users", label: "Gebruikers", value: stats?.users ?? 0, helper: "Totaal" },
-            { id: "auctions", label: "Actieve veilingen", value: stats?.activeAuctions ?? 0, helper: "Live" },
-            { id: "products", label: "Producten", value: stats?.products ?? 0, helper: "Beschikbaar" },
-            { id: "bids", label: "Biedingen", value: stats?.bids ?? 0, helper: "Laatste 24u" },
-        ],
-        [stats],
-    );
-
-    const refreshedAt = useMemo(() => formatDateTime(lastUpdated ?? null), [lastUpdated]);
-
     return (
-        <section className="card border-0 shadow-sm rounded-4 mb-4" aria-label="Dashboard overzicht">
-            <div className="card-body p-4 d-flex flex-column gap-4">
-                <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-                    <div>
-                        <p className="text-uppercase text-success-emphasis small fw-semibold mb-1">Live overzicht</p>
-                        <h2 className="h4 fw-semibold mb-1 text-success">Realtime prestaties</h2>
-                        <p className="text-muted small mb-0">Laatst bijgewerkt: {refreshedAt}</p>
-                    </div>
+        <Section title="Overzicht">
+            {loading && <div className="text-muted">Statistieken laden…</div>}
+            {error && <div className="alert alert-danger mb-0">{error}</div>}
+            {stats && (
+                <div className="row g-3">
+                    <DashboardCard label="Gebruikers" value={stats.users} />
+                    <DashboardCard label="Actieve veilingen" value={stats.activeAuctions} />
+                    <DashboardCard label="Producten" value={stats.products} />
+                    <DashboardCard label="Biedingen" value={stats.bids} />
                 </div>
+            )}
+            {lastUpdated && <small className="text-muted">Bijgewerkt: {lastUpdated.toLocaleString()}</small>}
+        </Section>
+    );
+}
 
-                <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
-                    {metrics.map((metric) => (
-                        <article key={metric.id} className="col">
-                            <div className="h-100 p-4 rounded-4 border border-success-subtle bg-white shadow-sm">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <p className="text-uppercase text-muted small mb-1">{metric.label}</p>
-                                        <div className="fs-2 fw-semibold text-success">
-                                            {loading ? "…" : metric.value}
-                                            {error && <span className="text-danger ms-2" aria-label="fout">!</span>}
-                                        </div>
-                                    </div>
-                                    <span className="badge text-success-emphasis bg-success-subtle rounded-pill">{metric.helper}</span>
-                                </div>
-                            </div>
-                        </article>
-                    ))}
-                </div>
+function DashboardCard({ label, value }: { label: string; value: number }) {
+    return (
+        <div className="col-12 col-md-3">
+            <div className="border rounded-4 p-3 bg-body-secondary h-100">
+                <div className="text-muted small">{label}</div>
+                <div className="display-6">{value}</div>
             </div>
-        </section>
+        </div>
     );
 }
