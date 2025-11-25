@@ -110,9 +110,11 @@ public class Veilingproduct
     [ForeignKey(nameof(Kwekernr))]
     public Gebruiker Gebruiker { get; set; } = null!;
 
-    public DateOnly beginDatum { get; set; }
+    [Column("beginDatum")]
+    public DateOnly BeginDatum { get; set; }
 
-    public bool status { get; set; }
+    [Column("status")]
+    public bool Status { get; set; }
 
     [Required, StringLength(200)]
     public string ImagePath { get; set; } = string.Empty;
