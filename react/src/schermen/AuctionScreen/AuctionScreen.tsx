@@ -1,6 +1,27 @@
+
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Timer } from '../AuctionScreen/RenderTimer.tsx';
+
 import '../../css/AuctionScreen.css';
 
 export default function AuctionScreen() {
+    const [aantal, setAantal] = useState(0);
+    const [huidigePrijs, setHuidigePrijs] = useState(0);
+
+    const location = useLocation();
+    const veilingItem = location.state?.veilingnr || 0;
+
+    const verwerkVerandering = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Haal de nieuwe waarde uit de input
+        const nieuweWaarde = e.target.value;
+
+        // Update de state variabele
+        setAantal(Number(nieuweWaarde));         
+    };
+
+    const totaalPrijs = (aantal * huidigePrijs).toFixed(2);
+
     return (
     <main className='Auction_Body'>
         <section>
@@ -9,7 +30,7 @@ export default function AuctionScreen() {
 
         <section>
             <h2>Actn:</h2>
-            <h3>A3-36638-132</h3>
+            <h3>VeilingNummer: {veilingItem}</h3>
         </section>
 
         <div className="Auction_Container">
@@ -43,14 +64,14 @@ export default function AuctionScreen() {
             <section className="Auction_schermAankoop">
                 <div className="Auction_schermAankoop_container">
                     <div className="Auction_klok">
-                        00:00
+                        <Timer onPrijsUpdate={setHuidigePrijs} targetVeilingNr={veilingItem}/>
                     </div>
                     <div className="huidigePrijs">
                         price:
                     </div>
                     <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal:</label>
-                    <input type="number" id="aantalkopenstuks" name="aantalkopenstuks"/>
-                    <div className="tekstVoorKopen">Je koopt x voor $y per stuk, in totaal $z.</div>
+                    <input type="number" id="aantalkopenstuks" name="aantalkopenstuks" onChange={verwerkVerandering}/>
+                    <div className="tekstVoorKopen">Je koopt {aantal} voor <Timer onPrijsUpdate={setHuidigePrijs} targetVeilingNr={veilingItem}/> per stuk, in totaal {totaalPrijs}.</div>
                     <button className="koopNu">Koop nu!</button>
                 </div>
             </section>

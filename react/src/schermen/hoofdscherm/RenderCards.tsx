@@ -41,7 +41,7 @@ export const renderCards = (items: VeilingItem[]) =>
         ))
 ); 
 
-export function AuctionCard({ imagePath, headerText, paragraafText }: CardItems) {
+export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }: CardItems) {
   const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);
   const [hasError, setHasError] = useState(false);
 
@@ -58,7 +58,9 @@ export function AuctionCard({ imagePath, headerText, paragraafText }: CardItems)
         <h3>{headerText}</h3>
         <p className='Description'>{paragraafText}</p>
       </div>
-      <NavLink to={`/Auction/`} type="button" className='auctionButton' aria-label={`Ga naar de veiling van: ${headerText}`}>go to auction</NavLink>
+      <NavLink to={`/Auction/`} state={{veilingnr: veilingnr}} 
+              type="button" className='auctionButton' 
+              aria-label={`Ga naar de veiling van: ${headerText}`}>go to auction</NavLink>
     </div>
   );
 }
