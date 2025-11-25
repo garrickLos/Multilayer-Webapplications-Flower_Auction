@@ -1,8 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { cx } from "../utils";
-import type { UiStatus, UserRole } from "../types";
+import type { StatusLabel } from "../types";
 
-/** Small helper input components used across the dashboard. */
 export function Field({ label, children }: { readonly label: string; readonly children: ReactNode }): JSX.Element {
     return (
         <label className="w-100 d-flex flex-column gap-1">
@@ -57,25 +56,20 @@ export function Input({
     );
 }
 
-export function StatusBadge({ status }: { readonly status: UiStatus }): JSX.Element {
-    const variants: Record<UiStatus, string> = {
+export function StatusBadge({ status }: { readonly status: StatusLabel }): JSX.Element {
+    const variants: Record<StatusLabel, string> = {
         active: "bg-success-subtle text-success-emphasis",
         inactive: "bg-secondary-subtle text-secondary-emphasis",
         sold: "bg-warning-subtle text-warning-emphasis",
-        deleted: "bg-danger-subtle text-danger-emphasis",
+        unknown: "bg-light text-secondary",
     };
-    const labels: Record<UiStatus, string> = {
+    const labels: Record<StatusLabel, string> = {
         active: "Actief",
         inactive: "Inactief",
         sold: "Verkocht",
-        deleted: "Geannuleerd",
+        unknown: "Onbekend",
     };
     return <span className={cx("badge rounded-pill", variants[status])}>{labels[status]}</span>;
-}
-
-export function RoleBadge({ role }: { readonly role: UserRole }): JSX.Element {
-    const variant = role === "Admin" || role === "Veilingmeester" ? "success" : role === "Kweker" ? "primary" : "secondary";
-    return <span className={`badge bg-${variant}-subtle text-${variant}-emphasis`}>{role}</span>;
 }
 
 export function Chip({ label, onRemove }: { readonly label: string; readonly onRemove?: () => void }): JSX.Element {

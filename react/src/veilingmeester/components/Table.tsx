@@ -1,7 +1,6 @@
 import { useMemo, useState, type JSX, type ReactNode } from "react";
-import { paginate, cx } from "../utils";
+import { cx, paginate } from "../utils";
 
-// Shared table with optional selection, filters and pagination.
 export type TableColumn<T> = {
     readonly key: string;
     readonly header: string;
@@ -28,6 +27,8 @@ export type TableProps<T> = {
         onToggleRow: (id: string | number) => void;
         onTogglePage: (ids: readonly (string | number)[], checked: boolean) => void;
     };
+    readonly totalCount?: number;
+    readonly serverPaginated?: boolean;
     readonly emptyMessage?: ReactNode;
 };
 
@@ -52,6 +53,8 @@ export function Table<T>({
     onPageSizeChange,
     onRowClick,
     selectable,
+    totalCount,
+    serverPaginated = false,
     emptyMessage = "Geen resultaten",
 }: TableProps<T>): JSX.Element {
     const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
@@ -68,16 +71,20 @@ export function Table<T>({
                 const bValue = column.getValue ? column.getValue(b.row) : (b.row as Record<string, unknown>)[column.key];
                 const aPrimitive = typeof aValue === "number" ? aValue : String(aValue ?? "");
                 const bPrimitive = typeof bValue === "number" ? bValue : String(bValue ?? "");
-                const comparison = typeof aPrimitive === "number" && typeof bPrimitive === "number"
-                    ? aPrimitive - bPrimitive
-                    : String(aPrimitive).localeCompare(String(bPrimitive), "nl-NL", { sensitivity: "base", numeric: true });
+                const comparison =
+                    typeof aPrimitive === "number" && typeof bPrimitive === "number"
+                        ? aPrimitive - bPrimitive
+                        : String(aPrimitive).localeCompare(String(bPrimitive), "nl-NL", { sensitivity: "base", numeric: true });
                 return comparison !== 0 ? comparison * factor : a.index - b.index;
             })
             .map((entry) => entry.row);
     }, [columns, rows, sort]);
 
-    const pageRows = useMemo(() => paginate(sortedRows, page, pageSize), [sortedRows, page, pageSize]);
-    const hasNext = page * pageSize < rows.length;
+    const pageRows = useMemo(
+        () => (serverPaginated ? sortedRows : paginate(sortedRows, page, pageSize)),
+        [page, pageSize, serverPaginated, sortedRows],
+    );
+    const hasNext = totalCount != null ? page * pageSize < totalCount : page * pageSize < rows.length;
     const selectedIds = selectable?.selectedIds ?? [];
     const pageIds = pageRows.map((row) => getRowId(row));
     const allPageSelected = selectable ? pageIds.every((id) => selectedIds.includes(id)) : false;
@@ -196,9 +203,14 @@ export function Table<T>({
                                             </td>
                                         )}
                                         {columns.map((column) => (
-                                            <td key={`${column.key}-${index}`} className={cx(column.align === "end" && "text-end", column.align === "center" && "text-center")}
+                                            <td
+                                                key={`${column.key}-${index}`}
+                                                className={cx(
+                                                    column.align === "end" && "text-end",
+                                                    column.align === "center" && "text-center",
+                                                )}
                                             >
-                                                {column.render ? column.render(row) : ((row as Record<string, ReactNode>)[column.key] ?? "")}
+                                                {column.render ? column.render(row) : (row as Record<string, ReactNode>)[column.key] ?? ""}
                                             </td>
                                         ))}
                                     </tr>
@@ -210,7 +222,10 @@ export function Table<T>({
             )}
 
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div className="text-muted small">Pagina {page}</div>
+                <div className="text-muted small">
+                    Pagina {page}
+                    {totalCount != null && ` • ${totalCount} resultaten`}
+                </div>
                 <div className="btn-group shadow-sm rounded-4 overflow-hidden">
                     <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1}>
                         Vorige
