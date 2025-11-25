@@ -46,6 +46,7 @@ public sealed class BiedingCreateDto : BiedingBaseAmountDto
     [Range(1, int.MaxValue)]
     public int GebruikerNr { get; init; }
 
+    // Bieding moet altijd aan een Veiling hangen → niet nullable
     [Range(1, int.MaxValue)]
     public int VeilingNr { get; init; }
 
@@ -63,6 +64,7 @@ public sealed class VeilingMeester_BiedingDto : BiedingBaseAmountDto
 
     public int GebruikerNr { get; init; }
 
+    // Dit kan ook int blijven; mapping int → int is netjes
     public int VeilingNr { get; init; }
 
     public int VeilingProductNr { get; init; }
@@ -113,8 +115,7 @@ public sealed class Klant_GebruikerDto : BaseGebruiker
 // Veiling DTO's
 public abstract class BaseVeilingDto
 {
-    [Required]
-    [StringLength(100)]
+    [Required, StringLength(100)]
     public string VeilingNaam { get; init; } = string.Empty;
 
     [Required]
@@ -126,7 +127,7 @@ public abstract class BaseVeilingDto
 
 public sealed class Klant_VeilingDto : BaseVeilingDto
 {
-    public int VeilingNr { get; init; }
+    public int? VeilingNr { get; init; }
 
     [StringLength(20)]
     public string Status { get; init; } = string.Empty;
@@ -149,7 +150,7 @@ public sealed class VeilingMeester_VeilingDto : BaseVeilingDto
     [StringLength(20)]
     public string Status { get; init; } = string.Empty;
 
-    public int VeilingNr { get; init; }
+    public int? VeilingNr { get; init; }
 
     public IEnumerable<VeilingProductDto> Producten { get; init; } = new List<VeilingProductDto>();
 
@@ -185,8 +186,9 @@ public sealed class VeilingproductCreateDto
     [Range(1, int.MaxValue)]
     public int CategorieNr { get; init; }
 
+    // Veilingproduct mag zonder Veiling → nullable
     [Range(1, int.MaxValue)]
-    public int VeilingNr { get; init; }
+    public int? VeilingNr { get; init; }
 
     [Required, StringLength(200)]
     public string Plaats { get; init; } = string.Empty;
@@ -225,7 +227,7 @@ public sealed class VeilingproductUpdateDto
     public int CategorieNr { get; init; }
 
     [Range(1, int.MaxValue)]
-    public int VeilingNr { get; init; }
+    public int? VeilingNr { get; init; }
 
     [Range(1, int.MaxValue)]
     public int Kwekernr { get; init; }
@@ -255,7 +257,7 @@ public sealed class VeilingproductListDto
     public int Minimumprijs { get; init; }
     public string Plaats { get; init; } = string.Empty;
     public string? Categorie { get; init; }
-    public int VeilingNr { get; init; }
+    public int? VeilingNr { get; init; }
     public int Kwekernr { get; init; }
     public DateOnly BeginDatum { get; init; }
     public bool Status { get; init; }
@@ -281,7 +283,7 @@ public sealed class VeilingproductDetailDto
     public int Minimumprijs { get; init; }
     public string Plaats { get; init; } = string.Empty;
     public string? Categorie { get; init; }
-    public int VeilingNr { get; init; }
+    public int? VeilingNr { get; init; }
     public int Kwekernr { get; init; }
     public DateOnly BeginDatum { get; init; }
     public bool Status { get; init; }

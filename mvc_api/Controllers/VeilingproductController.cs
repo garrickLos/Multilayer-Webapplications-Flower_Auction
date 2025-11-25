@@ -94,8 +94,11 @@ public class VeilingproductController : ControllerBase
         if (!await ReferenceExists(_db.Categorieen, c => c.CategorieNr == dto.CategorieNr, ct))
             return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
-        if (!await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
+        if (dto.VeilingNr.HasValue &&
+            !await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
+        {
             return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
+        }
 
         if (!await ReferenceExists(_db.Gebruikers, g => g.GebruikerNr == dto.Kwekernr, ct))
             return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
@@ -143,9 +146,12 @@ public class VeilingproductController : ControllerBase
         if (!await ReferenceExists(_db.Categorieen, c => c.CategorieNr == dto.CategorieNr, ct))
             return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
-        if (!await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
+        if (dto.VeilingNr.HasValue &&
+            !await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
+        {
             return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
-
+        }
+        
         if (!await ReferenceExists(_db.Gebruikers, g => g.GebruikerNr == dto.Kwekernr, ct))
             return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
 

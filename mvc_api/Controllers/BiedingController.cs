@@ -172,14 +172,14 @@ public class BiedingController : ControllerBase
 
 public static class BiedingExtensions
 {
-    public static IQueryable<VeilingMeester_BiedingDto> ProjectToVeilingMeester(this IQueryable<Bieding> query) =>
-        query.Select(b => new VeilingMeester_BiedingDto
-        {
-            BiedingNr        = b.BiedNr,
-            VeilingNr        = b.VeilingNr,
-            VeilingProductNr = b.VeilingproductNr,
-            AantalStuks      = b.AantalStuks,
-            GebruikerNr      = b.GebruikerNr,
-            BedragPerFust    = b.BedragPerFust
-        });
+public static IQueryable<VeilingMeester_BiedingDto> ProjectToVeilingMeester(this IQueryable<Bieding> query) =>
+    query.Select(b => new VeilingMeester_BiedingDto
+    {
+        BiedingNr        = b.BiedNr,
+        VeilingNr        = b.VeilingNr,
+        VeilingProductNr = b.VeilingproductNr,
+        AantalStuks      = b.AantalStuks,
+        GebruikerNr      = b.GebruikerNr,
+        BedragPerFust    = b.BedragPerFust
+    });
 }

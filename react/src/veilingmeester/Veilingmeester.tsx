@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 import { DashboardMetrics } from "./features/dashboard";
 import { AuctionsTab, LinkProductsModal, NewAuctionModal, type AuctionFormState } from "./features/auctions";
 import { ProductsTab } from "./features/products";

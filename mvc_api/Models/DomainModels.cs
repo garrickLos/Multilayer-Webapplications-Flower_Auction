@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -95,7 +95,7 @@ public class Veilingproduct
     public int CategorieNr { get; set; }
 
     [ForeignKey(nameof(Veiling))]
-    public int VeilingNr { get; set; }
+    public int? VeilingNr { get; set; }
 
     [Required, StringLength(200)]
     public string Plaats { get; set; } = string.Empty;

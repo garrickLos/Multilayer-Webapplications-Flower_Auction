@@ -37,10 +37,11 @@ public class AppDbContext : DbContext
             .HasForeignKey(vp => vp.CategorieNr)
             .OnDelete(DeleteBehavior.Restrict);
 
-        b.Entity<Veiling>()
-            .HasMany(v => v.Veilingproducten)
-            .WithOne(p => p.Veiling)
-            .HasForeignKey(p => p.VeilingNr)
+        b.Entity<Veilingproduct>()
+            .HasOne(vp => vp.Veiling)
+            .WithMany(v => v.Veilingproducten)
+            .HasForeignKey(vp => vp.VeilingNr)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexen

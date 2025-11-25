@@ -74,7 +74,7 @@ namespace mvc_api.Migrations
                     VoorraadBloemen = table.Column<int>(type: "INTEGER", nullable: false),
                     Startprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
                     CategorieNr = table.Column<int>(type: "INTEGER", nullable: false),
-                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: true),
                     Plaats = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Minimumprijs = table.Column<int>(type: "INTEGER", precision: 18, scale: 2, nullable: false),
                     Kwekernr = table.Column<int>(type: "INTEGER", nullable: false),

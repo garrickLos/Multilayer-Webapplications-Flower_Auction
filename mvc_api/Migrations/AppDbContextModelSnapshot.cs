@@ -287,7 +287,7 @@ namespace mvc_api.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("status");
 
-                    b.Property<int>("VeilingNr")
+                    b.Property<int?>("VeilingNr")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("VoorraadBloemen")
@@ -384,8 +384,7 @@ namespace mvc_api.Migrations
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Categorie");
 

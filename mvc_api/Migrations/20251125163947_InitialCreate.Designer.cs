@@ -11,7 +11,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251125161049_InitialCreate")]
+    [Migration("20251125163947_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -290,7 +290,7 @@ namespace mvc_api.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("status");
 
-                    b.Property<int>("VeilingNr")
+                    b.Property<int?>("VeilingNr")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("VoorraadBloemen")
@@ -387,8 +387,7 @@ namespace mvc_api.Migrations
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Categorie");
 
