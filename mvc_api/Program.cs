@@ -1,3 +1,10 @@
+// cd mvc_api
+
+// dotnet ef database drop --force
+
+// dotnet ef migrations add InitialCreate
+// dotnet ef database update
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using mvc_api.Data;
