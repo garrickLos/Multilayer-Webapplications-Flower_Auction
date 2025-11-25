@@ -145,7 +145,7 @@ export const listUsers = (
 export const getUser = (id: number, signal?: AbortSignal) => request<Klant_GebruikerDto>(`/api/Gebruiker/${id}`, { signal }).then((r) => r.data);
 
 export const createUser = (payload: GebruikerCreateDto, signal?: AbortSignal) =>
-    request<Klant_GebruikerDto>("/api/Gebruiker", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
+    request<GebruikerCreateDto>("/api/Gebruiker", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
 
 export const updateUser = (id: number, payload: GebruikerUpdateDto, signal?: AbortSignal) =>
     request<Klant_GebruikerDto>(`/api/Gebruiker/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
@@ -169,10 +169,10 @@ export const listAuctions = (
 export const getAuction = (id: number, signal?: AbortSignal) => request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, { signal }).then((r) => r.data);
 
 export const createAuction = (payload: VeilingCreateDto, signal?: AbortSignal) =>
-    request<VeilingMeester_VeilingDto>("/api/Veiling", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
+    request<VeilingCreateDto>("/api/Veiling", { method: "POST", body: JSON.stringify(payload), signal }).then((r) => r.data);
 
 export const updateAuction = (id: number, payload: VeilingUpdateDto, signal?: AbortSignal) =>
-    request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
+    request<VeilingUpdateDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal }).then((r) => r.data);
 
 export const deleteAuction = (id: number, signal?: AbortSignal) =>
     request<void>(`/api/Veiling/${id}`, { method: "DELETE", signal }).then(() => undefined);

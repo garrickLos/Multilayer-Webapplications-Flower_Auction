@@ -44,7 +44,7 @@ export interface CategorieDetailDto {
 }
 
 // Gebruiker DTO's
-export interface GebruikerBaseDto {
+interface GebruikerBaseDto {
     bedrijfsNaam: string;
     email: string;
     wachtwoord: string;

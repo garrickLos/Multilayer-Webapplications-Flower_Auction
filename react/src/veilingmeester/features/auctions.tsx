@@ -60,14 +60,10 @@ export function AuctionsTab(): JSX.Element {
 
     const handleCreate = async () => {
         try {
-            const created = await createAuction(form);
+            await createAuction(form);
             setSuccess("Veiling aangemaakt");
-            setData((prev) =>
-                prev
-                    ? { ...prev, items: [created, ...prev.items], totalCount: (prev.totalCount ?? 0) + 1 }
-                    : { items: [created], page: 1, pageSize: 10, hasNext: false },
-            );
             resetForm();
+            await load();
         } catch (err) {
             setError((err as ApiError).message ?? "Veiling kon niet worden aangemaakt");
         }
@@ -81,7 +77,8 @@ export function AuctionsTab(): JSX.Element {
                 begintijd: form.begintijd,
                 eindtijd: form.eindtijd,
             };
-            const updated = await updateAuction(selected.veilingNr, payload);
+            await updateAuction(selected.veilingNr, payload);
+            const updated: VeilingMeester_VeilingDto = { ...selected, ...payload };
             setSelected(updated);
             setData((prev) => (prev ? { ...prev, items: prev.items.map((item) => (item.veilingNr === updated.veilingNr ? updated : item)) } : prev));
             setSuccess("Veiling bijgewerkt");

@@ -3,19 +3,17 @@ import { createUser, deleteUser, getUser, listUsers, type ApiError, updateUser }
 import { Modal } from "../Modal";
 import { Section, InputField, FormRow, ErrorNotice, SuccessNotice } from "../components/ui";
 import { Table, type TableColumn } from "../components/Table";
-import type { Klant_GebruikerDto, PaginatedResult } from "../types";
+import type { GebruikerCreateDto, GebruikerUpdateDto, Klant_GebruikerDto, PaginatedResult } from "../types";
 
-const defaultUser: Klant_GebruikerDto = {
+const defaultUser: GebruikerCreateDto = {
     bedrijfsNaam: "",
     email: "",
     wachtwoord: "",
     soort: "",
     laatstIngelogd: null,
-    kvk: "",
-    straatAdres: "",
-    postcode: "",
-    gebruikerNr: undefined,
-    biedingen: [],
+    kvk: null,
+    straatAdres: null,
+    postcode: null,
 };
 
 export function UsersTab(): JSX.Element {
@@ -24,7 +22,7 @@ export function UsersTab(): JSX.Element {
     const [pageSize, setPageSize] = useState(10);
     const [data, setData] = useState<PaginatedResult<Klant_GebruikerDto> | null>(null);
     const [selected, setSelected] = useState<Klant_GebruikerDto | null>(null);
-    const [form, setForm] = useState<Klant_GebruikerDto>(defaultUser);
+    const [form, setForm] = useState<GebruikerCreateDto>(defaultUser);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
@@ -43,19 +41,17 @@ export function UsersTab(): JSX.Element {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, page, pageSize]);
 
-    const onChange = (field: keyof Klant_GebruikerDto) => (event: ChangeEvent<HTMLInputElement>) => {
+    const onChange = (field: keyof GebruikerCreateDto) => (event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
     const handleCreate = async () => {
         try {
-            const created = await createUser(form);
+            await createUser(form);
             setSuccess("Gebruiker aangemaakt");
-            setData((prev) =>
-                prev ? { ...prev, items: [created, ...(prev.items ?? [])], totalCount: (prev.totalCount ?? 0) + 1 } : { items: [created], page: 1, pageSize, hasNext: false },
-            );
             setForm(defaultUser);
+            await load();
         } catch (err) {
             setError((err as ApiError).message ?? "Gebruiker kon niet worden aangemaakt");
         }
@@ -66,7 +62,8 @@ export function UsersTab(): JSX.Element {
         try {
             const detail = await getUser(id);
             setSelected(detail);
-            setForm(detail);
+            const { bedrijfsNaam, email, wachtwoord, soort, laatstIngelogd, kvk, straatAdres, postcode } = detail;
+            setForm({ bedrijfsNaam, email, wachtwoord, soort, laatstIngelogd, kvk, straatAdres, postcode });
         } catch (err) {
             setError((err as ApiError).message ?? "Kan gebruiker niet laden");
         }
@@ -75,7 +72,17 @@ export function UsersTab(): JSX.Element {
     const handleUpdate = async () => {
         if (!selected?.gebruikerNr) return;
         try {
-            const updated = await updateUser(selected.gebruikerNr, form);
+            const payload: GebruikerUpdateDto = {
+                bedrijfsNaam: form.bedrijfsNaam,
+                email: form.email,
+                wachtwoord: form.wachtwoord,
+                soort: form.soort,
+                laatstIngelogd: form.laatstIngelogd,
+                kvk: form.kvk,
+                straatAdres: form.straatAdres,
+                postcode: form.postcode,
+            };
+            const updated = await updateUser(selected.gebruikerNr, payload);
             setSelected(updated);
             setData((prev) =>
                 prev ? { ...prev, items: prev.items.map((user) => (user.gebruikerNr === updated.gebruikerNr ? updated : user)) } : prev,
