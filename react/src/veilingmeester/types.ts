@@ -141,77 +141,78 @@ export const toRole = (value?: string | null): UserRole => {
 export class DomainMapper {
     static mapBid(dto: VeilingMeester_BiedingDto): Bid {
         return {
-            id: dto.BiedingNr,
-            auctionId: dto.VeilingNr,
-            productId: dto.VeilingProductNr,
-            userId: dto.GebruikerNr,
-            amount: dto.BedragPerFust,
-            quantity: dto.AantalStuks,
+            id: dto.biedingNr,
+            auctionId: dto.veilingNr,
+            productId: dto.veilingProductNr,
+            userId: dto.gebruikerNr,
+            amount: dto.bedragPerFust ?? 0,
+            quantity: dto.aantalStuks ?? 0,
             status: "active",
         } satisfies Bid;
     }
 
     static mapProduct(dto: VeilingproductListDto | VeilingproductDetailDto | VeilingProductDto): Product {
-        const linkedAuctionId = "VeilingNr" in dto ? dto.VeilingNr ?? undefined : undefined;
-        const status: ProductStatus = dto.Voorraad <= 0 ? "Uitverkocht" : linkedAuctionId ? "Gekoppeld" : "Beschikbaar";
+        const linkedAuctionId = "veilingNr" in dto ? dto.veilingNr ?? undefined : undefined;
+        const voorraad = "voorraad" in dto ? dto.voorraad : 0;
+        const status: ProductStatus = voorraad <= 0 ? "Uitverkocht" : linkedAuctionId ? "Gekoppeld" : "Beschikbaar";
 
         return {
-            id: dto.VeilingProductNr,
-            name: dto.Naam ?? "Onbekend product",
+            id: dto.veilingProductNr,
+            name: dto.naam ?? "Onbekend product",
             status,
-            category: "Categorie" in dto ? dto.Categorie ?? "Onbekend" : "Onbekend",
-            startPrice: dto.Startprijs,
-            stock: dto.Voorraad,
-            fust: "Fust" in dto && dto.Fust != null ? dto.Fust : 0,
+            category: "categorie" in dto ? dto.categorie ?? "Onbekend" : "Onbekend",
+            startPrice: "startprijs" in dto ? dto.startprijs : 0,
+            stock: voorraad,
+            fust: "fust" in dto && dto.fust != null ? dto.fust : 0,
             veilingNr: linkedAuctionId,
             linkedAuctionId,
-            growerId: "Kwekernr" in dto ? dto.Kwekernr : undefined,
-            imagePath: dto.ImagePath,
-            minimumPrice: "Minimumprijs" in dto ? dto.Minimumprijs : undefined,
-            location: "Plaats" in dto ? dto.Plaats : undefined,
-            active: "Status" in dto ? dto.Status : undefined,
-            bids: "Biedingen" in dto ? dto.Biedingen?.map(DomainMapper.mapBidSummary) : undefined,
+            growerId: "kwekernr" in dto ? dto.kwekernr : undefined,
+            imagePath: dto.imagePath ?? undefined,
+            minimumPrice: "minimumprijs" in dto ? dto.minimumprijs : undefined,
+            location: "plaats" in dto ? dto.plaats ?? undefined : undefined,
+            active: "status" in dto ? dto.status : undefined,
+            bids: "biedingen" in dto ? dto.biedingen?.map(DomainMapper.mapBidSummary) : undefined,
         } satisfies Product;
     }
 
     static mapBidSummary(dto: VeilingproductBidListItem): BidSummary {
         return {
-            id: dto.BiedNr,
-            amount: dto.BedragPerFust,
-            quantity: dto.AantalStuks,
-            userId: dto.GebruikerNr,
+            id: dto.biedNr,
+            amount: dto.bedragPerFust,
+            quantity: dto.aantalStuks,
+            userId: dto.gebruikerNr,
         } satisfies BidSummary;
     }
 
     static mapUser(dto: Klant_GebruikerDto): User {
         return {
-            id: dto.GebruikerNr,
-            name: dto.BedrijfsNaam || dto.Email,
-            email: dto.Email,
-            role: toRole(dto.Soort),
+            id: dto.gebruikerNr,
+            name: dto.bedrijfsNaam || dto.email,
+            email: dto.email,
+            role: toRole(dto.soort),
             status: "active",
-            lastLogin: dto.LaatstIngelogd,
-            kvk: dto.Kvk ?? undefined,
-            address: dto.StraatAdres ? `${dto.StraatAdres}${dto.Postcode ? `, ${dto.Postcode}` : ""}` : undefined,
-            bids: dto.Biedingen?.map(DomainMapper.mapBid),
+            lastLogin: dto.laatstIngelogd,
+            kvk: dto.kvk ?? undefined,
+            address: dto.straatAdres ? `${dto.straatAdres}${dto.postcode ? `, ${dto.postcode}` : ""}` : undefined,
+            bids: dto.biedingen?.map(DomainMapper.mapBid),
         } satisfies User;
     }
 
     static mapAuction(dto: VeilingMeester_VeilingDto): Auction {
-        const products = dto.Producten?.map(DomainMapper.mapProduct);
-        const bids = dto.Biedingen?.map(DomainMapper.mapBid);
+        const products = dto.producten?.map(DomainMapper.mapProduct);
+        const bids = dto.biedingen?.map(DomainMapper.mapBid);
 
-        const startPrices = products?.map((product) => product.startPrice) ?? dto.Producten?.map((product) => product.Startprijs);
+        const startPrices = products?.map((product) => product.startPrice) ?? dto.producten?.map((product) => product.startprijs);
         const minPrice = startPrices && startPrices.length > 0 ? Math.min(...startPrices) : undefined;
         const maxPrice = startPrices && startPrices.length > 0 ? Math.max(...startPrices) : undefined;
 
         return {
-            id: dto.VeilingNr ?? 0,
-            title: dto.VeilingNaam,
-            startDate: dto.Begintijd,
-            endDate: dto.Eindtijd,
-            status: toUiStatus(dto.Status),
-            rawStatus: dto.Status,
+            id: dto.veilingNr ?? 0,
+            title: dto.veilingNaam,
+            startDate: dto.begintijd,
+            endDate: dto.eindtijd,
+            status: toUiStatus(dto.status),
+            rawStatus: dto.status ?? undefined,
             minPrice,
             maxPrice,
             linkedProductIds: products?.map((product) => product.id),
@@ -221,7 +222,7 @@ export class DomainMapper {
     }
 
     static mapCategory(dto: CategorieDetailDto | CategorieListDto): Category {
-        return { id: dto.CategorieNr, name: dto.Naam } satisfies Category;
+        return { id: dto.categorieNr, name: dto.naam ?? "" } satisfies Category;
     }
 }
 
