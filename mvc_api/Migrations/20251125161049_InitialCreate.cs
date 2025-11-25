@@ -63,34 +63,6 @@ namespace mvc_api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Bieding",
-                columns: table => new
-                {
-                    BiedNr = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    BedragPerFust = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
-                    AantalStuks = table.Column<int>(type: "INTEGER", nullable: false),
-                    GebruikerNr = table.Column<int>(type: "INTEGER", nullable: false),
-                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Bieding", x => x.BiedNr);
-                    table.ForeignKey(
-                        name: "FK_Bieding_Gebruiker_GebruikerNr",
-                        column: x => x.GebruikerNr,
-                        principalTable: "Gebruiker",
-                        principalColumn: "GebruikerNr",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Bieding_Veiling_VeilingNr",
-                        column: x => x.VeilingNr,
-                        principalTable: "Veiling",
-                        principalColumn: "VeilingNr",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Veilingproduct",
                 columns: table => new
                 {
@@ -104,9 +76,9 @@ namespace mvc_api.Migrations
                     CategorieNr = table.Column<int>(type: "INTEGER", nullable: false),
                     VeilingNr = table.Column<int>(type: "INTEGER", nullable: false),
                     Plaats = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Minimumprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    Minimumprijs = table.Column<int>(type: "INTEGER", precision: 18, scale: 2, nullable: false),
                     Kwekernr = table.Column<int>(type: "INTEGER", nullable: false),
-                    beginDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    beginDatum = table.Column<DateOnly>(type: "TEXT", nullable: false),
                     status = table.Column<bool>(type: "INTEGER", nullable: false),
                     ImagePath = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false)
                 },
@@ -130,6 +102,41 @@ namespace mvc_api.Migrations
                         column: x => x.VeilingNr,
                         principalTable: "Veiling",
                         principalColumn: "VeilingNr",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Bieding",
+                columns: table => new
+                {
+                    BiedNr = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    BedragPerFust = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    AantalStuks = table.Column<int>(type: "INTEGER", nullable: false),
+                    GebruikerNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    VeilingproductNr = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bieding", x => x.BiedNr);
+                    table.ForeignKey(
+                        name: "FK_Bieding_Gebruiker_GebruikerNr",
+                        column: x => x.GebruikerNr,
+                        principalTable: "Gebruiker",
+                        principalColumn: "GebruikerNr",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Bieding_Veiling_VeilingNr",
+                        column: x => x.VeilingNr,
+                        principalTable: "Veiling",
+                        principalColumn: "VeilingNr",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Bieding_Veilingproduct_VeilingproductNr",
+                        column: x => x.VeilingproductNr,
+                        principalTable: "Veilingproduct",
+                        principalColumn: "VeilingProductNr",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -165,21 +172,21 @@ namespace mvc_api.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Bieding",
-                columns: new[] { "BiedNr", "AantalStuks", "BedragPerFust", "GebruikerNr", "VeilingNr" },
+                table: "Veilingproduct",
+                columns: new[] { "VeilingProductNr", "AantalFusten", "beginDatum", "CategorieNr", "GeplaatstDatum", "ImagePath", "Kwekernr", "Minimumprijs", "Naam", "Plaats", "Startprijs", "status", "VeilingNr", "VoorraadBloemen" },
                 values: new object[,]
                 {
-                    { 1001, 5, 13.50m, 2, 201 },
-                    { 1002, 3, 21.00m, 2, 202 }
+                    { 101, 10, new DateOnly(1, 1, 1), 1, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp", 1, 10, "Tulp Mix", " Aalsmeer", 12m, false, 201, 500 },
+                    { 102, 10, new DateOnly(1, 1, 1), 2, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp", 1, 15, "Rode Roos", "Eelde", 20m, false, 202, 300 }
                 });
 
             migrationBuilder.InsertData(
-                table: "Veilingproduct",
-                columns: new[] { "VeilingProductNr", "AantalFusten", "CategorieNr", "GeplaatstDatum", "ImagePath", "Kwekernr", "Minimumprijs", "Naam", "Plaats", "Startprijs", "VeilingNr", "VoorraadBloemen", "beginDatum", "status" },
+                table: "Bieding",
+                columns: new[] { "BiedNr", "AantalStuks", "BedragPerFust", "GebruikerNr", "VeilingNr", "VeilingproductNr" },
                 values: new object[,]
                 {
-                    { 101, 10, 1, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp", 1, 10m, "Tulp Mix", " Aalsmeer", 12m, 201, 500, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), false },
-                    { 102, 10, 2, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp", 1, 15m, "Rode Roos", "Eelde", 20m, 202, 300, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), false }
+                    { 1001, 5, 13.50m, 2, 201, 101 },
+                    { 1002, 3, 21.00m, 2, 202, 102 }
                 });
 
             migrationBuilder.CreateIndex(
@@ -191,6 +198,11 @@ namespace mvc_api.Migrations
                 name: "IX_Bieding_VeilingNr",
                 table: "Bieding",
                 column: "VeilingNr");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bieding_VeilingproductNr",
+                table: "Bieding",
+                column: "VeilingproductNr");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Gebruiker_Email",

@@ -57,7 +57,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 13.50m,
                             GebruikerNr = 2,
                             VeilingNr = 201,
-                            VeilingproductNr = 0
+                            VeilingproductNr = 101
                         },
                         new
                         {
@@ -66,7 +66,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 21.00m,
                             GebruikerNr = 2,
                             VeilingNr = 202,
-                            VeilingproductNr = 0
+                            VeilingproductNr = 102
                         });
                 });
 
@@ -247,6 +247,10 @@ namespace mvc_api.Migrations
                     b.Property<int>("AantalFusten")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateOnly>("BeginDatum")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("beginDatum");
+
                     b.Property<int>("CategorieNr")
                         .HasColumnType("INTEGER");
 
@@ -279,16 +283,14 @@ namespace mvc_api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("Status")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("status");
+
                     b.Property<int>("VeilingNr")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("VoorraadBloemen")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateOnly>("beginDatum")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("status")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("VeilingProductNr");
@@ -306,6 +308,7 @@ namespace mvc_api.Migrations
                         {
                             VeilingProductNr = 101,
                             AantalFusten = 10,
+                            BeginDatum = new DateOnly(1, 1, 1),
                             CategorieNr = 1,
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             ImagePath = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp",
@@ -314,15 +317,15 @@ namespace mvc_api.Migrations
                             Naam = "Tulp Mix",
                             Plaats = " Aalsmeer",
                             Startprijs = 12m,
+                            Status = false,
                             VeilingNr = 201,
-                            VoorraadBloemen = 500,
-                            beginDatum = new DateOnly(1, 1, 1),
-                            status = false
+                            VoorraadBloemen = 500
                         },
                         new
                         {
                             VeilingProductNr = 102,
                             AantalFusten = 10,
+                            BeginDatum = new DateOnly(1, 1, 1),
                             CategorieNr = 2,
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             ImagePath = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp",
@@ -331,10 +334,9 @@ namespace mvc_api.Migrations
                             Naam = "Rode Roos",
                             Plaats = "Eelde",
                             Startprijs = 20m,
+                            Status = false,
                             VeilingNr = 202,
-                            VoorraadBloemen = 300,
-                            beginDatum = new DateOnly(1, 1, 1),
-                            status = false
+                            VoorraadBloemen = 300
                         });
                 });
 

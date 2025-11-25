@@ -157,7 +157,8 @@ public class AppDbContext : DbContext
                 BedragPerFust = 13.50m,
                 AantalStuks   = 5,
                 GebruikerNr   = 2,
-                VeilingNr     = 201
+                VeilingNr     = 201,
+                VeilingproductNr = 101
             },
             new Bieding
             {
@@ -165,7 +166,9 @@ public class AppDbContext : DbContext
                 BedragPerFust = 21.00m,
                 AantalStuks   = 3,
                 GebruikerNr   = 2,
-                VeilingNr     = 202
+                VeilingNr     = 202,
+                VeilingproductNr = 102
+
             }
         );
     }
