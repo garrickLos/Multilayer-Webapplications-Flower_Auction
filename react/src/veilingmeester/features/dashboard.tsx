@@ -10,12 +10,11 @@ export function DashboardMetrics(): JSX.Element {
             { id: "users", label: "Gebruikers", value: stats?.users ?? 0, helper: "Totaal" },
             { id: "auctions", label: "Actieve veilingen", value: stats?.activeAuctions ?? 0, helper: "Live" },
             { id: "products", label: "Producten", value: stats?.products ?? 0, helper: "Beschikbaar" },
-            { id: "bids", label: "Biedingen", value: stats?.bids ?? 0, helper: "Laatste 24u" },
         ],
         [stats],
     );
 
-    const refreshedAt = useMemo(() => formatDateTime(lastUpdated ?? null), [lastUpdated]);
+    const refreshedAt = useMemo(() => formatDateTime(lastUpdated?.toISOString()), [lastUpdated]);
 
     return (
         <section className="card border-0 shadow-sm rounded-4 mb-4" aria-label="Dashboard overzicht">
@@ -28,7 +27,7 @@ export function DashboardMetrics(): JSX.Element {
                     </div>
                 </div>
 
-                <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
+                <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
                     {metrics.map((metric) => (
                         <article key={metric.id} className="col">
                             <div className="h-100 p-4 rounded-4 border border-success-subtle bg-white shadow-sm">

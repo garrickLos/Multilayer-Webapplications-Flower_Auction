@@ -1,380 +1,236 @@
-import { useMemo, useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
+import { createGebruiker, deleteGebruiker, listGebruikers, updateGebruiker } from "../api";
 import { Modal } from "../Modal";
 import { Table, type TableColumn } from "../components/Table";
-import { Chip, EmptyState, Field, Input, RoleBadge, Select, StatusBadge } from "../components/ui";
+import { EmptyState, Field, Input } from "../components/ui";
 import { appConfig } from "../config";
-import type { Bid, Product, Status, User, UserRole } from "../types";
-import { roleLabels } from "../types";
-import { filterRows, formatCurrency, formatDateTime } from "../utils";
+import type { GebruikerCreateDto, GebruikerUpdateDto, Klant_GebruikerDto } from "../types";
+import { formatDateTime } from "../utils";
 
-// User listing with simple modals.
-const statusOptions: readonly { value: Status | "all"; label: string }[] = [
-    { value: "all", label: "Alle" },
-    { value: "active", label: "Actief" },
-    { value: "inactive", label: "Inactief" },
-];
+const { table: tablePageSizeOptions } = appConfig.pagination;
 
-const roleOptions: readonly { value: UserRole | "all"; label: string }[] = [
-    { value: "all", label: "Alle rollen" },
-    { value: "Koper", label: "Koper" },
-    { value: "Kweker", label: "Kweker" },
-    { value: "Veilingmeester", label: "Veilingmeester" },
-    { value: "Admin", label: "Admin" },
-];
-const { table: tablePageSizeOptions, modal: modalPageSizeOptions } = appConfig.pagination;
-
-type UserFilters = { status: Status | "all"; role: UserRole | "all" };
-
-export type UsersTabProps = {
-    readonly users: readonly User[];
-    readonly bids: readonly Bid[];
-    readonly onEditUser: (user: User) => void;
-    readonly onViewBids: (userId: number) => void;
-    readonly onViewProducts: (userId: number) => void;
+const emptyForm: GebruikerCreateDto = {
+    BedrijfsNaam: "",
+    Email: "",
+    Wachtwoord: "",
+    Soort: "",
+    LaatstIngelogd: undefined,
+    Kvk: "",
+    StraatAdres: "",
+    Postcode: "",
 };
 
-export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
-    const [search, setSearch] = useState("");
-    const [filters, setFilters] = useState<UserFilters>({ status: "all", role: "all" });
+export function UsersTab(): JSX.Element {
+    const [rows, setRows] = useState<Klant_GebruikerDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
+    const [total, setTotal] = useState<number | undefined>();
+    const [search, setSearch] = useState("");
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [modalState, setModalState] = useState<{ mode: "create" | "edit"; user?: Klant_GebruikerDto } | null>(null);
 
-    const filteredRows = useMemo(
-        () =>
-            filterRows(users, search, filters, (row, term, currentFilters) => {
-                const matchesSearch = !term || row.name.toLowerCase().includes(term) || row.email.toLowerCase().includes(term);
-                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
-                const matchesRole = currentFilters.role === "all" || row.role === currentFilters.role;
-                return matchesSearch && matchesStatus && matchesRole;
-            }),
-        [filters, search, users],
-    );
+    useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const result = await listGebruikers({ page, pageSize, q: search || undefined, signal: controller.signal });
+                setRows(result.items);
+                setTotal(result.totalCount);
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") return;
+                setError((err as { message?: string }).message ?? "Kon gebruikers niet laden");
+            } finally {
+                setLoading(false);
+            }
+        };
+        void load();
+        return () => controller.abort();
+    }, [page, pageSize, refreshKey, search]);
 
-    const columns: TableColumn<User>[] = [
-        { key: "name", header: "Naam", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
-        { key: "email", header: "E-mail", sortable: true, render: (row) => row.email, getValue: (row) => row.email },
-        { key: "role", header: "Rol", sortable: true, render: (row) => <RoleBadge role={row.role} />, getValue: (row) => row.role },
-        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+    const columns: TableColumn<Klant_GebruikerDto>[] = [
+        { key: "GebruikerNr", header: "#", render: (row) => row.GebruikerNr },
+        { key: "BedrijfsNaam", header: "Bedrijfsnaam", sortable: true },
+        { key: "Email", header: "Email" },
+        { key: "Soort", header: "Soort" },
+        { key: "Kvk", header: "KVK", render: (row) => row.Kvk ?? "—" },
+        { key: "LaatstIngelogd", header: "Laatst ingelogd", render: (row) => formatDateTime(row.LaatstIngelogd) },
+        { key: "Biedingen", header: "Biedingen", render: (row) => row.Biedingen?.length ?? 0 },
         {
             key: "actions",
             header: "Acties",
             render: (row) => (
-                <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onEditUser(row)}>
-                        Bewerk
+                <div className="d-flex gap-2 justify-content-end">
+                    <button type="button" className="btn btn-outline-success btn-sm" onClick={() => setModalState({ mode: "edit", user: row })}>
+                        Bewerken
                     </button>
-                    {row.role === "Koper" && (
-                        <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewBids(row.id)}>
-                            Biedingen
-                        </button>
-                    )}
-                    {row.role === "Kweker" && (
-                        <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewProducts(row.id)}>
-                            Producten
-                        </button>
-                    )}
+                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleDelete(row.GebruikerNr)}>
+                        Verwijderen
+                    </button>
                 </div>
             ),
         },
     ];
 
-    const activeFilters = [
-        filters.status !== "all" && `Status: ${filters.status}`,
-        filters.role !== "all" && `Rol: ${roleLabels[filters.role]}`,
-        search && `Zoek: ${search}`,
-    ].filter(Boolean) as string[];
-
-    return (
-        <section className="d-flex flex-column gap-3" aria-label="Gebruikers">
-            <div className="d-flex flex-wrap align-items-center gap-2">
-                {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
-                {activeFilters.map((label) => (
-                    <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", role: "all" })} />
-                ))}
-            </div>
-
-            <div className="row g-3">
-                <div className="col-12 col-lg-4">
-                    <label className="w-100 form-label text-success-emphasis fw-semibold small text-uppercase" htmlFor="user-search">
-                        Zoeken
-                    </label>
-                    <div className="input-group">
-                        <span className="input-group-text bg-white text-success-emphasis border-success-subtle">
-                            <i className="bi bi-search" aria-hidden="true" />
-                        </span>
-                        <input
-                            id="user-search"
-                            type="search"
-                            className="form-control border-success-subtle"
-                            value={search}
-                            placeholder="Naam of e-mail"
-                            onChange={(event) => setSearch(event.target.value)}
-                        />
-                    </div>
-                </div>
-                <div className="col-12 col-lg-3">
-                    <Field label="Status">
-                        <Select
-                            value={filters.status}
-                            options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
-                            onChange={(value) => setFilters((prev) => ({ ...prev, status: value as UserFilters["status"] }))}
-                        />
-                    </Field>
-                </div>
-                <div className="col-12 col-lg-3">
-                    <Field label="Rol">
-                        <Select
-                            value={filters.role}
-                            options={roleOptions.map((option) => ({ value: option.value, label: option.label }))}
-                            onChange={(value) => setFilters((prev) => ({ ...prev, role: value as UserFilters["role"] }))}
-                        />
-                    </Field>
-                </div>
-                <div className="col-12 col-lg-2 d-flex align-items-end">
-                    <button
-                        type="button"
-                        className="btn btn-outline-success w-100"
-                        onClick={() => {
-                            setSearch("");
-                            setFilters({ status: "all", role: "all" });
-                            setPage(1);
-                        }}
-                    >
-                        Reset
-                    </button>
-                </div>
-            </div>
-
-            <Table
-                columns={columns}
-                rows={filteredRows}
-                getRowId={(row) => row.id}
-                page={page}
-                pageSize={pageSize}
-                pageSizeOptions={tablePageSizeOptions}
-                onPageChange={setPage}
-                onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setPage(1);
-                }}
-                emptyMessage={<EmptyState message="Geen gebruikers gevonden." />}
-            />
-        </section>
-    );
-}
-
-type UserFormState = { name: string; email: string; role: UserRole; status: Status; password: string };
-
-type UserModalProps = {
-    readonly user: User;
-    readonly onClose: () => void;
-    readonly onSave: (value: UserFormState) => Promise<void> | void;
-};
-
-export function EditUserModal({ user, onClose, onSave }: UserModalProps): JSX.Element {
-    const [draft, setDraft] = useState<UserFormState>({
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        password: "",
-    });
-    const [error, setError] = useState<string | null>(null);
-    const [saving, setSaving] = useState(false);
-    const update = <K extends keyof UserFormState>(key: K, value: UserFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
-
-    const handleSubmit = async () => {
-        if (!draft.name.trim() || !draft.email.trim() || !draft.password.trim() || !draft.role) {
-            setError("Bedrijfsnaam, e-mail, wachtwoord en rol zijn verplicht.");
-            return;
-        }
-
-        setSaving(true);
-        setError(null);
+    const handleSave = async (draft: GebruikerCreateDto | GebruikerUpdateDto, id?: number) => {
         try {
-            await onSave(draft);
+            if (id) await updateGebruiker(id, draft as GebruikerUpdateDto);
+            else await createGebruiker(draft as GebruikerCreateDto);
+            setModalState(null);
+            setPage(1);
+            setRefreshKey((value) => value + 1);
         } catch (err) {
-            setError((err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt.");
-        } finally {
-            setSaving(false);
+            setError((err as { message?: string }).message ?? "Opslaan mislukt");
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!window.confirm("Verwijder deze gebruiker?")) return;
+        try {
+            await deleteGebruiker(id);
+            setRows((prev) => prev.filter((row) => row.GebruikerNr !== id));
+            setTotal((prev) => (prev ? Math.max(prev - 1, 0) : prev));
+            setRefreshKey((value) => value + 1);
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Verwijderen mislukt");
         }
     };
 
     return (
+        <section className="d-flex flex-column gap-3" aria-label="Gebruikers">
+            <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                <div className="flex-grow-1">
+                    <Field label="Zoeken">
+                        <Input value={search} onChange={setSearch} placeholder="Bedrijfsnaam of email" />
+                    </Field>
+                </div>
+                <button type="button" className="btn btn-success" onClick={() => setModalState({ mode: "create" })}>
+                    Nieuwe gebruiker
+                </button>
+            </div>
+
+            {error && <div className="alert alert-danger mb-0">{error}</div>}
+            {loading && <div className="alert alert-info mb-0">Laden…</div>}
+
+            <Table
+                columns={columns}
+                rows={rows}
+                getRowId={(row) => row.GebruikerNr}
+                page={page}
+                pageSize={pageSize}
+                totalCount={total}
+                serverPaginated
+                pageSizeOptions={tablePageSizeOptions}
+                onPageChange={setPage}
+                onPageSizeChange={(value) => {
+                    setPageSize(value);
+                    setPage(1);
+                }}
+                emptyMessage={<EmptyState message="Geen gebruikers" />}
+            />
+
+            {modalState && (
+                <UserModal
+                    mode={modalState.mode}
+                    user={modalState.user}
+                    onClose={() => setModalState(null)}
+                    onSave={handleSave}
+                />
+            )}
+        </section>
+    );
+}
+
+type UserModalProps = {
+    mode: "create" | "edit";
+    user?: Klant_GebruikerDto;
+    onClose: () => void;
+    onSave: (draft: GebruikerCreateDto | GebruikerUpdateDto, id?: number) => void;
+};
+
+function UserModal({ mode, user, onClose, onSave }: UserModalProps): JSX.Element {
+    const [form, setForm] = useState<GebruikerCreateDto | GebruikerUpdateDto>(() =>
+        user
+            ? {
+                  BedrijfsNaam: user.BedrijfsNaam,
+                  Email: user.Email,
+                  Wachtwoord: user.Wachtwoord,
+                  Soort: user.Soort,
+                  Kvk: user.Kvk,
+                  StraatAdres: user.StraatAdres,
+                  Postcode: user.Postcode,
+                  LaatstIngelogd: user.LaatstIngelogd,
+              }
+            : emptyForm,
+    );
+
+    const update = <K extends keyof (GebruikerCreateDto & GebruikerUpdateDto)>(key: K, value: (GebruikerCreateDto & GebruikerUpdateDto)[K]) =>
+        setForm((prev) => ({ ...prev, [key]: value }));
+
+    return (
         <Modal
-            title="Bewerk gebruiker"
-            subtitle={user.name}
+            title={mode === "create" ? "Nieuwe gebruiker" : `Gebruiker #${user?.GebruikerNr}`}
             onClose={onClose}
             footer={
                 <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-outline-success" onClick={onClose} disabled={saving}>
+                    <button type="button" className="btn btn-outline-success" onClick={onClose}>
                         Annuleren
                     </button>
-                    <button type="button" className="btn btn-success" onClick={handleSubmit} disabled={saving}>
+                    <button type="button" className="btn btn-success" onClick={() => onSave(form, user?.GebruikerNr)}>
                         Opslaan
                     </button>
                 </div>
             }
         >
-            {error && (
-                <div className="alert alert-danger" role="alert">
-                    {error}
-                </div>
-            )}
             <div className="row g-3">
                 <div className="col-12">
-                    <Field label="Naam">
-                        <Input value={draft.name} onChange={(value) => update("name", value)} />
+                    <Field label="Bedrijfsnaam">
+                        <Input value={form.BedrijfsNaam} onChange={(value) => update("BedrijfsNaam", value)} />
                     </Field>
                 </div>
-                <div className="col-12">
-                    <Field label="E-mail">
-                        <Input value={draft.email} onChange={(value) => update("email", value)} />
+                <div className="col-12 col-md-6">
+                    <Field label="Email">
+                        <Input value={form.Email} onChange={(value) => update("Email", value)} />
                     </Field>
                 </div>
-                <div className="col-12">
+                <div className="col-12 col-md-6">
                     <Field label="Wachtwoord">
-                        <Input type="password" value={draft.password} onChange={(value) => update("password", value)} />
+                        <Input type="password" value={form.Wachtwoord} onChange={(value) => update("Wachtwoord", value)} />
                     </Field>
                 </div>
-                <div className="col-6">
-                    <Field label="Rol">
-                        <Select
-                            value={draft.role}
-                            options={roleOptions.filter((option) => option.value !== "all").map((option) => ({ value: option.value, label: option.label }))}
-                            onChange={(value) => update("role", value as UserRole)}
-                        />
+                <div className="col-12 col-md-6">
+                    <Field label="Soort">
+                        <Input value={form.Soort} onChange={(value) => update("Soort", value)} />
                     </Field>
                 </div>
-                <div className="col-6">
-                    <Field label="Status">
-                        <Select
-                            value={draft.status}
-                            options={statusOptions.filter((option) => option.value !== "all").map((option) => ({ value: option.value, label: option.label }))}
-                            onChange={(value) => update("status", value as Status)}
+                <div className="col-12 col-md-6">
+                    <Field label="KVK">
+                        <Input value={form.Kvk ?? ""} onChange={(value) => update("Kvk", value)} />
+                    </Field>
+                </div>
+                <div className="col-12 col-md-6">
+                    <Field label="Straatadres">
+                        <Input value={form.StraatAdres ?? ""} onChange={(value) => update("StraatAdres", value)} />
+                    </Field>
+                </div>
+                <div className="col-12 col-md-6">
+                    <Field label="Postcode">
+                        <Input value={form.Postcode ?? ""} onChange={(value) => update("Postcode", value)} />
+                    </Field>
+                </div>
+                <div className="col-12 col-md-6">
+                    <Field label="Laatst ingelogd (optioneel)">
+                        <Input
+                            type="datetime-local"
+                            value={form.LaatstIngelogd ?? ""}
+                            onChange={(value) => update("LaatstIngelogd", value)}
                         />
                     </Field>
                 </div>
             </div>
-        </Modal>
-    );
-}
-
-export function UserBidsModal({ user, bids, onClose }: { readonly user: User; readonly bids: readonly Bid[]; readonly onClose: () => void }): JSX.Element {
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(modalPageSizeOptions[0]);
-
-    const userBids = useMemo(
-        () =>
-            filterRows(bids, search, { status: statusFilter }, (row, term, currentFilters) => {
-                const matchesSearch = !term || String(row.auctionId).includes(term);
-                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
-                return matchesSearch && matchesStatus;
-            }),
-        [bids, search, statusFilter],
-    );
-
-    const columns: TableColumn<Bid>[] = [
-        { key: "auction", header: "Veiling", render: (row) => `#${row.auctionId}` },
-        { key: "amount", header: "Bedrag", sortable: true, render: (row) => formatCurrency(row.amount), getValue: (row) => row.amount },
-        { key: "quantity", header: "Aantal", sortable: true, render: (row) => row.quantity, getValue: (row) => row.quantity },
-        { key: "date", header: "Datum", sortable: true, render: (row) => formatDateTime(row.date), getValue: (row) => row.date },
-        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
-    ];
-
-    return (
-        <Modal
-            title="Biedingen"
-            subtitle={user.name}
-            onClose={onClose}
-            size="lg"
-            controls={
-                <div className="d-flex flex-wrap gap-2">
-                    <Input value={search} onChange={setSearch} placeholder="Veilingnummer" />
-                    <Select
-                        value={statusFilter}
-                        options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
-                        onChange={(value) => setStatusFilter(value as Status | "all")}
-                    />
-                </div>
-            }
-            footer={
-                <button type="button" className="btn btn-success" onClick={onClose}>
-                    Sluiten
-                </button>
-            }
-        >
-            <Table
-                columns={columns}
-                rows={userBids}
-                getRowId={(row) => row.id}
-                page={page}
-                pageSize={pageSize}
-                pageSizeOptions={modalPageSizeOptions}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-            />
-        </Modal>
-    );
-}
-
-export function UserProductsModal({ user, products, onClose }: { readonly user: User; readonly products: readonly Product[]; readonly onClose: () => void }): JSX.Element {
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(modalPageSizeOptions[0]);
-
-    const growerProducts = useMemo(
-        () =>
-            filterRows(products, search, { status: statusFilter }, (row, term, currentFilters) => {
-                const matchesSearch = !term || row.name.toLowerCase().includes(term) || String(row.id).includes(term);
-                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
-                return matchesSearch && matchesStatus;
-            }),
-        [products, search, statusFilter],
-    );
-
-    const columns: TableColumn<Product>[] = [
-        { key: "id", header: "#", render: (row) => `#${row.id}` },
-        { key: "name", header: "Naam", render: (row) => row.name },
-        { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
-        { key: "linked", header: "Veiling", render: (row) => (row.linkedAuctionId ? `#${row.linkedAuctionId}` : "—") },
-    ];
-
-    return (
-        <Modal
-            title="Producten"
-            subtitle={user.name}
-            onClose={onClose}
-            size="lg"
-            controls={
-                <div className="d-flex flex-wrap gap-2">
-                    <Input value={search} onChange={setSearch} placeholder="Naam of nummer" />
-                    <Select
-                        value={statusFilter}
-                        options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
-                        onChange={(value) => setStatusFilter(value as Status | "all")}
-                    />
-                </div>
-            }
-            footer={
-                <button type="button" className="btn btn-success" onClick={onClose}>
-                    Sluiten
-                </button>
-            }
-        >
-            <Table
-                columns={columns}
-                rows={growerProducts}
-                getRowId={(row) => row.id}
-                page={page}
-                pageSize={pageSize}
-                pageSizeOptions={modalPageSizeOptions}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-            />
         </Modal>
     );
 }
