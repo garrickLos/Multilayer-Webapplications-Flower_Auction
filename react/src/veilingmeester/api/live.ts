@@ -1,19 +1,20 @@
-import { getAuction } from "../api";
+import { fetchAuctionDetail } from "../api";
 import { appConfig } from "../config";
-import type { VeilingMeester_VeilingDto } from "../types";
+import { DomainMapper, type VeilingDetailDto, type VeilingDto, type VeilingRow } from "../types";
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-type Cleanup = () => void;
+type MutableVeilingRow = Mutable<VeilingRow>;
 
-type PatchHandler = (value: Partial<VeilingMeester_VeilingDto>) => void;
+export type AuctionPatchHandler = (update: Partial<VeilingRow>) => void;
+export type Cleanup = () => void;
 
-const { pollStepsMs } = appConfig.realtime;
+const POLL_STEPS = appConfig.realtime.pollStepsMs;
 
-const diff = (previous: Mutable<VeilingMeester_VeilingDto> | null, next: Mutable<VeilingMeester_VeilingDto>) => {
+const diff = (previous: MutableVeilingRow | null, next: MutableVeilingRow): Partial<MutableVeilingRow> | null => {
     if (!previous) return next;
-    const patch: Partial<VeilingMeester_VeilingDto> = {};
+    const patch: Partial<MutableVeilingRow> = {};
     let changed = false;
-    (Object.keys(next) as (keyof VeilingMeester_VeilingDto)[]).forEach((key) => {
+    (Object.keys(next) as (keyof MutableVeilingRow)[]).forEach((key) => {
         if (!Object.is(previous[key], next[key])) {
             patch[key] = next[key];
             changed = true;
@@ -22,42 +23,44 @@ const diff = (previous: Mutable<VeilingMeester_VeilingDto> | null, next: Mutable
     return changed ? patch : null;
 };
 
-const finished = (auction: VeilingMeester_VeilingDto) => {
-    const end = Date.parse(auction.eindtijd);
+const finished = (row: VeilingRow): boolean => {
+    if (row.status !== "active") return true;
+    const end = Date.parse(row.endDate);
     return Number.isFinite(end) && Date.now() >= end;
 };
 
-const parseMessage = (payload: string): VeilingMeester_VeilingDto | null => {
+const parseMessage = (payload: string): VeilingRow | null => {
     if (!payload) return null;
     try {
-        return JSON.parse(payload) as VeilingMeester_VeilingDto;
+        const parsed = JSON.parse(payload) as VeilingDetailDto | VeilingDto | VeilingRow;
+        return "titel" in parsed || "veilingNaam" in parsed ? DomainMapper.mapAuction(parsed) : (parsed as VeilingRow);
     } catch {
         return null;
     }
 };
 
-export const subscribeAuction = (veilingId: number, onPatch: PatchHandler): Cleanup => {
+export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler): Cleanup {
     if (typeof window === "undefined" || Number.isNaN(veilingId)) return () => undefined;
 
-    let last: Mutable<VeilingMeester_VeilingDto> | null = null;
+    let last: MutableVeilingRow | null = null;
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let sse: EventSource | null = null;
     let ws: WebSocket | null = null;
     const controller = new AbortController();
 
-    const applyRow = (row: VeilingMeester_VeilingDto | null) => {
+    const applyRow = (row: VeilingRow | null) => {
         if (!row || disposed) return;
-        const mutable: Mutable<VeilingMeester_VeilingDto> = { ...row };
-        const patch = diff(last, mutable);
-        last = mutable;
+        const mutableRow: MutableVeilingRow = { ...row };
+        const patch = diff(last, mutableRow);
+        last = mutableRow;
         if (patch) onPatch(patch);
         if (finished(row)) cleanup();
     };
 
     const fetchOnce = async () => {
         try {
-            const detail = await getAuction(veilingId, controller.signal);
+            const detail = await fetchAuctionDetail(veilingId, controller.signal);
             applyRow(detail);
         } catch (error) {
             if ((error as { name?: string }).name === "AbortError") return;
@@ -68,13 +71,15 @@ export const subscribeAuction = (veilingId: number, onPatch: PatchHandler): Clea
     const schedule = (delay: number) => {
         if (disposed) return;
         clearTimeout(timer);
-        timer = setTimeout(() => void fetchOnce(), delay);
+        timer = setTimeout(() => {
+            void fetchOnce();
+        }, delay);
     };
 
     const fallbackToPolling = () => {
         if (disposed) return;
         closeRealtime();
-        schedule(pollStepsMs[0]);
+        schedule(POLL_STEPS[0]);
     };
 
     const closeRealtime = () => {
@@ -87,7 +92,10 @@ export const subscribeAuction = (veilingId: number, onPatch: PatchHandler): Clea
     const initSse = () => {
         try {
             sse = new EventSource(`/api/Veiling/${veilingId}/stream`, { withCredentials: true });
-            sse.onmessage = (event) => applyRow(parseMessage(event.data));
+            sse.onmessage = (event) => {
+                const row = parseMessage(event.data);
+                if (row) applyRow(row);
+            };
             sse.onerror = fallbackToPolling;
         } catch {
             fallbackToPolling();
@@ -131,8 +139,8 @@ export const subscribeAuction = (veilingId: number, onPatch: PatchHandler): Clea
 
     initSse();
     if (!sse) initWebsocket();
-    if (!sse && !ws) schedule(pollStepsMs[0]);
+    if (!sse && !ws) schedule(POLL_STEPS[0]);
 
     void fetchOnce();
     return cleanup;
-};
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listAuctions, listBids, listProducts, listUsers } from "../api";
+import { fetchAuctions, fetchBids, fetchProducts, fetchUsers } from "../api";
 import { appConfig } from "../config";
 
 export type LiveStats = { users: number; activeAuctions: number; products: number; bids: number };
@@ -19,17 +19,17 @@ export function useLiveStats() {
             setError(null);
             try {
                 const [usersResponse, activeAuctionsResponse, productsResponse, bidsResponse] = await Promise.all([
-                    listUsers({ pageSize: prefetchPageSize }, controller.signal),
-                    listAuctions({ onlyActive: true, pageSize: prefetchPageSize }, controller.signal),
-                    listProducts({ pageSize: prefetchPageSize }, controller.signal),
-                    listBids({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchUsers({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchAuctions({ onlyActive: true, pageSize: prefetchPageSize }, controller.signal),
+                    fetchProducts({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchBids({ pageSize: prefetchPageSize }, controller.signal),
                 ]);
 
                 setStats({
                     users: usersResponse.items.length,
                     activeAuctions: activeAuctionsResponse.items.length,
                     products: productsResponse.items.length,
-                    bids: bidsResponse.items.length,
+                    bids: bidsResponse.items.length, // TODO: filter laatste 24u zodra de backend een timestamp exposeert.
                 });
                 setLastUpdated(new Date());
             } catch (err) {

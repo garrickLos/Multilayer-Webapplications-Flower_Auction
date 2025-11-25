@@ -1,272 +1,499 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type JSX } from "react";
-import { createAuction, deleteAuction, listAuctions, type ApiError, updateAuction } from "../api";
+import { useEffect, useMemo, useState, type JSX } from "react";
+import { deleteAuction, fetchAuctions } from "../api";
 import { Modal } from "../Modal";
-import { Section, InputField, FormRow, ErrorNotice, SuccessNotice } from "../components/ui";
 import { Table, type TableColumn } from "../components/Table";
-import type { PaginatedResult, VeilingCreateDto, VeilingMeester_VeilingDto, VeilingUpdateDto } from "../types";
+import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
+import { useTicker } from "../hooks";
+import { appConfig } from "../config";
+import type { Auction, Product, Status } from "../types";
+import { calculateClockPrice, deriveAuctionUiStatus, filterRows, formatCurrency, formatDateTime } from "../utils";
 
-const defaultForm: VeilingCreateDto = { veilingNaam: "", begintijd: "", eindtijd: "", status: "" };
+const { table: tablePageSizeOptions, modal: modalPageSizeOptions } = appConfig.pagination;
+const { prefetchPageSize } = appConfig.api;
 
-export function AuctionsTab(): JSX.Element {
-    const [filters, setFilters] = useState({ rol: "", veilingProduct: "", from: "", to: "", onlyActive: false });
-    const [data, setData] = useState<PaginatedResult<VeilingMeester_VeilingDto> | null>(null);
+// ---- filters & helpers ----
+
+type AuctionFilters = { onlyActive: boolean; from: string; to: string; rol: string; veilingProduct: string };
+
+const statusOptions: readonly { value: Status | "all"; label: string }[] = [
+    { value: "all", label: "Alle" },
+    { value: "active", label: "Actief" },
+    { value: "inactive", label: "Inactief" },
+    { value: "sold", label: "Verkocht" },
+    { value: "deleted", label: "Geannuleerd" },
+];
+
+/** Keep local state for auction list, filters, and clock updates. */
+function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
+    const [auctions, setAuctions] = useState<readonly Auction[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
-    const [selected, setSelected] = useState<VeilingMeester_VeilingDto | null>(null);
-    const [form, setForm] = useState<VeilingCreateDto>(defaultForm);
+    const [search, setSearch] = useState("");
+    const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", rol: "", veilingProduct: "" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-
-    const load = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await listAuctions(
-                {
-                    rol: filters.rol || undefined,
-                    veilingProduct: filters.veilingProduct ? Number(filters.veilingProduct) : undefined,
-                    from: filters.from || undefined,
-                    to: filters.to || undefined,
-                    onlyActive: filters.onlyActive || undefined,
-                    page,
-                    pageSize,
-                },
-            );
-            setData(response);
-        } catch (err) {
-            setError((err as ApiError).message ?? "Kan veilingen niet laden");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
+    const now = useTicker(5000);
 
     useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await fetchAuctions(
+                    {
+                        from: filters.from || undefined,
+                        to: filters.to || undefined,
+                        onlyActive: filters.onlyActive || undefined,
+                        rol: filters.rol || undefined,
+                        veilingProduct: filters.veilingProduct ? Number(filters.veilingProduct) : undefined,
+                        page: 1,
+                        pageSize: prefetchPageSize,
+                    },
+                    controller.signal,
+                );
+                setAuctions(response.items);
+                onAuctionsLoaded(response.items as Auction[]);
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") return;
+                setError((err as { message?: string }).message ?? "Kan veilingen niet laden.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
         void load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filters.rol, filters.veilingProduct, filters.from, filters.to, filters.onlyActive, page, pageSize]);
+        return () => controller.abort();
+    }, [filters.from, filters.onlyActive, filters.rol, filters.to, filters.veilingProduct, onAuctionsLoaded]);
 
-    const resetForm = () => setForm(defaultForm);
-
-    useEffect(() => {
-        if (!selected) return;
-        setForm({
-            veilingNaam: selected.veilingNaam,
-            begintijd: selected.begintijd,
-            eindtijd: selected.eindtijd,
-            status: selected.status ?? "",
-        });
-    }, [selected]);
-
-    const handleCreate = async () => {
-        try {
-            await createAuction(form);
-            setSuccess("Veiling aangemaakt");
-            resetForm();
-            await load();
-        } catch (err) {
-            setError((err as ApiError).message ?? "Veiling kon niet worden aangemaakt");
-        }
-    };
-
-    const handleUpdate = async () => {
-        if (!selected?.veilingNr) return;
-        try {
-            const payload: VeilingUpdateDto = {
-                veilingNaam: form.veilingNaam,
-                begintijd: form.begintijd,
-                eindtijd: form.eindtijd,
-            };
-            await updateAuction(selected.veilingNr, payload);
-            const updated: VeilingMeester_VeilingDto = { ...selected, ...payload };
-            setSelected(updated);
-            setData((prev) => (prev ? { ...prev, items: prev.items.map((item) => (item.veilingNr === updated.veilingNr ? updated : item)) } : prev));
-            setSuccess("Veiling bijgewerkt");
-        } catch (err) {
-            setError((err as ApiError).message ?? "Veiling kon niet worden bijgewerkt");
-        }
-    };
-
-    const handleDelete = async (id?: number | null) => {
-        if (!id) return;
-        if (!window.confirm("Weet je zeker dat je deze veiling wilt verwijderen?")) return;
-        try {
-            await deleteAuction(id);
-            setData((prev) => (prev ? { ...prev, items: prev.items.filter((item) => item.veilingNr !== id) } : prev));
-            if (selected?.veilingNr === id) setSelected(null);
-        } catch (err) {
-            setError((err as ApiError).message ?? "Verwijderen mislukt");
-        }
-    };
-
-    const columns: TableColumn<VeilingMeester_VeilingDto>[] = useMemo(
-        () => [
-            { header: "Naam", render: (row) => row.veilingNaam },
-            { header: "Status", render: (row) => row.status ?? "-" },
-            { header: "Start", render: (row) => new Date(row.begintijd).toLocaleString() },
-            { header: "Einde", render: (row) => new Date(row.eindtijd).toLocaleString() },
-            {
-                header: "Acties",
-                render: (row) => (
-                    <div className="d-flex gap-2">
-                        <button className="btn btn-sm btn-outline-primary" onClick={() => setSelected(row)}>
-                            Details
-                        </button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => void handleDelete(row.veilingNr)}>
-                            Verwijder
-                        </button>
-                    </div>
-                ),
-            },
-        ],
-        [],
+    const filteredRows = useMemo(
+        () =>
+            filterRows(auctions, "", filters, (row, _term, currentFilters) => {
+                const computedStatus = deriveAuctionUiStatus(row, now);
+                const matchesStatus = !currentFilters.onlyActive || computedStatus === "active";
+                const start = Date.parse(row.startDate);
+                const from = currentFilters.from ? Date.parse(currentFilters.from) : Number.NEGATIVE_INFINITY;
+                const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
+                const matchesFrom = Number.isFinite(start) ? start >= from : true;
+                const matchesTo = Number.isFinite(start) ? start <= to : true;
+                const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
+                const matchesRol = !currentFilters.rol || (row.rawStatus ?? "").toLowerCase().includes(currentFilters.rol.toLowerCase());
+                const matchesVeilingProduct =
+                    !currentFilters.veilingProduct || row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
+                return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesRol && matchesVeilingProduct;
+            }),
+        [auctions, filters, now, search],
     );
 
-    const onFormChange = (field: keyof VeilingCreateDto) => (event: ChangeEvent<HTMLInputElement>) => {
-        const value = event.target.value;
-        setForm((prev) => ({ ...prev, [field]: value }));
+    const handleCancel = async (auctionId: number) => {
+        try {
+            await deleteAuction(auctionId);
+            setAuctions((prev) => {
+                const next = prev.filter((auction) => auction.id !== auctionId);
+                onAuctionsLoaded([...next]);
+                return next;
+            });
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Veiling kon niet worden geannuleerd.");
+        }
     };
 
-    const selectedDetail = selected;
+    return {
+        auctions: filteredRows,
+        loading,
+        error,
+        search,
+        filters,
+        now,
+        page,
+        pageSize,
+        setSearch,
+        setFilters,
+        setPage,
+        setPageSize,
+        handleCancel,
+    };
+}
+
+// ---- Screens & modals ----
+
+type AuctionsTabProps = {
+    readonly onCreateRequested: () => void;
+    readonly onOpenLinkProducts: (auctionId: number) => void;
+    readonly onAuctionsLoaded: (auctions: Auction[]) => void;
+};
+
+export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsLoaded }: AuctionsTabProps): JSX.Element {
+    const {
+        auctions,
+        loading,
+        error,
+        search,
+        filters,
+        now,
+        page,
+        pageSize,
+        setSearch,
+        setFilters,
+        setPage,
+        setPageSize,
+        handleCancel,
+    } = useAuctionsPage(onAuctionsLoaded);
+
+    const columns: TableColumn<Auction>[] = [
+        { key: "title", header: "Titel", sortable: true, render: (row) => row.title, getValue: (row) => row.title },
+        {
+            key: "price",
+            header: "Klokprijs",
+            sortable: true,
+            render: (row) => {
+                const startPrice = row.maxPrice ?? row.minPrice ?? 0;
+                const minPrice = row.minPrice ?? 0;
+                const current = calculateClockPrice(startPrice, minPrice, new Date(row.startDate), new Date(row.endDate), now);
+                return (
+                    <div className="d-flex flex-column">
+                        <span>{formatCurrency(current)}</span>
+                        <small className="text-muted">Start {formatCurrency(startPrice)}</small>
+                    </div>
+                );
+            },
+            getValue: (row) => row.minPrice ?? 0,
+        },
+        { key: "startDate", header: "Start", sortable: true, render: (row) => formatDateTime(row.startDate), getValue: (row) => row.startDate },
+        { key: "endDate", header: "Einde", sortable: true, render: (row) => formatDateTime(row.endDate), getValue: (row) => row.endDate },
+        {
+            key: "products",
+            header: "Producten",
+            sortable: true,
+            render: (row) => row.linkedProductIds?.length ?? row.products?.length ?? 0,
+            getValue: (row) => row.linkedProductIds?.length ?? row.products?.length ?? 0,
+        },
+        {
+            key: "status",
+            header: "Status",
+            sortable: true,
+            render: (row) => <StatusBadge status={deriveAuctionUiStatus(row, now)} />,
+            getValue: (row) => deriveAuctionUiStatus(row, now),
+        },
+        {
+            key: "actions",
+            header: "Acties",
+            render: (row) => (
+                <div className="d-flex justify-content-end gap-2">
+                    <button
+                        type="button"
+                        className="btn btn-outline-success btn-sm"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onOpenLinkProducts(row.id);
+                        }}
+                    >
+                        Koppel producten
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            void handleCancel(row.id);
+                        }}
+                    >
+                        Annuleer
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
+    const activeFilters = [
+        filters.onlyActive && "Alleen actieve veilingen",
+        filters.from && `Vanaf: ${filters.from}`,
+        filters.to && `Tot: ${filters.to}`,
+        filters.rol && `Rol: ${filters.rol}`,
+        filters.veilingProduct && `Veilingproduct: ${filters.veilingProduct}`,
+        search && `Zoek: ${search}`,
+    ].filter(Boolean) as string[];
 
     return (
-        <Section title="Veilingen">
-            <FormRow>
-                <InputField
-                    id="auction-rol"
-                    label="Rol"
-                    value={filters.rol}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, rol: e.target.value }))}
-                    placeholder="bijv. koper"
-                />
-                <InputField
-                    id="auction-product"
-                    label="Veilingproduct nr"
-                    value={filters.veilingProduct}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, veilingProduct: e.target.value }))}
-                    type="number"
-                />
-                <InputField
-                    id="auction-from"
-                    label="Vanaf"
-                    value={filters.from}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value }))}
-                    type="datetime-local"
-                />
-                <InputField
-                    id="auction-to"
-                    label="Tot"
-                    value={filters.to}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value }))}
-                    type="datetime-local"
-                />
-                <label className="form-check align-self-end ms-2">
-                    <input
-                        className="form-check-input"
-                        type="checkbox"
-                        checked={filters.onlyActive}
-                        onChange={(e) => setFilters((prev) => ({ ...prev, onlyActive: e.target.checked }))}
-                    />
-                    <span className="form-check-label">Alleen actief</span>
-                </label>
-            </FormRow>
-
-            <FormRow>
-                <InputField
-                    id="auction-page"
-                    label="Pagina"
-                    value={page}
-                    type="number"
-                    onChange={(e) => setPage(Number(e.target.value) || 1)}
-                />
-                <InputField
-                    id="auction-pageSize"
-                    label="Per pagina"
-                    value={pageSize}
-                    type="number"
-                    onChange={(e) => setPageSize(Number(e.target.value) || 10)}
-                />
-                <button className="btn btn-success align-self-end" type="button" onClick={() => void load()} disabled={loading}>
-                    Verversen
+        <section className="d-flex flex-column gap-3" aria-label="Veilingen">
+            <div className="d-flex justify-content-between flex-wrap gap-2">
+                <div className="d-flex flex-wrap align-items-center gap-2">
+                    {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
+                    {activeFilters.map((label) => (
+                        <Chip key={label} label={label} onRemove={() => setFilters({ onlyActive: false, from: "", to: "", rol: "", veilingProduct: "" })} />
+                    ))}
+                </div>
+                <button type="button" className="btn btn-success" onClick={onCreateRequested}>
+                    Nieuwe veiling
                 </button>
-            </FormRow>
+            </div>
 
-            {error && <ErrorNotice message={error} />}
-            {success && <SuccessNotice message={success} />}
-
-            <Table columns={columns} rows={data?.items ?? []} />
-
-            <hr />
-            <h3 className="h6">Nieuwe veiling</h3>
-            <FormRow>
-                <InputField id="veiling-naam" label="Naam" value={form.veilingNaam} onChange={onFormChange("veilingNaam")} />
-                <InputField
-                    id="veiling-start"
-                    label="Begintijd"
-                    value={form.begintijd}
-                    type="datetime-local"
-                    onChange={onFormChange("begintijd")}
-                />
-                <InputField
-                    id="veiling-einde"
-                    label="Eindtijd"
-                    value={form.eindtijd}
-                    type="datetime-local"
-                    onChange={onFormChange("eindtijd")}
-                />
-                <InputField id="veiling-status" label="Status" value={form.status ?? ""} onChange={onFormChange("status")} />
-            </FormRow>
-            <button className="btn btn-primary" type="button" onClick={() => void handleCreate()}>
-                Aanmaken
-            </button>
-
-            {selectedDetail && (
-                <Modal title={`Veiling ${selectedDetail.veilingNaam}`} onClose={() => setSelected(null)}>
-                    <div className="d-flex flex-column gap-3">
-                        <div className="d-flex flex-wrap gap-3">
-                            <InputField id="edit-naam" label="Naam" value={form.veilingNaam} onChange={onFormChange("veilingNaam")} />
-                            <InputField
-                                id="edit-start"
-                                label="Begintijd"
-                                value={form.begintijd}
-                                type="datetime-local"
-                                onChange={onFormChange("begintijd")}
-                            />
-                            <InputField
-                                id="edit-einde"
-                                label="Eindtijd"
-                                value={form.eindtijd}
-                                type="datetime-local"
-                                onChange={onFormChange("eindtijd")}
-                            />
-                        </div>
-                        <div>
-                            <button className="btn btn-primary me-2" type="button" onClick={() => void handleUpdate()}>
-                                Bijwerken
-                            </button>
-                            <button className="btn btn-outline-secondary" type="button" onClick={() => setSelected(null)}>
-                                Sluiten
-                            </button>
-                        </div>
-                        <div>
-                            <h6>Producten</h6>
-                            <ul className="list-unstyled mb-2">
-                                {selectedDetail.producten?.map((product) => (
-                                    <li key={product.veilingProductNr}>{product.naam ?? "Onbekend"}</li>
-                                )) ?? <li className="text-muted">Geen producten</li>}
-                            </ul>
-                            <h6>Biedingen</h6>
-                            <ul className="list-unstyled mb-0">
-                                {selectedDetail.biedingen?.map((bid) => (
-                                    <li key={bid.biedingNr}>
-                                        #{bid.biedingNr} – €{bid.bedragPerFust} x {bid.aantalStuks}
-                                    </li>
-                                )) ?? <li className="text-muted">Geen biedingen</li>}
-                            </ul>
-                        </div>
-                    </div>
-                </Modal>
+            {error && (
+                <div className="alert alert-danger" role="alert">
+                    {error}
+                </div>
             )}
-        </Section>
+            {loading && (
+                <div className="alert alert-info" role="status">
+                    Veilingen laden…
+                </div>
+            )}
+
+            <div className="row g-3">
+                <div className="col-12 col-lg-3">
+                    <Field label="Alleen actieve veilingen">
+                        <div className="form-check form-switch">
+                            <input
+                                id="onlyActive"
+                                type="checkbox"
+                                className="form-check-input"
+                                checked={filters.onlyActive}
+                                onChange={(event) => setFilters((prev) => ({ ...prev, onlyActive: event.target.checked }))}
+                            />
+                            <label className="form-check-label" htmlFor="onlyActive">
+                                Alleen actieve
+                            </label>
+                        </div>
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Rol">
+                        <Input value={filters.rol} onChange={(value) => setFilters((prev) => ({ ...prev, rol: value }))} placeholder="Rol" />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Veilingproduct #">
+                        <Input
+                            type="number"
+                            value={filters.veilingProduct}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, veilingProduct: value }))}
+                            placeholder="Productnummer"
+                        />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Startdatum">
+                        <Input type="date" value={filters.from} onChange={(value) => setFilters((prev) => ({ ...prev, from: value }))} />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <Field label="Einddatum">
+                        <Input type="date" value={filters.to} onChange={(value) => setFilters((prev) => ({ ...prev, to: value }))} />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-3">
+                    <label className="w-100 form-label text-success-emphasis fw-semibold small text-uppercase" htmlFor="auction-search">
+                        Zoeken
+                    </label>
+                    <div className="input-group">
+                        <span className="input-group-text bg-white text-success-emphasis border-success-subtle">
+                            <i className="bi bi-search" aria-hidden="true" />
+                        </span>
+                        <input
+                            id="auction-search"
+                            type="search"
+                            className="form-control border-success-subtle"
+                            value={search}
+                            placeholder="Titel"
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <Table
+                columns={columns}
+                rows={auctions}
+                getRowId={(row) => row.id}
+                page={page}
+                pageSize={pageSize}
+                pageSizeOptions={tablePageSizeOptions}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                }}
+                emptyMessage={<EmptyState message="Geen veilingen gevonden." />}
+            />
+        </section>
+    );
+}
+
+export type AuctionFormState = { title: string; maxPrice: number; startTime: string; endTime: string; status: Status };
+
+type AuctionModalProps = { readonly onClose: () => void; readonly onSave: (draft: AuctionFormState) => Promise<void> | void };
+
+export function NewAuctionModal({ onClose, onSave }: AuctionModalProps): JSX.Element {
+    const now = new Date();
+    const defaultStart = new Date(now.getTime() + 30 * 60 * 1000).toISOString().slice(0, 16);
+    const defaultEnd = new Date(now.getTime() + 90 * 60 * 1000).toISOString().slice(0, 16);
+    const [draft, setDraft] = useState<AuctionFormState>({ title: "Nieuwe veiling", maxPrice: 0, startTime: defaultStart, endTime: defaultEnd, status: "inactive" });
+
+    const update = <K extends keyof AuctionFormState>(key: K, value: AuctionFormState[K]) => setDraft((prev) => ({ ...prev, [key]: value }));
+
+    return (
+        <Modal
+            title="Nieuwe veiling"
+            subtitle="Aanmaken"
+            onClose={onClose}
+            footer={
+                <div className="d-flex gap-2">
+                    <button type="button" className="btn btn-outline-success" onClick={onClose}>
+                        Annuleren
+                    </button>
+                    <button type="button" className="btn btn-success" onClick={() => onSave(draft)}>
+                        Opslaan
+                    </button>
+                </div>
+            }
+        >
+            <div className="row g-3">
+                <div className="col-12">
+                    <Field label="Titel">
+                        <Input value={draft.title} onChange={(value) => update("title", value)} placeholder="Titel" />
+                    </Field>
+                </div>
+                <div className="col-6">
+                    <Field label="Max. prijs">
+                        <Input type="number" value={draft.maxPrice} onChange={(value) => update("maxPrice", Number(value) || 0)} min={0} />
+                    </Field>
+                </div>
+                <div className="col-6">
+                    <Field label="Starttijd">
+                        <Input type="datetime-local" value={draft.startTime} onChange={(value) => update("startTime", value)} />
+                    </Field>
+                </div>
+                <div className="col-6">
+                    <Field label="Eindtijd">
+                        <Input type="datetime-local" value={draft.endTime} onChange={(value) => update("endTime", value)} />
+                    </Field>
+                </div>
+                <div className="col-12">
+                    <Field label="Status">
+                        <Select
+                            value={draft.status}
+                            options={statusOptions.filter((option) => option.value !== "all").map((option) => ({ value: option.value, label: option.label }))}
+                            onChange={(value) => update("status", value as Status)}
+                        />
+                    </Field>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
+type LinkProductsProps = {
+    readonly auction: Auction;
+    readonly products: readonly Product[];
+    readonly onClose: () => void;
+    readonly onSave: (productIds: readonly number[]) => void;
+};
+
+export function LinkProductsModal({ auction, products, onClose, onSave }: LinkProductsProps): JSX.Element {
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(modalPageSizeOptions[0]);
+    const [selectedIds, setSelectedIds] = useState<readonly number[]>(auction.linkedProductIds ?? []);
+
+    const availableProducts = useMemo(
+        () =>
+            filterRows(products, search, { status: statusFilter }, (product, term, currentFilters) => {
+                const notLinkedElsewhere = !product.linkedAuctionId || product.linkedAuctionId === auction.id;
+                const matchesSearch = !term || product.name.toLowerCase().includes(term) || String(product.id).includes(term);
+                const matchesStatus = currentFilters.status === "all" || product.status === currentFilters.status;
+                return notLinkedElsewhere && matchesSearch && matchesStatus;
+            }),
+        [auction.id, products, search, statusFilter],
+    );
+
+    const toggleRow = (id: number) => setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
+    const togglePage = (ids: readonly (string | number)[], checked: boolean) => {
+        setSelectedIds((prev) => {
+            const set = new Set(prev);
+            ids.forEach((id) => {
+                if (checked) set.add(Number(id));
+                else set.delete(Number(id));
+            });
+            return Array.from(set);
+        });
+    };
+
+    const columns: TableColumn<Product>[] = [
+        { key: "id", header: "#", sortable: true, render: (row) => <span className="fw-semibold">#{row.id}</span>, getValue: (row) => row.id },
+        { key: "name", header: "Naam", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
+        {
+            key: "price",
+            header: "Prijs",
+            sortable: true,
+            render: (row) => (
+                <div className="d-flex flex-column">
+                    <span>{formatCurrency(row.startPrice)}</span>
+                    <small className="text-muted">Voorraad {row.stock}</small>
+                </div>
+            ),
+            getValue: (row) => row.startPrice,
+        },
+        { key: "status", header: "Status", sortable: true, render: (row) => <StatusBadge status={row.status} />, getValue: (row) => row.status },
+        { key: "category", header: "Categorie", sortable: true, render: (row) => row.category, getValue: (row) => row.category },
+    ];
+
+    const handleSave = () => {
+        onSave(selectedIds);
+        onClose();
+    };
+
+    const handleCancel = () => {
+        setSelectedIds([]);
+        onClose();
+    };
+
+    return (
+        <Modal
+            title="Koppel producten"
+            subtitle={`Veiling #${auction.id}`}
+            onClose={handleCancel}
+            size="xl"
+            controls={
+                <div className="d-flex flex-wrap gap-2">
+                    <Input value={search} onChange={setSearch} placeholder="Productnaam of nummer" />
+                    <Select
+                        value={statusFilter}
+                        options={statusOptions.map((option) => ({ value: option.value, label: option.label }))}
+                        onChange={(value) => setStatusFilter(value as Status | "all")}
+                    />
+                    <span className="badge bg-success-subtle text-success-emphasis align-self-center">
+                        {selectedIds.length} geselecteerd
+                    </span>
+                </div>
+            }
+            footer={
+                <div className="d-flex gap-2">
+                    <button type="button" className="btn btn-outline-success" onClick={handleCancel}>
+                        Annuleren
+                    </button>
+                    <button type="button" className="btn btn-success" onClick={handleSave} disabled={selectedIds.length === 0}>
+                        Koppel selectie
+                    </button>
+                </div>
+            }
+        >
+            {availableProducts.length === 0 ? (
+                <EmptyState message="Geen beschikbare producten" />
+            ) : (
+                <Table
+                    columns={columns}
+                    rows={availableProducts}
+                    getRowId={(row) => row.id}
+                    page={page}
+                    pageSize={pageSize}
+                    pageSizeOptions={modalPageSizeOptions}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    onRowClick={(row) => toggleRow(row.id)}
+                    selectable={{ selectedIds, onToggleRow: (id) => toggleRow(Number(id)), onTogglePage: togglePage }}
+                />
+            )}
+        </Modal>
     );
 }

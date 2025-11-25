@@ -1,172 +1,173 @@
-// Shared API DTO definitions generated from OpenAPI spec.
-
-// Bieding DTO's
-export interface BiedingCreateDto {
-    bedragPerFust?: number;
-    aantalStuks?: number;
-    biedingNr?: number;
-    gebruikerNr?: number;
-    veilingNr?: number;
-    veilingproductNr?: number;
-}
-
-export interface BiedingUpdateDto {
-    bedragPerFust?: number;
-    aantalStuks?: number;
-}
-
-export interface VeilingMeester_BiedingDto {
-    bedragPerFust?: number;
-    aantalStuks?: number;
-    biedingNr?: number;
-    gebruikerNr?: number;
-    veilingNr?: number;
-    veilingProductNr?: number;
-}
+// Shared API DTO definitions based on the ASP.NET Core Web API models.
+// This file is framework-agnostic so other React sections can reuse the same types.
 
 // Categorie DTO's
 export interface CategorieCreateDto {
-    naam: string;
+    Naam: string;
 }
 
 export interface CategorieUpdateDto {
-    naam: string;
+    Naam: string;
 }
 
 export interface CategorieListDto {
-    categorieNr?: number;
-    naam?: string | null;
+    CategorieNr: number;
+    Naam: string;
 }
 
 export interface CategorieDetailDto {
-    categorieNr?: number;
-    naam?: string | null;
+    CategorieNr: number;
+    Naam: string;
+}
+
+// Bieding DTO's
+export interface BiedingBaseAmountDto {
+    BedragPerFust: number;
+    AantalStuks: number;
+}
+
+export interface BiedingCreateDto extends BiedingBaseAmountDto {
+    BiedingNr: number;
+    GebruikerNr: number;
+    VeilingNr: number;
+    VeilingproductNr: number;
+}
+
+export interface BiedingUpdateDto extends BiedingBaseAmountDto {}
+
+export interface VeilingMeester_BiedingDto extends BiedingBaseAmountDto {
+    BiedingNr: number;
+    GebruikerNr: number;
+    VeilingNr: number;
+    VeilingProductNr: number;
 }
 
 // Gebruiker DTO's
-interface GebruikerBaseDto {
-    bedrijfsNaam: string;
-    email: string;
-    wachtwoord: string;
-    laatstIngelogd?: string | null;
-    soort: string;
-    kvk?: string | null;
-    straatAdres?: string | null;
-    postcode?: string | null;
+export interface BaseGebruiker {
+    BedrijfsNaam: string;
+    Email: string;
+    Wachtwoord: string;
+    LaatstIngelogd?: string | null;
+    Soort: string;
+    Kvk?: string | null;
+    StraatAdres?: string | null;
+    Postcode?: string | null;
 }
 
-export interface GebruikerCreateDto extends GebruikerBaseDto {}
+export interface GebruikerCreateDto extends BaseGebruiker {}
 
-export interface GebruikerUpdateDto extends GebruikerBaseDto {}
+export interface GebruikerUpdateDto extends BaseGebruiker {}
 
-export interface Klant_GebruikerDto extends GebruikerBaseDto {
-    gebruikerNr?: number;
-    biedingen?: VeilingMeester_BiedingDto[] | null;
+export interface Klant_GebruikerDto extends BaseGebruiker {
+    GebruikerNr: number;
+    Biedingen: VeilingMeester_BiedingDto[];
 }
 
 // Veiling DTO's
-export interface VeilingCreateDto {
-    veilingNaam: string;
-    begintijd: string;
-    eindtijd: string;
-    status?: string | null;
+export interface BaseVeilingDto {
+    VeilingNaam: string;
+    Begintijd: string;
+    Eindtijd: string;
 }
 
-export interface VeilingUpdateDto {
-    veilingNaam: string;
-    begintijd: string;
-    eindtijd: string;
+export interface Klant_VeilingDto extends BaseVeilingDto {
+    VeilingNr?: number | null;
+    Status: string;
+    Producten: VeilingProductDto[];
+}
+
+export interface VeilingCreateDto extends BaseVeilingDto {
+    Status: string;
+}
+
+export interface VeilingUpdateDto extends BaseVeilingDto {}
+
+export interface VeilingMeester_VeilingDto extends BaseVeilingDto {
+    Status: string;
+    VeilingNr?: number | null;
+    Producten: VeilingProductDto[];
+    Biedingen: VeilingMeester_BiedingDto[];
 }
 
 export interface VeilingProductDto {
-    veilingProductNr?: number;
-    naam?: string | null;
-    startprijs?: number;
-    voorraad?: number;
-    imagePath?: string | null;
-}
-
-export interface VeilingMeester_VeilingDto {
-    veilingNaam: string;
-    begintijd: string;
-    eindtijd: string;
-    status?: string | null;
-    veilingNr?: number | null;
-    producten?: VeilingProductDto[] | null;
-    biedingen?: VeilingMeester_BiedingDto[] | null;
+    VeilingProductNr: number;
+    Naam: string;
+    Startprijs: number;
+    Voorraad: number;
+    ImagePath: string;
 }
 
 // Veilingproduct DTO's
 export interface VeilingproductCreateDto {
-    naam: string;
-    geplaatstDatum?: string | null;
-    fust?: number;
-    voorraad?: number;
-    startprijs?: number;
-    categorieNr?: number;
-    veilingNr?: number | null;
-    plaats: string;
-    minimumprijs?: number;
-    kwekernr?: number;
-    beginDatum?: string;
-    status?: boolean;
-    imagePath: string;
+    Naam: string;
+    GeplaatstDatum?: string | null;
+    Fust: number;
+    Voorraad: number;
+    Startprijs: number;
+    CategorieNr: number;
+    VeilingNr?: number | null;
+    Plaats: string;
+    Minimumprijs: number;
+    Kwekernr: number;
+    BeginDatum: string;
+    Status: boolean;
+    ImagePath: string;
 }
 
 export interface VeilingproductUpdateDto {
-    naam: string;
-    geplaatstDatum?: string | null;
-    fust?: number;
-    voorraad?: number;
-    startprijs?: number;
-    categorieNr?: number;
-    veilingNr?: number | null;
-    kwekernr?: number;
-    plaats: string;
-    minimumprijs?: number;
-    beginDatum?: string;
-    status?: boolean;
-    imagePath: string;
+    Naam: string;
+    GeplaatstDatum?: string | null;
+    Fust: number;
+    Voorraad: number;
+    Startprijs: number;
+    CategorieNr: number;
+    VeilingNr?: number | null;
+    Plaats: string;
+    Minimumprijs: number;
+    Kwekernr: number;
+    BeginDatum: string;
+    Status: boolean;
+    ImagePath: string;
 }
 
 export interface VeilingproductListDto {
-    veilingProductNr?: number;
-    naam?: string | null;
-    geplaatstDatum?: string;
-    fust?: number;
-    voorraad?: number;
-    startprijs?: number;
-    minimumprijs?: number;
-    plaats?: string | null;
-    categorie?: string | null;
-    veilingNr?: number | null;
-    kwekernr?: number;
-    beginDatum?: string;
-    status?: boolean;
-    imagePath?: string | null;
+    VeilingProductNr: number;
+    Naam: string;
+    GeplaatstDatum: string;
+    Fust: number;
+    Voorraad: number;
+    Startprijs: number;
+    Minimumprijs: number;
+    Plaats: string;
+    Categorie?: string | null;
+    VeilingNr?: number | null;
+    Kwekernr: number;
+    BeginDatum: string;
+    Status: boolean;
+    ImagePath: string;
 }
 
 export interface VeilingproductBidListItem {
-    biedNr?: number;
-    bedragPerFust?: number;
-    aantalStuks?: number;
-    gebruikerNr?: number;
+    BiedNr: number;
+    BedragPerFust: number;
+    AantalStuks: number;
+    GebruikerNr: number;
 }
 
 export interface VeilingproductDetailDto {
-    veilingProductNr?: number;
-    naam?: string | null;
-    geplaatstDatum?: string;
-    fust?: number;
-    voorraad?: number;
-    startprijs?: number;
-    minimumprijs?: number;
-    plaats?: string | null;
-    categorie?: string | null;
-    veilingNr?: number | null;
-    kwekernr?: number;
-    beginDatum?: string;
-    status?: boolean;
-    imagePath?: string | null;
-    biedingen?: VeilingproductBidListItem[] | null;
+    VeilingProductNr: number;
+    Naam: string;
+    GeplaatstDatum: string;
+    Fust: number;
+    Voorraad: number;
+    Startprijs: number;
+    Minimumprijs: number;
+    Plaats: string;
+    Categorie?: string | null;
+    VeilingNr?: number | null;
+    Kwekernr: number;
+    BeginDatum: string;
+    Status: boolean;
+    ImagePath: string;
+    Biedingen: VeilingproductBidListItem[];
 }
