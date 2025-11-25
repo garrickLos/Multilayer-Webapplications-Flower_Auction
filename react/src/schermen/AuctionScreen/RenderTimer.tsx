@@ -1,146 +1,96 @@
 import { useState, useEffect } from "react";
-import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet';
-
-// --- Interfaces ---
-
-interface ProductLogica {
-    naam: string;
-    startPrijs: number;
-    minPrijs: number;
-}
-
-interface VeilingLogica {
-    veilingNr: number;
-    status: string;
-    startIso: string;
-    endIso: string;
-    producten: ProductLogica[];
-}
-
-interface ApiVeilingResponse {
-    veilingNr: number;
-    status: string;
-    begintijd: string;
-    eindtijd: string;
-    producten: Array<{
-        naam: string;
-        // LET OP: Pas deze namen aan aan wat je ECHT uit de database krijgt (waarschijnlijk kleine letters)
-        minimumprijs?: number; 
-        startprijs?: number;
-    }>;
-}
-
-// --- Functies ---
-
-function CalculateActiveProductPrice(veiling: VeilingLogica): number {
-    // FOUT HERSTELD: Return altijd een nummer, geen string, anders crasht .toFixed()
-    if (!veiling || veiling.status !== 'active') return 0;
-
-    const start = veiling.startIso ? new Date(veiling.startIso).getTime() : Date.now();
-    const now = Date.now();
-
-    if (now < start) {
-        return veiling.producten.length > 0 ? veiling.producten[0].startPrijs : 0;
-    }
-
-    const verstrekenTijd = now - start;
-    
-    // FOUT HERSTELD: 'Math' met hoofdletter M
-    let resterendeTijdInSec = Math.floor(verstrekenTijd / 1000);
-
-    for (let i = 0; i < veiling.producten.length; i++) {
-        const product = veiling.producten[i];
-
-        console.log(product.naam);
-        console.log(product.minPrijs);
-
-        const prijsVerschil = product.startPrijs - product.minPrijs;
-        
-        // 1 cent = 1 seconde. Dus prijsverschil * 100 = seconden.
-        const productDuurInSec = Math.round(prijsVerschil * 100);
-
-        if (resterendeTijdInSec <= productDuurInSec) {
-            
-            const korting = resterendeTijdInSec * 0.01;
-            let huidigePrijs = product.startPrijs - korting;
-
-            return Number(huidigePrijs.toFixed(2));
-        }
-
-        // Trek de tijd van dit product af van het totaal en ga naar de volgende
-        resterendeTijdInSec -= productDuurInSec;
-    }
-
-    const laatsteProduct = veiling.producten[veiling.producten.length - 1]
-    return laatsteProduct ? laatsteProduct.minPrijs : 0;
-}
+import { type VeilingLogica } from "./VeilingTypes";
 
 interface TimerProps {
-    onPrijsUpdate: (nieuwePrijs: number) => void;
-    targetVeilingNr: number;
+    onPrijsUpdate: (prijs: number) => void;
+    onProductWissel: (productIndex: number) => void; // Nieuwe prop
+    item: VeilingLogica;
 }
 
-// --- Component ---
+// Hulpfunctie: Bereken de gegevens van het huidige actieve product
+function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
+    if (!veiling || !veiling.producten || veiling.producten.length === 0) {
+        return { prijs: 0, index: -1, isAfgelopen: true };
+    }
 
-export function Timer({ onPrijsUpdate, targetVeilingNr }: TimerProps) {
-    const [refreshApi, setRefreshApi] = useState(Date.now());
-    const [currentTime, setCurrentTime] = useState(Date.now());
-
-    const { data } = GetVeilingen<ApiVeilingResponse[]>(`/api/Veiling?refresh=${refreshApi}`);
-
-    const safeData = data || [];
-
-    const veilingenLijst: VeilingLogica[] = safeData.map((item) => {
-        return {
-            veilingNr: item.veilingNr,
-            status: item.status,
-            startIso: item.begintijd,
-            endIso: item.eindtijd,
-            producten: (item.producten || []).map(prod => ({
-                naam: prod.naam,
-                // FOUT HERSTELD: Mappen naar de waarschijnlijke API velden
-                startPrijs: prod.startprijs || 0,
-                minPrijs: prod.minimumprijs || 0
-            }))
+    const startTijd = veiling.startIso ? new Date(veiling.startIso).getTime() : Date.now();
+    const nu = Date.now();
+    
+    // Veiling is nog niet begonnen
+    if (nu < startTijd) {
+        return { 
+            prijs: veiling.producten[0].startPrijs, 
+            index: 0, 
+            isAfgelopen: false 
         };
-    });
+    }
 
+    let verstrekenTijdInSec = Math.floor((nu - startTijd) / 1000); // Tijd in seconden
+
+    // Loop door de producten heen om te kijken welke nu "bezig" is
+    for (let i = 0; i < veiling.producten.length; i++) {
+        const product = veiling.producten[i];
+        
+        // 1 cent daling per seconde (standaard bloemenveiling)
+        const dalingPerSeconde = 0.01; 
+        
+        const prijsVerschil = product.startPrijs - product.minPrijs;
+        const productDuurSec = Math.floor(prijsVerschil / dalingPerSeconde);
+
+        // Zitten we binnen de tijd van DIT product?
+        if (verstrekenTijdInSec < productDuurSec) {
+            const huidigeDaling = verstrekenTijdInSec * dalingPerSeconde;
+            const actuelePrijs = product.startPrijs - huidigeDaling;
+            
+            return {
+                prijs: Number(actuelePrijs.toFixed(2)),
+                index: i,
+                isAfgelopen: false
+            };
+        }
+
+        // Dit product is klaar (tijd is op, minimumprijs bereikt).
+        // We trekken de duur van dit product af van de verstreken tijd en gaan naar de volgende loop.
+        verstrekenTijdInSec -= productDuurSec;
+    }
+
+    // Als we hier komen, zijn alle producten geweest
+    const laatsteProduct = veiling.producten[veiling.producten.length - 1];
+    return {
+        prijs: laatsteProduct.minPrijs,
+        index: veiling.producten.length - 1,
+        isAfgelopen: true
+    };
+}
+
+export function Timer({ onPrijsUpdate, onProductWissel, item }: TimerProps) {
+    const [, setTick] = useState(0);
+
+    // Timer loop voor de visuele update elke seconde
     useEffect(() => {
         const visualInterval = setInterval(() => {
-            setCurrentTime(Date.now());
-        }, 1000);
+            setTick(t => t + 1);
+        }, 1000); // Check elke seconde
         return () => clearInterval(visualInterval);
     }, []);
 
+    // Elke render de berekening opnieuw doen
+    const status = berekenHuidigeVeilingStaat(item);
+
+    // Effect om updates naar de parent te sturen (alleen als waarden veranderen)
     useEffect(() => {
-        const apiInterval = setInterval(() => {
-            setRefreshApi(Date.now());
-        }, 1000);
-        return () => clearInterval(apiInterval);
-    }, []);
-
-    const item = veilingenLijst.length > 0 
-        ? veilingenLijst.find(v => v.veilingNr === targetVeilingNr)  
-        : null;
-    
-    const price = item ? CalculateActiveProductPrice(item) : 0;
-
-
-
-    useEffect(() => {
-        // Controleer of onPrijsUpdate bestaat voordat je hem aanroept
-        if (item && onPrijsUpdate) {
-            onPrijsUpdate(price);
-        }
-    }, [price, item, onPrijsUpdate]); 
-
-    if (!item) {
-        return <p>Veiling laden...</p>;
-    }
+        onPrijsUpdate(status.prijs);
+        onProductWissel(status.index);
+    }, [status.prijs, status.index, onPrijsUpdate, onProductWissel]);
 
     return (
         <div className="veiling-klok">
-            <p>€ {price.toFixed(2)}</p>
+             {/* Als de veiling is afgelopen, toon een tekst, anders de prijs */}
+            {status.isAfgelopen ? (
+                <p className="klok-einde">VEILING GESLOTEN</p>
+            ) : (
+                <p>€ {status.prijs.toFixed(2)}</p>
+            )}
         </div>
     );
 }

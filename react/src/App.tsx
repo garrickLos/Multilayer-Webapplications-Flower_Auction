@@ -32,7 +32,7 @@ export default function App() {
                 <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
                 <Route path="/privacyBeleid" element={<PrivacyScherm />} />
-                <Route path='/Auction' element={<AuctionScreen />} />
+                <Route path='/auction/:veilingnr' element={<AuctionScreen />} />
                 <Route path='/404' element={<ErrorPage />} />
 
                 <Route path='*' element={<Navigate to="/404" replace />} />          
