@@ -55,7 +55,8 @@ public class VeilingproductController : ControllerBase
         decimal Startprijs,
         string? Categorie,
         int VeilingNr,
-        string ImagePath
+        string ImagePath,
+        string Plaats
     );
     
     // Biedingen bij detailweergave
@@ -117,7 +118,8 @@ public class VeilingproductController : ControllerBase
                 v.Startprijs,
                 v.Categorie == null ? null : v.Categorie.Naam,
                 v.VeilingNr,
-                v.ImagePath
+                v.ImagePath,
+                v.Plaats
             ))
             .ToListAsync(ct);
 
