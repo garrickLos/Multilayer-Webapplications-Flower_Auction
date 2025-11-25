@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -42,7 +43,7 @@ public class GebruikerController : ControllerBase
             .ProjectGebruikerKlant()
             .ToListAsync(ct);
 
-        SetPaginationHeaders(total, page, pageSize);
+        this.SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
@@ -59,7 +60,7 @@ public class GebruikerController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404))
+            ? NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404))
             : Ok(dto);
     }
 
@@ -77,6 +78,7 @@ public class GebruikerController : ControllerBase
             BedrijfsNaam = dto.BedrijfsNaam.Trim(),
             Email        = dto.Email.Trim(),
             Wachtwoord   = dto.Wachtwoord,
+            LaatstIngelogd = dto.LaatstIngelogd,
             Soort        = dto.Soort,
             Kvk          = dto.Kvk,
             StraatAdres  = dto.StraatAdres,
@@ -86,17 +88,10 @@ public class GebruikerController : ControllerBase
         _db.Gebruikers.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        var result = new GebruikerCreateDto
-        {
-            BedrijfsNaam = entity.BedrijfsNaam,
-            Email        = entity.Email,
-            Wachtwoord   = entity.Wachtwoord,
-            Soort        = entity.Soort,
-            Kvk          = entity.Kvk,
-            StraatAdres  = entity.StraatAdres,
-            Postcode     = entity.Postcode,
-            LaatstIngelogd = entity.LaatstIngelogd ?? default
-        };
+        var result = await _db.Gebruikers.AsNoTracking()
+            .Where(x => x.GebruikerNr == entity.GebruikerNr)
+            .ProjectGebruikerKlant()
+            .FirstAsync(ct);
 
         return CreatedAtAction(nameof(GetById), new { id = entity.GebruikerNr }, result);
     }
@@ -113,28 +108,23 @@ public class GebruikerController : ControllerBase
 
         var entity = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
         entity.BedrijfsNaam = dto.BedrijfsNaam.Trim();
         entity.Email        = dto.Email.Trim();
+        entity.Wachtwoord   = dto.Wachtwoord;
         entity.Soort        = dto.Soort;
         entity.Kvk          = dto.Kvk;
         entity.StraatAdres  = dto.StraatAdres;
         entity.Postcode     = dto.Postcode;
+        entity.LaatstIngelogd = dto.LaatstIngelogd;
 
         await _db.SaveChangesAsync(ct);
 
-        var resultDto = new Klant_GebruikerDto
-        {
-            GebruikerNr  = entity.GebruikerNr,
-            BedrijfsNaam = entity.BedrijfsNaam,
-            Email        = entity.Email,
-            Wachtwoord   = entity.Wachtwoord,
-            Soort        = entity.Soort,
-            Kvk          = entity.Kvk,
-            StraatAdres  = entity.StraatAdres,
-            Postcode     = entity.Postcode
-        };
+        var resultDto = await _db.Gebruikers.AsNoTracking()
+            .Where(x => x.GebruikerNr == id)
+            .ProjectGebruikerKlant()
+            .FirstAsync(ct);
 
         return Ok(resultDto);
     }
@@ -147,27 +137,11 @@ public class GebruikerController : ControllerBase
     {
         var entity = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
         _db.Gebruikers.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return NoContent();
-    }
-
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
-        {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
-
-    private void SetPaginationHeaders(int total, int page, int pageSize)
-    {
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
     }
 }
 
@@ -180,6 +154,7 @@ public static class GebruikerExtensions
             BedrijfsNaam = g.BedrijfsNaam,
             Email        = g.Email,
             Wachtwoord   = g.Wachtwoord,
+            LaatstIngelogd = g.LaatstIngelogd,
             Soort        = g.Soort,
             Kvk          = g.Kvk,
             StraatAdres  = g.StraatAdres,

@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -7,9 +9,9 @@ namespace mvc_api.Controllers;
 
 public static class VeilingStatus
 {
-    public const string Active = "active";
+    public const string Active   = "active";
     public const string Inactive = "inactive";
-    public const string Sold = "sold";
+    public const string Sold     = "sold";
 }
 
 [ApiController]
@@ -52,10 +54,7 @@ public class VeilingController : ControllerBase
             query = query.Where(v => v.Status == VeilingStatus.Active && v.Eindtijd > now);
 
         var total = await query.CountAsync(ct);
-
-        Response.Headers.Append("X-Total-Count", total.ToString());
-        Response.Headers.Append("X-Page", page.ToString());
-        Response.Headers.Append("X-Page-Size", pageSize.ToString());
+        this.SetPaginationHeaders(total, page, pageSize);
 
         query = query
             .OrderBy(v => v.Begintijd)
@@ -93,7 +92,7 @@ public class VeilingController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         return dto is null
-            ? NotFound(Problem("Geen veiling gevonden met dit ID.", statusCode: 404, title: "Niet Gevonden"))
+            ? NotFound(this.CreateProblemDetails("Niet gevonden", "Geen veiling gevonden met dit ID.", 404))
             : Ok(dto);
     }
 
@@ -123,7 +122,7 @@ public class VeilingController : ControllerBase
         }
         catch
         {
-            return StatusCode(500, CreateProblemDetails(
+            return StatusCode(500, this.CreateProblemDetails(
                 "Opslagfout",
                 "Er is een fout opgetreden bij het opslaan van de Veiling.",
                 500));
@@ -151,7 +150,7 @@ public class VeilingController : ControllerBase
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
 
         if (entity is null)
-            return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
         entity.VeilingNaam = dto.VeilingNaam;
         entity.Begintijd   = dto.Begintijd;
@@ -180,7 +179,7 @@ public class VeilingController : ControllerBase
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
 
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
         _db.Veilingen.Remove(entity);
         await _db.SaveChangesAsync(ct);
@@ -199,15 +198,6 @@ public class VeilingController : ControllerBase
             _ => VeilingStatus.Inactive
         };
     }
-
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
-        {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
 }
 
 public static class VeilingExtensions
@@ -227,13 +217,14 @@ public static class VeilingExtensions
                     : v.Begintijd <= now
                         ? VeilingStatus.Active
                         : VeilingStatus.Inactive,
-            Producten = v.Veilingproducten.Select(p => new VeilingProductDto(
-                p.VeilingProductNr,
-                p.Naam,
-                p.Startprijs,
-                p.VoorraadBloemen,
-                p.ImagePath
-            ))
+            Producten = v.Veilingproducten.Select(p => new VeilingProductDto
+            {
+                VeilingProductNr = p.VeilingProductNr,
+                Naam             = p.Naam,
+                Startprijs       = p.Startprijs,
+                Voorraad         = p.VoorraadBloemen,
+                ImagePath        = p.ImagePath
+            })
         });
 
     public static IQueryable<VeilingMeester_VeilingDto> ProjectToVeilingMeesterDto(
@@ -251,13 +242,14 @@ public static class VeilingExtensions
                     : v.Begintijd <= now
                         ? VeilingStatus.Active
                         : VeilingStatus.Inactive,
-            Producten = v.Veilingproducten.Select(p => new VeilingProductDto(
-                p.VeilingProductNr,
-                p.Naam,
-                p.Startprijs,
-                p.VoorraadBloemen,
-                p.ImagePath
-            )).ToList(),
+            Producten = v.Veilingproducten.Select(p => new VeilingProductDto
+            {
+                VeilingProductNr = p.VeilingProductNr,
+                Naam             = p.Naam,
+                Startprijs       = p.Startprijs,
+                Voorraad         = p.VoorraadBloemen,
+                ImagePath        = p.ImagePath
+            }).ToList(),
             Biedingen = v.Biedingen.Select(b => new VeilingMeester_BiedingDto
             {
                 BiedingNr        = b.BiedNr,

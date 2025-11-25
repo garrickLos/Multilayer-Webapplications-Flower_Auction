@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -42,7 +43,7 @@ public class CategorieController : ControllerBase
             .Select(c => new CategorieListDto { CategorieNr = c.CategorieNr, Naam = c.Naam })
             .ToListAsync(ct);
 
-        SetPaginationHeaders(total, page, pageSize);
+        this.SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
@@ -57,7 +58,7 @@ public class CategorieController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404))
+            ? NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404))
             : Ok(dto);
     }
 
@@ -91,7 +92,7 @@ public class CategorieController : ControllerBase
 
         var entity = await _db.Categorieen.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
 
         entity.Naam = dto.Naam.Trim();
         await _db.SaveChangesAsync(ct);
@@ -105,38 +106,10 @@ public class CategorieController : ControllerBase
     {
         var entity = await _db.Categorieen.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
 
         _db.Categorieen.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
-
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
-        {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
-
-    private void SetPaginationHeaders(int total, int page, int pageSize)
-    {
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-    }
-}
-
-public sealed class CategorieListDto
-{
-    public int CategorieNr { get; init; }
-    public string Naam { get; init; } = string.Empty;
-}
-
-public sealed class CategorieDetailDto
-{
-    public int CategorieNr { get; init; }
-    public string Naam { get; init; } = string.Empty;
 }

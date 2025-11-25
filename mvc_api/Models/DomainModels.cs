@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -102,7 +102,7 @@ public class Veilingproduct
 
     [Precision(18, 2)]
     [Range(typeof(int), "1", "999999999",
-        ErrorMessage = "Minimumprijs moet minimaal 0,01 zijn.")]
+        ErrorMessage = "Minimumprijs moet minimaal 1 zijn.")]
     public int Minimumprijs { get; set; }
 
     public int Kwekernr { get; set; }

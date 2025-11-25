@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Mvc;
@@ -54,13 +54,18 @@ public class VeilingproductController : ControllerBase
                 Fust             = v.AantalFusten,
                 Voorraad         = v.VoorraadBloemen,
                 Startprijs       = v.Startprijs,
+                Minimumprijs     = v.Minimumprijs,
+                Plaats           = v.Plaats,
                 Categorie        = v.Categorie == null ? null : v.Categorie.Naam,
                 VeilingNr        = v.VeilingNr,
+                Kwekernr         = v.Kwekernr,
+                BeginDatum       = v.BeginDatum,
+                Status           = v.Status,
                 ImagePath        = v.ImagePath
             })
             .ToListAsync(ct);
 
-        SetPaginationHeaders(total, page, pageSize);
+        this.SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
@@ -73,34 +78,34 @@ public class VeilingproductController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404))
+            ? NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404))
             : Ok(dto);
     }
 
     // POST: api/Veilingproduct
     [HttpPost]
     public async Task<ActionResult<VeilingproductDetailDto>> Create(
-        [FromBody] VeilingproductCreateRequest dto,
+        [FromBody] VeilingproductCreateDto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
         if (!await ReferenceExists(_db.Categorieen, c => c.CategorieNr == dto.CategorieNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
         if (!await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
         if (!await ReferenceExists(_db.Gebruikers, g => g.GebruikerNr == dto.Kwekernr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
 
         var entity = new Veilingproduct
         {
             Naam            = dto.Naam.Trim(),
             GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
-            AantalFusten    = dto.AantalFusten,
-            VoorraadBloemen = dto.VoorraadBloemen,
+            AantalFusten    = dto.Fust,
+            VoorraadBloemen = dto.Voorraad,
             Startprijs      = dto.Startprijs,
             CategorieNr     = dto.CategorieNr,
             VeilingNr       = dto.VeilingNr,
@@ -125,7 +130,7 @@ public class VeilingproductController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<VeilingproductDetailDto>> Update(
         int id,
-        [FromBody] VeilingproductUpdateRequest dto,
+        [FromBody] VeilingproductUpdateDto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
@@ -133,16 +138,16 @@ public class VeilingproductController : ControllerBase
 
         var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
 
         if (!await ReferenceExists(_db.Categorieen, c => c.CategorieNr == dto.CategorieNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
 
         if (!await ReferenceExists(_db.Veilingen, v => v.VeilingNr == dto.VeilingNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
         if (!await ReferenceExists(_db.Gebruikers, g => g.GebruikerNr == dto.Kwekernr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
 
         entity.Naam            = dto.Naam.Trim();
         entity.GeplaatstDatum  = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
@@ -152,6 +157,10 @@ public class VeilingproductController : ControllerBase
         entity.CategorieNr     = dto.CategorieNr;
         entity.VeilingNr       = dto.VeilingNr;
         entity.Kwekernr        = dto.Kwekernr;
+        entity.Plaats          = dto.Plaats;
+        entity.Minimumprijs    = dto.Minimumprijs;
+        entity.BeginDatum      = dto.BeginDatum;
+        entity.Status          = dto.Status;
         entity.ImagePath       = dto.ImagePath;
 
         await _db.SaveChangesAsync(ct);
@@ -168,7 +177,7 @@ public class VeilingproductController : ControllerBase
     {
         var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
 
         _db.Veilingproducten.Remove(entity);
         await _db.SaveChangesAsync(ct);
@@ -184,8 +193,13 @@ public class VeilingproductController : ControllerBase
             Fust             = v.AantalFusten,
             Voorraad         = v.VoorraadBloemen,
             Startprijs       = v.Startprijs,
+            Minimumprijs     = v.Minimumprijs,
+            Plaats           = v.Plaats,
             Categorie        = v.Categorie == null ? null : v.Categorie.Naam,
             VeilingNr        = v.VeilingNr,
+            Kwekernr         = v.Kwekernr,
+            BeginDatum       = v.BeginDatum,
+            Status           = v.Status,
             ImagePath        = v.ImagePath,
             Biedingen        = v.Veiling != null
                 ? v.Veiling.Biedingen
@@ -200,125 +214,6 @@ public class VeilingproductController : ControllerBase
                 : Enumerable.Empty<VeilingproductBidListItem>()
         });
 
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
-        {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
-
-    private void SetPaginationHeaders(int total, int page, int pageSize)
-    {
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-    }
-
     private static Task<bool> ReferenceExists<T>(DbSet<T> set, Expression<Func<T, bool>> predicate, CancellationToken ct)
         where T : class => set.AsNoTracking().AnyAsync(predicate, ct);
-}
-
-public sealed class VeilingproductCreateRequest
-{
-    [Required, StringLength(200)]
-    public string Naam { get; init; } = string.Empty;
-
-    public DateTime? GeplaatstDatum { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int AantalFusten { get; init; }
-
-    [Range(0, int.MaxValue)]
-    public int VoorraadBloemen { get; init; }
-
-    [Range(typeof(int), "1", "999999999")]
-    public int Startprijs { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int CategorieNr { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int VeilingNr { get; init; }
-
-    [Required, StringLength(200)]
-    public string Plaats { get; init; } = string.Empty;
-
-    [Range(typeof(int), "1", "999999999")]
-    public int Minimumprijs { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int Kwekernr { get; init; }
-
-    public DateOnly BeginDatum { get; init; }
-
-    public bool Status { get; init; }
-
-    [Required, StringLength(200)]
-    public string ImagePath { get; init; } = string.Empty;
-}
-
-public sealed class VeilingproductUpdateRequest
-{
-    [Required, StringLength(200)]
-    public string Naam { get; init; } = string.Empty;
-
-    public DateTime? GeplaatstDatum { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int Fust { get; init; }
-
-    [Range(0, int.MaxValue)]
-    public int Voorraad { get; init; }
-
-    [Range(typeof(int), "1", "999999999")]
-    public int Startprijs { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int CategorieNr { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int VeilingNr { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int Kwekernr { get; init; }
-
-    [Required, StringLength(200)]
-    public string ImagePath { get; init; } = string.Empty;
-}
-
-public sealed class VeilingproductListDto
-{
-    public int VeilingProductNr { get; init; }
-    public string Naam { get; init; } = string.Empty;
-    public DateTime GeplaatstDatum { get; init; }
-    public int Fust { get; init; }
-    public int Voorraad { get; init; }
-    public decimal Startprijs { get; init; }
-    public string? Categorie { get; init; }
-    public int VeilingNr { get; init; }
-    public string ImagePath { get; init; } = string.Empty;
-}
-
-public sealed class VeilingproductBidListItem
-{
-    public int BiedNr { get; init; }
-    public decimal BedragPerFust { get; init; }
-    public int AantalStuks { get; init; }
-    public int GebruikerNr { get; init; }
-}
-
-public sealed class VeilingproductDetailDto
-{
-    public int VeilingProductNr { get; init; }
-    public string Naam { get; init; } = string.Empty;
-    public DateTime GeplaatstDatum { get; init; }
-    public int Fust { get; init; }
-    public int Voorraad { get; init; }
-    public decimal Startprijs { get; init; }
-    public string? Categorie { get; init; }
-    public int VeilingNr { get; init; }
-    public string ImagePath { get; init; } = string.Empty;
-    public IEnumerable<VeilingproductBidListItem> Biedingen { get; init; } = Enumerable.Empty<VeilingproductBidListItem>();
 }

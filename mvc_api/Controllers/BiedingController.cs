@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -10,8 +11,6 @@ namespace mvc_api.Controllers;
 [Produces("application/json")]
 public class BiedingController : ControllerBase
 {
-    private const string StatusActive = "active";
-
     private readonly AppDbContext _db;
 
     public BiedingController(AppDbContext db) => _db = db;
@@ -45,7 +44,7 @@ public class BiedingController : ControllerBase
             .ProjectToVeilingMeester()
             .ToListAsync(ct);
 
-        SetPaginationHeaders(total, page, pageSize);
+        this.SetPaginationHeaders(total, page, pageSize);
 
         return Ok(items);
     }
@@ -60,7 +59,7 @@ public class BiedingController : ControllerBase
             .FirstOrDefaultAsync(ct);
 
         return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
+            ? NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
             : Ok(dto);
     }
 
@@ -74,17 +73,17 @@ public class BiedingController : ControllerBase
             return ValidationProblem(ModelState);
 
         if (!await _db.Gebruikers.AsNoTracking().AnyAsync(g => g.GebruikerNr == dto.GebruikerNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
 
         var veiling = await _db.Veilingen.FirstOrDefaultAsync(v => v.VeilingNr == dto.VeilingNr, ct);
 
         if (veiling is null)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
+            return BadRequest(this.CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
 
         // Alleen bieden op actieve veilingen
-        if (!string.Equals(veiling.Status, StatusActive, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(veiling.Status, VeilingStatus.Active, StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest(CreateProblemDetails(
+            return BadRequest(this.CreateProblemDetails(
                 "Ongeldige status",
                 "Er kan alleen geboden worden op een actieve veiling.",
                 400));
@@ -108,7 +107,7 @@ public class BiedingController : ControllerBase
         }
         catch (DbUpdateException)
         {
-            return StatusCode(500, CreateProblemDetails(
+            return StatusCode(500, this.CreateProblemDetails(
                 "Opslagfout",
                 "Er is een fout opgetreden bij het opslaan van de bieding.",
                 500));
@@ -129,7 +128,7 @@ public class BiedingController : ControllerBase
 
     // PUT: api/Bieding/1001
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<BiedingUpdateDto>> Update(
+    public async Task<ActionResult<VeilingMeester_BiedingDto>> Update(
         int id,
         [FromBody] BiedingUpdateDto dto,
         CancellationToken ct = default)
@@ -139,18 +138,21 @@ public class BiedingController : ControllerBase
 
         var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
 
         entity.BedragPerFust = dto.BedragPerFust;
         entity.AantalStuks   = dto.AantalStuks;
 
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new BiedingUpdateDto
+        return Ok(new VeilingMeester_BiedingDto
         {
+            BiedingNr     = entity.BiedNr,
             BedragPerFust = entity.BedragPerFust,
             AantalStuks   = entity.AantalStuks,
-            GebruikerNr   = entity.GebruikerNr
+            GebruikerNr   = entity.GebruikerNr,
+            VeilingNr     = entity.VeilingNr,
+            VeilingProductNr = entity.VeilingproductNr
         });
     }
 
@@ -160,27 +162,11 @@ public class BiedingController : ControllerBase
     {
         var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
         if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
+            return NotFound(this.CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
 
         _db.Biedingen.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return NoContent();
-    }
-
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
-        {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
-
-    private void SetPaginationHeaders(int total, int page, int pageSize)
-    {
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
     }
 }
 
