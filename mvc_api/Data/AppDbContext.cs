@@ -50,6 +50,11 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasIndex(x => x.Email)
             .IsUnique();
 
+        // Bewaar legacy kolomnaam "Wachtwoord" als shadow property zodat bestaande schema's geen kolommen verliezen.
+        b.Entity<Gebruiker>()
+            .Property<string?>("Wachtwoord")
+            .HasMaxLength(200);
+
         b.Entity<Veilingproduct>()
             .HasIndex(x => new { x.CategorieNr, x.Naam });
 
@@ -58,7 +63,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .Property(v => v.Minimumprijs)
             .HasPrecision(18, 2);
 
-        // Seed data (statische waarden)
+        // Seed data (alle waarden statisch houden voor een deterministisch model)
         var loginD1   = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc);
         var loginD2   = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc);
         var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
@@ -71,12 +76,16 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 GebruikerNr    = 1,
                 BedrijfsNaam   = "Flora BV",
                 Email          = "flora@example.nl",
+                NormalizedEmail = "FLORA@EXAMPLE.NL",
                 UserName       = "flora@example.nl",
+                NormalizedUserName = "FLORA@EXAMPLE.NL",
                 LaatstIngelogd = loginD1,
                 Soort          = "Bedrijf",
                 Kvk            = "12345678",
                 StraatAdres    = "Bloemig 10",
-                Postcode       = "1234AB"
+                Postcode       = "1234AB",
+                SecurityStamp  = "STATIC-USER-1",
+                ConcurrencyStamp = "STATIC-CONC-1"
             },
             new Gebruiker
             {
@@ -84,12 +93,16 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 GebruikerNr    = 2,
                 BedrijfsNaam   = "Jan Jansen",
                 Email          = "jan@example.nl",
+                NormalizedEmail = "JAN@EXAMPLE.NL",
                 UserName       = "jan@example.nl",
+                NormalizedUserName = "JAN@EXAMPLE.NL",
                 LaatstIngelogd = loginD2,
                 Soort          = "Koper",
                 Kvk            = "00000000",
                 StraatAdres    = "Laan 5",
-                Postcode       = "2345BC"
+                Postcode       = "2345BC",
+                SecurityStamp  = "STATIC-USER-2",
+                ConcurrencyStamp = "STATIC-CONC-2"
             }
         );
 

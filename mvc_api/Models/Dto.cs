@@ -85,22 +85,13 @@ public record BiedingUpdateDto : BaseBieding_Dto;
 // );
 
 // Gebruiker CRUD
-// Gebruiker CRUD
-public abstract record BaseGebruiker
+public abstract record BaseGebruikerDto
 {
     [Required, StringLength(200)]
     public string BedrijfsNaam { get; set; } = string.Empty;
 
     [Required, EmailAddress, StringLength(200)]
     public string Email { get; set; } = string.Empty;
-
-    // Wordt alleen gebruikt om door te geven aan UserManager.CreateAsync,
-    // niet opslaan in de entity!
-    [Required, StringLength(200)]
-    public string Wachtwoord { get; set; } = string.Empty;
-
-    // LaatstIngelogd wordt door de backend gezet (bij login, niet door de client).
-    public DateTime? LaatstIngelogd { get; set; }
 
     [Required, StringLength(50)]
     public string Soort { get; set; } = string.Empty;
@@ -115,13 +106,15 @@ public abstract record BaseGebruiker
     public string? Postcode { get; set; }
 }
 
-public record GebruikerCreateDto : BaseGebruiker;
+public record GebruikerCreateDto : BaseGebruikerDto;
 
-public record GebruikerUpdateDto : BaseGebruiker;
+public record GebruikerUpdateDto : BaseGebruikerDto;
 
-public record Klant_GebruikerDto : BaseGebruiker
+public record Klant_GebruikerDto : BaseGebruikerDto
 {
     public int GebruikerNr { get; set; }
+
+    public DateTime? LaatstIngelogd { get; set; }
 
     public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = Enumerable.Empty<VeilingMeester_BiedingDto>();
 }
