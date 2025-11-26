@@ -25,6 +25,7 @@ public class Gebruiker : IdentityUser<int>
     [Required, StringLength(200)]
     public string BedrijfsNaam { get; set; } = string.Empty;
 
+    // Identity beheert email + password hash. Geen custom wachtwoord kolom meer in de entity.
     [Required, StringLength(200), EmailAddress]
     public override string? Email { get; set; } = string.Empty;
 
@@ -83,7 +84,8 @@ public class Veilingproduct
     [Required, StringLength(200)]
     public string Naam { get; set; } = string.Empty;
 
-    public DateTime GeplaatstDatum { get; set; } = DateTime.UtcNow;
+    // Geen dynamische standaardwaarde zodat het EF-model deterministisch blijft.
+    public DateTime GeplaatstDatum { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Aantal fusten moet minimaal 1 zijn.")]
     public int AantalFusten { get; set; }
