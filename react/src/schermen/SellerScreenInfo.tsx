@@ -35,7 +35,7 @@ export default function SellerScreenInfo() {
                             <div className="linkerHelft">
                                 <div className="productNaam">Product naam: {product.naam}</div>
                                 <div className="productCategorie">Product categorie: {product.categorie}</div>
-                                <div className="datum">Geplaatst op: {product.geplaatstDatum}</div>
+                                <div className="datum">Geplaatst op: {product.geplaatstDatum.replace("T", " om ")} uur</div>
                             </div>
                             <div className="rechterHelft">
                                 <div className="hoeveelheid">Hoeveelheid bloemen: {product.voorraad}</div>

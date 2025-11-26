@@ -204,7 +204,8 @@ public static class BiedingExtensions
 
             // Properties geërfd van BaseBieding_Dto
             AantalStuks = b.AantalStuks,
-            GebruikerNr = b.GebruikerNr
+            GebruikerNr = b.GebruikerNr,
+            BedragPerFust = b.BedragPerFust
         });
     }
 }

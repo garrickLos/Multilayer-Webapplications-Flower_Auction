@@ -13,38 +13,7 @@ public class VeilingproductController : ControllerBase
 {
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
-
-    // Request DTO's (Create/Update)
-    public sealed record VeilingproductCreateDto(
-        [Required, StringLength(200)] string Naam,
-        DateTime? GeplaatstDatum,
-        [Range(1, int.MaxValue)] int AantalFusten,
-        [Range(0, int.MaxValue)] int VoorraadBloemen,
-        [Range(typeof(int), "1", "999999999")] int Startprijs,
-        [Range(1, int.MaxValue)] int CategorieNr,
-        [Range(1, int.MaxValue)] int VeilingNr,
-        [Required, StringLength(200)] string Plaats,
-        [Range(typeof(int), "1", "999999999")] int Minimumprijs,
-        [Range(1, int.MaxValue)] int Kwekernr,
-        DateOnly beginDatum,
-        bool status,
-        [Required, StringLength(200)] string ImagePath
-    );
-
-    public sealed record VeilingproductUpdateDto(
-        [Required, StringLength(200)] string Naam,
-        DateTime? GeplaatstDatum,
-        [Range(1, int.MaxValue)] int Fust,
-        [Range(0, int.MaxValue)] int Voorraad,
-        [Range(typeof(int), "1", "999999999")] int Startprijs,
-        [Range(1, int.MaxValue)] int CategorieNr,
-        [Range(1, int.MaxValue)] int VeilingNr,
-        [Range(1, int.MaxValue)] int Kwekernr,
-        [Required, StringLength(200)] string ImagePath
-    );
-
-    // Response DTO's
-
+    
     // Lijstweergave
     public sealed record VpList(
         int VeilingProductNr,
@@ -52,9 +21,9 @@ public class VeilingproductController : ControllerBase
         DateTime GeplaatstDatum,
         int Fust,
         int Voorraad,
-        decimal Startprijs,
+        int? Startprijs,
         string? Categorie,
-        int VeilingNr,
+        int? VeilingNr,
         string ImagePath,
         string Plaats
     );
@@ -62,7 +31,7 @@ public class VeilingproductController : ControllerBase
     // Biedingen bij detailweergave
     public sealed record VBList(
         int BiedNr, 
-        decimal BedragPerFust, 
+        int BedragPerFust, 
         int AantalStuks, 
         int GebruikerNr
     );
@@ -73,13 +42,13 @@ public class VeilingproductController : ControllerBase
         DateTime GeplaatstDatum,
         int Fust,
         int Voorraad,
-        decimal Startprijs,
+        int? Startprijs,
         string? Categorie,
-        int VeilingNr,
+        int? VeilingNr,
         string ImagePath,
         IEnumerable<VBList> Biedingen
     );
-
+    
     // GET: api/Veilingproduct?q=tulp&categorieNr=1&page=1&pageSize=50
     [HttpGet]
     public async Task<ActionResult<IEnumerable<VpList>>> GetAll(
@@ -129,7 +98,7 @@ public class VeilingproductController : ControllerBase
 
         return Ok(items);
     }
-
+    
     // GET: api/Veilingproduct/101
     [HttpGet("{id:int}")]
     public async Task<ActionResult<VpDetail>> GetById(int id, CancellationToken ct = default)
@@ -146,7 +115,7 @@ public class VeilingproductController : ControllerBase
     // POST: api/Veilingproduct
     [HttpPost]
     public async Task<ActionResult<VpDetail>> Create(
-        [FromBody] VeilingproductCreateDto dto,
+        [FromBody] KwekerPost_Dto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
@@ -156,12 +125,7 @@ public class VeilingproductController : ControllerBase
             .AnyAsync(c => c.CategorieNr == dto.CategorieNr, ct);
         if (!categorieBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
-
-        var veilingBestaat = await _db.Veilingen
-            .AnyAsync(v => v.VeilingNr == dto.VeilingNr, ct);
-        if (!veilingBestaat)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
-
+        
         var kwekerBestaat = await _db.Gebruikers
             .AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct);
         if (!kwekerBestaat)
@@ -173,9 +137,7 @@ public class VeilingproductController : ControllerBase
             GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
             AantalFusten    = dto.AantalFusten,
             VoorraadBloemen = dto.VoorraadBloemen,
-            Startprijs      = dto.Startprijs,
             CategorieNr     = dto.CategorieNr,
-            VeilingNr       = dto.VeilingNr,
             Plaats          = dto.Plaats,
             Minimumprijs    = dto.Minimumprijs,
             Kwekernr        = dto.Kwekernr,

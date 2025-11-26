@@ -58,7 +58,7 @@ body {
     padding: 10px 20px;
 }
 
-.logoTitel, .veilingPLaatsen, .mijnVeilingenBekijken, .klantGegevens{
+.logoTitel, .veilingPLaatsen, .mijnVeilingenBekijken, .klantGegevens, .uitloggen{
     display: flex;
     align-items: center;
     gap: 10px;

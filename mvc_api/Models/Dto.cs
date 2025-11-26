@@ -13,17 +13,26 @@ public record CategorieUpdateDto(
     [Required, StringLength(200)] string Naam
 );
 
+/*public  record KlantVeilingproductGet_dto
+{
+    [Required, StringLength(200)] public string Naam { get; set; }
+    [Range(1, int.MaxValue)] public int CategorieNr { get; set; }
+    [Required, StringLength(200)] public string Plaats { get; set; }
+    [Required, StringLength(200)] public string ImagePath { get; set; }
+    public int VeilingproductNr { get; set; }
+
+}*/
+
 // Veilingproduct CRUD
-public record VeilingproductCreateDto(
+public record KwekerPost_Dto(
     [Required, StringLength(200)] string Naam,
     DateTime? GeplaatstDatum,
     [Range(1, int.MaxValue)] int AantalFusten,
     [Range(0, int.MaxValue)] int VoorraadBloemen,
-    [Range(typeof(int), "1", "9999999")] int? Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
-    [Range(1, int.MaxValue)] int? VeilingNr,
     [Required, StringLength(200)] string Plaats,
-    [Range(typeof(int), "0.01", "9999999")] int Minimumprijs,
+    [Range(1, 999999999)]
+     int Minimumprijs,
     [Range(1, int.MaxValue)] int Kwekernr,
     DateOnly beginDatum,
     bool status,
@@ -35,7 +44,8 @@ public record VeilingproductUpdateDto(
     DateTime? GeplaatstDatum,
     [Range(1, int.MaxValue)] int Fust,
     [Range(0, int.MaxValue)] int Voorraad,
-    [Range(typeof(int), "1", "9999999")] int Startprijs,
+    [Range(1, 999999999)]
+     int Startprijs,
     [Range(1, int.MaxValue)] int CategorieNr,
     [Range(1, int.MaxValue)] int VeilingNr,
     [Range(1, int.MaxValue)] int Kwekernr,
@@ -47,7 +57,7 @@ public record VeilingproductUpdateDto(
 public abstract record BaseBieding_Dto
 {
 
-    [Range(typeof(int), "1", "9999999")] 
+    [Range(1, 999999999)]
     public int BedragPerFust { get; set; }
     
     [Range(1, int.MaxValue)] 
@@ -183,8 +193,8 @@ public record VeilingMeester_VeilingDto : BaseVeiling_Dto
 public record VeilingProductDto(
     int VeilingProductNr,
     string Naam,
-    decimal Startprijs,
-    decimal Minimumprijs,
+    int? Startprijs,
+    int Minimumprijs,
     string Plaats,
     int CategorieNr,
     int VoorraadBloemen,
@@ -195,7 +205,7 @@ public record VeilingProductDto(
 public record VeilingProductDto_anonymous(
     int VeilingProductNr,
     string Naam,
-    decimal Startprijs,
+    int? Startprijs,
     int VoorraadBloemen,
     string ImagePath
 );

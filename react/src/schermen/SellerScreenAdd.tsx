@@ -16,9 +16,6 @@ export default function SellerScreenAdd() {
     const categorieLijst = (data as CategorieType[]) || [];
 
     const Data = {
-        //GeplaatstDatum: "2025-11-17T10:16:37.880",
-        VeilingNr: 201,
-        Startprijs: 4,
         status: true,
         Kwekernr: 1,
         ImagePath: ""
@@ -110,6 +107,7 @@ export default function SellerScreenAdd() {
         const AlleGegevens = {
             ...Data,
             ...product,
+            Minimumprijs: Math.round(Number(product.Minimumprijs) * 100),
             ImagePath: imagePath,
             GeplaatstDatum: huidigeTijd
         };

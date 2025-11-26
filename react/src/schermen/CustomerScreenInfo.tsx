@@ -18,25 +18,17 @@ export default function CustomerScreenInfo() {
         veilingNr: number;
         veilingProductNr: number;
     }
-
-    console.log(biedingLijst);
-    console.log(productLijst);
-    //geboden aantal stuks bieding
-    //geboden aantal fusten bieding
-    //bedrag per fust betaald bieding
-    
     interface ProductType {
-        veilingProductNr: number;
-        naam: string;
+        veilingProductNr: number; //
+        naam: string;//
         geplaatstDatum: string;
         fust: number;
         voorraad: number | string;
         startprijs: number;
-        categorie: string | null;
+        categorie: string | null; 
         veilingNr: number;
-        imagePath: string;
-        categorieNr: number;
-        plaats: string;
+        imagePath: string; 
+        plaats: string; 
     }
     console.log(biedingLijst);
     return (
@@ -62,7 +54,7 @@ export default function CustomerScreenInfo() {
                                         Totaal aantal bloemen gekocht: {bieding.aantalStuks}
                                     </div>
                                     <div className="totalePrijs">
-                                        Totaal betaald: {bieding.bedragPerFust}
+                                        Totaal betaald: {(bieding.bedragPerFust * bieding.aantalStuks)} euro
                                     </div>
                                     <div className="plaats">Plaats: {product.plaats}</div>
                                 </div>

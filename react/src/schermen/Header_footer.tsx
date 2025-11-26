@@ -26,6 +26,10 @@ export default function Header() {
                         <img src="/src/assets/pictures/webp/klantGegevens.webp" alt="foto van een persoon" className="klantGegevensLogo"></img>
                         <NavLink to='/klantGegevens'>klantGegevens</NavLink>
                     </div>
+                    <div className="uitloggen">
+                        <img src="/src/assets/pictures/webp/klantGegevens.webp" alt="foto van een persoon" className="klantGegevensLogo"></img>
+                        <NavLink to="/home">Uitloggen</NavLink>
+                    </div>
                 </ul>
             </nav>
         </div>
