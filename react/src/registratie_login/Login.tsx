@@ -1,88 +1,145 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// import './css/MainScreenStyle.css';
 import './css/Registration.css';
 
-type LoginPayload = {
+interface LoginRequest {
   email: string;
-  password: string;   // gehashte variant
+  password: string;
   rememberMe: boolean;
-};
-
-type FieldErrors = {
-  email?: string;
-  wachtwoord?: string;
-  global?: string;
-};
-
-// Hash wachtwoord met SHA-256
-async function hashPassword(password: string): Promise<string> {
-  const data = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
 }
 
+interface LoginResponse {
+  success: boolean;
+  errors: string[];
+}
+
+type FormErrors = {
+  email?: string;
+  password?: string;
+  general?: string;
+};
+
+const initialForm: LoginRequest = Object.freeze({
+  email: '',
+  password: '',
+  rememberMe: false
+});
+
+const fieldGroupClass = (err?: string) =>
+    `field-group${err ? ' field-group-error' : ''}`;
+
+const inputClass = (err?: string) =>
+    `form-control${err ? ' is-invalid' : ''}`;
+
 export default function Login() {
+  const [form, setForm] = useState<LoginRequest>(initialForm);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setErrors({});
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, type, checked, value } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
 
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const value = (name: string) => String(data.get(name) ?? '').trim();
+    setForm(prev => ({
+      ...prev,
+      [name]: newValue
+    }) as LoginRequest);
 
-    const email = value('email');
-    const rawPassword = value('wachtwoord');
-    const rememberCheckbox = form.querySelector<HTMLInputElement>('input[name="remember"]');
-    const rememberMe = !!rememberCheckbox?.checked;
+    // veld-specifieke fout resetten
+    setErrors(prev => ({
+      ...prev,
+      [name]: undefined
+    }));
 
-    const newErrors: FieldErrors = {};
+    setSubmittedMessage(null);
+  };
+
+  const validate = (): FormErrors => {
+    const errs: FormErrors = {};
+    const email = form.email.trim();
 
     if (!email) {
-      newErrors.email = 'E-mailadres is verplicht.';
-    } else if (!email.includes('@') || !email.includes('.')) {
-      newErrors.email = 'Vul een geldig e-mailadres in.';
+      errs.email = 'E-mailadres is verplicht.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs.email = 'E-mailadres is ongeldig.';
     }
 
-    if (!rawPassword) {
-      newErrors.wachtwoord = 'Wachtwoord is verplicht.';
-    } else if (rawPassword.length < 8) {
-      newErrors.wachtwoord = 'Wachtwoord moet minimaal 8 tekens zijn.';
+    if (!form.password) {
+      errs.password = 'Wachtwoord is verplicht.';
+    } else if (form.password.length < 6) {
+      errs.password = 'Wachtwoord moet minimaal 6 tekens bevatten.';
     }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    return errs;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isSubmitting) return; // dubbele submits voorkomen
+
+    setErrors({});
+    setSubmittedMessage(null);
+
+    const validationErrors = validate();
+    if (Object.values(validationErrors).some(Boolean)) {
+      setErrors(validationErrors);
       return;
     }
 
-    setSubmitting(true);
+    const payloadToSend: LoginRequest = {
+      email: form.email.trim(),
+      password: form.password,
+      rememberMe: form.rememberMe
+    };
+
+    setIsSubmitting(true);
 
     try {
-      const hashedPassword = await hashPassword(rawPassword);
+      const response = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadToSend)
+      });
 
-      const payload: LoginPayload = {
-        email,
-        password: hashedPassword,
-        rememberMe,
-      };
+      let payload: LoginResponse | null = null;
 
-      console.log('Login payload klaar voor API/AuthContext:', payload);
+      // probeer alleen JSON te lezen als er content is
+      if (response.headers.get('Content-Length') !== '0') {
+        try {
+          payload = (await response.json()) as LoginResponse;
+        } catch {
+          payload = null;
+        }
+      }
 
-      // TODO: echte login-call
-      // await fetch('/api/auth/login', {...});
+      const isUnauthorized = response.status === 401;
+      const isOk = response.ok && payload?.success;
 
-      navigate('/');
-    } catch (err) {
-      console.error(err);
-      setErrors({ global: 'Inloggen is niet gelukt. Probeer het later opnieuw.' });
+      if (!isOk) {
+        setErrors({
+          general:
+              payload?.errors?.length
+                  ? payload.errors.join('\n')
+                  : isUnauthorized
+                      ? 'Ongeldige inloggegevens.'
+                      : 'Er ging iets mis bij het inloggen.'
+        });
+        return;
+      }
+
+      setSubmittedMessage('Inloggen geslaagd! Je wordt doorgestuurd...');
+      setForm(initialForm);
+
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } catch {
+      setErrors({ general: 'Er ging iets mis bij het inloggen.' });
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -93,8 +150,7 @@ export default function Login() {
             <h1>Inloggen</h1>
 
             <form className="form" onSubmit={handleSubmit} noValidate>
-              {/* E-mailadres */}
-              <div className={`field-group ${errors.email ? 'field-group-error' : ''}`}>
+              <div className={fieldGroupClass(errors.email)}>
                 <label className="field-label" htmlFor="email">
                   E-mailadres
                 </label>
@@ -102,69 +158,86 @@ export default function Login() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Emailadres"
-                    inputMode="email"
-                    autoComplete="username"
+                    className={inputClass(errors.email)}
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="naam@bedrijf.nl"
+                    autoComplete="email"
                     required
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
                 />
-                {errors.email && <p className="field-error">{errors.email}</p>}
-              </div>
-
-              {/* Wachtwoord */}
-              <div className={`field-group ${errors.wachtwoord ? 'field-group-error' : ''}`}>
-                <label className="field-label" htmlFor="wachtwoord">
-                  Wachtwoord
-                </label>
-                <input
-                    id="wachtwoord"
-                    name="wachtwoord"
-                    type="password"
-                    placeholder="Wachtwoord"
-                    autoComplete="current-password"
-                    required
-                />
-                {errors.wachtwoord && (
-                    <p className="field-error">{errors.wachtwoord}</p>
+                {errors.email && (
+                    <p id="email-error" className="field-error">
+                      {errors.email}
+                    </p>
                 )}
               </div>
 
-              {/* Onthoud mij + Wachtwoord vergeten */}
-              <div className="consent-row consent-row-inline">
-                <label className="checkbox">
-                  <input type="checkbox" name="remember" />
-                  <span>Onthoud mij</span>
+              <div className={fieldGroupClass(errors.password)}>
+                <label className="field-label" htmlFor="password">
+                  Wachtwoord
                 </label>
-
-                {/* TODO: later naar echte pagina /wachtwoord-vergeten */}
-                <button
-                    type="button"
-                    className="forgot-link"
-                    id="forgotLink"
-                    onClick={() => alert('Wachtwoord reset functionaliteit wordt later toegevoegd.')}
-                >
-                  Wachtwoord vergeten?
-                </button>
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    className={inputClass(errors.password)}
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Je wachtwoord"
+                    autoComplete="current-password"
+                    required
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? 'password-error' : undefined}
+                />
+                {errors.password && (
+                    <p id="password-error" className="field-error">
+                      {errors.password}
+                    </p>
+                )}
               </div>
 
-              {/* Globale login-fout */}
-              {errors.global && (
+              <div className="consent-row consent-row-inline">
+                <label className="checkbox">
+                  <input
+                      type="checkbox"
+                      name="rememberMe"
+                      checked={form.rememberMe}
+                      onChange={handleChange}
+                  />
+                  <span>Onthoud mij</span>
+                </label>
+              </div>
+
+              {errors.general && (
                   <p className="form-error" aria-live="polite">
-                    {errors.global}
+                    {errors.general}
                   </p>
               )}
 
-              <button type="submit" className="btn-primary" disabled={submitting}>
-                {submitting ? 'Bezig met inloggen...' : 'Inloggen'}
+              {submittedMessage && (
+                  <p className="form-success" aria-live="polite">
+                    {submittedMessage}
+                  </p>
+              )}
+
+              <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={isSubmitting}
+                  aria-busy={isSubmitting}
+              >
+                {isSubmitting ? 'Bezig met inloggen...' : 'Inloggen'}
               </button>
 
               <p className="login-hint">
-                Nog geen account?{' '}
-                <Link id="loginTekst" to="/registreren">
-                  Registreer hier
-                </Link>
+                Nog geen account? <Link to="/registreren">Registreer hier</Link>
               </p>
             </form>
           </div>
+
+          <div className="hero-right" aria-hidden="true" />
         </div>
       </main>
   );
