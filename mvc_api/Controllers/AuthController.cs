@@ -1,7 +1,10 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
-using Microsoft.AspNetCore.Identity;
 
 namespace mvc_api.Controllers;
 
@@ -30,7 +33,7 @@ public class AuthController : ControllerBase
             return BadRequest(new RegisterResponse
             {
                 Success = false,
-                Errors = validationErrors
+                Errors  = validationErrors
             });
         }
 
@@ -40,33 +43,37 @@ public class AuthController : ControllerBase
             return Conflict(new RegisterResponse
             {
                 Success = false,
-                Errors = new[] { "Email is al in gebruik." }
+                Errors  = new[] { "Email is al in gebruik." }
             });
         }
 
         var user = new Gebruiker
         {
-            Email = request.Email,
-            UserName = request.Email,
-            BedrijfsNaam = $"{request.FirstName} {request.LastName}".Trim(),
-            Soort = "Koper",
-            Wachtwoord = request.Password
+            Email          = request.Email,
+            UserName       = request.Email,          // Email als username
+            BedrijfsNaam   = request.BedrijfsNaam,
+            Soort          = request.Soort,
+            Kvk            = request.Kvk,
+            StraatAdres    = request.StraatAdres,
+            Postcode       = request.Postcode,
+            LaatstIngelogd = null
         };
 
+        // Password wordt hier gehasht en in PasswordHash opgeslagen
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
             return BadRequest(new RegisterResponse
             {
                 Success = false,
-                Errors = result.Errors.Select(e => $"{e.Code}: {e.Description}")
+                Errors  = result.Errors.Select(e => $"{e.Code}: {e.Description}")
             });
         }
 
         return Ok(new RegisterResponse
         {
             Success = true,
-            Errors = Array.Empty<string>()
+            Errors  = Array.Empty<string>()
         });
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -63,7 +63,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         var loginD2   = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc);
         var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
         var dag       = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
-
+        
         b.Entity<Gebruiker>().HasData(
             new Gebruiker
             {
@@ -72,7 +72,6 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 BedrijfsNaam   = "Flora BV",
                 Email          = "flora@example.nl",
                 UserName       = "flora@example.nl",
-                Wachtwoord     = "***",
                 LaatstIngelogd = loginD1,
                 Soort          = "Bedrijf",
                 Kvk            = "12345678",
@@ -86,7 +85,6 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 BedrijfsNaam   = "Jan Jansen",
                 Email          = "jan@example.nl",
                 UserName       = "jan@example.nl",
-                Wachtwoord     = "***",
                 LaatstIngelogd = loginD2,
                 Soort          = "Koper",
                 Kvk            = "00000000",

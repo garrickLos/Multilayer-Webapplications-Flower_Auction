@@ -11,7 +11,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251117091248_InitialCreate")]
+    [Migration("20251126105151_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -19,6 +19,132 @@ namespace mvc_api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
 
             modelBuilder.Entity("mvc_api.Models.Bieding", b =>
                 {
@@ -29,14 +155,16 @@ namespace mvc_api.Migrations
                     b.Property<int>("AantalStuks")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("BedragPerFust")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
+                    b.Property<int>("BedragPerFust")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("GebruikerNr")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("VeilingNr")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("VeilingproductNr")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("BiedNr");
@@ -45,6 +173,8 @@ namespace mvc_api.Migrations
 
                     b.HasIndex("VeilingNr");
 
+                    b.HasIndex("VeilingproductNr");
+
                     b.ToTable("Bieding");
 
                     b.HasData(
@@ -52,17 +182,19 @@ namespace mvc_api.Migrations
                         {
                             BiedNr = 1001,
                             AantalStuks = 5,
-                            BedragPerFust = 13.50m,
+                            BedragPerFust = 13,
                             GebruikerNr = 2,
-                            VeilingNr = 201
+                            VeilingNr = 201,
+                            VeilingproductNr = 0
                         },
                         new
                         {
                             BiedNr = 1002,
                             AantalStuks = 3,
-                            BedragPerFust = 21.00m,
+                            BedragPerFust = 21,
                             GebruikerNr = 2,
-                            VeilingNr = 202
+                            VeilingNr = 202,
+                            VeilingproductNr = 0
                         });
                 });
 
@@ -116,8 +248,12 @@ namespace mvc_api.Migrations
 
             modelBuilder.Entity("mvc_api.Models.Gebruiker", b =>
                 {
-                    b.Property<int>("GebruikerNr")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("GebruikerNr");
+
+                    b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("BedrijfsNaam")
@@ -125,10 +261,17 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Kvk")
                         .HasMaxLength(20)
@@ -137,8 +280,34 @@ namespace mvc_api.Migrations
                     b.Property<DateTime?>("LaatstIngelogd")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Postcode")
                         .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Soort")
@@ -150,42 +319,63 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Wachtwoord")
-                        .IsRequired()
-                        .HasMaxLength(200)
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("GebruikerNr");
+                    b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Gebruiker");
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers", (string)null);
 
                     b.HasData(
                         new
                         {
-                            GebruikerNr = 1,
+                            Id = 1,
+                            AccessFailedCount = 0,
                             BedrijfsNaam = "Flora BV",
+                            ConcurrencyStamp = "8ce63f3a-9e16-4986-8476-53a31c0bf135",
                             Email = "flora@example.nl",
+                            EmailConfirmed = false,
                             Kvk = "12345678",
                             LaatstIngelogd = new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc),
+                            LockoutEnabled = false,
+                            PhoneNumberConfirmed = false,
                             Postcode = "1234AB",
                             Soort = "Bedrijf",
                             StraatAdres = "Bloemig 10",
-                            Wachtwoord = "***"
+                            TwoFactorEnabled = false,
+                            UserName = "flora@example.nl"
                         },
                         new
                         {
-                            GebruikerNr = 2,
+                            Id = 2,
+                            AccessFailedCount = 0,
                             BedrijfsNaam = "Jan Jansen",
+                            ConcurrencyStamp = "5c6f379d-f78c-48cc-a57d-fbdeeea45c8f",
                             Email = "jan@example.nl",
+                            EmailConfirmed = false,
                             Kvk = "00000000",
                             LaatstIngelogd = new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc),
+                            LockoutEnabled = false,
+                            PhoneNumberConfirmed = false,
                             Postcode = "2345BC",
                             Soort = "Koper",
                             StraatAdres = "Laan 5",
-                            Wachtwoord = "***"
+                            TwoFactorEnabled = false,
+                            UserName = "jan@example.nl"
                         });
                 });
 
@@ -257,9 +447,9 @@ namespace mvc_api.Migrations
                     b.Property<int>("Kwekernr")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("Minimumprijs")
+                    b.Property<int>("Minimumprijs")
                         .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Naam")
                         .IsRequired()
@@ -281,7 +471,7 @@ namespace mvc_api.Migrations
                     b.Property<int>("VoorraadBloemen")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("beginDatum")
+                    b.Property<DateOnly>("beginDatum")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("status")
@@ -306,13 +496,13 @@ namespace mvc_api.Migrations
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             ImagePath = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp",
                             Kwekernr = 1,
-                            Minimumprijs = 10m,
+                            Minimumprijs = 10,
                             Naam = "Tulp Mix",
                             Plaats = " Aalsmeer",
                             Startprijs = 12m,
                             VeilingNr = 201,
                             VoorraadBloemen = 500,
-                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            beginDatum = new DateOnly(1, 1, 1),
                             status = false
                         },
                         new
@@ -323,15 +513,66 @@ namespace mvc_api.Migrations
                             GeplaatstDatum = new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc),
                             ImagePath = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp",
                             Kwekernr = 1,
-                            Minimumprijs = 15m,
+                            Minimumprijs = 15,
                             Naam = "Rode Roos",
                             Plaats = "Eelde",
                             Startprijs = 20m,
                             VeilingNr = 202,
                             VoorraadBloemen = 300,
-                            beginDatum = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            beginDatum = new DateOnly(1, 1, 1),
                             status = false
                         });
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
+                {
+                    b.HasOne("mvc_api.Models.Gebruiker", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
+                {
+                    b.HasOne("mvc_api.Models.Gebruiker", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("mvc_api.Models.Gebruiker", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.HasOne("mvc_api.Models.Gebruiker", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("mvc_api.Models.Bieding", b =>
@@ -348,9 +589,17 @@ namespace mvc_api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("mvc_api.Models.Veilingproduct", "Veilingproduct")
+                        .WithMany()
+                        .HasForeignKey("VeilingproductNr")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Gebruiker");
 
                     b.Navigation("Veiling");
+
+                    b.Navigation("Veilingproduct");
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>

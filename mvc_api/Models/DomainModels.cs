@@ -28,9 +28,6 @@ public class Gebruiker : IdentityUser<int>
     [Required, StringLength(200), EmailAddress]
     public override string? Email { get; set; } = string.Empty;
 
-    [Required, StringLength(200)]
-    public string Wachtwoord { get; set; } = string.Empty;
-
     public DateTime? LaatstIngelogd { get; set; }
 
     [Required, StringLength(50)]
