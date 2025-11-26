@@ -1,10 +1,12 @@
-﻿using System;
+using System;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Models;
 
 namespace mvc_api.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -65,9 +67,11 @@ public class AppDbContext : DbContext
         b.Entity<Gebruiker>().HasData(
             new Gebruiker
             {
+                Id             = 1,
                 GebruikerNr    = 1,
                 BedrijfsNaam   = "Flora BV",
                 Email          = "flora@example.nl",
+                UserName       = "flora@example.nl",
                 Wachtwoord     = "***",
                 LaatstIngelogd = loginD1,
                 Soort          = "Bedrijf",
@@ -77,9 +81,11 @@ public class AppDbContext : DbContext
             },
             new Gebruiker
             {
+                Id             = 2,
                 GebruikerNr    = 2,
                 BedrijfsNaam   = "Jan Jansen",
                 Email          = "jan@example.nl",
+                UserName       = "jan@example.nl",
                 Wachtwoord     = "***",
                 LaatstIngelogd = loginD2,
                 Soort          = "Koper",

@@ -2,22 +2,31 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace mvc_api.Models;
 
 // Gebruiker
 [Table("Gebruiker")]
-public class Gebruiker
+public class Gebruiker : IdentityUser<int>
 {
     [Key]
-    public int GebruikerNr { get; set; }
+    [Column("GebruikerNr")]
+    public override int Id { get; set; }
+
+    [NotMapped]
+    public int GebruikerNr
+    {
+        get => Id;
+        set => Id = value;
+    }
 
     [Required, StringLength(200)]
     public string BedrijfsNaam { get; set; } = string.Empty;
 
     [Required, StringLength(200), EmailAddress]
-    public string Email { get; set; } = string.Empty;
+    public override string? Email { get; set; } = string.Empty;
 
     [Required, StringLength(200)]
     public string Wachtwoord { get; set; } = string.Empty;
