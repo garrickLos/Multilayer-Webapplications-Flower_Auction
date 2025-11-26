@@ -1,101 +1,271 @@
-.registration-page {
-  display: flex;
-  justify-content: center;
-  padding: 3rem 1rem;
-  background: #f5f5f5;
-  min-height: 100vh;
-  color: #0f172a;
+/* ===== Design tokens (kleuren, spacing, animatie) ===== */
+:root {
+  --bg: #f1f1f1;
+  --ink: #0f172a;
+  --muted: #6b7280;
+  --brand: #2e4a41;
+  --brand-2: #cfe5d2;
+  --focus: #64d5c4;
+  --shadow-soft: 0 0 0 1px rgba(0,0,0,.06) inset;
+  --transition-fast: 0.18s ease-out;
 }
 
-.registration-card {
-  width: 100%;
-  max-width: 440px;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+/* ===== Basis layout & typografie ===== */
+* { box-sizing: border-box; }
+
+html, body, main, .BODY {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-.registration-card h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.8rem;
+body {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.4;
 }
 
-.registration-intro {
-  margin: 0 0 1.5rem;
-  color: #475569;
+.container {
+  width: min(1100px, 92%);
+  margin-inline: auto;
 }
 
-.registration-form {
+/* ===== Hero-sectie ===== */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 3.5rem 0 2rem;
+  min-height: 60vh;
+  background:
+          radial-gradient(1800px 1800px at -200px 250px, var(--brand) 60.5%, transparent 61%) left top no-repeat,
+          radial-gradient(500px 500px at 85% 110%, var(--brand-2) 60.5%, transparent 61%) right bottom no-repeat;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2rem;
+}
+
+.hero-left h1 {
+  color: #fff;
+  margin: 0 0 1rem;
+  font-size: 2.2rem;
+}
+
+/* ===== Formulier ===== */
+.form {
+  width: min(600px, 100%);
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+/* Inputs & selects */
+.select-wrap { position: relative; }
 
-.form-row label {
-  font-weight: 600;
-  color: #0f172a;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-row input {
-  padding: 12px;
-  border: 1px solid #cbd5e1;
+.select-wrap select,
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 14px;
   border-radius: 8px;
-  font-size: 1rem;
+  border: 0;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+  font-size: 15px;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
-.form-row input:focus {
-  outline: 2px solid #14b8a6;
-  outline-offset: 1px;
+.select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
 }
 
-.error-text {
-  color: #b91c1c;
+.select-wrap .chev {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+input::placeholder { color: #9ca3af; }
+
+/* Focus-styling */
+input:focus-visible,
+.select-wrap select:focus-visible,
+.btn-primary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ===== 2 kolommen grid ===== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* ===== Checkbox / voorwaarden ===== */
+.consent-row {
+  margin-top: 6px;
+  color: #e5e7eb;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.alert {
-  border: 1px solid #f87171;
-  background: #fef2f2;
-  color: #991b1b;
-  border-radius: 8px;
-  padding: 12px;
+.checkbox {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  user-select: none;
 }
 
-.alert ul {
-  margin: 0.25rem 0 0;
-  padding-left: 18px;
+.checkbox input {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #94a3b8;
+  border-radius: 3px;
 }
 
-.success {
-  border: 1px solid #4ade80;
-  background: #f0fdf4;
-  color: #166534;
-  border-radius: 8px;
-  padding: 12px;
+/* ===== 'Onthoud mij' + 'Wachtwoord vergeten?' ===== */
+.consent-row-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-button[type="submit"] {
-  margin-top: 4px;
+.forgot-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #e5e7eb;
+  text-decoration: underline;
+}
+
+.forgot-link:hover {
+  color: #ffffff;
+}
+
+/* ===== Knop ===== */
+.btn-primary {
+  margin-top: 6px;
+  border: 0;
   padding: 12px 16px;
-  border: none;
   border-radius: 8px;
-  background: linear-gradient(90deg, #14b8a6, #0ea5e9);
-  color: white;
+  background: linear-gradient(90deg, #45d0be, #8fd6df);
+  color: #0b1620;
   font-weight: 700;
   cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
-button[type="submit"]:disabled {
+.btn-primary:hover {
+  background: linear-gradient(90deg, #8fd6df, #45d0be);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* ===== Login hint ===== */
+.login-hint {
+  margin: 0.5rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.login-hint a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.login-hint a:hover {
+  color: #000;
+}
+
+/* ===== Accessibility ===== */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+}
+
+/* ===== Footer fix ===== */
+footer {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-left h1 { margin-bottom: 1rem; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ===== Form field styling ===== */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-group-error input,
+.field-group-error select {
+  box-shadow: 0 0 0 1px rgba(239, 68, 68) inset;
+}
+
+/* Label */
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+/* Foutmelding onder veld */
+.field-error {
+  margin: 2px 0 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #fee2e2;
+  background: linear-gradient(90deg, rgba(148,27,37), rgba(185,28,28));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-error::before {
+  content: "⚠";
+  font-size: 0.8rem;
+}
+
+/* Globale error boven knop */
+.form-error {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #fee2e2;
+  background: #991b1b;
 }
