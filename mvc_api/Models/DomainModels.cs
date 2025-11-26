@@ -101,9 +101,9 @@ public class Veilingproduct
     public string Plaats { get; set; } = string.Empty;
 
     [Precision(18, 2)]
-    [Range(typeof(decimal), "0,01", "999999999",
+    [Range(typeof(int), "1", "999999999",
         ErrorMessage = "Minimumprijs moet minimaal 0,01 zijn.")]
-    public decimal Minimumprijs { get; set; }
+    public int Minimumprijs { get; set; }
 
     public int Kwekernr { get; set; }
 

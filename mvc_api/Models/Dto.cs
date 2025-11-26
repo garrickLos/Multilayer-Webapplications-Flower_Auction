@@ -23,7 +23,7 @@ public record VeilingproductCreateDto(
     [Range(1, int.MaxValue)] int CategorieNr,
     [Range(1, int.MaxValue)] int? VeilingNr,
     [Required, StringLength(200)] string Plaats,
-    [Range(typeof(int), "1", "9999999")] int Minimumprijs,
+    [Range(typeof(int), "0.01", "9999999")] int Minimumprijs,
     [Range(1, int.MaxValue)] int Kwekernr,
     DateOnly beginDatum,
     bool status,

@@ -1,26 +1,51 @@
 import "../css/SellerScreenInfo.css";
+import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
 
 export default function SellerScreenInfo() {
-    
-        return(
-            <main className="SellerScreenInfo">
-                <section className="rij">
-                    <div className="kolomLinks">
-                        <img src="../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp" alt="bloem"
-                             className="fotoProduct"/>
-                    </div>
-                    <div className="kolomRechts">
-                        <div className="linkerHelft">
-                            <div className="productNaam">Product naam:</div>
-                            <div className="productCategorie">Product categorie:</div>
+    const { data: ProductData } = GetProduct('/api/Veilingproduct');
+    const productLijst = (ProductData as ProductType[]) || [];
+
+    interface ProductType {
+        veilingProductNr: number;
+        naam: string;
+        geplaatstDatum: string;
+        fust: number;
+        voorraad: number | string;
+        startprijs: number;
+        categorie: string | null;
+        veilingNr: number;
+        imagePath: string;
+        categorieNr: number;
+        plaats: string;
+    }
+    console.log(productLijst.map(c=>c.plaats));
+    return (
+        <main className="SellerScreenInfo">
+            <section className="productScroller">
+                {productLijst.map((product) => (
+                    <div key={product.veilingProductNr} className="rij">
+                        <div className="kolomLinks">
+                            <img
+                                src={product.imagePath}
+                                alt={product.naam}
+                                className="fotoProduct"
+                            />
                         </div>
-                        <div className="rechterHelft">
-                            <div className="hoeveelheid">Hoeveelheid bloemen:</div>
-                            <div className="aantalFusten">Aantal fusten:</div>
+                        <div className="kolomRechts">
+                            <div className="linkerHelft">
+                                <div className="productNaam">Product naam: {product.naam}</div>
+                                <div className="productCategorie">Product categorie: {product.categorie}</div>
+                                <div className="datum">Geplaatst op: {product.geplaatstDatum}</div>
+                            </div>
+                            <div className="rechterHelft">
+                                <div className="hoeveelheid">Hoeveelheid bloemen: {product.voorraad}</div>
+                                <div className="aantalFusten">Aantal fusten: {product.fust}</div>
+                                <div className="plaats">Plaats: {product.plaats}</div>
+                            </div>
                         </div>
-                        <div className="plaats">Plaats:</div>
                     </div>
-                </section>
-            </main>
-        );
+                ))}
+            </section>
+        </main>
+    );
 }
