@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.Design;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -19,6 +20,7 @@ public static class VeilingStatus
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles = "VeilingMeester, Klant")]
 public class VeilingController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -35,12 +37,13 @@ public class VeilingController : ControllerBase
 
     // GET: api/Veiling
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<VeilingMeester_VeilingDto>>> GetAll(
         /* rol is tijdelijk, Zorgt ervoor dat we even makkelijk zonder het rollen systeem de api kunnen laten werken door 
         bij de api een '?rol=VeilingMeester' of een andere rol te plaatsen om de goede data te krijgen
         enige wat dan wel nog moet is dat die rol moet worden aangemaakt of het krijgt de standaar no rol info
         */
-        [FromQuery] string? rol, // dit is tijdelijk om een rolsysteem erin te bouwen die verschillende dto's laat zien op basis van de rol
+        //[FromQuery] string? rol, // dit is tijdelijk om een rolsysteem erin te bouwen die verschillende dto's laat zien op basis van de rol
         [FromQuery] int? veilingProduct,
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
@@ -112,7 +115,7 @@ public class VeilingController : ControllerBase
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize);
 
-        if (rol == "VeilingMeester")
+        if (User.IsInRole("VeilingMeester"))
         {
             // --- Projectie & Execution ---
             var items = await query
@@ -121,7 +124,7 @@ public class VeilingController : ControllerBase
 
             return Ok(items); 
         } 
-        else if (rol == "klant")
+        else if (User.IsInRole("Klant"))
         {
             var items = await query
                 .ProjectToVeiling_klantDto(now) // Roept de klant helper methode op zodat het de juiste gegevens laat zien
@@ -142,6 +145,7 @@ public class VeilingController : ControllerBase
 
     // GET: api/Veiling/{id}
     [HttpGet("{id:int}")]
+    [Authorize (Roles ="VeilingMeester, Klant")]
     public async Task<ActionResult<VeilingMeester_VeilingDto>> GetById(
         int id, 
         CancellationToken ct = default)
@@ -164,6 +168,7 @@ public class VeilingController : ControllerBase
 
     // POST: api/Veiling
     [HttpPost]
+    [Authorize (Roles ="VeilingMeester, Klant")]
     public async Task<ActionResult<VeilingCreateDto>> Create(
         [FromBody] VeilingCreateDto dto, 
         CancellationToken ct = default)
@@ -212,6 +217,7 @@ public class VeilingController : ControllerBase
 
     // PUT: api/Veiling/{id}
     [HttpPut("{id:int}")]
+    [Authorize (Roles ="VeilingMeester, Klant")]
     public async Task<ActionResult<VeilingUpdateDto>> Update(
         int id, 
         [FromBody] VeilingUpdateDto dto, 
@@ -250,6 +256,7 @@ public class VeilingController : ControllerBase
     // DELETE: api/Veiling/{id}
     //verwijderd ook alle producten die in de veiling zitten (mss handig om een softdelete te gebruiken)
     [HttpDelete("{id:int}")]
+    [Authorize (Roles ="VeilingMeester, Klant")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);

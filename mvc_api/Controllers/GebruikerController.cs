@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -8,6 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles ="VeilingMeester, Klant")]
 public class GebruikerController : ControllerBase
 {
     private readonly AppDbContext _db;

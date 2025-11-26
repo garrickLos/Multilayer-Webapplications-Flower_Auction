@@ -4,5 +4,7 @@ public sealed class LoginResponse
 {
     public required bool Success { get; init; }
 
+    public string? Token { get; set; }
+
     public IReadOnlyList<string> Errors { get; init; } = Array.Empty<string>();
 }

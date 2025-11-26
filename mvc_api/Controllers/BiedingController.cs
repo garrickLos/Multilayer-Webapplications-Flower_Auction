@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -8,6 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles ="VeilingMeester")]
 public class BiedingController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -19,6 +21,7 @@ public class BiedingController : ControllerBase
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
     [HttpGet]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetAll(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingNr,
@@ -56,6 +59,7 @@ public class BiedingController : ControllerBase
 
     // GET: api/Bieding/1001
     [HttpGet("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(int id, CancellationToken ct = default)
     {
         var dto = await _db.Biedingen.AsNoTracking()
@@ -70,6 +74,7 @@ public class BiedingController : ControllerBase
 
     // POST: api/Bieding
     [HttpPost]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> Create(
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
@@ -141,6 +146,7 @@ public class BiedingController : ControllerBase
 
     // PUT: api/Bieding/1001
     [HttpPut("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> Update(
         int id,
         [FromBody] BiedingUpdateDto dto,
@@ -167,6 +173,7 @@ public class BiedingController : ControllerBase
 
     // DELETE: api/Bieding/1001
     [HttpDelete("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
         var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
