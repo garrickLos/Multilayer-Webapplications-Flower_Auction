@@ -14,40 +14,98 @@ public class VeilingproductController : ControllerBase
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
     
-    // Lijstweergave
-    public sealed record VpList(
-        int VeilingProductNr,
-        string Naam,
-        DateTime GeplaatstDatum,
-        int Fust,
-        int Voorraad,
-        int? Startprijs,
-        string? Categorie,
-        int? VeilingNr,
-        string ImagePath,
-        string Plaats
-    );
-    
-    // Biedingen bij detailweergave
-    public sealed record VBList(
-        int BiedNr, 
-        int BedragPerFust, 
-        int AantalStuks, 
-        int GebruikerNr
-    );
+    //Get voor kweker
+    [HttpGet("Klant")]
+    public async Task<ActionResult<IEnumerable<klantVeilingproductGet_dto>>> KlantGetAll(
+        [FromQuery] string? q,
+        [FromQuery] int? categorieNr,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        page     = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
 
-    public sealed record VpDetail(
-        int VeilingProductNr,
-        string Naam,
-        DateTime GeplaatstDatum,
-        int Fust,
-        int Voorraad,
-        int? Startprijs,
-        string? Categorie,
-        int? VeilingNr,
-        string ImagePath,
-        IEnumerable<VBList> Biedingen
-    );
+        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            query = query.Where(vp => vp.Naam.Contains(term));
+        }
+
+        if (categorieNr is int cnr)
+            query = query.Where(vp => vp.CategorieNr == cnr);
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(vp => vp.Naam)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(v => new klantVeilingproductGet_dto(
+                v.VeilingProductNr,
+                v.Naam,
+                v.Categorie == null ? null : v.Categorie.Naam,
+                v.ImagePath,
+                v.Plaats
+            ))
+            .ToListAsync(ct);
+
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+
+        return Ok(items);
+    }
+    
+    //Get voor kweker
+    [HttpGet("Kweker")]
+    public async Task<ActionResult<IEnumerable<kwekerVeilingproductGet_dto>>> KwekerGetAll(
+        [FromQuery] string? q,
+        [FromQuery] int? categorieNr,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        page     = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            query = query.Where(vp => vp.Naam.Contains(term));
+        }
+
+        if (categorieNr is int cnr)
+            query = query.Where(vp => vp.CategorieNr == cnr);
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(vp => vp.Naam)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(v => new kwekerVeilingproductGet_dto(
+                v.VeilingProductNr,
+                v.Naam,
+                v.GeplaatstDatum,
+                v.AantalFusten,
+                v.VoorraadBloemen,
+                v.Categorie == null ? null : v.Categorie.Naam,
+                v.ImagePath,
+                v.Plaats
+            ))
+            .ToListAsync(ct);
+
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+
+        return Ok(items);
+    }
     
     // GET: api/Veilingproduct?q=tulp&categorieNr=1&page=1&pageSize=50
     [HttpGet]

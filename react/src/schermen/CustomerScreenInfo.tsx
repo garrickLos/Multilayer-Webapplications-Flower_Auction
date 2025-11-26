@@ -4,29 +4,22 @@ import { UseDataApi as GetBieding } from "../typeScript/ApiGet";
 
 
 export default function CustomerScreenInfo() {
-    const { data: ProductData } = GetProduct('/api/Veilingproduct');
+    const { data: ProductData } = GetProduct('/api/Veilingproduct/klant ');
     const productLijst = (ProductData as ProductType[]) || [];
 
-    const { data: BiedingData } = GetBieding('/api/Bieding');
+    const { data: BiedingData } = GetBieding('/api/Bieding/klant');
     const biedingLijst = (BiedingData as BiedingType[]) || [];
 
     interface BiedingType {
-        biedNr: number;
         aantalStuks: number;
         bedragPerFust: number;
         gebruikerNr: number;
-        veilingNr: number;
         veilingProductNr: number;
     }
     interface ProductType {
-        veilingProductNr: number; //
-        naam: string;//
-        geplaatstDatum: string;
-        fust: number;
-        voorraad: number | string;
-        startprijs: number;
+        veilingProductNr: number; 
+        naam: string;
         categorie: string | null; 
-        veilingNr: number;
         imagePath: string; 
         plaats: string; 
     }
@@ -40,7 +33,7 @@ export default function CustomerScreenInfo() {
                     );
                     if (!product) return null; 
                     return (
-                        <div key={bieding.biedNr} className="rij">
+                        <div key={bieding.gebruikerNr} className="rij">
                             <div className="kolomLinks">
                                 { <img src={product.imagePath} alt={product.naam} className="fotoProduct" /> }
                             </div>

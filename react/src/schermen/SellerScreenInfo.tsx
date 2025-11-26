@@ -2,7 +2,7 @@ import "../css/SellerScreenInfo.css";
 import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
 
 export default function SellerScreenInfo() {
-    const { data: ProductData } = GetProduct('/api/Veilingproduct');
+    const { data: ProductData } = GetProduct('/api/Veilingproduct/kweker');
     const productLijst = (ProductData as ProductType[]) || [];
 
     interface ProductType {
@@ -11,11 +11,8 @@ export default function SellerScreenInfo() {
         geplaatstDatum: string;
         fust: number;
         voorraad: number | string;
-        startprijs: number;
         categorie: string | null;
-        veilingNr: number;
         imagePath: string;
-        categorieNr: number;
         plaats: string;
     }
     console.log(productLijst.map(c=>c.plaats));

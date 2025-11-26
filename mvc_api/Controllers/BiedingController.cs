@@ -17,6 +17,33 @@ public class BiedingController : ControllerBase
     // afgestemd op VeilingController
     private const string StatusActive = "active";
 
+    // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
+    [HttpGet("Klant")]
+    public async Task<ActionResult<IEnumerable<klantBiedingGet_dto>>> GetKlantBiedingen(
+        [FromQuery] int? gebruikerNr,
+        [FromQuery] int? veilingProductNr,
+        CancellationToken ct = default)
+    {
+        var query = _db.Biedingen.AsNoTracking().AsQueryable();
+
+        if (gebruikerNr.HasValue)
+            query = query.Where(b => b.GebruikerNr == gebruikerNr.Value);
+
+        if (veilingProductNr.HasValue)
+            query = query.Where(b => b.VeilingproductNr == veilingProductNr.Value);
+
+        var items = await query
+            .Select(b => new klantBiedingGet_dto(
+                b.VeilingproductNr,
+                b.BedragPerFust,
+                b.AantalStuks,
+                b.GebruikerNr
+            ))
+            .ToListAsync(ct);
+
+        return Ok(items);
+    }
+
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
     [HttpGet]
     public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetAll(
@@ -205,7 +232,6 @@ public static class BiedingExtensions
             // Properties geërfd van BaseBieding_Dto
             AantalStuks = b.AantalStuks,
             GebruikerNr = b.GebruikerNr,
-            BedragPerFust = b.BedragPerFust
         });
     }
 }
