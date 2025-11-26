@@ -139,6 +139,16 @@ public abstract record BaseVeiling_Dto {
     
 }
 
+public record Anonymous_VeilingDto : BaseVeiling_Dto
+{
+    public int VeilingNr { get; set; }
+    
+    [StringLength(20)] 
+    public string Status { get; set; }
+
+    public IEnumerable<VeilingProductDto_anonymous>? Producten { get; init; } = Enumerable.Empty<VeilingProductDto_anonymous>();
+}
+
 public record Klant_VeilingDto : BaseVeiling_Dto
 {
     public int VeilingNr { get; set; }
@@ -174,6 +184,18 @@ public record VeilingProductDto(
     int VeilingProductNr,
     string Naam,
     decimal Startprijs,
-    int Voorraad,
+    decimal Minimumprijs,
+    string Plaats,
+    int CategorieNr,
+    int VoorraadBloemen,
+    int AantalFusten,
+    string ImagePath
+);
+
+public record VeilingProductDto_anonymous(
+    int VeilingProductNr,
+    string Naam,
+    decimal Startprijs,
+    int VoorraadBloemen,
     string ImagePath
 );

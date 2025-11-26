@@ -79,6 +79,10 @@ html, body {
     background-color: #fff;
 }
 
+#Veiling_aantalkopenstuks::selection {
+    background: black;
+}
+
 .ordenen {
     display: block;
     border-bottom: 1px solid lightgray;
