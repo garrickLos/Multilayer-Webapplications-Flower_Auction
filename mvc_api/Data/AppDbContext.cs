@@ -50,11 +50,6 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasIndex(x => x.Email)
             .IsUnique();
 
-        // Bewaar legacy kolomnaam "Wachtwoord" als shadow property zodat bestaande schema's geen kolommen verliezen.
-        b.Entity<Gebruiker>()
-            .Property<string?>("Wachtwoord")
-            .HasMaxLength(200);
-
         b.Entity<Veilingproduct>()
             .HasIndex(x => new { x.CategorieNr, x.Naam });
 
@@ -72,37 +67,41 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         b.Entity<Gebruiker>().HasData(
             new Gebruiker
             {
-                Id             = 1,
-                GebruikerNr    = 1,
-                BedrijfsNaam   = "Flora BV",
-                Email          = "flora@example.nl",
-                NormalizedEmail = "FLORA@EXAMPLE.NL",
-                UserName       = "flora@example.nl",
+                Id                = 1,
+                GebruikerNr       = 1,
+                BedrijfsNaam      = "Flora BV",
+                Email             = "flora@example.nl",
+                NormalizedEmail   = "FLORA@EXAMPLE.NL",
+                UserName          = "flora@example.nl",
                 NormalizedUserName = "FLORA@EXAMPLE.NL",
-                LaatstIngelogd = loginD1,
-                Soort          = "Bedrijf",
-                Kvk            = "12345678",
-                StraatAdres    = "Bloemig 10",
-                Postcode       = "1234AB",
-                SecurityStamp  = "STATIC-USER-1",
-                ConcurrencyStamp = "STATIC-CONC-1"
+                LaatstIngelogd    = loginD1,
+                Soort             = "Bedrijf",
+                Kvk               = "12345678",
+                StraatAdres       = "Bloemig 10",
+                Postcode          = "1234AB",
+                SecurityStamp     = "STATIC-USER-1",
+                ConcurrencyStamp  = "STATIC-CONC-1",
+                // voorbeeld hoe hash password eruit ziet
+                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++"
             },
             new Gebruiker
             {
-                Id             = 2,
-                GebruikerNr    = 2,
-                BedrijfsNaam   = "Jan Jansen",
-                Email          = "jan@example.nl",
-                NormalizedEmail = "JAN@EXAMPLE.NL",
-                UserName       = "jan@example.nl",
+                Id                = 2,
+                GebruikerNr       = 2,
+                BedrijfsNaam      = "Jan Jansen",
+                Email             = "jan@example.nl",
+                NormalizedEmail   = "JAN@EXAMPLE.NL",
+                UserName          = "jan@example.nl",
                 NormalizedUserName = "JAN@EXAMPLE.NL",
-                LaatstIngelogd = loginD2,
-                Soort          = "Koper",
-                Kvk            = "00000000",
-                StraatAdres    = "Laan 5",
-                Postcode       = "2345BC",
-                SecurityStamp  = "STATIC-USER-2",
-                ConcurrencyStamp = "STATIC-CONC-2"
+                LaatstIngelogd    = loginD2,
+                Soort             = "Koper",
+                Kvk               = "00000000",
+                StraatAdres       = "Laan 5",
+                Postcode          = "2345BC",
+                SecurityStamp     = "STATIC-USER-2",
+                ConcurrencyStamp  = "STATIC-CONC-2",
+                // Wachtwoord: Test123!
+                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
             }
         );
 
@@ -170,20 +169,20 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         b.Entity<Bieding>().HasData(
             new Bieding
             {
-                BiedNr        = 1001,
-                BedragPerFust = 13,
-                AantalStuks   = 5,
-                GebruikerNr   = 2,
-                VeilingNr     = 201,
+                BiedNr          = 1001,
+                BedragPerFust   = 13,
+                AantalStuks     = 5,
+                GebruikerNr     = 2,
+                VeilingNr       = 201,
                 VeilingproductNr = 101
             },
             new Bieding
             {
-                BiedNr        = 1002,
-                BedragPerFust = 21,
-                AantalStuks   = 3,
-                GebruikerNr   = 2,
-                VeilingNr     = 202,
+                BiedNr          = 1002,
+                BedragPerFust   = 21,
+                AantalStuks     = 3,
+                GebruikerNr     = 2,
+                VeilingNr       = 202,
                 VeilingproductNr = 102
             }
         );

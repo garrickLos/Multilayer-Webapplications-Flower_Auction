@@ -41,7 +41,6 @@ namespace mvc_api.Migrations
                     Kvk = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     StraatAdres = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     Postcode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
-                    Wachtwoord = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     UserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
@@ -276,11 +275,11 @@ namespace mvc_api.Migrations
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
-                columns: new[] { "GebruikerNr", "AccessFailedCount", "BedrijfsNaam", "ConcurrencyStamp", "Email", "EmailConfirmed", "Kvk", "LaatstIngelogd", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Postcode", "SecurityStamp", "Soort", "StraatAdres", "TwoFactorEnabled", "UserName", "Wachtwoord" },
+                columns: new[] { "GebruikerNr", "AccessFailedCount", "BedrijfsNaam", "ConcurrencyStamp", "Email", "EmailConfirmed", "Kvk", "LaatstIngelogd", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Postcode", "SecurityStamp", "Soort", "StraatAdres", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
-                    { 1, 0, "Flora BV", "STATIC-CONC-1", "flora@example.nl", false, "12345678", new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc), false, null, "FLORA@EXAMPLE.NL", "FLORA@EXAMPLE.NL", null, null, false, "1234AB", "STATIC-USER-1", "Bedrijf", "Bloemig 10", false, "flora@example.nl", null },
-                    { 2, 0, "Jan Jansen", "STATIC-CONC-2", "jan@example.nl", false, "00000000", new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc), false, null, "JAN@EXAMPLE.NL", "JAN@EXAMPLE.NL", null, null, false, "2345BC", "STATIC-USER-2", "Koper", "Laan 5", false, "jan@example.nl", null }
+                    { 1, 0, "Flora BV", "STATIC-CONC-1", "flora@example.nl", false, "12345678", new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc), false, null, "FLORA@EXAMPLE.NL", "FLORA@EXAMPLE.NL", "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++", null, false, "1234AB", "STATIC-USER-1", "Bedrijf", "Bloemig 10", false, "flora@example.nl" },
+                    { 2, 0, "Jan Jansen", "STATIC-CONC-2", "jan@example.nl", false, "00000000", new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc), false, null, "JAN@EXAMPLE.NL", "JAN@EXAMPLE.NL", "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++", null, false, "2345BC", "STATIC-USER-2", "Koper", "Laan 5", false, "jan@example.nl" }
                 });
 
             migrationBuilder.InsertData(

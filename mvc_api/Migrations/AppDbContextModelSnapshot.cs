@@ -323,10 +323,6 @@ namespace mvc_api.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Wachtwoord")
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -355,6 +351,7 @@ namespace mvc_api.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "FLORA@EXAMPLE.NL",
                             NormalizedUserName = "FLORA@EXAMPLE.NL",
+                            PasswordHash = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++",
                             PhoneNumberConfirmed = false,
                             Postcode = "1234AB",
                             SecurityStamp = "STATIC-USER-1",
@@ -376,6 +373,7 @@ namespace mvc_api.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "JAN@EXAMPLE.NL",
                             NormalizedUserName = "JAN@EXAMPLE.NL",
+                            PasswordHash = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++",
                             PhoneNumberConfirmed = false,
                             Postcode = "2345BC",
                             SecurityStamp = "STATIC-USER-2",
