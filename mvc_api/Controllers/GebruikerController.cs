@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -32,7 +31,7 @@ public class GebruikerController : ControllerBase
             var term = q.Trim();
             query = query.Where(g =>
                 g.BedrijfsNaam.Contains(term) ||
-                g.Email.Contains(term));
+                g.Email!.Contains(term));
         }
 
         var total = await query.CountAsync(ct);
@@ -54,7 +53,7 @@ public class GebruikerController : ControllerBase
     // GET: api/Gebruiker/{id}
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Klant_GebruikerDto>> GetById(
-        int id, 
+        int id,
         CancellationToken ct = default)
     {
         var dto = await _db.Gebruikers.AsNoTracking()
@@ -68,38 +67,45 @@ public class GebruikerController : ControllerBase
     }
 
     // POST: api/Gebruiker
+    // LET OP: deze maakt een gebruiker ZONDER login (geen wachtwoord)
+    // Echte registratie gebeurt via /auth/register
     [HttpPost]
-    public async Task<ActionResult<GebruikerCreateDto>> Create(
+    public async Task<ActionResult<Klant_GebruikerDto>> Create(
         [FromBody] GebruikerCreateDto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = new Gebruiker
+        var user = new Gebruiker
         {
-            BedrijfsNaam = dto.BedrijfsNaam.Trim(),
-            Email        = dto.Email.Trim(),
-            Wachtwoord   = dto.Wachtwoord,
-            Soort        = dto.Soort,
-            Kvk          = dto.Kvk,
-            StraatAdres  = dto.StraatAdres,
-            Postcode     = dto.Postcode,
+            BedrijfsNaam  = dto.BedrijfsNaam.Trim(),
+            Email         = dto.Email.Trim(),
+            UserName      = dto.Email.Trim(), // Identity gebruikt dit voor login
+            Soort         = dto.Soort,
+            Kvk           = dto.Kvk,
+            StraatAdres   = dto.StraatAdres,
+            Postcode      = dto.Postcode,
+            LaatstIngelogd = null
         };
 
-        _db.Gebruikers.Add(e);
+        _db.Gebruikers.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        var result = new GebruikerCreateDto
+        var result = new Klant_GebruikerDto
         {
-            Email = e.Email,
-            Soort = e.Soort,
-            Kvk = e.Kvk,
-            StraatAdres = e.StraatAdres,
-            Postcode = e.Postcode  
+            GebruikerNr    = user.GebruikerNr,
+            BedrijfsNaam   = user.BedrijfsNaam,
+            Email          = user.Email!,
+            Soort          = user.Soort,
+            Kvk            = user.Kvk,
+            StraatAdres    = user.StraatAdres,
+            Postcode       = user.Postcode,
+            LaatstIngelogd = user.LaatstIngelogd,
+            Biedingen      = Enumerable.Empty<VeilingMeester_BiedingDto>()
         };
 
-        return CreatedAtAction(nameof(GetById), new { id = e.GebruikerNr }, result);
+        return CreatedAtAction(nameof(GetById), new { id = user.GebruikerNr }, result);
     }
 
     // PUT: api/Gebruiker/{id}
@@ -112,42 +118,44 @@ public class GebruikerController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var user = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (user is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        e.BedrijfsNaam = dto.BedrijfsNaam.Trim();
-        e.Email        = dto.Email.Trim();
-        e.Soort        = dto.Soort;
-        e.Kvk          = dto.Kvk;
-        e.StraatAdres  = dto.StraatAdres;
-        e.Postcode     = dto.Postcode;
+        user.BedrijfsNaam = dto.BedrijfsNaam.Trim();
+        user.Email        = dto.Email.Trim();
+        user.UserName     = dto.Email.Trim();
+        user.Soort        = dto.Soort;
+        user.Kvk          = dto.Kvk;
+        user.StraatAdres  = dto.StraatAdres;
+        user.Postcode     = dto.Postcode;
 
         await _db.SaveChangesAsync(ct);
 
-        var resultDto = new GebruikerUpdateDto();
+        var result = await _db.Gebruikers.AsNoTracking()
+            .Where(g => g.GebruikerNr == id)
+            .Projectgebruiker_Klant()
+            .FirstAsync(ct);
 
-        return Ok(resultDto);
+        return Ok(result);
     }
 
     // DELETE: api/Gebruiker/{id}
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(
-        int id, 
+        int id,
         CancellationToken ct = default)
     {
-        var e = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (e is null)
+        var user = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (user is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
 
-        _db.Gebruikers.Remove(e);
+        _db.Gebruikers.Remove(user);
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
 
-
     // Helpers
-
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
         {
@@ -158,35 +166,32 @@ public class GebruikerController : ControllerBase
         };
 }
 
+// EXTENSIONS
 public static class GebruikerExtensions
 {
-    // Projectie voor Veilingmeesters
     public static IQueryable<Klant_GebruikerDto> Projectgebruiker_Klant(
         this IQueryable<Gebruiker> query)
     {
         return query.Select(g => new Klant_GebruikerDto
-        {   // Eigen properties van Klant_gebruikerDto
-            GebruikerNr = g.GebruikerNr,
-            BedrijfsNaam = g.BedrijfsNaam,
-            Email = g.Email,
-            Wachtwoord = g.Wachtwoord,
-            Soort = g.Soort,
-            Kvk = g.Kvk,
-            StraatAdres = g.StraatAdres,
-            Postcode = g.Postcode,
+        {
+            GebruikerNr    = g.GebruikerNr,
+            BedrijfsNaam   = g.BedrijfsNaam,
+            Email          = g.Email!,
+            Soort          = g.Soort,
+            Kvk            = g.Kvk,
+            StraatAdres    = g.StraatAdres,
+            Postcode       = g.Postcode,
+            LaatstIngelogd = g.LaatstIngelogd,
 
             Biedingen = g.Biedingen.Select(b => new VeilingMeester_BiedingDto
             {
-                // Eigen properties van VeilingMeester_BiedingDto
-                BiedingNr = b.BiedNr,
-                VeilingNr = b.VeilingNr, // Of v.VeilingNr, afhankelijk van je database relatie
+                BiedingNr        = b.BiedNr,
+                VeilingNr        = b.VeilingNr,
                 VeilingProductNr = b.VeilingproductNr,
-
-                // Properties geërfd van BaseBieding_Dto
-                AantalStuks = b.AantalStuks,
-                GebruikerNr = b.GebruikerNr,
-                BedragPerFust = b.BedragPerFust
-            }).ToList(),
+                AantalStuks      = b.AantalStuks,
+                GebruikerNr      = b.GebruikerNr,
+                BedragPerFust    = b.BedragPerFust
+            }).ToList()
         });
     }
 }

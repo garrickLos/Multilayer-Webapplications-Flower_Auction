@@ -1,10 +1,12 @@
 ﻿using System;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Models;
 
 namespace mvc_api.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -56,36 +58,50 @@ public class AppDbContext : DbContext
             .Property(v => v.Minimumprijs)
             .HasPrecision(18, 2);
 
-        // Seed data (statische waarden)
+        // Seed data (alle waarden statisch houden voor een deterministisch model)
         var loginD1   = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc);
         var loginD2   = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc);
         var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
         var dag       = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
-
+        
         b.Entity<Gebruiker>().HasData(
             new Gebruiker
             {
-                GebruikerNr    = 1,
-                BedrijfsNaam   = "Flora BV",
-                Email          = "flora@example.nl",
-                Wachtwoord     = "***",
-                LaatstIngelogd = loginD1,
-                Soort          = "Bedrijf",
-                Kvk            = "12345678",
-                StraatAdres    = "Bloemig 10",
-                Postcode       = "1234AB"
+                Id                = 1,
+                GebruikerNr       = 1,
+                BedrijfsNaam      = "Flora BV",
+                Email             = "flora@example.nl",
+                NormalizedEmail   = "FLORA@EXAMPLE.NL",
+                UserName          = "flora@example.nl",
+                NormalizedUserName = "FLORA@EXAMPLE.NL",
+                LaatstIngelogd    = loginD1,
+                Soort             = "Bedrijf",
+                Kvk               = "12345678",
+                StraatAdres       = "Bloemig 10",
+                Postcode          = "1234AB",
+                SecurityStamp     = "STATIC-USER-1",
+                ConcurrencyStamp  = "STATIC-CONC-1",
+                // voorbeeld hoe hash password eruit ziet
+                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++"
             },
             new Gebruiker
             {
-                GebruikerNr    = 2,
-                BedrijfsNaam   = "Jan Jansen",
-                Email          = "jan@example.nl",
-                Wachtwoord     = "***",
-                LaatstIngelogd = loginD2,
-                Soort          = "Koper",
-                Kvk            = "00000000",
-                StraatAdres    = "Laan 5",
-                Postcode       = "2345BC"
+                Id                = 2,
+                GebruikerNr       = 2,
+                BedrijfsNaam      = "Jan Jansen",
+                Email             = "jan@example.nl",
+                NormalizedEmail   = "JAN@EXAMPLE.NL",
+                UserName          = "jan@example.nl",
+                NormalizedUserName = "JAN@EXAMPLE.NL",
+                LaatstIngelogd    = loginD2,
+                Soort             = "Koper",
+                Kvk               = "00000000",
+                StraatAdres       = "Laan 5",
+                Postcode          = "2345BC",
+                SecurityStamp     = "STATIC-USER-2",
+                ConcurrencyStamp  = "STATIC-CONC-2",
+                // Wachtwoord: Test123!
+                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
             }
         );
 
@@ -153,19 +169,21 @@ public class AppDbContext : DbContext
         b.Entity<Bieding>().HasData(
             new Bieding
             {
-                BiedNr        = 1001,
-                BedragPerFust = 13,
-                AantalStuks   = 5,
-                GebruikerNr   = 2,
-                VeilingNr     = 201
+                BiedNr          = 1001,
+                BedragPerFust   = 13,
+                AantalStuks     = 5,
+                GebruikerNr     = 2,
+                VeilingNr       = 201,
+                VeilingproductNr = 101
             },
             new Bieding
             {
-                BiedNr        = 1002,
-                BedragPerFust = 21,
-                AantalStuks   = 3,
-                GebruikerNr   = 2,
-                VeilingNr     = 202
+                BiedNr          = 1002,
+                BedragPerFust   = 21,
+                AantalStuks     = 3,
+                GebruikerNr     = 2,
+                VeilingNr       = 202,
+                VeilingproductNr = 102
             }
         );
     }

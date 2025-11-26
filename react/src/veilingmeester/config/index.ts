@@ -1,11 +1,11 @@
+type EnvSource = { env?: Record<string, string | undefined> };
+
 const readEnv = (key: string): string | undefined => {
-    if (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env?.[key]) {
-        return (import.meta as { env: Record<string, string> }).env[key];
-    }
-    if (typeof process !== "undefined" && (process as { env?: Record<string, string> }).env?.[key]) {
-        return (process as { env: Record<string, string> }).env![key];
-    }
-    return undefined;
+    const metaEnv = typeof import.meta !== "undefined" ? (import.meta as EnvSource).env : undefined;
+    if (metaEnv?.[key]) return metaEnv[key];
+
+    const nodeEnv = (typeof globalThis !== "undefined" ? (globalThis as { process?: EnvSource }).process : undefined)?.env;
+    return nodeEnv?.[key];
 };
 
 const toNumber = (value: string | undefined, fallback: number): number => {
@@ -24,7 +24,35 @@ const toNumberList = (value: string | undefined, fallback: readonly number[]): r
 
 const defaultBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-export const appConfig = {
+export type AppConfig = {
+    readonly api: {
+        readonly baseUrl: string;
+        readonly requestTimeoutMs: number;
+        readonly prefetchPageSize: number;
+    };
+    readonly pagination: {
+        readonly table: readonly number[];
+        readonly modal: readonly number[];
+    };
+    readonly polling: {
+        readonly intervalMs: number;
+        readonly backoffMs: readonly number[];
+    };
+    readonly realtime: { readonly pollStepsMs: readonly number[] };
+    readonly ui: {
+        readonly productThumbnailSize: number;
+        readonly dashboardSampleSize: number;
+        readonly dashboardRefreshMs: number;
+    };
+    readonly storageKeys: {
+        readonly users: string;
+        readonly auctions: string;
+        readonly bids: string;
+        readonly products: string;
+    };
+};
+
+export const appConfig: AppConfig = {
     api: {
         baseUrl:
             readEnv("VITE_VEILINGMEESTER_API_BASE_URL") ||
@@ -32,6 +60,7 @@ export const appConfig = {
             readEnv("VEILINGMEESTER_API_BASE_URL") ||
             defaultBaseUrl,
         requestTimeoutMs: toNumber(readEnv("VITE_VEILINGMEESTER_REQUEST_TIMEOUT_MS"), 10000),
+        prefetchPageSize: toNumber(readEnv("VITE_VEILINGMEESTER_PREFETCH_PAGE_SIZE"), 200),
     },
     pagination: {
         table: toNumberList(readEnv("VITE_VEILINGMEESTER_PER_PAGE_OPTIONS"), [10, 25, 50]),
@@ -56,5 +85,3 @@ export const appConfig = {
         products: "vm_products_filters",
     },
 } as const;
-
-export type AppConfig = typeof appConfig;

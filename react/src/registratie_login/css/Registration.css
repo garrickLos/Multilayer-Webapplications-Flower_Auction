@@ -1,4 +1,4 @@
-/* ===== Design tokens (kleuren, spacing, animatie) ===== */
+/* ===== Design tokens ===== */
 :root {
   --bg: #f1f1f1;
   --ink: #0f172a;
@@ -6,11 +6,11 @@
   --brand: #2e4a41;
   --brand-2: #cfe5d2;
   --focus: #64d5c4;
-  --shadow-soft: 0 0 0 1px rgba(0,0,0,.06) inset;
+  --shadow-soft: 0 0 0 1px rgba(0, 0, 0, .06) inset;
+  --radius: 8px;
   --transition-fast: 0.18s ease-out;
 }
 
-/* ===== Basis layout & typografie ===== */
 * { box-sizing: border-box; }
 
 html, body, main, .BODY {
@@ -20,7 +20,7 @@ html, body, main, .BODY {
 }
 
 body {
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--ink);
   background: var(--bg);
   line-height: 1.4;
@@ -31,7 +31,7 @@ body {
   margin-inline: auto;
 }
 
-/* ===== Hero-sectie ===== */
+/* ===== Hero ===== */
 .hero {
   position: relative;
   overflow: hidden;
@@ -62,16 +62,11 @@ body {
   gap: 12px;
 }
 
-/* Inputs & selects */
-.select-wrap { position: relative; }
-
-.select-wrap select,
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+/* Inputs & selects (via .form-control) */
+.form-control {
   width: 100%;
   padding: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 0;
   background: #fff;
   box-shadow: var(--shadow-soft);
@@ -79,47 +74,42 @@ input[type="password"] {
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
-.select-wrap select {
+select.form-control {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 40px;
 }
 
-.select-wrap .chev {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--muted);
-  font-size: 14px;
-}
+.form-control::placeholder { color: #9ca3af; }
 
-input::placeholder { color: #9ca3af; }
-
-/* Focus-styling */
-input:focus-visible,
-.select-wrap select:focus-visible,
+.form-control:focus-visible,
 .btn-primary:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
-/* ===== 2 kolommen grid ===== */
+/* ===== Layout helpers ===== */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
-/* ===== Checkbox / voorwaarden ===== */
-.consent-row {
-  margin-top: 6px;
-  color: #e5e7eb;
-  font-size: 0.9rem;
+/* ===== Checkbox / voorwaarden (voor andere formulieren) ===== */
+.consent-row,
+.consent-row-inline {
   display: flex;
   align-items: center;
+  font-size: 0.9rem;
+}
+
+.consent-row {
+  margin-top: 6px;
   gap: 1rem;
+  color: #e5e7eb;
+}
+
+.consent-row-inline {
+  justify-content: space-between;
 }
 
 .checkbox {
@@ -136,13 +126,7 @@ input:focus-visible,
   border-radius: 3px;
 }
 
-/* ===== 'Onthoud mij' + 'Wachtwoord vergeten?' ===== */
-.consent-row-inline {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
+/* ===== Links / acties ===== */
 .forgot-link {
   background: none;
   border: 0;
@@ -152,30 +136,25 @@ input:focus-visible,
   color: #e5e7eb;
   text-decoration: underline;
 }
-
-.forgot-link:hover {
-  color: #ffffff;
-}
+.forgot-link:hover { color: #ffffff; }
 
 /* ===== Knop ===== */
 .btn-primary {
   margin-top: 6px;
   border: 0;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: linear-gradient(90deg, #45d0be, #8fd6df);
   color: #0b1620;
   font-weight: 700;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
-
 .btn-primary:hover {
   background: linear-gradient(90deg, #8fd6df, #45d0be);
   color: #fff;
   transform: translateY(-1px);
 }
-
 .btn-primary:disabled {
   opacity: 0.7;
   cursor: not-allowed;
@@ -187,16 +166,12 @@ input:focus-visible,
   color: #cbd5e1;
   font-size: 0.95rem;
 }
-
 .login-hint a {
   color: #fff;
   font-weight: 600;
   text-decoration: underline;
 }
-
-.login-hint a:hover {
-  color: #000;
-}
+.login-hint a:hover { color: #000; }
 
 /* ===== Accessibility ===== */
 .visually-hidden {
@@ -223,49 +198,52 @@ footer {
   .grid-2 { grid-template-columns: 1fr; }
 }
 
-/* ===== Form field styling ===== */
+/* ===== Form fields ===== */
 .field-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.field-group-error input,
-.field-group-error select {
+.field-group-error .form-control {
   box-shadow: 0 0 0 1px rgba(239, 68, 68) inset;
 }
 
-/* Label */
 .field-label {
   font-size: 0.9rem;
   font-weight: 500;
   color: #e5e7eb;
 }
 
-/* Foutmelding onder veld */
+/* Meldingen */
+.field-error,
+.form-error,
+.form-success {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
 .field-error {
-  margin: 2px 0 0;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  color: #fee2e2;
-  background: linear-gradient(90deg, rgba(148,27,37), rgba(185,28,28));
+  margin-top: 2px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  color: #fee2e2;
+  background: linear-gradient(90deg, rgb(148, 27, 37), rgb(185, 28, 28));
 }
-
 .field-error::before {
   content: "⚠";
   font-size: 0.8rem;
 }
 
-/* Globale error boven knop */
 .form-error {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 0.9rem;
   color: #fee2e2;
   background: #991b1b;
+}
+
+.form-success {
+  color: #064e3b;
+  background: #bbf7d0;
 }

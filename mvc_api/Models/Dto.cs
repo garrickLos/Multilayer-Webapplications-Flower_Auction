@@ -85,41 +85,37 @@ public record BiedingUpdateDto : BaseBieding_Dto;
 // );
 
 // Gebruiker CRUD
-public abstract record BaseGebruiker
+public abstract record BaseGebruikerDto
 {
+    [Required, StringLength(200)]
+    public string BedrijfsNaam { get; set; } = string.Empty;
 
-    [Required, StringLength(200)] 
-    public string BedrijfsNaam { get; set; }
-    
-    [Required, EmailAddress, StringLength(200)] 
-    public string Email { get; set; }
-    
-    [Required, StringLength(200)] 
-    public string Wachtwoord { get; set; }
+    [Required, EmailAddress, StringLength(200)]
+    public string Email { get; set; } = string.Empty;
 
-    public DateTime LaatstIngelogd { get; set; }
-    
-    [Required, StringLength(50)] 
-    public string Soort { get; set; }
-    
-    [StringLength(20)] 
+    [Required, StringLength(50)]
+    public string Soort { get; set; } = string.Empty;
+
+    [StringLength(20)]
     public string? Kvk { get; set; }
-    
-    [StringLength(200)] 
+
+    [StringLength(200)]
     public string? StraatAdres { get; set; }
-    
-    [StringLength(10)] 
+
+    [StringLength(10)]
     public string? Postcode { get; set; }
 }
 
-public record GebruikerCreateDto : BaseGebruiker;
+public record GebruikerCreateDto : BaseGebruikerDto;
 
-public record GebruikerUpdateDto : BaseGebruiker;
+public record GebruikerUpdateDto : BaseGebruikerDto;
 
-public record Klant_GebruikerDto : BaseGebruiker
+public record Klant_GebruikerDto : BaseGebruikerDto
 {
     public int GebruikerNr { get; set; }
-    
+
+    public DateTime? LaatstIngelogd { get; set; }
+
     public IEnumerable<VeilingMeester_BiedingDto> Biedingen { get; init; } = Enumerable.Empty<VeilingMeester_BiedingDto>();
 }
 
