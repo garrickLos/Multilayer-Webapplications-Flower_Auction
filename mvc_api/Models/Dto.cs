@@ -48,7 +48,7 @@ public abstract record BaseBieding_Dto
 {
 
     [Range(typeof(int), "1", "9999999")] 
-    public Decimal BedragPerFust { get; set; }
+    public int BedragPerFust { get; set; }
     
     [Range(1, int.MaxValue)] 
     public int AantalStuks { get; set; }

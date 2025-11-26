@@ -46,10 +46,9 @@ public class Bieding
     [Key]
     public int BiedNr { get; set; }
 
-    [Precision(18, 2)]
-    [Range(typeof(decimal), "0,01", "999999999",
+    [Range(typeof(decimal), "1", "999999999",
         ErrorMessage = "Bedrag per fust moet minimaal 0,01 zijn.")]
-    public decimal BedragPerFust { get; set; }
+    public int BedragPerFust { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Aantal stuks moet minimaal 1 zijn.")]
     public int AantalStuks { get; set; }

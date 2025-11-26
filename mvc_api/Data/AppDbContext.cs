@@ -154,7 +154,7 @@ public class AppDbContext : DbContext
             new Bieding
             {
                 BiedNr        = 1001,
-                BedragPerFust = 13.50m,
+                BedragPerFust = 13,
                 AantalStuks   = 5,
                 GebruikerNr   = 2,
                 VeilingNr     = 201
@@ -162,7 +162,7 @@ public class AppDbContext : DbContext
             new Bieding
             {
                 BiedNr        = 1002,
-                BedragPerFust = 21.00m,
+                BedragPerFust = 21,
                 AantalStuks   = 3,
                 GebruikerNr   = 2,
                 VeilingNr     = 202
