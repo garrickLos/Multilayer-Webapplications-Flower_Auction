@@ -248,8 +248,6 @@ public sealed record VpList(
     string ImagePath,
     string Plaats
 );
-    
-
 
 public sealed record VpDetail(
     int VeilingProductNr,

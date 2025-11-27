@@ -182,7 +182,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 13,
                             GebruikerNr = 2,
                             VeilingNr = 201,
-                            VeilingproductNr = 101
+                            VeilingproductNr = 0
                         },
                         new
                         {
@@ -191,7 +191,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 21,
                             GebruikerNr = 2,
                             VeilingNr = 202,
-                            VeilingproductNr = 102
+                            VeilingproductNr = 0
                         });
                 });
 

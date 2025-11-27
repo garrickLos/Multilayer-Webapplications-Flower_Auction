@@ -174,8 +174,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 BedragPerFust   = 13,
                 AantalStuks     = 5,
                 GebruikerNr     = 2,
-                VeilingNr       = 201,
-                VeilingproductNr = 101
+                VeilingNr       = 201
             },
             new Bieding
             {
@@ -183,8 +182,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 BedragPerFust   = 21,
                 AantalStuks     = 3,
                 GebruikerNr     = 2,
-                VeilingNr       = 202,
-                VeilingproductNr = 102
+                VeilingNr       = 202
             }
         );
     }
