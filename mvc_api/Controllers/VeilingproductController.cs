@@ -14,7 +14,7 @@ public class VeilingproductController : ControllerBase
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
     
-    //Get voor kweker
+    //Get voor klant
     [HttpGet("Klant")]
     public async Task<ActionResult<IEnumerable<klantVeilingproductGet_dto>>> KlantGetAll(
         [FromQuery] string? q,
