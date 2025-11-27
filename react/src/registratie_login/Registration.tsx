@@ -1,191 +1,160 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-// import '../css/MainScreenStyle.css';
+import { useNavigate } from 'react-router-dom';
 import './css/Registration.css';
 
-// Toegestane rollen
-type Role = 'klant' | 'kweker';
-
-// Data die we naar de backend sturen
-type RegistrationPayload = {
-    role: Role;
-    firstName: string;
-    lastName: string;
+interface RegisterRequest {
     email: string;
-    password: string;   // gehashte variant
-    street: string;
-    postalCode: string;
-    company: string;
-    kvk: string;
-    vatNumber: string;
-};
-
-// Fouten per veld
-type FieldErrors = {
-    rol?: string;
-    voornaam?: string;
-    achternaam?: string;
-    email?: string;
-    wachtwoord?: string;
-    straat?: string;
-    postcode?: string;
-    bedrijf?: string;
+    password: string;
+    confirmPassword: string;
+    bedrijfsNaam: string;
+    soort: string;
     kvk?: string;
-    btw?: string;
-    terms?: string;
-};
-
-// Simpel input-component met label + foutmelding
-type TextFieldProps = {
-    id: string;
-    name: keyof FieldErrors | string;
-    label: string;
-    type?: string;
-    placeholder?: string;
-    autoComplete?: string;
-    inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
-    pattern?: string;
-    error?: string;
-};
-
-function TextField({id, name, label, type = 'text', placeholder, autoComplete, inputMode, pattern, error}: TextFieldProps) {
-    const hasError = !!error;
-    return (
-        <div className={`field-group ${hasError ? 'field-group-error' : ''}`}>
-            <label className="field-label" htmlFor={id}>
-                {label}
-            </label>
-            <input
-                id={id}
-                name={name}
-                type={type}
-                placeholder={placeholder}
-                autoComplete={autoComplete}
-                inputMode={inputMode}
-                pattern={pattern}
-                required
-            />
-            {hasError && <p className="field-error">{error}</p>}
-        </div>
-    );
+    straatAdres?: string;
+    postcode?: string;
 }
 
-// Hash wachtwoord
-async function hashPassword(password: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+interface RegisterResponse {
+    success: boolean;
+    errors: string[];
 }
+
+type FormErrors = Partial<Record<keyof RegisterRequest, string>> & { general?: string };
+
+const initialForm: RegisterRequest = {
+    email: '',
+    password: '',
+    confirmPassword: '',
+    bedrijfsNaam: '',
+    soort: '',
+    kvk: '',
+    straatAdres: '',
+    postcode: ''
+};
+
+const LOGIN_PATH = '/inloggen';
+
+const fieldGroupClass = (err?: string) =>
+    `field-group${err ? ' field-group-error' : ''}`;
+
+const inputClass = (err?: string) =>
+    `form-control${err ? ' is-invalid' : ''}`;
 
 export default function Registration() {
+    const [form, setForm] = useState<RegisterRequest>(initialForm);
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
-    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-    const [globalError, setGlobalError] = useState<string | null>(null);
-    const [submitting, setSubmitting] = useState(false);
 
-    // Formulier versturen: eerst checken, dan payload bouwen
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setGlobalError(null);
-        setFieldErrors({});
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        let newValue = value;
 
-        const form = event.currentTarget;
-        const data = new FormData(form);
-        const value = (name: string) => String(data.get(name) ?? '').trim();
-
-        const errors: FieldErrors = {};
-
-        // Algemene voorwaarden
-        if (!data.get('terms')) {
-            errors.terms = 'Je moet de algemene voorwaarden accepteren.';
+        if (name === 'kvk') {
+            newValue = value.replace(/\D/g, '').slice(0, 8);
+        } else if (name === 'postcode') {
+            newValue = value.replace(/\s/g, '').toUpperCase().slice(0, 6);
         }
 
-        // Rol
-        const rawRole = value('rol');
-        if (rawRole !== 'klant' && rawRole !== 'kweker') {
-            errors.rol = 'Selecteer een rol: Klant of Kweker.';
-        }
+        setForm((prev) => ({ ...prev, [name]: newValue }));
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
+        setSubmittedMessage(null);
+    };
 
-        // Naam
-        const firstName = value('voornaam');
-        if (!firstName) errors.voornaam = 'Voornaam is verplicht.';
+    const validate = (): FormErrors => {
+        const errs: FormErrors = {};
+        const email = form.email.trim();
+        const bedrijfsNaam = form.bedrijfsNaam.trim();
+        const kvk = form.kvk?.trim();
+        const postcode = form.postcode?.trim().toUpperCase();
 
-        const lastName = value('achternaam');
-        if (!lastName) errors.achternaam = 'Achternaam is verplicht.';
-
-        // E-mail: heel simpele check
-        const email = value('email');
         if (!email) {
-            errors.email = 'E-mailadres is verplicht.';
-        } else if (!email.includes('@') || !email.includes('.')) {
-            errors.email = 'Vul een geldig e-mailadres in.';
+            errs.email = 'E-mailadres is verplicht.';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errs.email = 'E-mailadres is ongeldig.';
         }
 
-        // Wachtwoord: min. 8 tekens
-        const rawPassword = value('wachtwoord');
-        if (!rawPassword) {
-            errors.wachtwoord = 'Wachtwoord is verplicht.';
-        } else if (rawPassword.length < 8) {
-            errors.wachtwoord = 'Wachtwoord moet minimaal 8 tekens zijn.';
+        if (!form.password) {
+            errs.password = 'Wachtwoord is verplicht.';
+        } else if (form.password.length < 6) {
+            errs.password = 'Wachtwoord moet minimaal 6 tekens bevatten.';
         }
 
-        // Adres
-        const street = value('straat');
-        if (!street) errors.straat = 'Straat en huisnummer zijn verplicht.';
-
-        const postalCode = value('postcode');
-        if (!postalCode) errors.postcode = 'Postcode is verplicht.';
-
-        // Bedrijf
-        const company = value('bedrijf');
-        if (!company) errors.bedrijf = 'Bedrijfsnaam is verplicht.';
-
-        // KvK: alleen cijfers, 6–12 lang
-        const kvkRaw = value('kvk');
-        const kvkDigits = kvkRaw.replace(/\D/g, ''); // alleen nummers
-        if (!kvkDigits) {
-            errors.kvk = 'KvK nummer is verplicht.';
-        } else if (kvkDigits.length < 6 || kvkDigits.length > 12) {
-            errors.kvk = 'KvK moet uit 6–12 cijfers bestaan.';
+        if (!form.confirmPassword) {
+            errs.confirmPassword = 'Bevestig je wachtwoord.';
+        } else if (form.confirmPassword !== form.password) {
+            errs.confirmPassword = 'Wachtwoorden komen niet overeen.';
         }
 
-        // BTW: gewoon niet leeg, uppercase
-        const vatNumberRaw = value('btw').replace(/\s+/g, '').toUpperCase();
-        if (!vatNumberRaw) {
-            errors.btw = 'BTW nummer is verplicht.';
+        if (!bedrijfsNaam) {
+            errs.bedrijfsNaam = 'Bedrijfsnaam is verplicht.';
         }
 
-        // Stop als er fouten zijn
-        if (Object.keys(errors).length > 0) {
-            setFieldErrors(errors);
+        if (!form.soort) {
+            errs.soort = 'Selecteer een soort (bijv. Bedrijf of Koper).';
+        }
+
+        if (kvk && !/^\d{8}$/.test(kvk)) {
+            errs.kvk = 'KvK-nummer moet uit 8 cijfers bestaan.';
+        }
+
+        if (postcode && !/^[1-9][0-9]{3}[A-Z]{2}$/.test(postcode)) {
+            errs.postcode = 'Postcode moet het formaat 1234AB hebben.';
+        }
+
+        return errs;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmittedMessage(null);
+        setErrors({});
+
+        const validationErrors = validate();
+        if (Object.values(validationErrors).some(Boolean)) {
+            setErrors(validationErrors);
             return;
         }
 
-        setSubmitting(true);
+        const payloadToSend: RegisterRequest = {
+            ...form,
+            email: form.email.trim(),
+            bedrijfsNaam: form.bedrijfsNaam.trim(),
+            kvk: form.kvk?.trim() || undefined,
+            straatAdres: form.straatAdres?.trim() || undefined,
+            postcode: form.postcode?.trim().toUpperCase() || undefined
+        };
 
+        setIsSubmitting(true);
         try {
-            // Wachtwoord eerst hashen met SHA-256
-            const hashedPassword = await hashPassword(rawPassword);
+            const response = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadToSend)
+            });
 
-            const payload: RegistrationPayload = {role: rawRole as Role, firstName, lastName, email, password: hashedPassword, street, postalCode, company, kvk: kvkDigits, vatNumber: vatNumberRaw,};
+            const payload = (await response
+                .json()
+                .catch(() => null)) as RegisterResponse | null;
 
-            console.log('Registratiepayload klaar voor API/AuthContext:', payload);
+            if (!response.ok || !payload || !payload.success) {
+                setErrors({
+                    general:
+                        payload?.errors?.length
+                            ? payload.errors.join('\n')
+                            : 'Er ging iets mis bij het versturen van het formulier.'
+                });
+                return;
+            }
 
-            // Later:
-            // await fetch('/api/auth/register', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify(payload),
-            // });
+            setSubmittedMessage('Registratie succesvol! Je wordt doorgestuurd naar de loginpagina...');
+            setForm(initialForm);
 
-            navigate('/inloggen');
-        } catch (e) {
-            console.error(e);
-            setGlobalError('Er ging iets mis bij het registreren.');
+            setTimeout(() => navigate(LOGIN_PATH), 2000);
+        } catch {
+            setErrors({ general: 'Er ging iets mis bij het versturen van het formulier.' });
         } finally {
-            setSubmitting(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -196,148 +165,232 @@ export default function Registration() {
                     <h1>Registreren</h1>
 
                     <form className="form" onSubmit={handleSubmit} noValidate>
-                        {/* Rol */}
-                        <div className={`field-group ${fieldErrors.rol ? 'field-group-error' : ''}`}>
-                            <label className="field-label" htmlFor="rol">
-                                Rol
+                        <div className={fieldGroupClass(errors.email)}>
+                            <label className="field-label" htmlFor="email">
+                                E-mailadres
                             </label>
-                            <div className="select-wrap">
-                                <select id="rol" name="rol" required defaultValue="">
-                                    <option value="" disabled>
-                                        Kies een rol
-                                    </option>
-                                    <option value="klant">Klant</option>
-                                    <option value="kweker">Kweker</option>
-                                </select>
-                                <span className="chev" aria-hidden="true">▾</span>
-                            </div>
-                            {fieldErrors.rol && <p className="field-error">{fieldErrors.rol}</p>}
-                        </div>
-
-                        {/* Naam */}
-                        <div className="grid-2">
-                            <TextField
-                                id="voornaam"
-                                name="voornaam"
-                                label="Voornaam"
-                                placeholder="Voornaam"
-                                autoComplete="given-name"
-                                error={fieldErrors.voornaam}
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                className={inputClass(errors.email)}
+                                value={form.email}
+                                onChange={handleChange}
+                                required
+                                autoComplete="email"
+                                placeholder="naam@bedrijf.nl"
+                                aria-invalid={!!errors.email}
+                                aria-describedby={errors.email ? 'email-error' : undefined}
                             />
-                            <TextField
-                                id="achternaam"
-                                name="achternaam"
-                                label="Achternaam"
-                                placeholder="Achternaam"
-                                autoComplete="family-name"
-                                error={fieldErrors.achternaam}
-                            />
-                        </div>
-
-                        {/* Email */}
-                        <TextField
-                            id="email"
-                            name="email"
-                            label="E-mailadres"
-                            type="email"
-                            placeholder="Emailadres"
-                            autoComplete="email"
-                            inputMode="email"
-                            error={fieldErrors.email}
-                        />
-
-                        {/* Wachtwoord */}
-                        <TextField
-                            id="wachtwoord"
-                            name="wachtwoord"
-                            label="Wachtwoord"
-                            type="password"
-                            placeholder="Wachtwoord"
-                            autoComplete="new-password"
-                            error={fieldErrors.wachtwoord}
-                        />
-
-                        {/* Adres */}
-                        <div className="grid-2">
-                            <TextField
-                                id="straat"
-                                name="straat"
-                                label="Straat + huisnummer"
-                                placeholder="Straatnaam + huisnummer"
-                                autoComplete="address-line1"
-                                error={fieldErrors.straat}
-                            />
-                            <TextField
-                                id="postcode"
-                                name="postcode"
-                                label="Postcode"
-                                placeholder="Postcode"
-                                autoComplete="postal-code"
-                                inputMode="text"
-                                pattern="[A-Za-z0-9 ]{4,8}"
-                                error={fieldErrors.postcode}
-                            />
-                        </div>
-
-                        {/* Bedrijf + KvK */}
-                        <div className="grid-2">
-                            <TextField
-                                id="bedrijf"
-                                name="bedrijf"
-                                label="Bedrijfsnaam"
-                                placeholder="Bedrijfsnaam"
-                                error={fieldErrors.bedrijf}
-                            />
-                            <TextField
-                                id="kvk"
-                                name="kvk"
-                                label="KvK nummer"
-                                placeholder="KvK nummer"
-                                inputMode="numeric"
-                                pattern="[0-9]{6,12}"
-                                error={fieldErrors.kvk}
-                            />
-                        </div>
-
-                        {/* BTW */}
-                        <TextField
-                            id="btw"
-                            name="btw"
-                            label="BTW nummer"
-                            placeholder="BTW nummer"
-                            pattern="[A-Za-z0-9]{8,20}"
-                            error={fieldErrors.btw}
-                        />
-
-                        {/* Algemene voorwaarden */}
-                        <div className={`field-group ${fieldErrors.terms ? 'field-group-error' : ''}`}>
-                            <div className="consent-row">
-                                <label className="checkbox">
-                                    <input type="checkbox" name="terms" required />
-                                    <span>Ik accepteer de algemene voorwaarden van uw site.</span>
-                                </label>
-                            </div>
-                            {fieldErrors.terms && (
-                                <p className="field-error">{fieldErrors.terms}</p>
+                            {errors.email && (
+                                <p id="email-error" className="field-error">
+                                    {errors.email}
+                                </p>
                             )}
                         </div>
 
-                        {/* Globale fout (bijv. server error) */}
-                        {globalError && (
+                        <div className="grid-2">
+                            <div className={fieldGroupClass(errors.password)}>
+                                <label className="field-label" htmlFor="password">
+                                    Wachtwoord
+                                </label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    className={inputClass(errors.password)}
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    required
+                                    minLength={6}
+                                    autoComplete="new-password"
+                                    placeholder="Minimaal 6 tekens"
+                                    aria-invalid={!!errors.password}
+                                    aria-describedby={errors.password ? 'password-error' : undefined}
+                                />
+                                {errors.password && (
+                                    <p id="password-error" className="field-error">
+                                        {errors.password}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className={fieldGroupClass(errors.confirmPassword)}>
+                                <label className="field-label" htmlFor="confirmPassword">
+                                    Bevestig wachtwoord
+                                </label>
+                                <input
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    type="password"
+                                    className={inputClass(errors.confirmPassword)}
+                                    value={form.confirmPassword}
+                                    onChange={handleChange}
+                                    required
+                                    minLength={6}
+                                    autoComplete="new-password"
+                                    placeholder="Herhaal je wachtwoord"
+                                    aria-invalid={!!errors.confirmPassword}
+                                    aria-describedby={
+                                        errors.confirmPassword ? 'confirmPassword-error' : undefined
+                                    }
+                                />
+                                {errors.confirmPassword && (
+                                    <p id="confirmPassword-error" className="field-error">
+                                        {errors.confirmPassword}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid-2">
+                            <div className={fieldGroupClass(errors.bedrijfsNaam)}>
+                                <label className="field-label" htmlFor="bedrijfsNaam">
+                                    Bedrijfsnaam
+                                </label>
+                                <input
+                                    id="bedrijfsNaam"
+                                    name="bedrijfsNaam"
+                                    type="text"
+                                    className={inputClass(errors.bedrijfsNaam)}
+                                    value={form.bedrijfsNaam}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Bijv. Flora BV"
+                                    aria-invalid={!!errors.bedrijfsNaam}
+                                    aria-describedby={
+                                        errors.bedrijfsNaam ? 'bedrijfsNaam-error' : undefined
+                                    }
+                                />
+                                {errors.bedrijfsNaam && (
+                                    <p id="bedrijfsNaam-error" className="field-error">
+                                        {errors.bedrijfsNaam}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className={fieldGroupClass(errors.soort)}>
+                                <label className="field-label" htmlFor="soort">
+                                    Soort
+                                </label>
+                                <select
+                                    id="soort"
+                                    name="soort"
+                                    className={inputClass(errors.soort)}
+                                    value={form.soort}
+                                    onChange={handleChange}
+                                    required
+                                    aria-invalid={!!errors.soort}
+                                    aria-describedby={errors.soort ? 'soort-error' : undefined}
+                                >
+                                    <option value="" disabled>
+                                        Kies een soort
+                                    </option>
+                                    <option value="Bedrijf">Bedrijf</option>
+                                    <option value="Koper">Koper</option>
+                                </select>
+                                {errors.soort && (
+                                    <p id="soort-error" className="field-error">
+                                        {errors.soort}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid-2">
+                            <div className={fieldGroupClass(errors.kvk)}>
+                                <label className="field-label" htmlFor="kvk">
+                                    KvK (optioneel)
+                                </label>
+                                <input
+                                    id="kvk"
+                                    name="kvk"
+                                    type="text"
+                                    className={inputClass(errors.kvk)}
+                                    value={form.kvk ?? ''}
+                                    onChange={handleChange}
+                                    placeholder="8 cijfers"
+                                    inputMode="numeric"
+                                    maxLength={8}
+                                    aria-invalid={!!errors.kvk}
+                                    aria-describedby={errors.kvk ? 'kvk-error' : undefined}
+                                />
+                                {errors.kvk && (
+                                    <p id="kvk-error" className="field-error">
+                                        {errors.kvk}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className={fieldGroupClass()}>
+                                <label className="field-label" htmlFor="straatAdres">
+                                    Straat + huisnummer (optioneel)
+                                </label>
+                                <input
+                                    id="straatAdres"
+                                    name="straatAdres"
+                                    type="text"
+                                    className="form-control"
+                                    value={form.straatAdres ?? ''}
+                                    onChange={handleChange}
+                                    autoComplete="address-line1"
+                                    placeholder="Bijv. Bloemstraat 10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className={fieldGroupClass(errors.postcode)}>
+                            <label className="field-label" htmlFor="postcode">
+                                Postcode (optioneel)
+                            </label>
+                            <input
+                                id="postcode"
+                                name="postcode"
+                                type="text"
+                                className={inputClass(errors.postcode)}
+                                value={form.postcode ?? ''}
+                                onChange={handleChange}
+                                autoComplete="postal-code"
+                                placeholder="1234AB"
+                                maxLength={6}
+                                aria-invalid={!!errors.postcode}
+                                aria-describedby={errors.postcode ? 'postcode-error' : undefined}
+                            />
+                            {errors.postcode && (
+                                <p id="postcode-error" className="field-error">
+                                    {errors.postcode}
+                                </p>
+                            )}
+                        </div>
+
+                        {errors.general && (
                             <p className="form-error" aria-live="polite">
-                                {globalError}
+                                {errors.general}
+                            </p>
+                        )}
+                        {submittedMessage && (
+                            <p className="form-success" aria-live="polite">
+                                {submittedMessage}
                             </p>
                         )}
 
-                        <button type="submit" className="btn-primary" disabled={submitting}>
-                            {submitting ? 'Bezig met registreren...' : 'Registreren'}
+                        <button
+                            type="submit"
+                            className="btn btn-primary w-100"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'Bezig met registreren...' : 'Registreren'}
                         </button>
 
                         <p className="login-hint">
                             Heb je al een account?{' '}
-                            <Link id="loginTekst" to="/inloggen">
-                                Log hier in
-                            </Link>
+                            <button
+                                type="button"
+                                className="forgot-link"
+                                onClick={() => navigate(LOGIN_PATH)}
+                            >
+                                Inloggen
+                            </button>
                         </p>
                     </form>
                 </div>

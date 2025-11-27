@@ -1,8 +1,9 @@
 // cd mvc_api
+//     
+// dotnet ef database drop --force
+//     
 // dotnet ef migrations add InitialCreate
 // dotnet ef database update
-
-// dotnet ef database drop --force
 
 
 // "ConnectionStrings": {
@@ -10,9 +11,11 @@
 // }
 
 
-using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using mvc_api.Data;
+using mvc_api.Models;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +37,23 @@ var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
     // options.UseSqlServer(connectionString));
+
+// Identity configuratie (alleen registratie, verdere auth volgt later)
+builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequireDigit = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequiredLength = 6;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+// Nodig zodat UserManager/SignInManager goed werken
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
 
 
 var app = builder.Build();
@@ -57,5 +77,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.Run();

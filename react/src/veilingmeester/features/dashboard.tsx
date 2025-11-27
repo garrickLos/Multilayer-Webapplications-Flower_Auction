@@ -1,32 +1,21 @@
 import { useMemo, type JSX } from "react";
+import { useLiveStats } from "../hooks";
 import { formatDateTime } from "../utils";
-import type { Auction, Bid, Product, User } from "../types";
 
-// Dashboard cards based on in-memory state.
-type DashboardMetricsProps = {
-    readonly users: readonly User[];
-    readonly auctions: readonly Auction[];
-    readonly products: readonly Product[];
-    readonly bids: readonly Bid[];
-};
+export function DashboardMetrics(): JSX.Element {
+    const { stats, loading, error, lastUpdated } = useLiveStats();
 
-export function DashboardMetrics({ users, auctions, products, bids }: DashboardMetricsProps): JSX.Element {
     const metrics = useMemo(
         () => [
-            { id: "users", label: "Gebruikers", value: users.length, helper: "Totaal" },
-            {
-                id: "auctions",
-                label: "Actieve veilingen",
-                value: auctions.filter((auction) => auction.status === "active").length,
-                helper: "Live",
-            },
-            { id: "products", label: "Producten", value: products.length, helper: "Beschikbaar" },
-            { id: "bids", label: "Biedingen", value: bids.length, helper: "Laatste 24u" },
+            { id: "users", label: "Gebruikers", value: stats?.users ?? 0, helper: "Totaal" },
+            { id: "auctions", label: "Actieve veilingen", value: stats?.activeAuctions ?? 0, helper: "Live" },
+            { id: "products", label: "Producten", value: stats?.products ?? 0, helper: "Beschikbaar" },
+            { id: "bids", label: "Biedingen", value: stats?.bids ?? 0, helper: "Laatste 24u" },
         ],
-        [auctions, bids.length, products.length, users.length],
+        [stats],
     );
 
-    const refreshedAt = useMemo(() => formatDateTime(new Date()), []);
+    const refreshedAt = useMemo(() => formatDateTime(lastUpdated ?? null), [lastUpdated]);
 
     return (
         <section className="card border-0 shadow-sm rounded-4 mb-4" aria-label="Dashboard overzicht">
@@ -46,7 +35,10 @@ export function DashboardMetrics({ users, auctions, products, bids }: DashboardM
                                 <div className="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <p className="text-uppercase text-muted small mb-1">{metric.label}</p>
-                                        <div className="fs-2 fw-semibold text-success">{metric.value}</div>
+                                        <div className="fs-2 fw-semibold text-success">
+                                            {loading ? "…" : metric.value}
+                                            {error && <span className="text-danger ms-2" aria-label="fout">!</span>}
+                                        </div>
                                     </div>
                                     <span className="badge text-success-emphasis bg-success-subtle rounded-pill">{metric.helper}</span>
                                 </div>

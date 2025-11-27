@@ -1,64 +1,59 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 import { DashboardMetrics } from "./features/dashboard";
-import { AuctionsTab, AuctionDetailsModal, LinkProductsModal, NewAuctionModal } from "./features/auctions";
+import { AuctionsTab, LinkProductsModal, NewAuctionModal, type AuctionFormState } from "./features/auctions";
 import { ProductsTab } from "./features/products";
 import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
+import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, updateUser } from "./api";
+import { appConfig } from "./config";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
-import { cx } from "./utils";
-
-// Root container that holds all state and routes modals.
-const seedUsers: User[] = [
-    { id: 1, name: "Anke van Dijk", email: "anke@example.nl", role: "auctioneer", status: "active" },
-    { id: 2, name: "Bram de Boer", email: "bram@example.nl", role: "grower", status: "active" },
-    { id: 3, name: "Chantal Jansen", email: "chantal@example.nl", role: "buyer", status: "inactive" },
-];
-
-const seedAuctions: Auction[] = [
-    {
-        id: 201,
-        title: "Tulpen ochtendveiling",
-        status: "active",
-        minPrice: 1.25,
-        maxPrice: 2.5,
-        startDate: "2024-05-10T08:00",
-        endDate: "2024-05-10T10:00",
-        linkedProductIds: [501, 502],
-    },
-    {
-        id: 202,
-        title: "Rozen middagveiling",
-        status: "inactive",
-        minPrice: 0.9,
-        maxPrice: 1.8,
-        startDate: "2024-05-12T13:00",
-        endDate: "2024-05-12T16:00",
-        linkedProductIds: [],
-    },
-];
-
-const seedProducts: Product[] = [
-    { id: 501, name: "Rode roos", status: "active", category: "Snijbloemen", minPrice: 1.1, maxPrice: 1.9, growerId: 2, linkedAuctionId: 201 },
-    { id: 502, name: "Gele tulp", status: "active", category: "Snijbloemen", minPrice: 0.8, maxPrice: 1.2, growerId: 2, linkedAuctionId: 201 },
-    { id: 503, name: "Orchidee mix", status: "inactive", category: "Planten", minPrice: 2.5, maxPrice: 3.4, growerId: 2 },
-    { id: 504, name: "Lavendel", status: "sold", category: "Planten", minPrice: 1.0, maxPrice: 1.6, growerId: 2 },
-];
-
-const seedBids: Bid[] = [
-    { id: 1, userId: 3, auctionId: 201, amount: 1.6, quantity: 50, date: "2024-05-10T08:30", status: "active" },
-    { id: 2, userId: 3, auctionId: 201, amount: 1.7, quantity: 30, date: "2024-05-10T08:45", status: "sold" },
-];
+import { cx, uiStatusToAuctionStatus } from "./utils";
 
 type TabKey = "users" | "auctions" | "products";
+
+const { prefetchPageSize } = appConfig.api;
 
 export function Veilingmeester() {
     const offline = useOffline();
     const [activeTab, setActiveTab] = useState<TabKey>("auctions");
-    const [users, setUsers] = useState<User[]>(seedUsers);
-    const [auctions, setAuctions] = useState<Auction[]>(seedAuctions);
-    const [products, setProducts] = useState<Product[]>(seedProducts);
-    const [bids] = useState<Bid[]>(seedBids);
+    const [users, setUsers] = useState<User[]>([]);
+    const [auctions, setAuctions] = useState<Auction[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [bids, setBids] = useState<Bid[]>([]);
     const [activeModal, setActiveModal] = useState<ModalState | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAuctionsLoaded = useCallback((items: Auction[]) => setAuctions(items), []);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const [userResponse, auctionResponse, productResponse, bidResponse] = await Promise.all([
+                    fetchUsers({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchAuctions({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchProducts({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchBids({ pageSize: prefetchPageSize }, controller.signal),
+                ]);
+
+                setUsers([...userResponse.items]);
+                setAuctions([...auctionResponse.items]);
+                setProducts([...productResponse.items]);
+                setBids([...bidResponse.items]);
+            } catch (err) {
+                if ((err as { name?: string }).name === "AbortError") return;
+                setError((err as { message?: string }).message ?? "Kan gegevens niet laden");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void load();
+        return () => controller.abort();
+    }, []);
 
     const activeAuction = useMemo(
         () => (activeModal && "auctionId" in activeModal ? auctions.find((entry) => entry.id === activeModal.auctionId) ?? null : null),
@@ -69,20 +64,19 @@ export function Veilingmeester() {
         [activeModal, users],
     );
 
-    const handleCreateAuction = (draft: { title: string; minPrice: number; maxPrice: number; startDate: string; endDate: string; status: Auction["status"] }) => {
-        const nextId = auctions.reduce((max, auction) => Math.max(max, auction.id), 0) + 1;
-        const newAuction: Auction = {
-            id: nextId,
-            title: draft.title || `Veiling ${nextId}`,
-            minPrice: draft.minPrice,
-            maxPrice: draft.maxPrice || draft.minPrice,
-            startDate: draft.startDate,
-            endDate: draft.endDate,
-            status: draft.status,
-            linkedProductIds: [],
-        };
-        setAuctions((prev) => [newAuction, ...prev]);
-        setActiveModal(null);
+    const handleCreateAuction = async (draft: AuctionFormState) => {
+        try {
+            const created = await createAuction({
+                veilingNaam: draft.title,
+                begintijd: draft.startTime,
+                eindtijd: draft.endTime,
+                status: uiStatusToAuctionStatus(draft.status) ?? "",
+            });
+            setAuctions((prev) => [created, ...prev]);
+            setActiveModal(null);
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Veiling kon niet worden aangemaakt");
+        }
     };
 
     const handleLinkProducts = (auctionId: number, productIds: readonly number[]) => {
@@ -98,10 +92,29 @@ export function Veilingmeester() {
         );
     };
 
-    const handleUpdateUser = (updated: User) => {
-        setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)));
-        setActiveModal(null);
-    };
+    const handleUpdateUser = useCallback(
+        async (updated: User & { password?: string }) => {
+            try {
+                const response = await updateUser(updated.id, {
+                    bedrijfsNaam: updated.name,
+                    email: updated.email,
+                    wachtwoord: updated.password ?? "",
+                    soort: updated.role,
+                    straatAdres: updated.address ?? null,
+                    postcode: null,
+                    kvk: updated.kvk ?? null,
+                    laatstIngelogd: updated.lastLogin ?? null,
+                });
+                setUsers((prev) => prev.map((user) => (user.id === response.id ? response : user)));
+                setActiveModal(null);
+            } catch (err) {
+                const message = (err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt";
+                setError(message);
+                throw new Error(message);
+            }
+        },
+        [],
+    );
 
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
         {
@@ -109,17 +122,16 @@ export function Veilingmeester() {
             label: "Veilingen",
             render: () => (
                 <AuctionsTab
-                    auctions={auctions}
                     onCreateRequested={() => setActiveModal({ key: "newAuction" })}
-                    onOpenDetails={(auctionId) => setActiveModal({ key: "auctionDetails", auctionId })}
                     onOpenLinkProducts={(auctionId) => setActiveModal({ key: "linkProducts", auctionId })}
+                    onAuctionsLoaded={handleAuctionsLoaded}
                 />
             ),
         },
         {
             key: "products",
             label: "Producten",
-            render: () => <ProductsTab products={products} />,
+            render: () => <ProductsTab auctions={auctions} />,
         },
         {
             key: "users",
@@ -149,8 +161,18 @@ export function Veilingmeester() {
                         Je bent offline. Gegevens verversen zodra de verbinding terug is.
                     </div>
                 )}
+                {error && (
+                    <div className="alert alert-danger border-0 rounded-4 shadow-sm mb-0" role="alert">
+                        {error}
+                    </div>
+                )}
+                {loading && !error && (
+                    <div className="alert alert-info border-0 rounded-4 shadow-sm mb-0" role="status">
+                        Gegevens worden geladen…
+                    </div>
+                )}
 
-                <DashboardMetrics users={users} auctions={auctions} products={products} bids={bids} />
+                <DashboardMetrics />
 
                 <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
                     <div className="card-body p-4 d-flex flex-column gap-3">
@@ -192,9 +214,6 @@ export function Veilingmeester() {
                 ))}
 
                 {activeModal?.key === "newAuction" && <NewAuctionModal onClose={() => setActiveModal(null)} onSave={handleCreateAuction} />}
-                {activeModal?.key === "auctionDetails" && activeAuction && (
-                    <AuctionDetailsModal auction={activeAuction} onClose={() => setActiveModal(null)} />
-                )}
                 {activeModal?.key === "linkProducts" && activeAuction && (
                     <LinkProductsModal
                         auction={activeAuction}
