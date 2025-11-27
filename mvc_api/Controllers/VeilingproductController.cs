@@ -185,7 +185,7 @@ public class VeilingproductController : ControllerBase
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
         
         var kwekerBestaat = await _db.Gebruikers
-            .AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct);
+            .AnyAsync(g => g.Id == dto.Kwekernr, ct);
         if (!kwekerBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
 

@@ -11,8 +11,8 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251127092850_AlleMigrationsVerwijderd")]
-    partial class AlleMigrationsVerwijderd
+    [Migration("20251127120810_VerbeterdeVersie")]
+    partial class VerbeterdeVersie
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -19,7 +19,7 @@ export default function CustomerScreenInfo() {
     interface ProductType {
         veilingProductNr: number; 
         naam: string;
-        categorie: string | null; 
+        categorie: string; 
         imagePath: string; 
         plaats: string; 
     }
@@ -38,11 +38,8 @@ export default function CustomerScreenInfo() {
                                 { <img src={product.imagePath} alt={product.naam} className="fotoProduct" /> }
                             </div>
                             <div className="kolomRechts">
-                                <div className="linkerHelft">
                                     <div className="productNaam">Product naam: {product.naam}</div>
                                     <div className="productCategorie">Product categorie: {product.categorie}</div>
-                                </div>
-                                <div className="rechterHelft">
                                     <div className="hoeveelheid">
                                         Totaal aantal bloemen gekocht: {bieding.aantalStuks}
                                     </div>
@@ -50,7 +47,6 @@ export default function CustomerScreenInfo() {
                                         Totaal betaald: {(bieding.bedragPerFust * bieding.aantalStuks)} euro
                                     </div>
                                     <div className="plaats">Plaats: {product.plaats}</div>
-                                </div>
                             </div>
                         </div>
                     );

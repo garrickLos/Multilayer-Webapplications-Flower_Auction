@@ -101,7 +101,7 @@ public sealed class AuthController : ControllerBase
             user,
             request.Password,
             request.RememberMe,
-            lockoutOnFailure: false);
+            lockoutOnFailure: true);
 
         if (!result.Succeeded)
         {

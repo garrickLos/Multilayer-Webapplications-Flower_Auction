@@ -8,30 +8,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b6610308-964e-4659-a153-43f8feeb3fa8" name="Changes" comment="">
+    <list default="true" id="b6610308-964e-4659-a153-43f8feeb3fa8" name="Changes" comment="werkt voor de demo">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api.dir/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BloemenVeiling.db" beforeDir="false" afterPath="$PROJECT_DIR$/BloemenVeiling.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BloemenVeiling.db-shm" beforeDir="false" afterPath="$PROJECT_DIR$/BloemenVeiling.db-shm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BloemenVeiling.db-wal" beforeDir="false" afterPath="$PROJECT_DIR$/BloemenVeiling.db-wal" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/AppDbContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Data/AppDbContext.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126162806_Test.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126162806_Test.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126171447_NullAanpassingen.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126171447_NullAanpassingen.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126174613_LaatsteAanpassingen.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126174613_LaatsteAanpassingen.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126175306_BedragPerFustNaarInt.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126175306_BedragPerFustNaarInt.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126175517_IntNaarBedragperfust.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126175517_IntNaarBedragperfust.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126180123_aanpassingen.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126180123_aanpassingen.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126182927_KwekerGetAll.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126182927_KwekerGetAll.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126185427_extraDtos.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/20251126185427_extraDtos.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Migrations/AppDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Migrations/AppDbContextModelSnapshot.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models/Dto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Models/Dto.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../react/src/registratie_login/Registration.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../react/src/registratie_login/Registration.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controllers/AuthController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Controllers/AuthController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controllers/VeilingproductController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Controllers/VeilingproductController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Migrations/20251127092850_AlleMigrationsVerwijderd.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Migrations/20251127092850_AlleMigrationsVerwijderd.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Models/DomainModels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/src/css/SellerScreenInfo.css" beforeDir="false" afterPath="$PROJECT_DIR$/../react/src/css/SellerScreenInfo.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/src/schermen/CustomerScreenInfo.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../react/src/schermen/CustomerScreenInfo.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/src/schermen/SellerScreenInfo.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../react/src/schermen/SellerScreenInfo.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,21 +52,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;Thomas&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "dev-branch",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected=".NET Launch Settings Profile.mvc_api: http">
     <configuration name="mvc_api: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/mvc_api.csproj" />
@@ -126,6 +115,7 @@
       <workItem from="1764174340631" duration="6082000" />
       <workItem from="1764181069364" duration="2337000" />
       <workItem from="1764235330265" duration="2314000" />
+      <workItem from="1764243766608" duration="1356000" />
     </task>
     <servers />
   </component>
@@ -136,6 +126,8 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+    <MESSAGE value="werkt voor de demo" />
+    <option name="LAST_COMMIT_MESSAGE" value="werkt voor de demo" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

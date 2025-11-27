@@ -11,7 +11,7 @@ export default function SellerScreenInfo() {
         geplaatstDatum: string;
         fust: number;
         voorraad: number | string;
-        categorie: string | null;
+        categorie: string;
         imagePath: string;
         plaats: string;
     }
@@ -29,16 +29,12 @@ export default function SellerScreenInfo() {
                             />
                         </div>
                         <div className="kolomRechts">
-                            <div className="linkerHelft">
                                 <div className="productNaam">Product naam: {product.naam}</div>
                                 <div className="productCategorie">Product categorie: {product.categorie}</div>
                                 <div className="datum">Geplaatst op: {product.geplaatstDatum.replace("T", " om ")} uur</div>
-                            </div>
-                            <div className="rechterHelft">
                                 <div className="hoeveelheid">Hoeveelheid bloemen: {product.voorraad}</div>
                                 <div className="aantalFusten">Aantal fusten: {product.fust}</div>
                                 <div className="plaats">Plaats: {product.plaats}</div>
-                            </div>
                         </div>
                     </div>
                 ))}
