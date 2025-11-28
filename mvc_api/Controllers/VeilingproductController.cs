@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
+using VeilingproductUpdateDto = mvc_api.Models.Dtos.VeilingproductUpdateDto;
 
 namespace mvc_api.Controllers;
 

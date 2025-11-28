@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
+using GebruikerCreateDto = mvc_api.Models.Dtos.GebruikerCreateDto;
+using GebruikerUpdateDto = mvc_api.Models.Dtos.GebruikerUpdateDto;
 
 namespace mvc_api.Controllers;
 
