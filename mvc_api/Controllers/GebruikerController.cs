@@ -17,6 +17,7 @@ public class GebruikerController : ControllerBase
 
     // GET: api/Gebruiker?q=jan&page=1&pageSize=50
     [HttpGet]
+    [Authorize(Roles ="Klant")]
     public async Task<ActionResult<IEnumerable<Klant_GebruikerDto>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] int page = 1,

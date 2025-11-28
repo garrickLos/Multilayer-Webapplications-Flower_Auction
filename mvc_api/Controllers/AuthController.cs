@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using mvc_api.Auth.GenereerBearerToken;
 
 namespace mvc_api.Controllers;
 
@@ -18,14 +15,18 @@ public sealed class AuthController : ControllerBase
     private readonly SignInManager<Gebruiker> _signInManager;
     private readonly IConfiguration _config;
 
+    private readonly GenereerBearerToken _bearerToken;
+
     public AuthController(
         UserManager<Gebruiker> userManager,
         SignInManager<Gebruiker> signInManager,
-        IConfiguration config)
+        IConfiguration config,
+        GenereerBearerToken bearerTokenService)
     {
         _userManager   = userManager  ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
         _config        = config;
+        _bearerToken   = bearerTokenService;
     }
 
     [HttpPost("register")]
@@ -128,7 +129,7 @@ public sealed class AuthController : ControllerBase
             return InvalidCredentialsResponse();
         }
 
-        var token = GenerateJwtToken(user);
+        var token = await _bearerToken.GenerateJwtToken(user);
 
         return Ok(new LoginResponse
         {
@@ -139,29 +140,6 @@ public sealed class AuthController : ControllerBase
     }
 
     // Helpers
-
-    private string GenerateJwtToken(Gebruiker user)
-    {
-        var key     = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-        var creds   = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email!),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-
-        var token = new JwtSecurityToken(
-            issuer:   _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims:   claims,
-            expires:  DateTime.UtcNow.AddHours(1),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
 
     private string[] GetModelErrors() =>
         ModelState.Values

@@ -35,15 +35,15 @@ builder.Services.AddSwaggerGen(c =>
     
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 12345abcdef\"",
+        Description = "Voer in: Bearer {token}",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
-    // Pas de beveiliging toe op alle endpoints
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -52,12 +52,9 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header,
+                }
             },
-            new List<string>()
+            Array.Empty<string>()
         }
     });
 });
@@ -66,28 +63,7 @@ builder.Services.AddSwaggerGen(c =>
 var connectionString = builder.Configuration.GetConnectionString("Default");
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key), // Dezelfde sleutel als in AuthController
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        ClockSkew = TimeSpan.Zero // Voorkomt wachttijd bij verlopen tokens
-    };
-});
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
 // Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -107,8 +83,34 @@ builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key), // Dezelfde sleutel als in AuthController
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        ClockSkew = TimeSpan.Zero // Voorkomt wachttijd bij verlopen tokens
+    };
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    // options.ExpireTimeSpan = TimeSpan.FromHours(6);
+    // options.SlidingExpiration = false;
+    options.Cookie.Name = "Asp.NetCookie";
+
     // Voorkom redirect naar /Account/Login bij 401 (Niet ingelogd)
     options.Events.OnRedirectToLogin = context =>
     {
@@ -124,10 +126,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Nodig zodat UserManager/SignInManager goed werken
-builder.Services.AddAuthentication();
+// // Nodig zodat UserManager/SignInManager goed werken
+// builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
-
+builder.Services.AddScoped<mvc_api.Auth.GenereerBearerToken.GenereerBearerToken>();
 
 var app = builder.Build();
 
@@ -144,9 +146,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     // Alleen in development automatisch migreren
-    using var scope = app.Services.CreateScope();
+    var scope = app.Services.CreateScope();
+    
+    var services = scope.ServiceProvider;
+
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+        db.Database.Migrate();
+    
+    try 
+    {
+        await DataSeeder.InitialiseerRollen(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Fout bij het seeden van de database.");
+    }
 }
 
 app.UseHttpsRedirection();

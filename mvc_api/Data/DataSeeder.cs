@@ -1,25 +1,23 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 public static class DataSeeder
 {
-    // Deze methode controleert en maakt de rollen aan
     public static async Task InitialiseerRollen(IServiceProvider serviceProvider)
     {
-        // Haal de RoleManager service op uit de container
-        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        // 1. Let op de <int> hier
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
 
-        // Definieer de rollen die je wilt hebben
         string[] rollen = { "VeilingMeester", "Klant" };
 
         foreach (var rolNaam in rollen)
         {
-            // Check of de rol al bestaat in de database
             var rolBestaat = await roleManager.RoleExistsAsync(rolNaam);
 
             if (!rolBestaat)
             {
-                // De rol bestaat niet, dus we maken hem aan
-                await roleManager.CreateAsync(new IdentityRole(rolNaam));
+                // 2. Let op de <int> hier bij het aanmaken
+                await roleManager.CreateAsync(new IdentityRole<int> { Name = rolNaam });
             }
         }
     }
