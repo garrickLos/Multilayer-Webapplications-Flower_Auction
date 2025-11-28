@@ -205,9 +205,9 @@ namespace mvc_api.Migrations
                     GeplaatstDatum = table.Column<DateTime>(type: "TEXT", nullable: false),
                     AantalFusten = table.Column<int>(type: "INTEGER", nullable: false),
                     VoorraadBloemen = table.Column<int>(type: "INTEGER", nullable: false),
-                    Startprijs = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    Startprijs = table.Column<int>(type: "INTEGER", nullable: true),
                     CategorieNr = table.Column<int>(type: "INTEGER", nullable: false),
-                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: false),
+                    VeilingNr = table.Column<int>(type: "INTEGER", nullable: true),
                     Plaats = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Minimumprijs = table.Column<int>(type: "INTEGER", precision: 18, scale: 2, nullable: false),
                     Kwekernr = table.Column<int>(type: "INTEGER", nullable: false),
@@ -309,8 +309,8 @@ namespace mvc_api.Migrations
                 columns: new[] { "VeilingProductNr", "AantalFusten", "CategorieNr", "GeplaatstDatum", "ImagePath", "Kwekernr", "Minimumprijs", "Naam", "Plaats", "Startprijs", "VeilingNr", "VoorraadBloemen", "beginDatum", "status" },
                 values: new object[,]
                 {
-                    { 101, 10, 1, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp", 1, 10, "Tulp Mix", " Aalsmeer", 12m, 201, 500, new DateOnly(1, 1, 1), false },
-                    { 102, 10, 2, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp", 1, 15, "Rode Roos", "Eelde", 20m, 202, 300, new DateOnly(1, 1, 1), false }
+                    { 101, 10, 1, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp", 1, 10, "Tulp Mix", " Aalsmeer", 12, 201, 500, new DateOnly(1, 1, 1), false },
+                    { 102, 10, 2, new DateTime(2025, 10, 9, 14, 0, 0, 0, DateTimeKind.Utc), "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp", 1, 15, "Rode Roos", "Eelde", 20, 202, 300, new DateOnly(1, 1, 1), false }
                 });
 
             migrationBuilder.InsertData(
