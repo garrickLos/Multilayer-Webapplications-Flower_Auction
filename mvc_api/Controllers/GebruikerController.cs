@@ -1,67 +1,70 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
+using mvc_api.Models.Dtos;
 
 namespace mvc_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester, Klant")]
 public class GebruikerController : ControllerBase
 {
     private readonly AppDbContext _db;
     public GebruikerController(AppDbContext db) => _db = db;
 
-    // GET: api/Gebruiker?q=jan&page=1&pageSize=50
-    [HttpGet]
-    [Authorize(Roles ="Klant")]
-    public async Task<ActionResult<IEnumerable<Klant_GebruikerDto>>> GetAll(
+    [HttpGet("admin")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<GebruikerAdminListDto>>> GetAdmin(
         [FromQuery] string? q,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
+        [FromQuery] string? role,
+        [FromQuery] ModelStatus? status,
+        [FromQuery] string? email,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
-
         var query = _db.Gebruikers.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(q))
         {
             var term = q.Trim();
-            query = query.Where(g =>
-                g.BedrijfsNaam.Contains(term) ||
-                g.Email!.Contains(term));
+            query = query.Where(g => g.BedrijfsNaam.Contains(term) || g.Email!.Contains(term));
         }
 
-        var total = await query.CountAsync(ct);
+        if (!string.IsNullOrWhiteSpace(role))
+            query = query.Where(g => g.Soort == role);
+
+        if (status is ModelStatus st)
+            query = query.Where(g => g.Status == st);
+
+        if (!string.IsNullOrWhiteSpace(email))
+            query = query.Where(g => g.Email!.Contains(email));
 
         var items = await query
-            .OrderBy(g => g.BedrijfsNaam)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Projectgebruiker_Klant()
+            .Select(g => new GebruikerAdminListDto(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Status))
             .ToListAsync(ct);
-
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
 
         return Ok(items);
     }
 
-    // GET: api/Gebruiker/{id}
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<Klant_GebruikerDto>> GetById(
-        int id,
-        CancellationToken ct = default)
+    [HttpGet("admin/{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<GebruikerAdminDetailDto>> GetAdminDetail(int id, CancellationToken ct = default)
     {
         var dto = await _db.Gebruikers.AsNoTracking()
-            .Where(x => x.GebruikerNr == id)
-            .Projectgebruiker_Klant()
+            .Where(g => g.GebruikerNr == id)
+            .Select(g => new GebruikerAdminDetailDto(
+                g.GebruikerNr,
+                g.BedrijfsNaam,
+                g.Email!,
+                g.Soort,
+                g.Kvk,
+                g.StraatAdres,
+                g.Postcode,
+                g.Status,
+                g.LaatstIngelogd
+            ))
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -69,11 +72,77 @@ public class GebruikerController : ControllerBase
             : Ok(dto);
     }
 
-    // POST: api/Gebruiker
-    // LET OP: deze maakt een gebruiker ZONDER login (geen wachtwoord)
-    // Echte registratie gebeurt via /auth/register
+    [HttpGet("veilingmeester")]
+    [Authorize(Roles = "Veilingmeester")]
+    public async Task<ActionResult<IEnumerable<GebruikerAuctionViewDto>>> GetForAuctionTeam(
+        [FromQuery] string? role,
+        [FromQuery] ModelStatus? status,
+        CancellationToken ct = default)
+    {
+        var query = _db.Gebruikers.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(role))
+            query = query.Where(g => g.Soort == role);
+
+        if (status is ModelStatus st)
+            query = query.Where(g => g.Status == st);
+
+        var items = await query
+            .Select(g => new GebruikerAuctionViewDto(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Status))
+            .ToListAsync(ct);
+
+        return Ok(items);
+    }
+
+    [HttpGet("veilingmeester/{id:int}")]
+    [Authorize(Roles = "Veilingmeester")]
+    public async Task<ActionResult<GebruikerAuctionViewDto>> GetAuctionDetail(int id, CancellationToken ct = default)
+    {
+        var dto = await _db.Gebruikers.AsNoTracking()
+            .Where(g => g.GebruikerNr == id && g.Status != ModelStatus.Deleted)
+            .Select(g => new GebruikerAuctionViewDto(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Status))
+            .FirstOrDefaultAsync(ct);
+
+        return dto is null
+            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404))
+            : Ok(dto);
+    }
+
+    [HttpPatch("{id:int}/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateStatus(int id, [FromBody] GebruikerStatusUpdateDto dto, CancellationToken ct = default)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var user = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (user is null)
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+
+        user.Status = dto.Status;
+        await _db.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
+    [HttpPatch("{id:int}/role")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateRole(int id, [FromBody] string role, CancellationToken ct = default)
+    {
+        var user = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
+        if (user is null)
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+
+        if (string.IsNullOrWhiteSpace(role))
+            return BadRequest(CreateProblemDetails("Ongeldige rol", "Rol mag niet leeg zijn.", 400));
+
+        user.Soort = role.Trim();
+        await _db.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
     [HttpPost]
-    public async Task<ActionResult<Klant_GebruikerDto>> Create(
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<GebruikerAdminDetailDto>> Create(
         [FromBody] GebruikerCreateDto dto,
         CancellationToken ct = default)
     {
@@ -84,36 +153,24 @@ public class GebruikerController : ControllerBase
         {
             BedrijfsNaam  = dto.BedrijfsNaam.Trim(),
             Email         = dto.Email.Trim(),
-            UserName      = dto.Email.Trim(), // Identity gebruikt dit voor login
+            UserName      = dto.Email.Trim(),
             Soort         = dto.Soort,
             Kvk           = dto.Kvk,
             StraatAdres   = dto.StraatAdres,
             Postcode      = dto.Postcode,
-            LaatstIngelogd = null
+            LaatstIngelogd = null,
+            Status        = ModelStatus.Active
         };
 
         _db.Gebruikers.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        var result = new Klant_GebruikerDto
-        {
-            GebruikerNr    = user.GebruikerNr,
-            BedrijfsNaam   = user.BedrijfsNaam,
-            Email          = user.Email!,
-            Soort          = user.Soort,
-            Kvk            = user.Kvk,
-            StraatAdres    = user.StraatAdres,
-            Postcode       = user.Postcode,
-            LaatstIngelogd = user.LaatstIngelogd,
-            Biedingen      = Enumerable.Empty<VeilingMeester_BiedingDto>()
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = user.GebruikerNr }, result);
+        return await GetAdminDetail(user.GebruikerNr, ct);
     }
 
-    // PUT: api/Gebruiker/{id}
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<Klant_GebruikerDto>> Update(
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<GebruikerAdminDetailDto>> Update(
         int id,
         [FromBody] GebruikerUpdateDto dto,
         CancellationToken ct = default)
@@ -135,30 +192,59 @@ public class GebruikerController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
-        var result = await _db.Gebruikers.AsNoTracking()
-            .Where(g => g.GebruikerNr == id)
-            .Projectgebruiker_Klant()
-            .FirstAsync(ct);
-
-        return Ok(result);
+        return await GetAdminDetail(id, ct);
     }
 
-    // DELETE: api/Gebruiker/{id}
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(
-        int id,
-        CancellationToken ct = default)
-    {
-        var user = await _db.Gebruikers.FindAsync(new object[] { id }, ct);
-        if (user is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen gebruiker met ID {id}.", 404));
+[HttpGet("me")]
+[Authorize]
+public async Task<ActionResult<GebruikerSelfDto>> GetSelf(CancellationToken ct = default)
+{
+        if (!int.TryParse(User?.Identity?.Name, out var userId))
+            return Unauthorized();
 
-        _db.Gebruikers.Remove(user);
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
-    }
+        var dto = await _db.Gebruikers.AsNoTracking()
+            .Where(g => g.GebruikerNr == userId && g.Status == ModelStatus.Active)
+            .Select(g => new GebruikerSelfDto(
+                g.GebruikerNr,
+                g.BedrijfsNaam,
+                g.Email!,
+                g.Soort,
+                g.Kvk,
+                g.StraatAdres,
+                g.Postcode,
+                g.LaatstIngelogd,
+                g.Status
+            ))
+            .FirstOrDefaultAsync(ct);
 
-    // Helpers
+        return dto is null ? Unauthorized() : Ok(dto);
+}
+
+[HttpPut("me")]
+[Authorize]
+public async Task<IActionResult> UpdateSelf([FromBody] GebruikerSelfUpdateDto dto, CancellationToken ct = default)
+{
+    if (!ModelState.IsValid)
+        return ValidationProblem(ModelState);
+
+    if (!int.TryParse(User?.Identity?.Name, out var userId))
+        return Unauthorized();
+
+    var user = await _db.Gebruikers.FindAsync(new object[] { userId }, ct);
+    if (user is null)
+        return Unauthorized();
+
+    user.BedrijfsNaam = dto.BedrijfsNaam.Trim();
+    user.Email        = dto.Email.Trim();
+    user.UserName     = dto.Email.Trim();
+    user.Kvk          = dto.Kvk;
+    user.StraatAdres  = dto.StraatAdres;
+    user.Postcode     = dto.Postcode;
+
+    await _db.SaveChangesAsync(ct);
+    return NoContent();
+}
+
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
         {
@@ -167,34 +253,4 @@ public class GebruikerController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
-}
-
-// EXTENSIONS
-public static class GebruikerExtensions
-{
-    public static IQueryable<Klant_GebruikerDto> Projectgebruiker_Klant(
-        this IQueryable<Gebruiker> query)
-    {
-        return query.Select(g => new Klant_GebruikerDto
-        {
-            GebruikerNr    = g.GebruikerNr,
-            BedrijfsNaam   = g.BedrijfsNaam,
-            Email          = g.Email!,
-            Soort          = g.Soort,
-            Kvk            = g.Kvk,
-            StraatAdres    = g.StraatAdres,
-            Postcode       = g.Postcode,
-            LaatstIngelogd = g.LaatstIngelogd,
-
-            Biedingen = g.Biedingen.Select(b => new VeilingMeester_BiedingDto
-            {
-                BiedingNr        = b.BiedNr,
-                VeilingNr        = b.VeilingNr,
-                VeilingProductNr = b.VeilingproductNr,
-                AantalStuks      = b.AantalStuks,
-                GebruikerNr      = b.GebruikerNr,
-                BedragPerFust    = b.BedragPerFust
-            }).ToList()
-        });
-    }
 }

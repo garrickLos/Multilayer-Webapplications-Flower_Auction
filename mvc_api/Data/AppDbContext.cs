@@ -50,8 +50,20 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasIndex(x => x.Email)
             .IsUnique();
 
+        b.Entity<Gebruiker>()
+            .Property(x => x.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(ModelStatus.Active);
+
         b.Entity<Veilingproduct>()
             .HasIndex(x => new { x.CategorieNr, x.Naam });
+
+        b.Entity<Veilingproduct>()
+            .Property(x => x.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(ModelStatus.Active);
 
         // Geld-precisie (Bieding/Veilingproduct via attributen, hier extra voor Minimumprijs)
         b.Entity<Veilingproduct>()
