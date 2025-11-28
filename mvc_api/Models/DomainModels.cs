@@ -7,6 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace mvc_api.Models;
 
+public enum ModelStatus
+{
+    Active,
+    Inactive,
+    Deleted,
+    Archived
+}
+
 // Gebruiker
 [Table("Gebruiker")]
 public class Gebruiker : IdentityUser<int>
@@ -30,6 +38,8 @@ public class Gebruiker : IdentityUser<int>
     public override string? Email { get; set; } = string.Empty;
 
     public DateTime? LaatstIngelogd { get; set; }
+
+    public ModelStatus Status { get; set; } = ModelStatus.Active;
 
     [Required, StringLength(50)]
     public string Soort { get; set; } = string.Empty;
@@ -115,7 +125,7 @@ public class Veilingproduct
 
     public DateOnly beginDatum { get; set; }
 
-    public bool status { get; set; }
+    public ModelStatus Status { get; set; } = ModelStatus.Active;
 
     [Required, StringLength(200)]
     public string ImagePath { get; set; } = string.Empty;
