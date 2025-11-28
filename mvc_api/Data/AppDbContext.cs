@@ -105,6 +105,27 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             }
         );
 
+        b.Entity<IdentityRole<int>>().HasData(
+            new IdentityRole<int> 
+            { 
+                Id = 1, 
+                Name = "VeilingMeester", 
+                NormalizedName = "VEILINGMEESTER" 
+            },
+            new IdentityRole<int> 
+            { 
+                Id = 2, 
+                Name = "Klant", 
+                NormalizedName = "KLANT" 
+            }
+        );
+
+        b.Entity<IdentityUserRole<int>>().HasData(
+            new IdentityUserRole<int> { RoleId = 1, UserId = 1 },
+            new IdentityUserRole<int> { RoleId = 2, UserId = 2 },
+            new IdentityUserRole<int> { RoleId = 1, UserId = 4}
+        );
+
         b.Entity<Categorie>().HasData(
             new Categorie { CategorieNr = 1, Naam = "Tulpen" },
             new Categorie { CategorieNr = 2, Naam = "Rozen" },
@@ -169,7 +190,6 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         b.Entity<Bieding>().HasData(
             new Bieding
             {
-
                 BiedNr          = 1001,
                 BedragPerFust   = 13,
                 AantalStuks     = 5,

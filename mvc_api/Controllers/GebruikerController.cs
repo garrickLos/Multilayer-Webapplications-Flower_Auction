@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -8,6 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles ="VeilingMeester, Klant")]
 public class GebruikerController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -15,6 +17,7 @@ public class GebruikerController : ControllerBase
 
     // GET: api/Gebruiker?q=jan&page=1&pageSize=50
     [HttpGet]
+    [Authorize(Roles ="Klant")]
     public async Task<ActionResult<IEnumerable<Klant_GebruikerDto>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] int page = 1,
