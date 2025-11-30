@@ -12,7 +12,7 @@ import { renderCards, type VeilingItem } from './RenderCards.tsx';
 export default function MainScreen() {
     const [refreshTimer, setRefreshTimer] = useState(Date.now());
 
-    const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling?refresh=${refreshTimer}`);
+    const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}`);
 
     const safeVeilingen = data || [];
 

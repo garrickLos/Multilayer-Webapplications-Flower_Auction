@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using mvc_api.Data;
 
@@ -10,9 +11,11 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251126194316_linkIdToUser")]
+    partial class linkIdToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -213,7 +216,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 13,
                             GebruikerNr = 2,
                             VeilingNr = 201,
-                            VeilingproductNr = 0
+                            VeilingproductNr = 101
                         },
                         new
                         {
@@ -222,7 +225,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 21,
                             GebruikerNr = 2,
                             VeilingNr = 202,
-                            VeilingproductNr = 0
+                            VeilingproductNr = 102
                         });
                 });
 
@@ -497,10 +500,11 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Startprijs")
-                        .HasColumnType("INTEGER");
+                    b.Property<decimal>("Startprijs")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
 
-                    b.Property<int?>("VeilingNr")
+                    b.Property<int>("VeilingNr")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("VoorraadBloemen")
@@ -534,7 +538,7 @@ namespace mvc_api.Migrations
                             Minimumprijs = 10,
                             Naam = "Tulp Mix",
                             Plaats = " Aalsmeer",
-                            Startprijs = 12,
+                            Startprijs = 12m,
                             VeilingNr = 201,
                             VoorraadBloemen = 500,
                             beginDatum = new DateOnly(1, 1, 1),
@@ -551,7 +555,7 @@ namespace mvc_api.Migrations
                             Minimumprijs = 15,
                             Naam = "Rode Roos",
                             Plaats = "Eelde",
-                            Startprijs = 20,
+                            Startprijs = 20m,
                             VeilingNr = 202,
                             VoorraadBloemen = 300,
                             beginDatum = new DateOnly(1, 1, 1),
@@ -654,7 +658,8 @@ namespace mvc_api.Migrations
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Categorie");
 

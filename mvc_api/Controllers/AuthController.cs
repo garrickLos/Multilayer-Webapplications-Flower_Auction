@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
+using mvc_api.Auth.GenereerBearerToken;
 
 namespace mvc_api.Controllers;
 
@@ -12,13 +13,20 @@ public sealed class AuthController : ControllerBase
 {
     private readonly UserManager<Gebruiker> _userManager;
     private readonly SignInManager<Gebruiker> _signInManager;
+    private readonly IConfiguration _config;
+
+    private readonly GenereerBearerToken _bearerToken;
 
     public AuthController(
         UserManager<Gebruiker> userManager,
-        SignInManager<Gebruiker> signInManager)
+        SignInManager<Gebruiker> signInManager,
+        IConfiguration config,
+        GenereerBearerToken bearerTokenService)
     {
         _userManager   = userManager  ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
+        _config        = config;
+        _bearerToken   = bearerTokenService;
     }
 
     [HttpPost("register")]
@@ -82,6 +90,7 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
+
         if (!ModelState.IsValid)
         {
             return BadRequest(new LoginResponse
@@ -120,13 +129,12 @@ public sealed class AuthController : ControllerBase
             return InvalidCredentialsResponse();
         }
 
-        // AANNAME: LaatstIngelogd is een DateTime? in het Gebruiker-model
-        user.LaatstIngelogd = DateTime.UtcNow;
-        await _userManager.UpdateAsync(user);
+        var token = await _bearerToken.GenerateJwtToken(user);
 
         return Ok(new LoginResponse
         {
             Success = true,
+            Token = token,
             Errors  = Array.Empty<string>()
         });
     }
