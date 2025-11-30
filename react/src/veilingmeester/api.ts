@@ -1,22 +1,17 @@
 import {
     type BiedingCreateDto,
     type BiedingUpdateDto,
-    type CategorieCreateDto,
     type CategorieDetailDto,
     type CategorieListDto,
-    type CategorieUpdateDto,
-    type GebruikerCreateDto,
-    type GebruikerUpdateDto,
-    type Klant_GebruikerDto,
+    type GebruikerAuctionViewDto,
     type VeilingCreateDto,
     type VeilingMeester_BiedingDto,
     type VeilingMeester_VeilingDto,
     type VeilingUpdateDto,
-    type VeilingproductCreateDto,
-    type VeilingproductDetailDto,
-    type VeilingproductListDto,
-    type VeilingproductUpdateDto,
-} from "../api/dtos";
+    type VeilingProductDto,
+    type VeilingproductVeilingmeesterDetailDto,
+    type VeilingproductVeilingmeesterListDto,
+} from "./apiTypes";
 import { appConfig } from "./config";
 import { DomainMapper, type Auction, type Bid, type Category, type PaginatedList, type Product, type User } from "./types";
 
@@ -131,7 +126,7 @@ export async function fetchUsers(
     params: { q?: string; page?: number; pageSize?: number },
     signal?: AbortSignal,
 ): Promise<PaginatedList<User>> {
-    return fetchList("/api/Gebruiker", params, DomainMapper.mapUser, { signal });
+    return fetchList<GebruikerAuctionViewDto, User>("/api/Gebruiker/veilingmeester", params, DomainMapper.mapUser, { signal });
 }
 
 export async function fetchBids(
@@ -148,7 +143,6 @@ export async function fetchBids(
 
 export async function fetchAuctions(
     params: {
-        rol?: string;
         veilingProduct?: number | string;
         from?: string;
         to?: string;
@@ -159,7 +153,6 @@ export async function fetchAuctions(
     signal?: AbortSignal,
 ): Promise<PaginatedList<Auction>> {
     const queryParams = {
-        rol: params.rol,
         veilingProduct: params.veilingProduct,
         from: params.from,
         to: params.to,
@@ -167,7 +160,7 @@ export async function fetchAuctions(
         page: params.page,
         pageSize: params.pageSize,
     };
-    return fetchList("/api/Veiling", queryParams, DomainMapper.mapAuction, { signal });
+    return fetchList<VeilingMeester_VeilingDto, Auction>("/api/Veiling/VeilingMeester", queryParams, DomainMapper.mapAuction, { signal });
 }
 
 export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Promise<Auction> {
@@ -176,14 +169,24 @@ export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Prom
 }
 
 export async function fetchProducts(
-    params: { q?: string; categorieNr?: number | string; page?: number; pageSize?: number },
+    params: {
+        q?: string;
+        categorieNr?: number | string;
+        status?: string;
+        minPrice?: number;
+        maxPrice?: number;
+        createdAfter?: string;
+        title?: string;
+        page?: number;
+        pageSize?: number;
+    },
     signal?: AbortSignal,
 ): Promise<PaginatedList<Product>> {
-    return fetchList("/api/Veilingproduct", params, DomainMapper.mapProduct, { signal });
+    return fetchList<VeilingproductVeilingmeesterListDto, Product>("/api/Veilingproduct/veilingmeester", params, DomainMapper.mapProduct, { signal });
 }
 
 export async function fetchProductDetail(id: number, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductDetailDto>(`/api/Veilingproduct/${id}`, { signal });
+    const { data } = await request<VeilingproductVeilingmeesterDetailDto>(`/api/Veilingproduct/veilingmeester/${id}`, { signal });
     return DomainMapper.mapProduct(data);
 }
 
@@ -191,30 +194,12 @@ export async function fetchCategories(
     params: { q?: string; page?: number; pageSize?: number } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Category>> {
-    return fetchList("/api/Categorie", params, DomainMapper.mapCategory, { signal });
+    return fetchList<CategorieListDto, Category>("/api/Categorie", params, DomainMapper.mapCategory, { signal });
 }
 
 export async function fetchCategoryDetail(id: number, signal?: AbortSignal): Promise<Category> {
     const { data } = await request<CategorieDetailDto>(`/api/Categorie/${id}`, { signal });
     return DomainMapper.mapCategory(data);
-}
-
-export async function updateUser(id: number, payload: GebruikerUpdateDto, signal?: AbortSignal): Promise<User> {
-    const { data } = await request<Klant_GebruikerDto>(`/api/Gebruiker/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapUser(data);
-}
-
-export async function createUser(payload: GebruikerCreateDto, signal?: AbortSignal): Promise<User> {
-    const { data } = await request<Klant_GebruikerDto>(`/api/Gebruiker`, { method: "POST", body: JSON.stringify(payload), signal });
-    return DomainMapper.mapUser(data);
-}
-
-export async function deleteUser(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Gebruiker/${id}`, { method: "DELETE", signal });
 }
 
 export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
@@ -277,26 +262,4 @@ export async function updateCategory(id: number, payload: CategorieUpdateDto, si
 
 export async function deleteCategory(id: number, signal?: AbortSignal): Promise<void> {
     await request(`/api/Categorie/${id}`, { method: "DELETE", signal });
-}
-
-export async function createProduct(payload: VeilingproductCreateDto, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductDetailDto>(`/api/Veilingproduct`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapProduct(data);
-}
-
-export async function updateProduct(id: number, payload: VeilingproductUpdateDto, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductDetailDto>(`/api/Veilingproduct/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapProduct(data);
-}
-
-export async function deleteProduct(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Veilingproduct/${id}`, { method: "DELETE", signal });
 }

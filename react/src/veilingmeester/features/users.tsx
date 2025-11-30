@@ -28,12 +28,11 @@ type UserFilters = { status: Status | "all"; role: UserRole | "all" };
 export type UsersTabProps = {
     readonly users: readonly User[];
     readonly bids: readonly Bid[];
-    readonly onEditUser: (user: User) => void;
     readonly onViewBids: (userId: number) => void;
     readonly onViewProducts: (userId: number) => void;
 };
 
-export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
+export function UsersTab({ users, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<UserFilters>({ status: "all", role: "all" });
     const [page, setPage] = useState(1);
@@ -60,9 +59,6 @@ export function UsersTab({ users, onEditUser, onViewBids, onViewProducts }: User
             header: "Acties",
             render: (row) => (
                 <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onEditUser(row)}>
-                        Bewerk
-                    </button>
                     {row.role === "Koper" && (
                         <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewBids(row.id)}>
                             Biedingen

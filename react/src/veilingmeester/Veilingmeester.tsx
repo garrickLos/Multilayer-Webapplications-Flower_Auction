@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 import { DashboardMetrics } from "./features/dashboard";
 import { AuctionsTab, LinkProductsModal, NewAuctionModal, type AuctionFormState } from "./features/auctions";
 import { ProductsTab } from "./features/products";
-import { EditUserModal, UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
+import { UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
-import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, updateUser } from "./api";
+import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers } from "./api";
 import { appConfig } from "./config";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
 import { cx, uiStatusToAuctionStatus } from "./utils";
@@ -63,7 +63,6 @@ export function Veilingmeester() {
         () => (activeModal && "userId" in activeModal ? users.find((entry) => entry.id === activeModal.userId) ?? null : null),
         [activeModal, users],
     );
-
     const handleCreateAuction = async (draft: AuctionFormState) => {
         try {
             const created = await createAuction({
@@ -92,30 +91,6 @@ export function Veilingmeester() {
         );
     };
 
-    const handleUpdateUser = useCallback(
-        async (updated: User & { password?: string }) => {
-            try {
-                const response = await updateUser(updated.id, {
-                    bedrijfsNaam: updated.name,
-                    email: updated.email,
-                    wachtwoord: updated.password ?? "",
-                    soort: updated.role,
-                    straatAdres: updated.address ?? null,
-                    postcode: null,
-                    kvk: updated.kvk ?? null,
-                    laatstIngelogd: updated.lastLogin ?? null,
-                });
-                setUsers((prev) => prev.map((user) => (user.id === response.id ? response : user)));
-                setActiveModal(null);
-            } catch (err) {
-                const message = (err as { message?: string }).message ?? "Gebruiker kon niet worden bijgewerkt";
-                setError(message);
-                throw new Error(message);
-            }
-        },
-        [],
-    );
-
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
         {
             key: "auctions",
@@ -140,7 +115,6 @@ export function Veilingmeester() {
                 <UsersTab
                     users={users}
                     bids={bids}
-                    onEditUser={(user) => setActiveModal({ key: "editUser", userId: user.id })}
                     onViewBids={(userId) => setActiveModal({ key: "userBids", userId })}
                     onViewProducts={(userId) => setActiveModal({ key: "userProducts", userId })}
                 />
@@ -220,13 +194,6 @@ export function Veilingmeester() {
                         products={products}
                         onClose={() => setActiveModal(null)}
                         onSave={(productIds) => handleLinkProducts(activeAuction.id, productIds)}
-                    />
-                )}
-                {activeModal?.key === "editUser" && activeUser && (
-                    <EditUserModal
-                        user={activeUser}
-                        onClose={() => setActiveModal(null)}
-                        onSave={(draft) => handleUpdateUser({ ...activeUser, ...draft })}
                     />
                 )}
                 {activeModal?.key === "userBids" && activeUser && (

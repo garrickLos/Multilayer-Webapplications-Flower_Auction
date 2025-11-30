@@ -56,9 +56,9 @@ export const uiStatusToAuctionStatus = (status: UiStatus): AuctionStatus => {
 };
 
 export const mapProductStatusToUiStatus = (status: ProductStatus): UiStatus => {
-    if (status === "Uitverkocht") return "sold";
-    if (status === "Gekoppeld") return "inactive";
-    return "active";
+    if (status === "Deleted") return "deleted";
+    if (status === "Active") return "active";
+    return "inactive";
 };
 
 export const aggregateProductStock = (products?: readonly Product[]): number =>
@@ -66,9 +66,8 @@ export const aggregateProductStock = (products?: readonly Product[]): number =>
 
 const productStatusStrategy: ProductStatusStrategy = {
     resolve: (product: Product) => {
-        if (product.stock <= 0) return "Uitverkocht";
-        if (product.linkedAuctionId) return "Gekoppeld";
-        return "Beschikbaar";
+        if (product.status) return product.status;
+        return product.linkedAuctionId ? "Inactive" : "Active";
     },
 };
 
