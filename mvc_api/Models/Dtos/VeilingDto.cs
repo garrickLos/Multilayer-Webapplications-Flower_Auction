@@ -59,8 +59,8 @@ public record VeilingMeester_VeilingDto : BaseVeiling_Dto
 public record VeilingProductDto(
     int VeilingProductNr,
     string Naam,
-    decimal Startprijs,
-    decimal Minimumprijs,
+    int? Startprijs,
+    int Minimumprijs,
     string Plaats,
     int CategorieNr,
     int VoorraadBloemen,
@@ -71,7 +71,7 @@ public record VeilingProductDto(
 public record VeilingProductDto_anonymous(
     int VeilingProductNr,
     string Naam,
-    decimal Startprijs,
+    int? Startprijs,
     int VoorraadBloemen,
     string ImagePath
 );

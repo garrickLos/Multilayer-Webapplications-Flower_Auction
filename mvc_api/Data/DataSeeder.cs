@@ -8,7 +8,7 @@ public static class DataSeeder
         // 1. Let op de <int> hier
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
 
-        string[] rollen = { "VeilingMeester", "Klant" };
+        string[] rollen = { "VeilingMeester", "Koper", "Bedrijf" };
 
         foreach (var rolNaam in rollen)
         {

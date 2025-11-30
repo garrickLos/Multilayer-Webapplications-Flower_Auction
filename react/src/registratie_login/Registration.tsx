@@ -300,7 +300,7 @@ export default function Registration() {
                         <div className="grid-2">
                             <div className={fieldGroupClass(errors.kvk)}>
                                 <label className="field-label" htmlFor="kvk">
-                                    KvK (optioneel)
+                                    KvK
                                 </label>
                                 <input
                                     id="kvk"
