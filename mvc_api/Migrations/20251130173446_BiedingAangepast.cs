@@ -5,7 +5,7 @@
 namespace mvc_api.Migrations
 {
     /// <inheritdoc />
-    public partial class AlleMigrationsVerwijderd : Migration
+    public partial class BiedingAangepast : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

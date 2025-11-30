@@ -9,7 +9,6 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester")]
 public class BiedingController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -21,6 +20,7 @@ public class BiedingController : ControllerBase
 
     // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
     [HttpGet("Klant")]
+    [Authorize (Roles ="Koper")]
     public async Task<ActionResult<IEnumerable<klantBiedingGet_dto>>> GetKlantBiedingen(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingProductNr,

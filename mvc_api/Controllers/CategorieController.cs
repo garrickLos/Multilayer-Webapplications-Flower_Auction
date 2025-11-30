@@ -9,16 +9,12 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester")]
+[Authorize (Roles ="VeilingMeester, Bedrijf")]
 public class CategorieController : ControllerBase
 {
     private readonly AppDbContext _db;
     public CategorieController(AppDbContext db) => _db = db;
-
-    // DTO's voor responses
-    public sealed record CList(int CategorieNr, string Naam);
-    public sealed record CDetail(int CategorieNr, string Naam);
-
+    
     // GET: api/Categorie?q=roos&page=1&pageSize=50
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CList>>> GetAll(

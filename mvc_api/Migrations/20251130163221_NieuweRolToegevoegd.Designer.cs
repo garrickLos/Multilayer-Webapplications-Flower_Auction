@@ -11,8 +11,8 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251127092850_AlleMigrationsVerwijderd")]
-    partial class AlleMigrationsVerwijderd
+    [Migration("20251130163221_NieuweRolToegevoegd")]
+    partial class NieuweRolToegevoegd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -45,6 +45,20 @@ namespace mvc_api.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "VeilingMeester",
+                            NormalizedName = "VEILINGMEESTER"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Klant",
+                            NormalizedName = "KLANT"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -125,6 +139,23 @@ namespace mvc_api.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 1,
+                            RoleId = 1
+                        },
+                        new
+                        {
+                            UserId = 2,
+                            RoleId = 2
+                        },
+                        new
+                        {
+                            UserId = 4,
+                            RoleId = 1
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
@@ -185,7 +216,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 13,
                             GebruikerNr = 2,
                             VeilingNr = 201,
-                            VeilingproductNr = 0
+                            VeilingproductNr = 101
                         },
                         new
                         {
@@ -194,7 +225,7 @@ namespace mvc_api.Migrations
                             BedragPerFust = 21,
                             GebruikerNr = 2,
                             VeilingNr = 202,
-                            VeilingproductNr = 0
+                            VeilingproductNr = 102
                         });
                 });
 

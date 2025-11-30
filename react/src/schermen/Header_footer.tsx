@@ -28,7 +28,9 @@ export default function Header() {
                     </div>
                     <div className="uitloggen">
                         <img src="/src/assets/pictures/webp/klantGegevens.webp" alt="foto van een persoon" className="klantGegevensLogo"></img>
-                        <NavLink to="/home">Uitloggen</NavLink>
+                        <NavLink to="/home" onClick={() => {
+                            sessionStorage.removeItem("token"); // verwijder de token
+                        }}>Uitloggen</NavLink>
                     </div>
                 </ul>
             </nav>

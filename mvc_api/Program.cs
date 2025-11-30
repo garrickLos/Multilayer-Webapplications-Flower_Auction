@@ -107,7 +107,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    // options.ExpireTimeSpan = TimeSpan.FromHours(6);
+    options.ExpireTimeSpan = TimeSpan.FromHours(6);
     // options.SlidingExpiration = false;
     options.Cookie.Name = "Asp.NetCookie";
 

@@ -9,7 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester, Klant")]
+[Authorize (Roles ="VeilingMeester, Koper")]
 public class GebruikerController : ControllerBase
 {
     private readonly AppDbContext _db;

@@ -20,8 +20,11 @@ export function UseDataApi<T>(url: string) {
             setError(null);
             
             try {
-                const response = await fetch(url, { signal });
-
+                const token = sessionStorage.getItem("token");
+                const response = await fetch(url, {
+                    signal,
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined // <- header toevoegen
+                });
                 if (!response.ok) {
                     throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
                 }

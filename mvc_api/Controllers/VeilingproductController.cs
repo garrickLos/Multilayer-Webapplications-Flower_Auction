@@ -10,7 +10,6 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester")]
 public class VeilingproductController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -18,6 +17,7 @@ public class VeilingproductController : ControllerBase
     
     //Get voor klant
     [HttpGet("Klant")]
+    [Authorize (Roles ="Koper")]
     public async Task<ActionResult<IEnumerable<klantVeilingproductGet_dto>>> KlantGetAll(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
@@ -63,6 +63,7 @@ public class VeilingproductController : ControllerBase
     
     //Get voor kweker
     [HttpGet("Kweker")]
+    [Authorize (Roles ="Bedrijf")]
     public async Task<ActionResult<IEnumerable<kwekerVeilingproductGet_dto>>> KwekerGetAll(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
@@ -174,6 +175,7 @@ public class VeilingproductController : ControllerBase
 
     // POST: api/Veilingproduct
     [HttpPost]
+    [Authorize (Roles ="Bedrijf")]
     public async Task<ActionResult<VpDetail>> Create(
         [FromBody] KwekerPost_Dto dto,
         CancellationToken ct = default)
