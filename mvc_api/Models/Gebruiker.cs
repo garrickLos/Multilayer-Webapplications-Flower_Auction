@@ -27,7 +27,7 @@ public class Gebruiker : IdentityUser<int>
     public string Soort { get; set; } = string.Empty;
 
     [StringLength(20)]
-    public string? Kvk { get; set; }
+    public string Kvk { get; set; }
 
     [StringLength(200)]
     public string? StraatAdres { get; set; }

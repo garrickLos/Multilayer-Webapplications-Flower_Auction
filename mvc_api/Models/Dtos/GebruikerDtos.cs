@@ -7,7 +7,7 @@ public record GebruikerUpdateDto(
     [property: Required, StringLength(200)] string BedrijfsNaam,
     [property: Required, EmailAddress, StringLength(200)] string Email,
     [property: Required, StringLength(50)] string Soort,
-    [property: StringLength(20)] string? Kvk,
+    [property: StringLength(20)] string Kvk,
     [property: StringLength(200)] string? StraatAdres,
     [property: StringLength(10)] string? Postcode
 );
@@ -15,7 +15,7 @@ public record GebruikerUpdateDto(
 public record GebruikerSelfUpdateDto(
     [property: Required, StringLength(200)] string BedrijfsNaam,
     [property: Required, EmailAddress, StringLength(200)] string Email,
-    [property: StringLength(20)] string? Kvk,
+    [property: StringLength(20)] string Kvk,
     [property: StringLength(200)] string? StraatAdres,
     [property: StringLength(10)] string? Postcode
 );
@@ -37,7 +37,7 @@ public record GebruikerAdminDetailDto(
     string BedrijfsNaam,
     string Email,
     string Soort,
-    string? Kvk,
+    string Kvk,
     string? StraatAdres,
     string? Postcode,
     ModelStatus Status,
@@ -49,7 +49,7 @@ public record GebruikerSelfDto(
     string BedrijfsNaam,
     string Email,
     string Soort,
-    string? Kvk,
+    string Kvk,
     string? StraatAdres,
     string? Postcode,
     DateTime? LaatstIngelogd,
@@ -61,6 +61,7 @@ public record GebruikerAuctionViewDto(
     string BedrijfsNaam,
     string Email,
     string Soort,
+    string Kvk,
     ModelStatus Status
 );
 

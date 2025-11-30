@@ -222,7 +222,7 @@ public class GebruikerController : ControllerBase
         new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.StraatAdres, g.Postcode, g.Status, g.LaatstIngelogd);
 
     private static GebruikerAuctionViewDto MapToAuction(Gebruiker g) =>
-        new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Status);
+        new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.Status);
 
     private static GebruikerSelfDto MapToSelf(Gebruiker g) =>
         new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.StraatAdres, g.Postcode, g.LaatstIngelogd, g.Status);
