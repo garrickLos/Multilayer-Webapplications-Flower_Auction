@@ -13,7 +13,7 @@ const { prefetchPageSize } = appConfig.api;
 
 // ---- filters & helpers ----
 
-type AuctionFilters = { onlyActive: boolean; from: string; to: string; rol: string; veilingProduct: string };
+type AuctionFilters = { onlyActive: boolean; from: string; to: string; veilingProduct: string };
 
 const statusOptions: readonly { value: Status | "all"; label: string }[] = [
     { value: "all", label: "Alle" },
@@ -29,7 +29,7 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-    const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", rol: "", veilingProduct: "" });
+    const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", veilingProduct: "" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
     const now = useTicker(5000);
@@ -45,7 +45,6 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                         from: filters.from || undefined,
                         to: filters.to || undefined,
                         onlyActive: filters.onlyActive || undefined,
-                        rol: filters.rol || undefined,
                         veilingProduct: filters.veilingProduct ? Number(filters.veilingProduct) : undefined,
                         page: 1,
                         pageSize: prefetchPageSize,
@@ -64,7 +63,7 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
 
         void load();
         return () => controller.abort();
-    }, [filters.from, filters.onlyActive, filters.rol, filters.to, filters.veilingProduct, onAuctionsLoaded]);
+    }, [filters.from, filters.onlyActive, filters.to, filters.veilingProduct, onAuctionsLoaded]);
 
     const filteredRows = useMemo(
         () =>
@@ -77,10 +76,9 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                 const matchesFrom = Number.isFinite(start) ? start >= from : true;
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
                 const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
-                const matchesRol = !currentFilters.rol || (row.rawStatus ?? "").toLowerCase().includes(currentFilters.rol.toLowerCase());
                 const matchesVeilingProduct =
                     !currentFilters.veilingProduct || row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
-                return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesRol && matchesVeilingProduct;
+                return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesVeilingProduct;
             }),
         [auctions, filters, now, search],
     );
@@ -209,7 +207,6 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
         filters.onlyActive && "Alleen actieve veilingen",
         filters.from && `Vanaf: ${filters.from}`,
         filters.to && `Tot: ${filters.to}`,
-        filters.rol && `Rol: ${filters.rol}`,
         filters.veilingProduct && `Veilingproduct: ${filters.veilingProduct}`,
         search && `Zoek: ${search}`,
     ].filter(Boolean) as string[];
@@ -220,7 +217,11 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                 <div className="d-flex flex-wrap align-items-center gap-2">
                     {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
                     {activeFilters.map((label) => (
-                        <Chip key={label} label={label} onRemove={() => setFilters({ onlyActive: false, from: "", to: "", rol: "", veilingProduct: "" })} />
+                        <Chip
+                            key={label}
+                            label={label}
+                            onRemove={() => setFilters({ onlyActive: false, from: "", to: "", veilingProduct: "" })}
+                        />
                     ))}
                 </div>
                 <button type="button" className="btn btn-success" onClick={onCreateRequested}>
@@ -254,11 +255,6 @@ export function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsL
                                 Alleen actieve
                             </label>
                         </div>
-                    </Field>
-                </div>
-                <div className="col-12 col-lg-3">
-                    <Field label="Rol">
-                        <Input value={filters.rol} onChange={(value) => setFilters((prev) => ({ ...prev, rol: value }))} placeholder="Rol" />
                     </Field>
                 </div>
                 <div className="col-12 col-lg-3">

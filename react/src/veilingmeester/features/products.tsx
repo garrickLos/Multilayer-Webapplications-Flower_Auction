@@ -3,16 +3,16 @@ import { Table, type TableColumn } from "../components/Table";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge } from "../components/ui";
 import { fetchAuctions, fetchCategories, fetchProducts } from "../api";
 import { appConfig } from "../config";
-import type { Auction, Product, Status, UiStatus } from "../types";
+import type { Auction, Product, ProductStatus } from "../types";
 import { deriveProductStatus, filterRows, formatCurrency, mapProductStatusToUiStatus } from "../utils";
 
 // Product listing with simple filters.
-const statusOptions: readonly { value: Status | "all"; label: string }[] = [
+const statusOptions: readonly { value: ProductStatus | "all"; label: string }[] = [
     { value: "all", label: "Alle" },
-    { value: "active", label: "Actief" },
-    { value: "inactive", label: "Inactief" },
-    { value: "sold", label: "Verkocht" },
-    { value: "deleted", label: "Geannuleerd" },
+    { value: "Active", label: "Actief" },
+    { value: "Inactive", label: "Inactief" },
+    { value: "Deleted", label: "Verwijderd" },
+    { value: "Archived", label: "Gearchiveerd" },
 ];
 
 const linkedOptions = [
@@ -24,13 +24,20 @@ const linkedOptions = [
 const { table: tablePageSizeOptions } = appConfig.pagination;
 const { prefetchPageSize } = appConfig.api;
 
-type ProductFilters = { status: UiStatus | "all"; category: string; linkState: (typeof linkedOptions)[number]["value"] };
+type ProductFilters = {
+    status: ProductStatus | "all";
+    category: string;
+    linkState: (typeof linkedOptions)[number]["value"];
+    minPrice: string;
+    maxPrice: string;
+    createdAfter: string;
+};
 
 type ProductsTabProps = { readonly auctions: readonly Auction[] };
 
 export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
     const [search, setSearch] = useState("");
-    const [filters, setFilters] = useState<ProductFilters>({ status: "all", category: "", linkState: "all" });
+    const [filters, setFilters] = useState<ProductFilters>({ status: "all", category: "", linkState: "all", minPrice: "", maxPrice: "", createdAfter: "" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(tablePageSizeOptions[0]);
     const [products, setProducts] = useState<readonly Product[]>([]);
@@ -76,6 +83,11 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
                     {
                         q: search || undefined,
                         categorieNr: filters.category ? Number(filters.category) : undefined,
+                        status: filters.status === "all" ? undefined : filters.status,
+                        minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
+                        maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+                        createdAfter: filters.createdAfter || undefined,
+                        title: search || undefined,
                         page,
                         pageSize,
                     },
@@ -92,7 +104,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
 
         void load();
         return () => controller.abort();
-    }, [filters.category, page, pageSize, search]);
+    }, [filters.category, filters.status, filters.minPrice, filters.maxPrice, filters.createdAfter, page, pageSize, search]);
 
     const auctionNameMap = useMemo(() => {
         const source = localAuctions.length > 0 ? localAuctions : auctions;
@@ -104,7 +116,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
             filterRows(products, "", filters, (row, _term, currentFilters) => {
                 const selectedCategory = categories.find((category) => String(category.id) === currentFilters.category)?.name;
                 const uiStatus = mapProductStatusToUiStatus(deriveProductStatus(row));
-                const matchesStatus = currentFilters.status === "all" || uiStatus === currentFilters.status;
+                const matchesStatus = currentFilters.status === "all" || row.status === currentFilters.status;
                 const matchesCategory = !currentFilters.category || row.category === selectedCategory;
                 const matchesLink =
                     currentFilters.linkState === "all" ||
@@ -150,6 +162,9 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
         filters.status !== "all" && `Status: ${filters.status}`,
         selectedCategoryLabel && `Categorie: ${selectedCategoryLabel}`,
         filters.linkState !== "all" && `Koppeling: ${filters.linkState}`,
+        filters.minPrice && `Min prijs: ${filters.minPrice}`,
+        filters.maxPrice && `Max prijs: ${filters.maxPrice}`,
+        filters.createdAfter && `Na: ${filters.createdAfter}`,
         search && `Zoek: ${search}`,
     ].filter(Boolean) as string[];
 
@@ -158,7 +173,13 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
             <div className="d-flex flex-wrap align-items-center gap-2">
                 {activeFilters.length === 0 && <span className="text-muted small">Geen filters actief.</span>}
                 {activeFilters.map((label) => (
-                    <Chip key={label} label={label} onRemove={() => setFilters({ status: "all", category: "", linkState: "all" })} />
+                    <Chip
+                        key={label}
+                        label={label}
+                        onRemove={() =>
+                            setFilters({ status: "all", category: "", linkState: "all", minPrice: "", maxPrice: "", createdAfter: "" })
+                        }
+                    />
                 ))}
             </div>
 
@@ -219,6 +240,35 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
                             value={filters.linkState}
                             options={linkedOptions.map((option) => ({ value: option.value, label: option.label }))}
                             onChange={(value) => setFilters((prev) => ({ ...prev, linkState: value as ProductFilters["linkState"] }))}
+                        />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-2">
+                    <Field label="Min. prijs">
+                        <Input
+                            type="number"
+                            value={filters.minPrice}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, minPrice: value }))}
+                            placeholder="vanaf"
+                        />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-2">
+                    <Field label="Max. prijs">
+                        <Input
+                            type="number"
+                            value={filters.maxPrice}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, maxPrice: value }))}
+                            placeholder="tot"
+                        />
+                    </Field>
+                </div>
+                <div className="col-12 col-lg-2">
+                    <Field label="Geplaatst na">
+                        <Input
+                            type="date"
+                            value={filters.createdAfter}
+                            onChange={(value) => setFilters((prev) => ({ ...prev, createdAfter: value }))}
                         />
                     </Field>
                 </div>
