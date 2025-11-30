@@ -45,7 +45,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasForeignKey(p => p.VeilingNr)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Indexen
+        // Indexen en status-mapping
         b.Entity<Gebruiker>()
             .HasIndex(x => x.Email)
             .IsUnique();
@@ -75,67 +75,69 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         var loginD2   = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc);
         var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
         var dag       = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
-        
+
         b.Entity<Gebruiker>().HasData(
             new Gebruiker
             {
-                Id                = 1,
-                GebruikerNr       = 1,
-                BedrijfsNaam      = "Flora BV",
-                Email             = "flora@example.nl",
-                NormalizedEmail   = "FLORA@EXAMPLE.NL",
-                UserName          = "flora@example.nl",
+                Id                 = 1,
+                GebruikerNr        = 1,
+                BedrijfsNaam       = "Flora BV",
+                Email              = "flora@example.nl",
+                NormalizedEmail    = "FLORA@EXAMPLE.NL",
+                UserName           = "flora@example.nl",
                 NormalizedUserName = "FLORA@EXAMPLE.NL",
-                LaatstIngelogd    = loginD1,
-                Soort             = "Bedrijf",
-                Kvk               = "12345678",
-                StraatAdres       = "Bloemig 10",
-                Postcode          = "1234AB",
-                SecurityStamp     = "STATIC-USER-1",
-                ConcurrencyStamp  = "STATIC-CONC-1",
+                LaatstIngelogd     = loginD1,
+                Soort              = "Bedrijf",
+                Kvk                = "12345678",
+                StraatAdres        = "Bloemig 10",
+                Postcode           = "1234AB",
+                SecurityStamp      = "STATIC-USER-1",
+                ConcurrencyStamp   = "STATIC-CONC-1",
                 // voorbeeld hoe hash password eruit ziet
-                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++"
+                PasswordHash       = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++"
             },
             new Gebruiker
             {
-                Id                = 2,
-                GebruikerNr       = 2,
-                BedrijfsNaam      = "Jan Jansen",
-                Email             = "jan@example.nl",
-                NormalizedEmail   = "JAN@EXAMPLE.NL",
-                UserName          = "jan@example.nl",
+                Id                 = 2,
+                GebruikerNr        = 2,
+                BedrijfsNaam       = "Jan Jansen",
+                Email              = "jan@example.nl",
+                NormalizedEmail    = "JAN@EXAMPLE.NL",
+                UserName           = "jan@example.nl",
                 NormalizedUserName = "JAN@EXAMPLE.NL",
-                LaatstIngelogd    = loginD2,
-                Soort             = "Koper",
-                Kvk               = "00000000",
-                StraatAdres       = "Laan 5",
-                Postcode          = "2345BC",
-                SecurityStamp     = "STATIC-USER-2",
-                ConcurrencyStamp  = "STATIC-CONC-2",
+                LaatstIngelogd     = loginD2,
+                Soort              = "Koper",
+                Kvk                = "00000000",
+                StraatAdres        = "Laan 5",
+                Postcode           = "2345BC",
+                SecurityStamp      = "STATIC-USER-2",
+                ConcurrencyStamp   = "STATIC-CONC-2",
                 // Wachtwoord: Test123!
-                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
+                PasswordHash       = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
             }
         );
 
         b.Entity<IdentityRole<int>>().HasData(
-            new IdentityRole<int> 
-            { 
-                Id = 1, 
-                Name = "VeilingMeester", 
-                NormalizedName = "VEILINGMEESTER" 
+            new IdentityRole<int>
+            {
+                Id               = 1,
+                Name             = "VeilingMeester",
+                NormalizedName   = "VEILINGMEESTER",
+                ConcurrencyStamp = "ROLE-CONC-1"
             },
-            new IdentityRole<int> 
-            { 
-                Id = 2, 
-                Name = "Klant", 
-                NormalizedName = "KLANT" 
+            new IdentityRole<int>
+            {
+                Id               = 2,
+                Name             = "Klant",
+                NormalizedName   = "KLANT",
+                ConcurrencyStamp = "ROLE-CONC-2"
             }
         );
 
         b.Entity<IdentityUserRole<int>>().HasData(
             new IdentityUserRole<int> { RoleId = 1, UserId = 1 },
-            new IdentityUserRole<int> { RoleId = 2, UserId = 2 },
-            new IdentityUserRole<int> { RoleId = 1, UserId = 4}
+            new IdentityUserRole<int> { RoleId = 2, UserId = 2 }
+            // let op: geen UserId = 4 hier, want er is geen gebruiker met Id 4 in de seed
         );
 
         b.Entity<Categorie>().HasData(
@@ -150,19 +152,19 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         b.Entity<Veiling>().HasData(
             new Veiling
             {
-                VeilingNr    = 201,
-                VeilingNaam  = "veiling001",
-                Begintijd    = dag.AddHours(9),
-                Eindtijd     = dag.AddHours(10),
-                Status       = "active",
+                VeilingNr   = 201,
+                VeilingNaam = "veiling001",
+                Begintijd   = dag.AddHours(9),
+                Eindtijd    = dag.AddHours(10),
+                Status      = "active"
             },
             new Veiling
             {
-                VeilingNr    = 202,
-                VeilingNaam  = "veiling001",
-                Begintijd    = dag.AddHours(10),
-                Eindtijd     = dag.AddHours(11),
-                Status       = "active"
+                VeilingNr   = 202,
+                VeilingNaam = "veiling001",
+                Begintijd   = dag.AddHours(10),
+                Eindtijd    = dag.AddHours(11),
+                Status      = "active"
             }
         );
 
@@ -177,7 +179,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 Startprijs       = 12,
                 CategorieNr      = 1,
                 VeilingNr        = 201,
-                Plaats           = " Aalsmeer",
+                Plaats           = "Aalsmeer",
                 Minimumprijs     = 10,
                 Kwekernr         = 1,
                 ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
@@ -202,20 +204,20 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         b.Entity<Bieding>().HasData(
             new Bieding
             {
-                BiedNr          = 1001,
-                BedragPerFust   = 13,
-                AantalStuks     = 5,
-                GebruikerNr     = 2,
-                VeilingNr       = 201,
+                BiedNr           = 1001,
+                BedragPerFust    = 13,
+                AantalStuks      = 5,
+                GebruikerNr      = 2,
+                VeilingNr        = 201,
                 VeilingproductNr = 101
             },
             new Bieding
             {
-                BiedNr          = 1002,
-                BedragPerFust   = 21,
-                AantalStuks     = 3,
-                GebruikerNr     = 2,
-                VeilingNr       = 202,
+                BiedNr           = 1002,
+                BedragPerFust    = 21,
+                AantalStuks      = 3,
+                GebruikerNr      = 2,
+                VeilingNr        = 202,
                 VeilingproductNr = 102
             }
         );

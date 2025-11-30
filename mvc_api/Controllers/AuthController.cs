@@ -44,15 +44,23 @@ public sealed class AuthController : ControllerBase
         if (existingUser is not null)
             return Conflict(new RegisterResponse { Success = false, Errors = new[] { "Email is al in gebruik." } });
 
+        var email        = request.Email.Trim();
+        var bedrijfsNaam = request.BedrijfsNaam.Trim();
+        var soort        = request.Soort.Trim();
+        var kvk          = request.Kvk?.Trim();
+        var straatAdres  = request.StraatAdres?.Trim();
+        var postcode     = request.Postcode?.Trim();
         var user = new Gebruiker
+            
         {
-            Email        = request.Email.Trim(),
-            UserName     = request.Email.Trim(),
-            BedrijfsNaam = request.BedrijfsNaam.Trim(),
-            Soort        = request.Soort,
-            Kvk          = request.Kvk,
-            StraatAdres  = request.StraatAdres,
-            Postcode     = request.Postcode
+            Email        = email,
+            UserName     = email,
+            BedrijfsNaam = bedrijfsNaam,
+            Soort        = soort,
+            Kvk          = kvk,
+            StraatAdres  = straatAdres,
+            Postcode     = postcode,
+            Status       = ModelStatus.Active
         };
 
         // Password wordt hier gehasht en in PasswordHash opgeslagen
@@ -95,6 +103,15 @@ public sealed class AuthController : ControllerBase
             return InvalidCredentialsResponse();
         }
 
+        if (user.Status == ModelStatus.Deleted || user.Status == ModelStatus.Inactive)
+        {
+            return Unauthorized(new LoginResponse
+            {
+                Success = false,
+                Errors  = new[] { "Account is niet actief." }
+            });
+        }
+        
         var result = await _signInManager.PasswordSignInAsync(
             user,
             request.Password,
@@ -120,6 +137,9 @@ public sealed class AuthController : ControllerBase
 
         var token = await _bearerToken.GenerateJwtToken(user);
 
+        user.LaatstIngelogd = DateTime.UtcNow;
+        await _userManager.UpdateAsync(user);
+        
         return Ok(new LoginResponse
         {
             Success = true,
