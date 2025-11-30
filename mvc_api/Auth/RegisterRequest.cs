@@ -4,26 +4,22 @@ namespace mvc_api.DTOs.Auth;
 
 public class RegisterRequest
 {
-    [Required]
-    [EmailAddress]
+    [Required, EmailAddress, StringLength(200)]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
-    [MinLength(6)]
+    [Required, MinLength(6)]
+    [DataType(DataType.Password)]
     public string Password { get; set; } = string.Empty;
 
     [Required]
+    [DataType(DataType.Password)]
     [Compare(nameof(Password), ErrorMessage = "Wachtwoorden komen niet overeen.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    // Komt overeen met Gebruiker.BedrijfsNaam
-    [Required]
-    [StringLength(200)]
+    [Required, StringLength(200)]
     public string BedrijfsNaam { get; set; } = string.Empty;
 
-    // Komt overeen met Gebruiker.Soort (Bedrijf/Koper)
-    [Required]
-    [StringLength(50)]
+    [Required, StringLength(50)]
     public string Soort { get; set; } = string.Empty;
 
     [StringLength(20)]

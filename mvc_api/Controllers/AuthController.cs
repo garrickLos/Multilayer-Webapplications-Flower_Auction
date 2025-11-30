@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using mvc_api.Auth.GenereerBearerToken;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
-using mvc_api.Auth.GenereerBearerToken;
 
 namespace mvc_api.Controllers;
 
@@ -13,20 +13,16 @@ public sealed class AuthController : ControllerBase
 {
     private readonly UserManager<Gebruiker> _userManager;
     private readonly SignInManager<Gebruiker> _signInManager;
-    private readonly IConfiguration _config;
-
     private readonly GenereerBearerToken _bearerToken;
 
     public AuthController(
         UserManager<Gebruiker> userManager,
         SignInManager<Gebruiker> signInManager,
-        IConfiguration config,
         GenereerBearerToken bearerTokenService)
     {
-        _userManager   = userManager  ?? throw new ArgumentNullException(nameof(userManager));
+        _userManager   = userManager   ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
-        _config        = config;
-        _bearerToken   = bearerTokenService;
+        _bearerToken   = bearerTokenService ?? throw new ArgumentNullException(nameof(bearerTokenService));
     }
 
     [HttpPost("register")]
@@ -46,24 +42,17 @@ public sealed class AuthController : ControllerBase
 
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser is not null)
-        {
-            return Conflict(new RegisterResponse
-            {
-                Success = false,
-                Errors  = new[] { "Email is al in gebruik." }
-            });
-        }
+            return Conflict(new RegisterResponse { Success = false, Errors = new[] { "Email is al in gebruik." } });
 
         var user = new Gebruiker
         {
-            Email          = request.Email,
-            UserName       = request.Email,
-            BedrijfsNaam   = request.BedrijfsNaam,
-            Soort          = request.Soort,
-            Kvk            = request.Kvk,
-            StraatAdres    = request.StraatAdres,
-            Postcode       = request.Postcode,
-            LaatstIngelogd = null
+            Email        = request.Email.Trim(),
+            UserName     = request.Email.Trim(),
+            BedrijfsNaam = request.BedrijfsNaam.Trim(),
+            Soort        = request.Soort,
+            Kvk          = request.Kvk,
+            StraatAdres  = request.StraatAdres,
+            Postcode     = request.Postcode
         };
 
         // Password wordt hier gehasht en in PasswordHash opgeslagen
