@@ -11,7 +11,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251130230306_InitialCreate")]
+    [Migration("20251201091814_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -304,6 +304,7 @@ namespace mvc_api.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Kvk")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
