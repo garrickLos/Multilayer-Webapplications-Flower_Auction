@@ -41,22 +41,25 @@ export const paginate = <T,>(rows: readonly T[], page: number, pageSize: number)
 
 export const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
 
-export const mapAuctionStatusToBadge = (status: AuctionStatus): UiStatus => {
-    if (status === "Actief") return "active";
-    if (status === "Verkocht" || status === "Afgesloten") return "sold";
-    if (status === "Geannuleerd") return "deleted";
+export const mapAuctionStatusToBadge = (status: AuctionStatus | string): UiStatus => {
+    const normalised = (status ?? "").toLowerCase();
+    if (normalised === "actief" || normalised === "active") return "active";
+    if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "sold" || normalised === "archived")
+        return "sold";
+    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
     return "inactive";
 };
 
-export const uiStatusToAuctionStatus = (status: UiStatus): AuctionStatus => {
-    if (status === "active") return "Actief";
-    if (status === "sold") return "Verkocht";
-    if (status === "deleted") return "Geannuleerd";
-    return "NogNietGestart";
+export const uiStatusToAuctionStatus = (status: UiStatus): AuctionStatus | string => {
+    if (status === "active") return "active";
+    if (status === "sold") return "sold";
+    if (status === "deleted") return "deleted";
+    return "inactive";
 };
 
 export const mapProductStatusToUiStatus = (status: ProductStatus): UiStatus => {
     if (status === "Deleted") return "deleted";
+    if (status === "Archived") return "sold";
     if (status === "Active") return "active";
     return "inactive";
 };

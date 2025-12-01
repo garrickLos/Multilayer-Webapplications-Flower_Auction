@@ -27,6 +27,11 @@ const jsonHeaders = {
     "Content-Type": "application/json",
 };
 
+const getAuthHeaders = (): Record<string, string> => {
+    const token = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("token") : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 async function request<T>(path: string, init?: FetchInit): Promise<{ data: T; headers: Headers }> {
     const controller = new AbortController();
     const linked = init?.signal;
@@ -47,7 +52,7 @@ async function request<T>(path: string, init?: FetchInit): Promise<{ data: T; he
         const response = await fetch(`${baseUrl}${path}`, {
             credentials: "include",
             ...init,
-            headers: { ...jsonHeaders, ...(init?.headers ?? {}) },
+            headers: { ...jsonHeaders, ...getAuthHeaders(), ...(init?.headers ?? {}) },
             signal: controller.signal,
         });
 
@@ -66,6 +71,11 @@ async function request<T>(path: string, init?: FetchInit): Promise<{ data: T; he
 }
 
 async function normaliseError(response: Response): Promise<ApiError> {
+    if (response.status === 401)
+        return { status: 401, message: "Niet geautoriseerd. Log opnieuw in om verder te gaan." } satisfies ApiError;
+    if (response.status === 403)
+        return { status: 403, message: "Je hebt geen toegang tot deze resource." } satisfies ApiError;
+
     let message = response.statusText || "Onbekende fout";
     try {
         const contentType = response.headers.get("content-type") ?? "";

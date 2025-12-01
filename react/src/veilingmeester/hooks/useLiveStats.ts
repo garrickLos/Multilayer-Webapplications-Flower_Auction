@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchAuctions, fetchBids, fetchProducts, fetchUsers } from "../api";
+import { fetchAuctions, fetchBids, fetchProducts, fetchUsers, type ApiError } from "../api";
 import { appConfig } from "../config";
 
 export type LiveStats = { users: number; activeAuctions: number; products: number; bids: number };
@@ -34,7 +34,12 @@ export function useLiveStats() {
                 setLastUpdated(new Date());
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
-                setError((err as { message?: string }).message ?? "Kan statistieken niet laden");
+                const apiError = err as ApiError;
+                if (apiError.status === 401 || apiError.status === 403) {
+                    setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+                } else {
+                    setError((apiError as { message?: string }).message ?? "Kan statistieken niet laden");
+                }
             } finally {
                 setLoading(false);
             }

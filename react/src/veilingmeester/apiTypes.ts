@@ -15,13 +15,13 @@ export interface BiedingBaseAmountDto {
     gebruikerNr: number;
 }
 
-export interface BiedingCreateDto extends Partial<BiedingBaseAmountDto> {
+export interface BiedingCreateDto extends BiedingBaseAmountDto {
     biedingNr?: number;
-    veilingNr?: number;
-    veilingproductNr?: number;
+    veilingNr: number;
+    veilingproductNr: number;
 }
 
-export interface BiedingUpdateDto extends Partial<BiedingBaseAmountDto> {}
+export interface BiedingUpdateDto extends BiedingBaseAmountDto {}
 
 export interface VeilingMeester_BiedingDto extends BiedingBaseAmountDto {
     biedingNr: number;
@@ -33,7 +33,7 @@ export interface VeilingCreateDto {
     veilingNaam: string;
     begintijd: string;
     eindtijd: string;
-    status?: string | null;
+    status: string;
 }
 
 export interface VeilingUpdateDto {
@@ -52,13 +52,12 @@ export interface VeilingProductDto {
     voorraadBloemen: number;
     aantalFusten: number;
     imagePath: string;
-    veilingNr?: number | null;
 }
 
 export interface VeilingMeester_VeilingDto {
     veilingNr: number;
     veilingNaam: string;
-    status?: string | null;
+    status: string;
     begintijd: string;
     eindtijd: string;
     producten?: VeilingProductDto[] | null;
@@ -87,10 +86,10 @@ export interface VeilingproductVeilingmeesterDetailDto extends VeilingproductVei
 
 export interface CategorieListDto {
     categorieNr: number;
-    naam: string | null;
+    naam: string;
 }
 
 export interface CategorieDetailDto {
     categorieNr: number;
-    naam: string | null;
+    naam: string;
 }

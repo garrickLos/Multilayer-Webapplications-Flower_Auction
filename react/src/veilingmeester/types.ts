@@ -1,10 +1,4 @@
-import {
-    type BiedingCreateDto,
-    type BiedingUpdateDto,
-    type VeilingCreateDto,
-    type VeilingUpdateDto,
-    type VeilingproductBidListItem,
-} from "./apiTypes";
+import { type BiedingCreateDto, type BiedingUpdateDto, type VeilingCreateDto, type VeilingUpdateDto } from "./apiTypes";
 import type {
     CategorieDetailDto,
     CategorieListDto,
@@ -125,7 +119,8 @@ export const toUiStatus = (value?: AuctionStatus | string | null): UiStatus => {
     const normalised = (value ?? "").toLowerCase();
     if (normalised === "actief" || normalised === "active") return "active";
     if (normalised === "verkocht" || normalised === "afgesloten") return "sold";
-    if (normalised === "geannuleerd") return "deleted";
+    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
+    if (normalised === "archived") return "sold";
     return "inactive";
 };
 
@@ -154,11 +149,12 @@ export class DomainMapper {
     static mapProduct(dto: VeilingproductVeilingmeesterListDto | VeilingproductVeilingmeesterDetailDto | VeilingProductDto): Product {
         const linkedAuctionId = "veilingNr" in dto ? dto.veilingNr ?? undefined : undefined;
         const stock = "voorraadBloemen" in dto ? dto.voorraadBloemen : undefined;
+        const status = ("status" in dto && dto.status ? dto.status : "Inactive") as ModelStatus;
 
         return {
             id: dto.veilingProductNr,
             name: dto.naam ?? "Onbekend product",
-            status: "status" in dto && dto.status ? dto.status : "Inactive",
+            status,
             category: "categorieNaam" in dto ? dto.categorieNaam : undefined,
             startPrice: "startprijs" in dto ? dto.startprijs ?? undefined : undefined,
             minimumPrice: "minimumprijs" in dto ? dto.minimumprijs ?? 0 : 0,
@@ -170,18 +166,8 @@ export class DomainMapper {
             sellerName: "verkoperNaam" in dto ? dto.verkoperNaam : undefined,
             imagePath: dto.imagePath ?? undefined,
             location: "plaats" in dto ? dto.plaats ?? undefined : undefined,
-            active: "status" in dto ? dto.status === "Active" : undefined,
-            bids: "biedingen" in dto ? dto.biedingen?.map(DomainMapper.mapBidSummary) : undefined,
+            active: status === "Active",
         } satisfies Product;
-    }
-
-    static mapBidSummary(dto: VeilingproductBidListItem): BidSummary {
-        return {
-            id: dto.biedNr,
-            amount: dto.bedragPerFust,
-            quantity: dto.aantalStuks,
-            userId: dto.gebruikerNr,
-        } satisfies BidSummary;
     }
 
     static mapUser(dto: GebruikerAuctionViewDto): User {

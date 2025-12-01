@@ -22,7 +22,7 @@ const toNumberList = (value: string | undefined, fallback: readonly number[]): r
     return numbers.length ? numbers : fallback;
 };
 
-const defaultBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
+const defaultBaseUrl = "http://localhost:5105";
 
 export type AppConfig = {
     readonly api: {

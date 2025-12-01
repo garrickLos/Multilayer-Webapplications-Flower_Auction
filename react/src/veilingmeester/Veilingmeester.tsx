@@ -4,7 +4,7 @@ import { AuctionsTab, LinkProductsModal, NewAuctionModal, type AuctionFormState 
 import { ProductsTab } from "./features/products";
 import { UserBidsModal, UserProductsModal, UsersTab } from "./features/users";
 import { useOffline } from "./hooks";
-import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers } from "./api";
+import { createAuction, fetchAuctions, fetchBids, fetchProducts, fetchUsers, type ApiError } from "./api";
 import { appConfig } from "./config";
 import type { Auction, Bid, ModalState, Product, User } from "./types";
 import { cx, uiStatusToAuctionStatus } from "./utils";
@@ -45,7 +45,12 @@ export function Veilingmeester() {
                 setBids([...bidResponse.items]);
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
-                setError((err as { message?: string }).message ?? "Kan gegevens niet laden");
+                const apiError = err as ApiError;
+                if (apiError.status === 401 || apiError.status === 403) {
+                    setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+                } else {
+                    setError((apiError as { message?: string }).message ?? "Kan gegevens niet laden");
+                }
             } finally {
                 setLoading(false);
             }
