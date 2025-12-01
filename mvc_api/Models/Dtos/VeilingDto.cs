@@ -63,7 +63,6 @@ public record VeilingProductDto(
     int Minimumprijs,
     string Plaats,
     int CategorieNr,
-    int VoorraadBloemen,
     int AantalFusten,
     string ImagePath
 );
@@ -72,6 +71,5 @@ public record VeilingProductDto_anonymous(
     int VeilingProductNr,
     string Naam,
     int? Startprijs,
-    int VoorraadBloemen,
     string ImagePath
 );

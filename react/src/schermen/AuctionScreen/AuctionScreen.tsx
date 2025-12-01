@@ -19,7 +19,7 @@ export default function AuctionScreen() {
     const [huidigePrijs, setHuidigePrijs] = useState(0);
 
     // Data ophalen
-    const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling?rol=klant&refresh=${refreshApi}`);
+    const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling/klant?refresh=${refreshApi}`);
     const safeData = data || [];
 
     // API Refresh interval
@@ -50,8 +50,6 @@ export default function AuctionScreen() {
     const categorie = catData || [];
 
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
-
-    console.log(activeVeiling);
 
     if (activeVeiling?.status == 'inactive') {
         return geenVeilingPlaats();

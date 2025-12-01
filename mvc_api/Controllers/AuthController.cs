@@ -68,6 +68,13 @@ public sealed class AuthController : ControllerBase
 
         // Password wordt hier gehasht en in PasswordHash opgeslagen
         var result = await _userManager.CreateAsync(user, request.Password);
+        
+        // linked de user aan de rol in de database met een tussentabel
+        if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(user, request.Soort);
+        }
+
         if (!result.Succeeded)
         {
             return BadRequest(new RegisterResponse

@@ -34,7 +34,9 @@ public class VeilingController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-         var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         var veilingenTeUpdaten = _db.Veilingen
         .Where(v => 
@@ -50,14 +52,13 @@ public class VeilingController : ControllerBase
             foreach (var v in veilingenTeUpdaten)
             {
                 // Check opnieuw per item wat er moet gebeuren
-                if (v.Eindtijd <= now)
+                if (now >= v.Eindtijd)
                 {
                     // Tijd is voorbij -> Sluiten
                     v.Status = VeilingStatus.Inactive;
                 }
-                else if (v.Begintijd <= now && v.Eindtijd > now)
+                else if (now >= v.Begintijd.Date && now < v.Eindtijd.Date)
                 {
-                    // Tijd is bezig -> Openen
                     v.Status = VeilingStatus.Active;
                 }
             }
@@ -88,13 +89,14 @@ public class VeilingController : ControllerBase
                 
         // --- Projectie & Execution ---
         var items = await _projectie
-            .ProjectToVeiling_anonymousDto(query,now) // Roept de andere helper methode aan zodat het Alleen de basis laat zien
+            .ProjectToVeiling_anonymousDto(query,now) //roept de data op van een niet ingelogde persoon.
             .ToListAsync(ct);
 
         return Ok(items); 
     }
 
     [HttpGet("VeilingMeester")]
+    [Authorize (Roles="VeilingMeester")]
     public async Task<ActionResult<IEnumerable<object>>> GetVeilingMeester(
 
         [FromQuery] int? veilingProduct,
@@ -105,7 +107,9 @@ public class VeilingController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-         var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         var veilingenTeUpdaten = _db.Veilingen
         .Where(v => 
@@ -171,6 +175,7 @@ public class VeilingController : ControllerBase
     }
 
     [HttpGet("klant")]
+    [Authorize (Roles = "Koper, VeilingMeester")]
     public async Task<ActionResult<IEnumerable<object>>> GetKlant(
 
         [FromQuery] int? veilingProduct,
@@ -181,7 +186,9 @@ public class VeilingController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-         var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         var veilingenTeUpdaten = _db.Veilingen
         .Where(v => 
@@ -197,14 +204,13 @@ public class VeilingController : ControllerBase
             foreach (var v in veilingenTeUpdaten)
             {
                 // Check opnieuw per item wat er moet gebeuren
-                if (v.Eindtijd <= now)
+                if (now >= v.Eindtijd)
                 {
                     // Tijd is voorbij -> Sluiten
                     v.Status = VeilingStatus.Inactive;
                 }
-                else if (v.Begintijd <= now && v.Eindtijd > now)
+                else if (now >= v.Begintijd && now < v.Eindtijd)
                 {
-                    // Tijd is bezig -> Openen
                     v.Status = VeilingStatus.Active;
                 }
             }
@@ -254,7 +260,10 @@ public class VeilingController : ControllerBase
         int id, 
         CancellationToken ct = default)
     {
+
         var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         var query = _db.Veilingen.AsNoTracking()
             .AsQueryable();
@@ -287,6 +296,8 @@ public class VeilingController : ControllerBase
     {
         // Validatie van [Required] gebeurt automatisch door [ApiController]
         var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         var entity = new Veiling
         {
@@ -334,6 +345,10 @@ public class VeilingController : ControllerBase
         [FromBody] VeilingUpdateDto dto, 
         CancellationToken ct = default)
     {
+        var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
+
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
@@ -348,7 +363,6 @@ public class VeilingController : ControllerBase
         //     entity.Status = NormalizeStatus(dto.Status);
 
         // Business Logic check
-        var now = DateTime.UtcNow;
         if (entity.Eindtijd <= now && entity.Status == VeilingStatus.Active)
             entity.Status = VeilingStatus.Inactive;
 
