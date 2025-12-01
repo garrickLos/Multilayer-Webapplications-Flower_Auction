@@ -46,8 +46,8 @@ export default function AuctionScreen() {
         ? activeVeiling.producten[actieveProductIndex] 
         : null;
 
-    const { data: catData } = GetVeilingen<veilingCategorie[]>(`/api/Categorie/${huidigProduct?.categorieNr}`);
-    const categorie = catData || [];
+    const { data: catData } = GetVeilingen<veilingCategorie>(`/api/Categorie/${huidigProduct?.categorieNr}`);
+    const categorie = catData || null;
 
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
@@ -82,7 +82,7 @@ export default function AuctionScreen() {
                         </div>
                         </div>
                         <div className="ordenen">
-                            <div className="productCategorie">Product categorie: {categorie.naam}</div>
+                            <div className="productCategorie">Product categorie: {categorie?.naam}</div>
                         </div>
                         <div className="ordenen">
                             <div className="hoeveelheid">AantalFusten: {huidigProduct?.aantalFusten} </div>
@@ -135,8 +135,9 @@ export default function AuctionScreen() {
 function geenVeilingPlaats() {
     return (
         <main className='Auction_Body'>
-            <div>
-                <h1>Geen veiling</h1>
+            <div id='legePagina'>
+                <h1>Geen veiling gevonden.</h1>
+                <p>Mogelijk dat de veiling is afgelopen of dat de veiling niet meer bestaat. ga terug naar het hoofdmenu en kies een andere veiling</p>
             </div>
         </main>
     )

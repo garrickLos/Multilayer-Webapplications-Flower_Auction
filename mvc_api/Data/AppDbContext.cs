@@ -115,15 +115,20 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             new IdentityRole<int> 
             { 
                 Id = 2, 
-                Name = "Klant", 
-                NormalizedName = "KLANT" 
+                Name = "Koper", 
+                NormalizedName = "KOPER" 
+            },
+            new IdentityRole<int>
+            {
+                Id = 3,
+                Name = "Bedrijf",
+                NormalizedName = "BEDRIJF"
             }
         );
 
         b.Entity<IdentityUserRole<int>>().HasData(
             new IdentityUserRole<int> { RoleId = 1, UserId = 1 },
-            new IdentityUserRole<int> { RoleId = 2, UserId = 2 },
-            new IdentityUserRole<int> { RoleId = 1, UserId = 4}
+            new IdentityUserRole<int> { RoleId = 2, UserId = 2 }
         );
 
         b.Entity<Categorie>().HasData(

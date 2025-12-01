@@ -11,7 +11,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles = "VeilingMeester, Koper")]
+[Authorize (Roles = "VeilingMeester, Koper, Bedrijf")]
 public class VeilingController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -175,7 +175,6 @@ public class VeilingController : ControllerBase
     }
 
     [HttpGet("klant")]
-    [Authorize (Roles = "Koper, VeilingMeester")]
     public async Task<ActionResult<IEnumerable<object>>> GetKlant(
 
         [FromQuery] int? veilingProduct,
@@ -239,7 +238,7 @@ public class VeilingController : ControllerBase
                 .Take(pageSize);
 
             // --- Projectie & Execution ---
-        if (User.Identity.IsAuthenticated && User.IsInRole("Koper") || User.IsInRole("VeilingMeester"))
+        if (User.Identity.IsAuthenticated)
         {
             var items = await _projectie
                 .ProjectToVeiling_klantDto(query, now) // Roept de klant helper methode op zodat het de juiste gegevens laat zien
@@ -255,7 +254,7 @@ public class VeilingController : ControllerBase
 
     // GET: api/Veiling/{id}
     [HttpGet("{id:int}")]
-    [Authorize (Roles ="VeilingMeester, Koper")]
+    [Authorize (Roles ="VeilingMeester, Koper, Bedrijf")]
     public async Task<ActionResult<VeilingMeester_VeilingDto>> GetById(
         int id, 
         CancellationToken ct = default)
