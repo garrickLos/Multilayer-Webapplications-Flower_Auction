@@ -13,10 +13,9 @@ public class Veilingproduct
     [Required, StringLength(200)]
     public string Naam { get; set; } = string.Empty;
 
-    // Geen dynamische standaardwaarde zodat het EF-model deterministisch blijft.
     public DateTime GeplaatstDatum { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Aantal fusten moet minimaal 1 zijn.")]
+    [Range(1, int.MaxValue)]
     public int AantalFusten { get; set; }
 
     [Range(0, int.MaxValue)]
@@ -39,11 +38,12 @@ public class Veilingproduct
 
     public int Kwekernr { get; set; }
 
-    // Koppeling naar gebruiker (kweker) via Kwekernr → Gebruiker.Id
     [ForeignKey(nameof(Kwekernr))]
     public Gebruiker Gebruiker { get; set; } = null!;
 
-    public DateOnly beginDatum { get; set; }
+    // Kweker bepaalt datum
+    public DateOnly? BeginDatum { get; set; }
+    public DateOnly? EindDatum { get; set; }
 
     public ModelStatus Status { get; set; } = ModelStatus.Active;
 

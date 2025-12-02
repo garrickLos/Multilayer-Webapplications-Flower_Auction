@@ -1,41 +1,86 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using mvc_api.Models;
 
 namespace mvc_api.Models.Dtos;
 
-public record VeilingproductCreateDto(
-    [property: Required, StringLength(200)] string Naam,
-    DateTime? GeplaatstDatum,
-    [property: Range(1, int.MaxValue)] int AantalFusten,
-    [property: Range(0, int.MaxValue)] int VoorraadBloemen,
-    [property: Range(1, int.MaxValue)] int? Startprijs,
-    [property: Range(1, int.MaxValue)] int CategorieNr,
-    [property: StringLength(200)] string Plaats,
-    [property: Range(1, 999999999)] int Minimumprijs,
-    [property: Range(1, int.MaxValue)] int Kwekernr,
-    DateOnly beginDatum,
-    [property: Required, StringLength(200)] string ImagePath
-);
+public record VeilingproductCreateDto
+{
+    [Required, StringLength(200)]
+    public string Naam { get; init; } = default!;
 
-public record VeilingproductUpdateDto(
-    [property: Required, StringLength(200)] string Naam,
-    DateTime? GeplaatstDatum,
-    [property: Range(1, int.MaxValue)] int AantalFusten,
-    [property: Range(0, int.MaxValue)] int VoorraadBloemen,
-    [property: Range(1, int.MaxValue)] int? Startprijs,
-    [property: Range(1, int.MaxValue)] int CategorieNr,
-    [property: Range(1, int.MaxValue)] int? VeilingNr,
-    [property: Range(1, int.MaxValue)] int Kwekernr,
-    [property: Required, StringLength(200)] string ImagePath,
-    [property: Range(1, 999999999)] int Minimumprijs,
-    [property: StringLength(200)] string Plaats
-);
+    public DateTime? GeplaatstDatum { get; init; }
 
-public record VeilingproductStatusUpdateDto(
-    [property: Required] ModelStatus Status
-);
+    [Range(1, int.MaxValue)]
+    public int AantalFusten { get; init; }
 
+    [Range(0, int.MaxValue)]
+    public int VoorraadBloemen { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int CategorieNr { get; init; }
+
+    [StringLength(200)]
+    public string Plaats { get; init; } = string.Empty;
+
+    [Range(1, 999_999_999)]
+    public int Minimumprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Kwekernr { get; init; }
+
+    [Required]
+    public DateOnly BeginDatum { get; init; }
+
+    [Required]
+    public DateOnly EindDatum { get; init; }
+
+    [Required, StringLength(200)]
+    public string ImagePath { get; init; } = default!;
+}
+
+public record VeilingproductUpdateDto
+{
+    [Required, StringLength(200)]
+    public string Naam { get; init; } = default!;
+
+    public DateTime? GeplaatstDatum { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int AantalFusten { get; init; }
+
+    [Range(0, int.MaxValue)]
+    public int VoorraadBloemen { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int CategorieNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int? VeilingNr { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int Kwekernr { get; init; }
+
+    [Required, StringLength(200)]
+    public string ImagePath { get; init; } = default!;
+
+    [Range(1, 999_999_999)]
+    public int Minimumprijs { get; init; }
+
+    public string Plaats { get; init; } = string.Empty;
+}
+
+public record VeilingproductVeilingmeesterUpdateDto
+{
+    [Range(1, 999_999_999)]
+    public int? Startprijs { get; init; }
+
+    [Range(1, int.MaxValue)]
+    public int? VeilingNr { get; init; }
+}
+
+// READ DTOs
 public record VeilingproductPublicListDto(
     int VeilingProductNr,
     string Naam,
@@ -47,20 +92,6 @@ public record VeilingproductPublicListDto(
     int? Startprijs
 );
 
-public record VeilingproductPublicDetailDto(
-    int VeilingProductNr,
-    string Naam,
-    string? CategorieNaam,
-    string ImagePath,
-    string Plaats,
-    int VoorraadBloemen,
-    int AantalFusten,
-    int? Startprijs,
-    int Minimumprijs,
-    DateTime GeplaatstDatum,
-    string VerkoperNaam
-);
-
 public record VeilingproductKwekerListDto(
     int VeilingProductNr,
     string Naam,
@@ -70,22 +101,6 @@ public record VeilingproductKwekerListDto(
     int AantalFusten,
     int VoorraadBloemen,
     int? VeilingNr
-);
-
-public record VeilingproductKwekerDetailDto(
-    int VeilingProductNr,
-    string Naam,
-    string? CategorieNaam,
-    ModelStatus Status,
-    int? Startprijs,
-    int Minimumprijs,
-    int AantalFusten,
-    int VoorraadBloemen,
-    string Plaats,
-    DateTime GeplaatstDatum,
-    int? VeilingNr,
-    string ImagePath,
-    DateOnly beginDatum
 );
 
 public record VeilingproductVeilingmeesterListDto(
@@ -100,54 +115,7 @@ public record VeilingproductVeilingmeesterListDto(
     int Minimumprijs
 );
 
-public record VeilingproductVeilingmeesterDetailDto(
-    int VeilingProductNr,
-    string Naam,
-    string? CategorieNaam,
-    ModelStatus Status,
-    int? VeilingNr,
-    int? Startprijs,
-    int Minimumprijs,
-    int AantalFusten,
-    int VoorraadBloemen,
-    string Plaats,
-    DateTime GeplaatstDatum,
-    string ImagePath,
-    int Kwekernr,
-    string VerkoperNaam
-);
-
-public record VeilingproductAdminListDto(
-    int VeilingProductNr,
-    string Naam,
-    string? CategorieNaam,
-    ModelStatus Status,
-    int? VeilingNr,
-    int? Startprijs,
-    int Minimumprijs,
-    string Plaats,
-    int Kwekernr,
-    string VerkoperNaam
-);
-
-public record VeilingproductAdminDetailDto(
-    int VeilingProductNr,
-    string Naam,
-    string? CategorieNaam,
-    int? VeilingNr,
-    ModelStatus Status,
-    int? Startprijs,
-    int Minimumprijs,
-    int AantalFusten,
-    int VoorraadBloemen,
-    string Plaats,
-    DateTime GeplaatstDatum,
-    string ImagePath,
-    int Kwekernr,
-    string VerkoperNaam,
-    string VerkoperEmail
-);
-
+// SELECTORS
 public static class VeilingproductDtoSelectors
 {
     public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v => new(
@@ -161,20 +129,6 @@ public static class VeilingproductDtoSelectors
         v.Startprijs
     );
 
-    public static readonly Expression<Func<Veilingproduct, VeilingproductPublicDetailDto>> PublicDetail = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.ImagePath,
-        v.Plaats,
-        v.VoorraadBloemen,
-        v.AantalFusten,
-        v.Startprijs,
-        v.Minimumprijs,
-        v.GeplaatstDatum,
-        v.Gebruiker.BedrijfsNaam
-    );
-
     public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerListDto>> KwekerList = v => new(
         v.VeilingProductNr,
         v.Naam,
@@ -184,22 +138,6 @@ public static class VeilingproductDtoSelectors
         v.AantalFusten,
         v.VoorraadBloemen,
         v.VeilingNr
-    );
-
-    public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerDetailDto>> KwekerDetail = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.Status,
-        v.Startprijs,
-        v.Minimumprijs,
-        v.AantalFusten,
-        v.VoorraadBloemen,
-        v.Plaats,
-        v.GeplaatstDatum,
-        v.VeilingNr,
-        v.ImagePath,
-        v.beginDatum
     );
 
     public static readonly Expression<Func<Veilingproduct, VeilingproductVeilingmeesterListDto>> VeilingmeesterList = v => new(
@@ -212,53 +150,5 @@ public static class VeilingproductDtoSelectors
         v.Gebruiker.BedrijfsNaam,
         v.Startprijs,
         v.Minimumprijs
-    );
-
-    public static readonly Expression<Func<Veilingproduct, VeilingproductVeilingmeesterDetailDto>> VeilingmeesterDetail = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.Status,
-        v.VeilingNr,
-        v.Startprijs,
-        v.Minimumprijs,
-        v.AantalFusten,
-        v.VoorraadBloemen,
-        v.Plaats,
-        v.GeplaatstDatum,
-        v.ImagePath,
-        v.Kwekernr,
-        v.Gebruiker.BedrijfsNaam
-    );
-
-    public static readonly Expression<Func<Veilingproduct, VeilingproductAdminListDto>> AdminList = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.Status,
-        v.VeilingNr,
-        v.Startprijs,
-        v.Minimumprijs,
-        v.Plaats,
-        v.Kwekernr,
-        v.Gebruiker.BedrijfsNaam
-    );
-
-    public static readonly Expression<Func<Veilingproduct, VeilingproductAdminDetailDto>> AdminDetail = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.VeilingNr,
-        v.Status,
-        v.Startprijs,
-        v.Minimumprijs,
-        v.AantalFusten,
-        v.VoorraadBloemen,
-        v.Plaats,
-        v.GeplaatstDatum,
-        v.ImagePath,
-        v.Kwekernr,
-        v.Gebruiker.BedrijfsNaam,
-        v.Gebruiker.Email!
     );
 }

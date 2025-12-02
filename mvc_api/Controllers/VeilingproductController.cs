@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
-using VeilingproductUpdateDto = mvc_api.Models.Dtos.VeilingproductUpdateDto;
 
 namespace mvc_api.Controllers;
 
@@ -16,6 +15,7 @@ public class VeilingproductController : ControllerBase
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
 
+    // PUBLIC
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<VeilingproductPublicListDto>>> GetPublic(
@@ -27,7 +27,8 @@ public class VeilingproductController : ControllerBase
         [FromQuery] string? title,
         CancellationToken ct = default)
     {
-        var query = BuildFilteredQuery(q, categorieNr, null, minPrice, maxPrice, createdAfter, title, ModelStatus.Active);
+        var query = BuildFilteredQuery(
+            q, categorieNr, null, minPrice, maxPrice, createdAfter, title, ModelStatus.Active);
 
         var items = await query
             .Select(VeilingproductDtoSelectors.PublicList)
@@ -36,22 +37,9 @@ public class VeilingproductController : ControllerBase
         return Ok(items);
     }
 
-    [HttpGet("public/{id:int}")]
-    [AllowAnonymous]
-    public async Task<ActionResult<VeilingproductPublicDetailDto>> GetPublicDetail(int id, CancellationToken ct = default)
-    {
-        var dto = await _db.Veilingproducten.AsNoTracking()
-            .Where(v => v.VeilingProductNr == id && v.Status == ModelStatus.Active)
-            .Select(VeilingproductDtoSelectors.PublicDetail)
-            .FirstOrDefaultAsync(ct);
-
-        return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404))
-            : Ok(dto);
-    }
-
+    // KWEKER
     [HttpGet("kweker")]
-    [Authorize(Roles = "Kweker")]
+    // [Authorize(Roles = "Kweker")]
     public async Task<ActionResult<IEnumerable<VeilingproductKwekerListDto>>> GetForKweker(
         [FromQuery] ModelStatus? status,
         CancellationToken ct = default)
@@ -59,8 +47,9 @@ public class VeilingproductController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Unauthorized();
 
-        var query = _db.Veilingproducten.AsNoTracking()
-            .Where(v => v.Kwekernr == userId && (!status.HasValue || v.Status == status.Value));
+        var query = _db.Veilingproducten
+            .AsNoTracking()
+            .Where(v => v.Kwekernr == userId && (!status.HasValue || v.Status == status));
 
         var items = await query
             .OrderBy(v => v.Naam)
@@ -70,25 +59,9 @@ public class VeilingproductController : ControllerBase
         return Ok(items);
     }
 
-    [HttpGet("kweker/{id:int}")]
-    [Authorize(Roles = "Kweker")]
-    public async Task<ActionResult<VeilingproductKwekerDetailDto>> GetKwekerDetail(int id, CancellationToken ct = default)
-    {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
-
-        var dto = await _db.Veilingproducten.AsNoTracking()
-            .Where(v => v.VeilingProductNr == id && v.Kwekernr == userId)
-            .Select(VeilingproductDtoSelectors.KwekerDetail)
-            .FirstOrDefaultAsync(ct);
-
-        return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id} voor deze kweker.", 404))
-            : Ok(dto);
-    }
-
+    // VEILINGMEESTER
     [HttpGet("veilingmeester")]
-    [Authorize(Roles = "Veilingmeester")]
+    // [Authorize(Roles = "Veilingmeester")]
     public async Task<ActionResult<IEnumerable<VeilingproductVeilingmeesterListDto>>> GetForVeilingmeester(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
@@ -99,7 +72,8 @@ public class VeilingproductController : ControllerBase
         [FromQuery] string? title,
         CancellationToken ct = default)
     {
-        var query = BuildFilteredQuery(q, categorieNr, status, minPrice, maxPrice, createdAfter, title, null);
+        var query = BuildFilteredQuery(
+            q, categorieNr, status, minPrice, maxPrice, createdAfter, title, null);
 
         var items = await query
             .Select(VeilingproductDtoSelectors.VeilingmeesterList)
@@ -108,102 +82,56 @@ public class VeilingproductController : ControllerBase
         return Ok(items);
     }
 
-    [HttpGet("veilingmeester/{id:int}")]
-    [Authorize(Roles = "Veilingmeester")]
-    public async Task<ActionResult<VeilingproductVeilingmeesterDetailDto>> GetVeilingmeesterDetail(int id, CancellationToken ct = default)
-    {
-        var dto = await _db.Veilingproducten.AsNoTracking()
-            .Where(v => v.VeilingProductNr == id)
-            .Select(VeilingproductDtoSelectors.VeilingmeesterDetail)
-            .FirstOrDefaultAsync(ct);
-
-        return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404))
-            : Ok(dto);
-    }
-
-    [HttpGet("admin")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<VeilingproductAdminListDto>>> GetAdmin(
-        [FromQuery] string? q,
-        [FromQuery] int? categorieNr,
-        [FromQuery] ModelStatus? status,
-        [FromQuery] int? minPrice,
-        [FromQuery] int? maxPrice,
-        [FromQuery] DateTime? createdAfter,
-        [FromQuery] string? title,
-        [FromQuery] int? kwekerNr,
-        CancellationToken ct = default)
-    {
-        var query = BuildFilteredQuery(q, categorieNr, status, minPrice, maxPrice, createdAfter, title, null);
-
-        if (kwekerNr.HasValue)
-            query = query.Where(v => v.Kwekernr == kwekerNr.Value);
-
-        var items = await query
-            .Select(VeilingproductDtoSelectors.AdminList)
-            .ToListAsync(ct);
-
-        return Ok(items);
-    }
-
-    [HttpGet("admin/{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<VeilingproductAdminDetailDto>> GetAdminDetail(int id, CancellationToken ct = default)
-    {
-        var dto = await _db.Veilingproducten.AsNoTracking()
-            .Where(v => v.VeilingProductNr == id)
-            .Select(VeilingproductDtoSelectors.AdminDetail)
-            .FirstOrDefaultAsync(ct);
-
-        return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404))
-            : Ok(dto);
-    }
-
+    // CREATE (KWEKER)
     [HttpPost]
-    [Authorize(Roles = "Admin,Kweker")]
-    public async Task<ActionResult<VeilingproductAdminDetailDto>> Create(
+    // [Authorize(Roles = "Kweker")]
+    public async Task<ActionResult<VeilingproductKwekerListDto>> Create(
         [FromBody] VeilingproductCreateDto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        if (!await _db.Categorieen.AnyAsync(c => c.CategorieNr == dto.CategorieNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
+        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, dto.Kwekernr, ct);
+        if (referenceError != null)
+            return referenceError;
 
-        if (!await _db.Gebruikers.AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
-
-        if (User.IsInRole("Kweker") && (!TryGetUserId(out var userId) || userId != dto.Kwekernr))
+        if (!TryGetUserId(out var userId) || userId != dto.Kwekernr)
             return Forbid();
 
         var entity = new Veilingproduct
         {
-            Naam            = dto.Naam.Trim(),
-            GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
-            AantalFusten    = dto.AantalFusten,
+            Naam = dto.Naam.Trim(),
+            GeplaatstDatum = dto.GeplaatstDatum ?? DateTime.UtcNow,
+            AantalFusten = dto.AantalFusten,
             VoorraadBloemen = dto.VoorraadBloemen,
-            Startprijs      = dto.Startprijs,
-            CategorieNr     = dto.CategorieNr,
-            Plaats          = dto.Plaats,
-            Minimumprijs    = dto.Minimumprijs,
-            Kwekernr        = dto.Kwekernr,
-            beginDatum      = dto.beginDatum,
-            Status          = ModelStatus.Active,
-            ImagePath       = dto.ImagePath
+            Startprijs = null,
+            CategorieNr = dto.CategorieNr,
+            Plaats = dto.Plaats,
+            Minimumprijs = dto.Minimumprijs,
+            Kwekernr = dto.Kwekernr,
+            BeginDatum = dto.BeginDatum,
+            EindDatum = dto.EindDatum,
+            Status = ModelStatus.Active,
+            ImagePath = dto.ImagePath
         };
 
         _db.Veilingproducten.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        return await GetAdminDetail(entity.VeilingProductNr, ct);
+        var resultDto = await _db.Veilingproducten
+            .AsNoTracking()
+            .Where(v => v.VeilingProductNr == entity.VeilingProductNr)
+            .Select(VeilingproductDtoSelectors.KwekerList)
+            .SingleAsync(ct);
+
+        return Ok(resultDto);
     }
 
+    // UPDATE (KWEKER)
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin,Kweker")]
-    public async Task<ActionResult<VeilingproductAdminDetailDto>> Update(
+    // [Authorize(Roles = "Kweker")]
+    public async Task<ActionResult<VeilingproductKwekerListDto>> Update(
         int id,
         [FromBody] VeilingproductUpdateDto dto,
         CancellationToken ct = default)
@@ -211,75 +139,69 @@ public class VeilingproductController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
+        var entity = await _db.Veilingproducten.FindAsync(id);
+        if (entity == null)
+            return NotFound();
 
-        if (User.IsInRole("Kweker") && (!TryGetUserId(out var userId) || entity.Kwekernr != userId))
+        if (!TryGetUserId(out var userId) || entity.Kwekernr != userId)
             return Forbid();
 
-        if (!await _db.Categorieen.AnyAsync(c => c.CategorieNr == dto.CategorieNr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Categorie bestaat niet.", 400));
+        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, dto.Kwekernr, ct);
+        if (referenceError != null)
+            return referenceError;
 
-        if (!await _db.Gebruikers.AnyAsync(g => g.GebruikerNr == dto.Kwekernr, ct))
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Kweker bestaat niet.", 400));
-
-        entity.Naam            = dto.Naam.Trim();
-        entity.GeplaatstDatum  = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
-        entity.AantalFusten    = dto.AantalFusten;
+        entity.Naam = dto.Naam.Trim();
+        entity.GeplaatstDatum = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
+        entity.AantalFusten = dto.AantalFusten;
         entity.VoorraadBloemen = dto.VoorraadBloemen;
-        entity.Startprijs      = dto.Startprijs;
-        entity.CategorieNr     = dto.CategorieNr;
-        entity.VeilingNr       = dto.VeilingNr;
-        entity.Kwekernr        = dto.Kwekernr;
-        entity.ImagePath       = dto.ImagePath;
-        entity.Minimumprijs    = dto.Minimumprijs;
-        entity.Plaats          = dto.Plaats;
+        entity.CategorieNr = dto.CategorieNr;
+        entity.VeilingNr = dto.VeilingNr;
+        entity.Kwekernr = dto.Kwekernr;
+        entity.ImagePath = dto.ImagePath;
+        entity.Minimumprijs = dto.Minimumprijs;
+        entity.Plaats = dto.Plaats;
 
         await _db.SaveChangesAsync(ct);
 
-        return await GetAdminDetail(id, ct);
+        var resultDto = await _db.Veilingproducten
+            .AsNoTracking()
+            .Where(v => v.VeilingProductNr == id)
+            .Select(VeilingproductDtoSelectors.KwekerList)
+            .SingleAsync(ct);
+
+        return Ok(resultDto);
     }
 
-    [HttpPatch("{id:int}/status")]
-    [Authorize(Roles = "Admin,Veilingmeester,Kweker")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] VeilingproductStatusUpdateDto dto, CancellationToken ct = default)
+    // UPDATE (VEILINGMEESTER) – startprijs + veiling koppelen
+    [HttpPatch("veilingmeester/{id:int}/planning")]
+    // [Authorize(Roles = "Veilingmeester")]
+    public async Task<ActionResult<VeilingproductVeilingmeesterListDto>> UpdatePlanning(
+        int id,
+        [FromBody] VeilingproductVeilingmeesterUpdateDto dto,
+        CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
+        var entity = await _db.Veilingproducten.FindAsync(id);
+        if (entity == null)
+            return NotFound();
 
-        if (User.IsInRole("Kweker"))
-        {
-            if (!TryGetUserId(out var userId) || entity.Kwekernr != userId)
-                return Forbid();
+        entity.Startprijs = dto.Startprijs;
+        entity.VeilingNr = dto.VeilingNr;
 
-            if (dto.Status is not (ModelStatus.Inactive or ModelStatus.Deleted))
-                return BadRequest(CreateProblemDetails("Ongeldige status", "Kweker mag enkel eigen items (de)activeren of verwijderen.", 400));
-        }
-
-        entity.Status = dto.Status;
         await _db.SaveChangesAsync(ct);
 
-        return NoContent();
+        var resultDto = await _db.Veilingproducten
+            .AsNoTracking()
+            .Where(v => v.VeilingProductNr == id)
+            .Select(VeilingproductDtoSelectors.VeilingmeesterList)
+            .SingleAsync(ct);
+
+        return Ok(resultDto);
     }
 
-    [HttpPost("{id:int}/mark-sold")]
-    [Authorize(Roles = "Admin,Veilingmeester")]
-    public async Task<IActionResult> MarkAsSold(int id, CancellationToken ct = default)
-    {
-        var entity = await _db.Veilingproducten.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veilingproduct met ID {id}.", 404));
-
-        entity.Status = ModelStatus.Archived;
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
-    }
-
+    // HELPERS
     private IQueryable<Veilingproduct> BuildFilteredQuery(
         string? q,
         int? categorieNr,
@@ -329,17 +251,18 @@ public class VeilingproductController : ControllerBase
             userId = parsed;
             return true;
         }
-
         userId = 0;
         return false;
     }
 
-    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
-        new()
-        {
-            Title    = title,
-            Detail   = detail,
-            Status   = statusCode,
-            Instance = HttpContext?.Request?.Path
-        };
+    private async Task<ActionResult?> ValidateReferencesAsync(int categorieNr, int kwekerNr, CancellationToken ct)
+    {
+        if (!await _db.Categorieen.AnyAsync(c => c.CategorieNr == categorieNr, ct))
+            return BadRequest();
+
+        if (!await _db.Gebruikers.AnyAsync(g => g.GebruikerNr == kwekerNr, ct))
+            return BadRequest();
+
+        return null;
+    }
 }

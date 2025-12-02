@@ -480,8 +480,14 @@ namespace mvc_api.Migrations
                     b.Property<int>("AantalFusten")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateOnly?>("BeginDatum")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CategorieNr")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("EindDatum")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("GeplaatstDatum")
                         .HasColumnType("TEXT");
@@ -524,9 +530,6 @@ namespace mvc_api.Migrations
                     b.Property<int>("VoorraadBloemen")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateOnly>("beginDatum")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("VeilingProductNr");
 
                     b.HasIndex("Kwekernr");
@@ -552,8 +555,7 @@ namespace mvc_api.Migrations
                             Startprijs = 12,
                             Status = "Active",
                             VeilingNr = 201,
-                            VoorraadBloemen = 500,
-                            beginDatum = new DateOnly(1, 1, 1)
+                            VoorraadBloemen = 500
                         },
                         new
                         {
@@ -569,8 +571,7 @@ namespace mvc_api.Migrations
                             Startprijs = 20,
                             Status = "Active",
                             VeilingNr = 202,
-                            VoorraadBloemen = 300,
-                            beginDatum = new DateOnly(1, 1, 1)
+                            VoorraadBloemen = 300
                         });
                 });
 
