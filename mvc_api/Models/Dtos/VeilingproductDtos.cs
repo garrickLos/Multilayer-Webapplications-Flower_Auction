@@ -5,6 +5,7 @@ using mvc_api.Models;
 
 namespace mvc_api.Models.Dtos;
 
+// CREATE
 public record VeilingproductCreateDto
 {
     [Required, StringLength(200)]
@@ -40,6 +41,7 @@ public record VeilingproductCreateDto
     public string ImagePath { get; init; } = default!;
 }
 
+// UPDATE
 public record VeilingproductUpdateDto
 {
     [Required, StringLength(200)]
@@ -71,6 +73,7 @@ public record VeilingproductUpdateDto
     public string Plaats { get; init; } = string.Empty;
 }
 
+// VEILINGMEESTER UPDATE
 public record VeilingproductVeilingmeesterUpdateDto
 {
     [Range(1, 999_999_999)]
@@ -80,29 +83,32 @@ public record VeilingproductVeilingmeesterUpdateDto
     public int? VeilingNr { get; init; }
 }
 
-// READ DTOs
+// PUBLIC READ (blijft hetzelfde)
 public record VeilingproductPublicListDto(
     int VeilingProductNr,
     string Naam,
-    string? CategorieNaam,
     string ImagePath,
-    string Plaats,
     int VoorraadBloemen,
-    int AantalFusten,
+    int? VeilingNr,
     int? Startprijs
 );
 
+// KWEKER LIST — uitgebreid zoals jij wilde
 public record VeilingproductKwekerListDto(
     int VeilingProductNr,
     string Naam,
-    ModelStatus Status,
-    int? Startprijs,
-    int Minimumprijs,
+    DateTime GeplaatstDatum,
     int AantalFusten,
     int VoorraadBloemen,
+    string? CategorieNaam,
+    string ImagePath,
+    string Plaats,
+    int? Startprijs,
+    int Minimumprijs,
     int? VeilingNr
 );
 
+// VEILINGMEESTER LIST — "alles"
 public record VeilingproductVeilingmeesterListDto(
     int VeilingProductNr,
     string Naam,
@@ -111,44 +117,64 @@ public record VeilingproductVeilingmeesterListDto(
     int? VeilingNr,
     int Kwekernr,
     string VerkoperNaam,
+    string VerkoperEmail,
+    int AantalFusten,
+    int VoorraadBloemen,
+    string Plaats,
+    int Minimumprijs,
     int? Startprijs,
-    int Minimumprijs
+    DateTime GeplaatstDatum,
+    string ImagePath,
+    DateOnly? BeginDatum,
+    DateOnly? EindDatum
 );
 
 // SELECTORS
 public static class VeilingproductDtoSelectors
 {
-    public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.ImagePath,
-        v.Plaats,
-        v.VoorraadBloemen,
-        v.AantalFusten,
-        v.Startprijs
-    );
+    public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>
+        new(
+            v.VeilingProductNr,
+            v.Naam,
+            v.ImagePath,
+            v.VoorraadBloemen,
+            v.VeilingNr,
+            v.Startprijs
+        );
 
-    public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerListDto>> KwekerList = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Status,
-        v.Startprijs,
-        v.Minimumprijs,
-        v.AantalFusten,
-        v.VoorraadBloemen,
-        v.VeilingNr
-    );
+    public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerListDto>> KwekerList = v =>
+        new(
+            v.VeilingProductNr,
+            v.Naam,
+            v.GeplaatstDatum,
+            v.AantalFusten,
+            v.VoorraadBloemen,
+            v.Categorie == null ? null : v.Categorie.Naam,
+            v.ImagePath,
+            v.Plaats,
+            v.Startprijs,
+            v.Minimumprijs,
+            v.VeilingNr
+        );
 
-    public static readonly Expression<Func<Veilingproduct, VeilingproductVeilingmeesterListDto>> VeilingmeesterList = v => new(
-        v.VeilingProductNr,
-        v.Naam,
-        v.Categorie == null ? null : v.Categorie.Naam,
-        v.Status,
-        v.VeilingNr,
-        v.Kwekernr,
-        v.Gebruiker.BedrijfsNaam,
-        v.Startprijs,
-        v.Minimumprijs
-    );
+    public static readonly Expression<Func<Veilingproduct, VeilingproductVeilingmeesterListDto>> VeilingmeesterList = v =>
+        new(
+            v.VeilingProductNr,
+            v.Naam,
+            v.Categorie == null ? null : v.Categorie.Naam,
+            v.Status,
+            v.VeilingNr,
+            v.Kwekernr,
+            v.Gebruiker.BedrijfsNaam,
+            v.Gebruiker.Email!,
+            v.AantalFusten,
+            v.VoorraadBloemen,
+            v.Plaats,
+            v.Minimumprijs,
+            v.Startprijs,
+            v.GeplaatstDatum,
+            v.ImagePath,
+            v.BeginDatum,
+            v.EindDatum
+        );
 }

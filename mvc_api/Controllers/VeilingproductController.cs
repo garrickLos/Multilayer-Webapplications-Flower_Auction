@@ -15,7 +15,6 @@ public class VeilingproductController : ControllerBase
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
 
-    // PUBLIC
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<VeilingproductPublicListDto>>> GetPublic(
@@ -37,9 +36,8 @@ public class VeilingproductController : ControllerBase
         return Ok(items);
     }
 
-    // KWEKER
     [HttpGet("kweker")]
-    // [Authorize(Roles = "Kweker")]
+    [Authorize(Roles = "Kweker")]
     public async Task<ActionResult<IEnumerable<VeilingproductKwekerListDto>>> GetForKweker(
         [FromQuery] ModelStatus? status,
         CancellationToken ct = default)
@@ -49,7 +47,8 @@ public class VeilingproductController : ControllerBase
 
         var query = _db.Veilingproducten
             .AsNoTracking()
-            .Where(v => v.Kwekernr == userId && (!status.HasValue || v.Status == status));
+            .Where(v => v.Kwekernr == userId &&
+                        (!status.HasValue || v.Status == status.Value));
 
         var items = await query
             .OrderBy(v => v.Naam)
@@ -59,9 +58,8 @@ public class VeilingproductController : ControllerBase
         return Ok(items);
     }
 
-    // VEILINGMEESTER
     [HttpGet("veilingmeester")]
-    // [Authorize(Roles = "Veilingmeester")]
+    [Authorize(Roles = "Veilingmeester")]
     public async Task<ActionResult<IEnumerable<VeilingproductVeilingmeesterListDto>>> GetForVeilingmeester(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
@@ -82,9 +80,8 @@ public class VeilingproductController : ControllerBase
         return Ok(items);
     }
 
-    // CREATE (KWEKER)
     [HttpPost]
-    // [Authorize(Roles = "Kweker")]
+    [Authorize(Roles = "Kweker")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Create(
         [FromBody] VeilingproductCreateDto dto,
         CancellationToken ct = default)
@@ -101,19 +98,19 @@ public class VeilingproductController : ControllerBase
 
         var entity = new Veilingproduct
         {
-            Naam = dto.Naam.Trim(),
-            GeplaatstDatum = dto.GeplaatstDatum ?? DateTime.UtcNow,
-            AantalFusten = dto.AantalFusten,
+            Naam            = dto.Naam.Trim(),
+            GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
+            AantalFusten    = dto.AantalFusten,
             VoorraadBloemen = dto.VoorraadBloemen,
-            Startprijs = null,
-            CategorieNr = dto.CategorieNr,
-            Plaats = dto.Plaats,
-            Minimumprijs = dto.Minimumprijs,
-            Kwekernr = dto.Kwekernr,
-            BeginDatum = dto.BeginDatum,
-            EindDatum = dto.EindDatum,
-            Status = ModelStatus.Active,
-            ImagePath = dto.ImagePath
+            Startprijs      = null,
+            CategorieNr     = dto.CategorieNr,
+            Plaats          = dto.Plaats,
+            Minimumprijs    = dto.Minimumprijs,
+            Kwekernr        = dto.Kwekernr,
+            BeginDatum      = dto.BeginDatum,
+            EindDatum       = dto.EindDatum,
+            Status          = ModelStatus.Active,
+            ImagePath       = dto.ImagePath
         };
 
         _db.Veilingproducten.Add(entity);
@@ -121,16 +118,16 @@ public class VeilingproductController : ControllerBase
 
         var resultDto = await _db.Veilingproducten
             .AsNoTracking()
-            .Where(v => v.VeilingProductNr == entity.VeilingProductNr)
+            .Where(v => v.VeilingProductNr == entity.VeilingProductNr &&
+                        v.Kwekernr == userId)
             .Select(VeilingproductDtoSelectors.KwekerList)
             .SingleAsync(ct);
 
         return Ok(resultDto);
     }
 
-    // UPDATE (KWEKER)
     [HttpPut("{id:int}")]
-    // [Authorize(Roles = "Kweker")]
+    [Authorize(Roles = "Kweker")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Update(
         int id,
         [FromBody] VeilingproductUpdateDto dto,
@@ -150,31 +147,32 @@ public class VeilingproductController : ControllerBase
         if (referenceError != null)
             return referenceError;
 
-        entity.Naam = dto.Naam.Trim();
-        entity.GeplaatstDatum = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
-        entity.AantalFusten = dto.AantalFusten;
+        entity.Naam            = dto.Naam.Trim();
+        entity.GeplaatstDatum  = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
+        entity.AantalFusten    = dto.AantalFusten;
         entity.VoorraadBloemen = dto.VoorraadBloemen;
-        entity.CategorieNr = dto.CategorieNr;
-        entity.VeilingNr = dto.VeilingNr;
-        entity.Kwekernr = dto.Kwekernr;
-        entity.ImagePath = dto.ImagePath;
-        entity.Minimumprijs = dto.Minimumprijs;
-        entity.Plaats = dto.Plaats;
+        entity.CategorieNr     = dto.CategorieNr;
+        entity.VeilingNr       = dto.VeilingNr;
+        entity.Kwekernr        = dto.Kwekernr;
+        entity.ImagePath       = dto.ImagePath;
+        entity.Minimumprijs    = dto.Minimumprijs;
+        entity.Plaats          = dto.Plaats;
 
         await _db.SaveChangesAsync(ct);
 
         var resultDto = await _db.Veilingproducten
             .AsNoTracking()
-            .Where(v => v.VeilingProductNr == id)
+            .Where(v => v.VeilingProductNr == id &&
+                        v.Kwekernr == userId)
             .Select(VeilingproductDtoSelectors.KwekerList)
             .SingleAsync(ct);
 
         return Ok(resultDto);
     }
-
+    
     // UPDATE (VEILINGMEESTER) – startprijs + veiling koppelen
-    [HttpPatch("veilingmeester/{id:int}/planning")]
-    // [Authorize(Roles = "Veilingmeester")]
+    [HttpPut("veilingmeester/{id:int}")]
+    [Authorize(Roles = "Veilingmeester")]
     public async Task<ActionResult<VeilingproductVeilingmeesterListDto>> UpdatePlanning(
         int id,
         [FromBody] VeilingproductVeilingmeesterUpdateDto dto,
@@ -188,7 +186,7 @@ public class VeilingproductController : ControllerBase
             return NotFound();
 
         entity.Startprijs = dto.Startprijs;
-        entity.VeilingNr = dto.VeilingNr;
+        entity.VeilingNr  = dto.VeilingNr;
 
         await _db.SaveChangesAsync(ct);
 
@@ -201,7 +199,6 @@ public class VeilingproductController : ControllerBase
         return Ok(resultDto);
     }
 
-    // HELPERS
     private IQueryable<Veilingproduct> BuildFilteredQuery(
         string? q,
         int? categorieNr,
