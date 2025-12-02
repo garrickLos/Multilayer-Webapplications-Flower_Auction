@@ -30,16 +30,7 @@ public class VeilingproductController : ControllerBase
         var query = BuildFilteredQuery(q, categorieNr, null, minPrice, maxPrice, createdAfter, title, ModelStatus.Active);
 
         var items = await query
-            .Select(v => new VeilingproductPublicListDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.ImagePath,
-                v.Plaats,
-                v.VoorraadBloemen,
-                v.AantalFusten,
-                v.Startprijs
-            ))
+            .Select(VeilingproductDtoSelectors.PublicList)
             .ToListAsync(ct);
 
         return Ok(items);
@@ -51,19 +42,7 @@ public class VeilingproductController : ControllerBase
     {
         var dto = await _db.Veilingproducten.AsNoTracking()
             .Where(v => v.VeilingProductNr == id && v.Status == ModelStatus.Active)
-            .Select(v => new VeilingproductPublicDetailDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.ImagePath,
-                v.Plaats,
-                v.VoorraadBloemen,
-                v.AantalFusten,
-                v.Startprijs,
-                v.Minimumprijs,
-                v.GeplaatstDatum,
-                v.Gebruiker.BedrijfsNaam
-            ))
+            .Select(VeilingproductDtoSelectors.PublicDetail)
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -85,16 +64,7 @@ public class VeilingproductController : ControllerBase
 
         var items = await query
             .OrderBy(v => v.Naam)
-            .Select(v => new VeilingproductKwekerListDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Status,
-                v.Startprijs,
-                v.Minimumprijs,
-                v.AantalFusten,
-                v.VoorraadBloemen,
-                v.VeilingNr
-            ))
+            .Select(VeilingproductDtoSelectors.KwekerList)
             .ToListAsync(ct);
 
         return Ok(items);
@@ -109,21 +79,7 @@ public class VeilingproductController : ControllerBase
 
         var dto = await _db.Veilingproducten.AsNoTracking()
             .Where(v => v.VeilingProductNr == id && v.Kwekernr == userId)
-            .Select(v => new VeilingproductKwekerDetailDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.Status,
-                v.Startprijs,
-                v.Minimumprijs,
-                v.AantalFusten,
-                v.VoorraadBloemen,
-                v.Plaats,
-                v.GeplaatstDatum,
-                v.VeilingNr,
-                v.ImagePath,
-                v.beginDatum
-            ))
+            .Select(VeilingproductDtoSelectors.KwekerDetail)
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -146,17 +102,7 @@ public class VeilingproductController : ControllerBase
         var query = BuildFilteredQuery(q, categorieNr, status, minPrice, maxPrice, createdAfter, title, null);
 
         var items = await query
-            .Select(v => new VeilingproductVeilingmeesterListDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.Status,
-                v.VeilingNr,
-                v.Kwekernr,
-                v.Gebruiker.BedrijfsNaam,
-                v.Startprijs,
-                v.Minimumprijs
-            ))
+            .Select(VeilingproductDtoSelectors.VeilingmeesterList)
             .ToListAsync(ct);
 
         return Ok(items);
@@ -168,22 +114,7 @@ public class VeilingproductController : ControllerBase
     {
         var dto = await _db.Veilingproducten.AsNoTracking()
             .Where(v => v.VeilingProductNr == id)
-            .Select(v => new VeilingproductVeilingmeesterDetailDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.Status,
-                v.VeilingNr,
-                v.Startprijs,
-                v.Minimumprijs,
-                v.AantalFusten,
-                v.VoorraadBloemen,
-                v.Plaats,
-                v.GeplaatstDatum,
-                v.ImagePath,
-                v.Kwekernr,
-                v.Gebruiker.BedrijfsNaam
-            ))
+            .Select(VeilingproductDtoSelectors.VeilingmeesterDetail)
             .FirstOrDefaultAsync(ct);
 
         return dto is null
@@ -210,18 +141,7 @@ public class VeilingproductController : ControllerBase
             query = query.Where(v => v.Kwekernr == kwekerNr.Value);
 
         var items = await query
-            .Select(v => new VeilingproductAdminListDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.Status,
-                v.VeilingNr,
-                v.Startprijs,
-                v.Minimumprijs,
-                v.Plaats,
-                v.Kwekernr,
-                v.Gebruiker.BedrijfsNaam
-            ))
+            .Select(VeilingproductDtoSelectors.AdminList)
             .ToListAsync(ct);
 
         return Ok(items);
@@ -233,23 +153,7 @@ public class VeilingproductController : ControllerBase
     {
         var dto = await _db.Veilingproducten.AsNoTracking()
             .Where(v => v.VeilingProductNr == id)
-            .Select(v => new VeilingproductAdminDetailDto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.VeilingNr,
-                v.Status,
-                v.Startprijs,
-                v.Minimumprijs,
-                v.AantalFusten,
-                v.VoorraadBloemen,
-                v.Plaats,
-                v.GeplaatstDatum,
-                v.ImagePath,
-                v.Kwekernr,
-                v.Gebruiker.BedrijfsNaam,
-                v.Gebruiker.Email!
-            ))
+            .Select(VeilingproductDtoSelectors.AdminDetail)
             .FirstOrDefaultAsync(ct);
 
         return dto is null
