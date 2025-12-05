@@ -119,3 +119,73 @@ html, body {
     text-align: center;
     margin-bottom: 10px;
 }
+
+.MainScreen .auctionButton {
+    
+}
+
+.MainScreen .auctionButton:hover {
+    background-color: var(--accent-muted);
+
+    color: var(--ink-light);
+}
+
+#AuctionScreen_state-container {
+    position: absolute;
+    display: flex;
+
+    align-items: center;
+    flex-direction: column;
+
+    color: var(--ink-light);
+
+    left: 5%;
+    right: 50px;
+
+    align-self: center;
+
+    text-align: center;
+}
+
+#AuctionScreen_state-container .button{
+    height: 45px;
+
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--accent-light);
+    color: var(--inverse-text);
+
+    border-radius: 5px;
+
+    padding: 10px;
+}
+
+#AuctionScreen_state-container .button:hover {
+    background-color: var(--accent-muted);
+
+    color: var(--ink-light);
+}
+
+.AuctionScreen_errorInput {
+
+    display: flex;
+
+    top: 20px;
+
+    align-content: center;
+    justify-content: center;
+    text-align: center;
+
+    height: 25px;
+
+    color: var(--inverse-text);
+
+    margin: 5px;
+    
+    padding-left: 20px;
+
+    background-color: var(--error);
+
+    border-radius: 5px;
+}

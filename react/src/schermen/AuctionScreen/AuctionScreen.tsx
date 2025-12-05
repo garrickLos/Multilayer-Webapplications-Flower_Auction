@@ -2,19 +2,27 @@ import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import { Timer } from '../AuctionScreen/RenderTimer'; // Zorg dat imports kloppen
 import { type categorie as veilingCategorie, type VeilingLogica } from '../AuctionScreen/VeilingTypes';
-import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet';
+import { UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
+import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 
 import '../../css/AuctionScreen.css';
 
+const token = Token();
+const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+
+type error = {
+    verkeerdeWaarde?: string;
+};
+
 export default function AuctionScreen() {
+    //zorgt ervoor dat er een refresh is voor het ophalen van de api componenten.
+    const refreshApi = ApiRefresh(1000);
+
     // const location = useLocation();
     const { veilingnr } = useParams();
     const veilingItemNr = Number(veilingnr) || 0;
 
     const [actieveProductIndex, setActieveProductIndex] = useState(0);
-
-    // State declaraties (Horen altijd bovenin de component)
-    const [refreshApi, setRefreshApi] = useState(Date.now());
     const [aantal, setAantal] = useState(0);
     const [huidigePrijs, setHuidigePrijs] = useState(0);
 
@@ -22,13 +30,12 @@ export default function AuctionScreen() {
     const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling/klant?refresh=${refreshApi}`);
     const safeData = data || [];
 
-    // API Refresh interval
-    useEffect(() => {
-        const apiInterval = setInterval(() => {
-            setRefreshApi(Date.now());
-        }, 1000);
-        return () => clearInterval(apiInterval);
-    }, []);
+    // Data mappen en direct sorteren
+    const veilingenLijst = mapData(safeData).sort((a, b) => a.veilingNr - b.veilingNr);
+    const activeVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr) || null;
+    const huidigProduct = getHuidigeProduct(activeVeiling, actieveProductIndex);
+
+    const [errors, setErrors] = useState<error>({});
 
     // Event handlers
     const verwerkVerandering = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,24 +44,38 @@ export default function AuctionScreen() {
 
     const totaalPrijs = (aantal * huidigePrijs).toFixed(2);
 
-    // Data mappen en direct sorteren
-    const veilingenLijst = mapData(safeData).sort((a, b) => a.veilingNr - b.veilingNr);
-    
-    const activeVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr) || null;
-
-    const huidigProduct = activeVeiling && activeVeiling.producten[actieveProductIndex] 
-        ? activeVeiling.producten[actieveProductIndex] 
-        : null;
-
     const { data: catData } = GetVeilingen<veilingCategorie>(`/api/Categorie/${huidigProduct?.categorieNr}`);
     const categorie = catData || null;
 
-    const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+    let [koopItem, setKoopItem] = useState<boolean>(false);
 
-    if (activeVeiling?.status == 'inactive') {
+    const handleKlik = () => {
+        const resultaat = checkInputField(aantal, errors);
+        setKoopItem(resultaat);
+    };
+
+    if (activeVeiling?.status == 'inactive' || token == null) {
         return geenVeilingGeplaatst();
     } else {
-        return (
+        return Veilingscherm(errors);
+}
+
+// voor wanneer de veiling niet gevonden kan worden of als de gebruiker niet is ingelogd.
+function geenVeilingGeplaatst() {
+    return (
+        <main className='Auction_Body'>
+            <div id='AuctionScreen_state-container'>
+                <h1>Geen veiling gevonden.</h1>
+                <p>Het is mogelijk dat de veiling is afgelopen, niet meer bestaat of dat u niet bent ingelogd.</p>
+                <NavLink to={"/home"} className={"button"}>terug naar hoofdscherm</NavLink>
+            </div>
+        </main>
+    )
+}
+
+//voor de veilingscherm zelf, wanneer de gebruiker naar een veiling wilt gaan.
+function Veilingscherm(errors: error) {
+    return (
         <main className='Auction_Body'>
             <section>
                 <h2>Artificial Citroen boom in deco pot</h2>
@@ -117,13 +138,20 @@ export default function AuctionScreen() {
                         </div>
 
                         <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal:</label>
-                        <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}/>
+                        <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}
+                                min={0}
+                        />
+
+                        <div>
+                            {koopItem == true}
+                            {koopItem == false && <p className='AuctionScreen_errorInput'>{errors.verkeerdeWaarde}</p>}
+                        </div>
                         
                         <div className="tekstVoorKopen">
                             Je koopt {aantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
                         </div>
                         
-                        <button className="koopNu">Koop nu!</button>
+                        <button className="koopNu" onClick={handleKlik}>Koop nu!</button>
                     </div>
                 </section>
             </div>
@@ -132,16 +160,22 @@ export default function AuctionScreen() {
     }
 }
 
-function geenVeilingGeplaatst() {
-    return (
-        <main className='Auction_Body'>
-            <div id='legePagina'>
-                <h1>Geen veiling gevonden.</h1>
-                <p>Mogelijk dat de veiling is afgelopen of dat de veiling niet meer bestaat. ga terug naar het hoofdmenu en kies een andere veiling</p>
-                <NavLink to={"/home"}>terug naar hoofdscherm</NavLink>
-            </div>
-        </main>
-    )
+function checkInputField(input: number, err: error) {
+    if (input > 0) {
+        return true
+    } else {
+        err.verkeerdeWaarde = "Minimale input van 1 verwacht";
+        return false;
+    }
+}
+
+function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: number) {
+
+    let actieveVeiling = activeVeiling && activeVeiling.producten[actieveProductIndex] 
+        ? activeVeiling.producten[actieveProductIndex] 
+        : null;
+
+    return actieveVeiling;
 }
 
 function mapData(safeData: any[]): VeilingLogica[] {

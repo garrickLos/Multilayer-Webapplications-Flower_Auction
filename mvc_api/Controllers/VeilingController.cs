@@ -175,7 +175,6 @@ public class VeilingController : ControllerBase
     }
 
     [HttpGet("klant")]
-    [Authorize (Roles ="VeilingMeester, Koper, Bedrijf")]
     public async Task<ActionResult<IEnumerable<object>>> GetKlant(
 
         [FromQuery] int? veilingProduct,

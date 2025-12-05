@@ -8,25 +8,14 @@ import '../../css/loadIcon.css';
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
 import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
 import { renderCards, type VeilingItem } from './RenderCards.tsx';
+import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 
 export default function MainScreen() {
-    let ApiRefreshTime: number = 180000;
-
-    const [refreshTimer, setRefreshTimer] = useState(Date.now());
+    const refreshTimer = ApiRefresh(60000);
 
     const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}`);
 
     const safeVeilingen = data || [];
-
-    useEffect(() => {
-        // 300000 milliseconden = 5 minuten (180000 = 3 minuten)
-        const intervalId = setInterval(() => {
-            setRefreshTimer(Date.now());
-        }, ApiRefreshTime);
-
-        // Ruim de timer op als de component verdwijnt
-        return () => clearInterval(intervalId);
-    }, []);
 
     const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
     const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
