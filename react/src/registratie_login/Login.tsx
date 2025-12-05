@@ -131,6 +131,8 @@ export default function Login() {
 
             if (payload?.success && payload.token) {
                 sessionStorage.setItem('token', payload.token);
+                
+                window.dispatchEvent(new Event('login'));
             }
 
             setSubmittedMessage('Inloggen geslaagd! Je wordt doorgestuurd...');

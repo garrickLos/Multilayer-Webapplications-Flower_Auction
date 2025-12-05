@@ -9,9 +9,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b6610308-964e-4659-a153-43f8feeb3fa8" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Auth/GenereerBearerToken.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Auth/GenereerBearerToken.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api.dir/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BloemenVeiling.db" beforeDir="false" afterPath="$PROJECT_DIR$/BloemenVeiling.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models/Dtos/AuthDto.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Models/Dtos/AuthDto.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../react/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../react/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/src/registratie_login/Login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../react/src/registratie_login/Login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../react/src/schermen/Header_footer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../react/src/schermen/Header_footer.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,6 +118,8 @@
       <workItem from="1764235330265" duration="2314000" />
       <workItem from="1764517902004" duration="6034000" />
       <workItem from="1764577700306" duration="3037000" />
+      <workItem from="1764584431296" duration="2901000" />
+      <workItem from="1764932469959" duration="1659000" />
     </task>
     <servers />
   </component>
