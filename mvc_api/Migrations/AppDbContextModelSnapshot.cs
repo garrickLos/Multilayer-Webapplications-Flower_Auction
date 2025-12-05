@@ -301,7 +301,6 @@ namespace mvc_api.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Kvk")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 

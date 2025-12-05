@@ -40,7 +40,7 @@ namespace mvc_api.Migrations
                     LaatstIngelogd = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false, defaultValue: "Active"),
                     Soort = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Kvk = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Kvk = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     StraatAdres = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     Postcode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
                     UserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),

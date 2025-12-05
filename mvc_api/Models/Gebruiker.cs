@@ -9,13 +9,11 @@ namespace mvc_api.Models;
 [Table("Gebruiker")]
 public class Gebruiker : IdentityUser<int>
 {
-    // Domain-ID waarop je overal filtert (gewoon gemapt, dus bruikbaar in LINQ)
     public int GebruikerNr { get; set; }
 
     [Required, StringLength(200)]
     public string BedrijfsNaam { get; set; } = string.Empty;
 
-    // Identity beheert Email + PasswordHash; we laten Email hier gewoon staan
     [Required, StringLength(200), EmailAddress]
     public override string? Email { get; set; } = string.Empty;
 
@@ -27,7 +25,7 @@ public class Gebruiker : IdentityUser<int>
     public string Soort { get; set; } = string.Empty;
 
     [StringLength(20)]
-    public string Kvk { get; set; }
+    public string? Kvk { get; set; }
 
     [StringLength(200)]
     public string? StraatAdres { get; set; }
