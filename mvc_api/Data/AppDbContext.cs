@@ -102,6 +102,25 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 ConcurrencyStamp  = "STATIC-CONC-2",
                 // Wachtwoord: Test123!
                 PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
+            },
+            new Gebruiker
+            {
+                Id                = 3,
+                GebruikerNr       = 3,
+                BedrijfsNaam      = "johan johansen",
+                Email             = "johan@example.nl",
+                NormalizedEmail   = "JOHAN@EXAMPLE.NL",
+                UserName          = "johan@example.nl",
+                NormalizedUserName = "JOHAN@EXAMPLE.NL",
+                LaatstIngelogd    = loginD2,
+                Soort             = "Bedrijf",
+                Kvk               = "00000000",
+                StraatAdres       = "Laan 6",
+                Postcode          = "2346BC",
+                SecurityStamp     = "STATIC-USER-2",
+                ConcurrencyStamp  = "STATIC-CONC-2",
+                // Wachtwoord: Test123!
+                PasswordHash      = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
             }
         );
 
@@ -116,7 +135,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             { 
                 Id = 2, 
                 Name = "Koper", 
-                NormalizedName = "KOPER" 
+                NormalizedName = "KOPER"
             },
             new IdentityRole<int>
             {
@@ -128,7 +147,8 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 
         b.Entity<IdentityUserRole<int>>().HasData(
             new IdentityUserRole<int> { RoleId = 1, UserId = 1 },
-            new IdentityUserRole<int> { RoleId = 2, UserId = 2 }
+            new IdentityUserRole<int> { RoleId = 2, UserId = 2 },
+            new IdentityUserRole<int> { RoleId = 3, UserId = 3}
         );
 
         b.Entity<Categorie>().HasData(

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { NavLink, useParams } from 'react-router-dom';
 import { Timer } from '../AuctionScreen/RenderTimer'; // Zorg dat imports kloppen
 import { type categorie as veilingCategorie, type VeilingLogica } from '../AuctionScreen/VeilingTypes';
 import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet';
@@ -52,7 +52,7 @@ export default function AuctionScreen() {
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
     if (activeVeiling?.status == 'inactive') {
-        return geenVeilingPlaats();
+        return geenVeilingGeplaatst();
     } else {
         return (
         <main className='Auction_Body'>
@@ -132,12 +132,13 @@ export default function AuctionScreen() {
     }
 }
 
-function geenVeilingPlaats() {
+function geenVeilingGeplaatst() {
     return (
         <main className='Auction_Body'>
             <div id='legePagina'>
                 <h1>Geen veiling gevonden.</h1>
                 <p>Mogelijk dat de veiling is afgelopen of dat de veiling niet meer bestaat. ga terug naar het hoofdmenu en kies een andere veiling</p>
+                <NavLink to={"/home"}>terug naar hoofdscherm</NavLink>
             </div>
         </main>
     )
