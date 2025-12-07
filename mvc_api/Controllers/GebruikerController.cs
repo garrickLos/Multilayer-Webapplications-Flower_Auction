@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,29 +18,30 @@ public class GebruikerController : ControllerBase
 
     [HttpGet("veilingmeester")]
     [Authorize(Roles = "VeilingMeester")]
-    public ActionResult<IEnumerable<GebruikerAuctionViewDto>> GetForAuctionTeam(
+    public async Task<ActionResult<IEnumerable<GebruikerSummaryDto>>> GetForAuctionTeam(
         [FromQuery] string? role,
-        [FromQuery] ModelStatus? status)
+        [FromQuery] ModelStatus? status,
+        CancellationToken ct = default)
     {
         var query = Filter(QueryGebruikers(), null, role, status, null)
             .Where(g => g.Status != ModelStatus.Deleted)
             .OrderBy(g => g.GebruikerNr);
 
-        var items = query
-            .Select(MapToAuction)
-            .ToList();
+        var items = await query
+            .Select(MapToSummary)
+            .ToListAsync(ct);
 
         return Ok(items);
     }
 
     [HttpGet("veilingmeester/{id:int}")]
     [Authorize(Roles = "VeilingMeester")]
-    public ActionResult<GebruikerAuctionViewDto> GetAuctionDetail(int id)
+    public async Task<ActionResult<GebruikerSummaryDto>> GetAuctionDetail(int id, CancellationToken ct = default)
     {
-        var dto = QueryGebruikers()
+        var dto = await QueryGebruikers()
             .Where(g => g.GebruikerNr == id && g.Status != ModelStatus.Deleted)
-            .Select(MapToAuction)
-            .FirstOrDefault();
+            .Select(MapToSummary)
+            .FirstOrDefaultAsync(ct);
 
         if (dto is null)
             return NotFound(NotFoundProblem(id));
@@ -51,15 +51,15 @@ public class GebruikerController : ControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public ActionResult<GebruikerSelfDto> GetSelf()
+    public async Task<ActionResult<GebruikerDetailDto>> GetSelf(CancellationToken ct = default)
     {
-        if (!TryGetUserId(out var gebruikerNr))
+        if (!TryGetGebruikerNr(out var gebruikerNr))
             return Unauthorized();
 
-        var dto = QueryGebruikers()
+        var dto = await QueryGebruikers()
             .Where(g => g.GebruikerNr == gebruikerNr && g.Status == ModelStatus.Active)
-            .Select(MapToSelf)
-            .FirstOrDefault();
+            .Select(MapToDetail)
+            .FirstOrDefaultAsync(ct);
 
         if (dto is null)
             return Unauthorized();
@@ -76,7 +76,7 @@ public class GebruikerController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        if (!TryGetUserId(out var gebruikerNr))
+        if (!TryGetGebruikerNr(out var gebruikerNr))
             return Unauthorized();
 
         var user = await _db.Gebruikers
@@ -88,15 +88,15 @@ public class GebruikerController : ControllerBase
         user.BedrijfsNaam = dto.BedrijfsNaam.Trim();
         user.Email        = dto.Email.Trim();
         user.UserName     = dto.Email.Trim();
-        user.Kvk          = dto.Kvk;
-        user.StraatAdres  = dto.StraatAdres;
-        user.Postcode     = dto.Postcode;
+        user.Kvk          = TrimOrNull(dto.Kvk);
+        user.StraatAdres  = TrimOrNull(dto.StraatAdres);
+        user.Postcode     = TrimOrNull(dto.Postcode?.ToUpperInvariant());
 
         await _db.SaveChangesAsync(ct);
         return NoContent();
     }
 
-    private IQueryable<Gebruiker> QueryGebruikers() => _db.Gebruikers.AsQueryable();
+    private IQueryable<Gebruiker> QueryGebruikers() => _db.Gebruikers.AsNoTracking();
 
     private static IQueryable<Gebruiker> Filter(
         IQueryable<Gebruiker> query,
@@ -105,8 +105,8 @@ public class GebruikerController : ControllerBase
         ModelStatus? status,
         string? email)
     {
-        var trimmedTerm  = term?.Trim();
-        var trimmedEmail = email?.Trim();
+        var trimmedTerm  = TrimOrNull(term);
+        var trimmedEmail = TrimOrNull(email);
 
         if (!string.IsNullOrWhiteSpace(trimmedTerm))
         {
@@ -115,8 +115,8 @@ public class GebruikerController : ControllerBase
                 g.Email!.Contains(trimmedTerm!));
         }
 
-        if (!string.IsNullOrWhiteSpace(role))
-            query = query.Where(g => g.Soort == role);
+        if (GebruikerSoorten.TryNormalize(role, out var normalizedRole))
+            query = query.Where(g => g.Soort == normalizedRole);
 
         if (status is not null)
             query = query.Where(g => g.Status == status);
@@ -127,16 +127,16 @@ public class GebruikerController : ControllerBase
         return query;
     }
 
-    private static GebruikerAuctionViewDto MapToAuction(Gebruiker g) =>
+    private static GebruikerSummaryDto MapToSummary(Gebruiker g) =>
         new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.Status);
 
-    private static GebruikerSelfDto MapToSelf(Gebruiker g) =>
-        new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.StraatAdres, g.Postcode, g.LaatstIngelogd, g.Status);
+    private static GebruikerDetailDto MapToDetail(Gebruiker g) =>
+        new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.Status, g.StraatAdres, g.Postcode, g.LaatstIngelogd);
 
-    private bool TryGetUserId(out int userId)
+    private bool TryGetGebruikerNr(out int gebruikerNr)
     {
         var idValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(idValue, out userId);
+        return int.TryParse(idValue, out gebruikerNr);
     }
 
     private ProblemDetails NotFoundProblem(int id) =>
@@ -150,4 +150,6 @@ public class GebruikerController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
+
+    private static string? TrimOrNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
