@@ -6,7 +6,7 @@ using mvc_api.Models;
 
 namespace mvc_api.Data;
 
-public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>, IAppDbContext
+public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

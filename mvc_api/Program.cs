@@ -72,8 +72,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
     // options.UseSqlServer(connectionString));
 
-builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
-
 // Identity configuratie (alleen registratie, verdere auth volgt later)
 builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
     {

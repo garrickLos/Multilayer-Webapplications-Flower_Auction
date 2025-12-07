@@ -13,8 +13,8 @@ namespace mvc_api.Controllers;
 [Produces("application/json")]
 public class VeilingproductController : ControllerBase
 {
-    private readonly IAppDbContext _db;
-    public VeilingproductController(IAppDbContext db) => _db = db;
+    private readonly AppDbContext _db;
+    public VeilingproductController(AppDbContext db) => _db = db;
 
     [HttpGet("public")]
     [AllowAnonymous]

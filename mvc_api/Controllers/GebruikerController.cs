@@ -13,8 +13,8 @@ namespace mvc_api.Controllers;
 [Produces("application/json")]
 public class GebruikerController : ControllerBase
 {
-    private readonly IAppDbContext _db;
-    public GebruikerController(IAppDbContext db) => _db = db;
+    private readonly AppDbContext _db;
+    public GebruikerController(AppDbContext db) => _db = db;
 
     [HttpGet("veilingmeester")]
     [Authorize(Roles = "VeilingMeester")]
