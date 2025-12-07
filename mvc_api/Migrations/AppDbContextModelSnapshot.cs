@@ -42,22 +42,6 @@ namespace mvc_api.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ConcurrencyStamp = "ROLE-CONC-1",
-                            Name = "VeilingMeester",
-                            NormalizedName = "VEILINGMEESTER"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            ConcurrencyStamp = "ROLE-CONC-2",
-                            Name = "Klant",
-                            NormalizedName = "KLANT"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -138,18 +122,6 @@ namespace mvc_api.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 1
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            RoleId = 2
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
@@ -373,56 +345,6 @@ namespace mvc_api.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            AccessFailedCount = 0,
-                            BedrijfsNaam = "Flora BV",
-                            ConcurrencyStamp = "STATIC-CONC-1",
-                            Email = "flora@example.nl",
-                            EmailConfirmed = false,
-                            GebruikerNr = 1,
-                            Kvk = "12345678",
-                            LaatstIngelogd = new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc),
-                            LockoutEnabled = false,
-                            NormalizedEmail = "FLORA@EXAMPLE.NL",
-                            NormalizedUserName = "FLORA@EXAMPLE.NL",
-                            PasswordHash = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++",
-                            PhoneNumberConfirmed = false,
-                            Postcode = "1234AB",
-                            SecurityStamp = "STATIC-USER-1",
-                            Soort = "Bedrijf",
-                            Status = "Active",
-                            StraatAdres = "Bloemig 10",
-                            TwoFactorEnabled = false,
-                            UserName = "flora@example.nl"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            AccessFailedCount = 0,
-                            BedrijfsNaam = "Jan Jansen",
-                            ConcurrencyStamp = "STATIC-CONC-2",
-                            Email = "jan@example.nl",
-                            EmailConfirmed = false,
-                            GebruikerNr = 2,
-                            Kvk = "00000000",
-                            LaatstIngelogd = new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc),
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JAN@EXAMPLE.NL",
-                            NormalizedUserName = "JAN@EXAMPLE.NL",
-                            PasswordHash = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++",
-                            PhoneNumberConfirmed = false,
-                            Postcode = "2345BC",
-                            SecurityStamp = "STATIC-USER-2",
-                            Soort = "Koper",
-                            Status = "Active",
-                            StraatAdres = "Laan 5",
-                            TwoFactorEnabled = false,
-                            UserName = "jan@example.nl"
-                        });
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>

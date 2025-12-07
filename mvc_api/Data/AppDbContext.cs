@@ -70,75 +70,8 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .Property(v => v.Minimumprijs)
             .HasPrecision(18, 2);
 
-        // Seed data (alle waarden statisch houden voor een deterministisch model)
-        var loginD1   = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc);
-        var loginD2   = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc);
         var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
         var dag       = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
-
-        b.Entity<Gebruiker>().HasData(
-            new Gebruiker
-            {
-                Id                 = 1,
-                GebruikerNr        = 1,
-                BedrijfsNaam       = "Flora BV",
-                Email              = "flora@example.nl",
-                NormalizedEmail    = "FLORA@EXAMPLE.NL",
-                UserName           = "flora@example.nl",
-                NormalizedUserName = "FLORA@EXAMPLE.NL",
-                LaatstIngelogd     = loginD1,
-                Soort              = "Bedrijf",
-                Kvk                = "12345678",
-                StraatAdres        = "Bloemig 10",
-                Postcode           = "1234AB",
-                SecurityStamp      = "STATIC-USER-1",
-                ConcurrencyStamp   = "STATIC-CONC-1",
-                // voorbeeld hoe hash password eruit ziet
-                PasswordHash       = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++"
-            },
-            new Gebruiker
-            {
-                Id                 = 2,
-                GebruikerNr        = 2,
-                BedrijfsNaam       = "Jan Jansen",
-                Email              = "jan@example.nl",
-                NormalizedEmail    = "JAN@EXAMPLE.NL",
-                UserName           = "jan@example.nl",
-                NormalizedUserName = "JAN@EXAMPLE.NL",
-                LaatstIngelogd     = loginD2,
-                Soort              = "Koper",
-                Kvk                = "00000000",
-                StraatAdres        = "Laan 5",
-                Postcode           = "2345BC",
-                SecurityStamp      = "STATIC-USER-2",
-                ConcurrencyStamp   = "STATIC-CONC-2",
-                // Wachtwoord: Test123!
-                PasswordHash       = "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++"
-            }
-        );
-
-        b.Entity<IdentityRole<int>>().HasData(
-            new IdentityRole<int>
-            {
-                Id               = 1,
-                Name             = "VeilingMeester",
-                NormalizedName   = "VEILINGMEESTER",
-                ConcurrencyStamp = "ROLE-CONC-1"
-            },
-            new IdentityRole<int>
-            {
-                Id               = 2,
-                Name             = "Klant",
-                NormalizedName   = "KLANT",
-                ConcurrencyStamp = "ROLE-CONC-2"
-            }
-        );
-
-        b.Entity<IdentityUserRole<int>>().HasData(
-            new IdentityUserRole<int> { RoleId = 1, UserId = 1 },
-            new IdentityUserRole<int> { RoleId = 2, UserId = 2 }
-            // let op: geen UserId = 4 hier, want er is geen gebruiker met Id 4 in de seed
-        );
 
         b.Entity<Categorie>().HasData(
             new Categorie { CategorieNr = 1, Naam = "Tulpen" },
