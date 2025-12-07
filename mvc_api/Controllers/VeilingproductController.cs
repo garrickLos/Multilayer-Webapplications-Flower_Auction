@@ -94,7 +94,6 @@ public class VeilingproductController : ControllerBase
         if (referenceError != null)
             return referenceError;
 
-        // Kwekernr komt uit de ingelogde gebruiker
         if (!TryGetUserId(out var userId))
             return Forbid();
 
