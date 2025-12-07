@@ -5,7 +5,7 @@ namespace mvc_api.Models.Dtos;
 
 public static class GebruikerSoorten
 {
-    public static readonly string[] Allowed = { "Kweker", "Koper", "VeilingMeester" };
+    public static readonly string[] Allowed = { "Kweker", "Koper" };
 
     public static bool TryNormalize(string? value, out string normalized)
     {

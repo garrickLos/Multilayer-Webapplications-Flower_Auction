@@ -18,82 +18,37 @@ public class GebruikerController : ControllerBase
 
     [HttpGet("veilingmeester")]
     [Authorize(Roles = "VeilingMeester")]
-    public async Task<ActionResult<IEnumerable<GebruikerSummaryDto>>> GetForAuctionTeam(
+    public ActionResult<IEnumerable<GebruikerSummaryDto>> GetForAuctionTeam(
         [FromQuery] string? role,
-        [FromQuery] ModelStatus? status,
-        CancellationToken ct = default)
+        [FromQuery] ModelStatus? status)
     {
         var query = Filter(QueryGebruikers(), null, role, status, null)
             .Where(g => g.Status != ModelStatus.Deleted)
             .OrderBy(g => g.GebruikerNr);
 
-        var items = await query
+        var items = query
             .Select(MapToSummary)
-            .ToListAsync(ct);
+            .ToList();
 
         return Ok(items);
     }
 
-    [HttpGet("veilingmeester/{id:int}")]
-    [Authorize(Roles = "VeilingMeester")]
-    public async Task<ActionResult<GebruikerSummaryDto>> GetAuctionDetail(int id, CancellationToken ct = default)
-    {
-        var dto = await QueryGebruikers()
-            .Where(g => g.GebruikerNr == id && g.Status != ModelStatus.Deleted)
-            .Select(MapToSummary)
-            .FirstOrDefaultAsync(ct);
-
-        if (dto is null)
-            return NotFound(NotFoundProblem(id));
-
-        return Ok(dto);
-    }
-
     [HttpGet("me")]
     [Authorize]
-    public async Task<ActionResult<GebruikerDetailDto>> GetSelf(CancellationToken ct = default)
+    public ActionResult<GebruikerDetailDto> GetSelf()
     {
         if (!TryGetGebruikerNr(out var gebruikerNr))
             return Unauthorized();
 
-        var dto = await QueryGebruikers()
+        var dto = QueryGebruikers()
             .Where(g => g.GebruikerNr == gebruikerNr && g.Status == ModelStatus.Active)
             .Select(MapToDetail)
-            .FirstOrDefaultAsync(ct);
+            .FirstOrDefault();
 
         if (dto is null)
             return Unauthorized();
 
         return Ok(dto);
-    }
-
-    [HttpPut("me")]
-    [Authorize]
-    public async Task<IActionResult> UpdateSelf(
-        [FromBody] GebruikerSelfUpdateDto dto,
-        CancellationToken ct = default)
-    {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
-
-        if (!TryGetGebruikerNr(out var gebruikerNr))
-            return Unauthorized();
-
-        var user = await _db.Gebruikers
-            .SingleOrDefaultAsync(g => g.GebruikerNr == gebruikerNr, ct);
-
-        if (user is null)
-            return Unauthorized();
-
-        user.BedrijfsNaam = dto.BedrijfsNaam.Trim();
-        user.Email        = dto.Email.Trim();
-        user.UserName     = dto.Email.Trim();
-        user.Kvk          = TrimOrNull(dto.Kvk);
-        user.StraatAdres  = TrimOrNull(dto.StraatAdres);
-        user.Postcode     = TrimOrNull(dto.Postcode?.ToUpperInvariant());
-
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
     }
 
     private IQueryable<Gebruiker> QueryGebruikers() => _db.Gebruikers.AsNoTracking();
