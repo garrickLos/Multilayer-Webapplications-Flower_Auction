@@ -38,6 +38,21 @@ public static class DataSeeder
             },
             "Test123!",
             "Klant"
+        ),
+        (
+            new Gebruiker
+            {
+                BedrijfsNaam   = "Bloemenhandel De Vrolijke Roos",
+                Email          = "bedrijf@example.nl",
+                UserName       = "bedrijf@example.nl",
+                LaatstIngelogd = new DateTime(2025, 10, 06, 10, 0, 0, DateTimeKind.Utc),
+                Soort          = "Bedrijf",
+                Kvk            = "87654321",
+                StraatAdres    = "Handelsweg 22",
+                Postcode       = "3456CD"
+            },
+            "Test123!",
+            "Bedrijf"
         )
     ];
 
@@ -55,8 +70,7 @@ public static class DataSeeder
 
     private static async Task EnsureRoles(RoleManager<IdentityRole<int>> roleManager)
     {
-        string[] rollen = { "VeilingMeester", "Klant" };
-
+        string[] rollen = { "VeilingMeester", "Koper", "Bedrijf" };
         foreach (var rolNaam in rollen)
         {
             if (!await roleManager.RoleExistsAsync(rolNaam))
