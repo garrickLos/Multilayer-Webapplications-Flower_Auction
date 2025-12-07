@@ -145,17 +145,17 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    // Alleen in development automatisch migreren
-    var scope = app.Services.CreateScope();
-    
-    var services = scope.ServiceProvider;
+}
 
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.Migrate();
-    
-    try 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var db       = services.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+
+    try
     {
-        await DataSeeder.InitialiseerRollen(services);
+        await DataSeeder.Seed(app.Services);
     }
     catch (Exception ex)
     {

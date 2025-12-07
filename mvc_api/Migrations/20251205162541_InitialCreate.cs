@@ -277,24 +277,6 @@ namespace mvc_api.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "AspNetRoles",
-                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[,]
-                {
-                    { 1, "ROLE-CONC-1", "VeilingMeester", "VEILINGMEESTER" },
-                    { 2, "ROLE-CONC-2", "Klant", "KLANT" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "AspNetUsers",
-                columns: new[] { "Id", "AccessFailedCount", "BedrijfsNaam", "ConcurrencyStamp", "Email", "EmailConfirmed", "GebruikerNr", "Kvk", "LaatstIngelogd", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Postcode", "SecurityStamp", "Soort", "StraatAdres", "TwoFactorEnabled", "UserName" },
-                values: new object[,]
-                {
-                    { 1, 0, "Flora BV", "STATIC-CONC-1", "flora@example.nl", false, 1, "12345678", new DateTime(2025, 10, 8, 12, 0, 0, 0, DateTimeKind.Utc), false, null, "FLORA@EXAMPLE.NL", "FLORA@EXAMPLE.NL", "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker1++++++++++++", null, false, "1234AB", "STATIC-USER-1", "Bedrijf", "Bloemig 10", false, "flora@example.nl" },
-                    { 2, 0, "Jan Jansen", "STATIC-CONC-2", "jan@example.nl", false, 2, "00000000", new DateTime(2025, 10, 7, 13, 0, 0, 0, DateTimeKind.Utc), false, null, "JAN@EXAMPLE.NL", "JAN@EXAMPLE.NL", "AQAAAAIAAYagAAAAEExampleHashVoorGebruiker2++++++++++++", null, false, "2345BC", "STATIC-USER-2", "Koper", "Laan 5", false, "jan@example.nl" }
-                });
-
-            migrationBuilder.InsertData(
                 table: "Categorie",
                 columns: new[] { "CategorieNr", "Naam" },
                 values: new object[,]
@@ -314,15 +296,6 @@ namespace mvc_api.Migrations
                 {
                     { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), "active", "veiling001" },
                     { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), "active", "veiling001" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "AspNetUserRoles",
-                columns: new[] { "RoleId", "UserId" },
-                values: new object[,]
-                {
-                    { 1, 1 },
-                    { 2, 2 }
                 });
 
             migrationBuilder.InsertData(
