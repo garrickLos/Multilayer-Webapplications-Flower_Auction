@@ -225,11 +225,11 @@ public class VeilingproductController : ControllerBase
             query = query.Where(v => v.Status == fst);
 
         if (minPrice is int min)
-            query = query.Where(v => v.Startprijs >= min);
-
+            query = query.Where(v => (v.Startprijs ?? v.Minimumprijs) >= min);
+        
         if (maxPrice is int max)
-            query = query.Where(v => v.Startprijs <= max);
-
+            query = query.Where(v => (v.Startprijs ?? v.Minimumprijs) <= max);
+        
         if (createdAfter is DateTime ca)
             query = query.Where(v => v.GeplaatstDatum >= ca);
 
