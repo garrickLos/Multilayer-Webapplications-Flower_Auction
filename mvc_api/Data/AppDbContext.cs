@@ -70,8 +70,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .Property(v => v.Minimumprijs)
             .HasPrecision(18, 2);
 
-        var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
-        var dag       = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
+        var dag = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
 
         b.Entity<Categorie>().HasData(
             new Categorie { CategorieNr = 1, Naam = "Tulpen" },

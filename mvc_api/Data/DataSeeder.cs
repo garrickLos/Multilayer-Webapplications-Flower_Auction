@@ -129,6 +129,7 @@ public static class DataSeeder
         }
 
         var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
+        var startdag  = DateOnly.FromDateTime(geplaatst.Date.AddDays(1));
 
         var seedProducten = new[]
         {
@@ -145,6 +146,7 @@ public static class DataSeeder
                 Plaats           = "Aalsmeer",
                 Minimumprijs     = 10,
                 Kwekernr         = kweker.Id,
+                BeginDatum       = startdag,
                 ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
             },
             new Veilingproduct
@@ -160,6 +162,7 @@ public static class DataSeeder
                 Plaats           = "Eelde",
                 Minimumprijs     = 15,
                 Kwekernr         = kweker.Id,
+                BeginDatum       = startdag,
                 ImagePath        = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
             }
         };

@@ -214,7 +214,6 @@ namespace mvc_api.Migrations
                     Minimumprijs = table.Column<int>(type: "INTEGER", precision: 18, scale: 2, nullable: false),
                     Kwekernr = table.Column<int>(type: "INTEGER", nullable: false),
                     BeginDatum = table.Column<DateOnly>(type: "TEXT", nullable: true),
-                    EindDatum = table.Column<DateOnly>(type: "TEXT", nullable: true),
                     Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false, defaultValue: "Active"),
                     ImagePath = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false)
                 },
