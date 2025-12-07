@@ -28,14 +28,8 @@ public record VeilingproductCreateDto
     [Range(1, 999_999_999)]
     public int Minimumprijs { get; init; }
 
-    [Range(1, int.MaxValue)]
-    public int Kwekernr { get; init; }
-
     [Required]
     public DateOnly BeginDatum { get; init; }
-
-    [Required]
-    public DateOnly EindDatum { get; init; }
 
     [Required, StringLength(200)]
     public string ImagePath { get; init; } = default!;
@@ -57,12 +51,6 @@ public record VeilingproductUpdateDto
 
     [Range(1, int.MaxValue)]
     public int CategorieNr { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int? VeilingNr { get; init; }
-
-    [Range(1, int.MaxValue)]
-    public int Kwekernr { get; init; }
 
     [Required, StringLength(200)]
     public string ImagePath { get; init; } = default!;
@@ -125,8 +113,7 @@ public record VeilingproductVeilingmeesterListDto(
     int? Startprijs,
     DateTime GeplaatstDatum,
     string ImagePath,
-    DateOnly? BeginDatum,
-    DateOnly? EindDatum
+    DateOnly? BeginDatum
 );
 
 // SELECTORS
@@ -174,7 +161,6 @@ public static class VeilingproductDtoSelectors
             v.Startprijs,
             v.GeplaatstDatum,
             v.ImagePath,
-            v.BeginDatum,
-            v.EindDatum
+            v.BeginDatum
         );
 }

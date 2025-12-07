@@ -90,11 +90,11 @@ public class VeilingproductController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, dto.Kwekernr, ct);
+        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, ct);
         if (referenceError != null)
             return referenceError;
 
-        if (!TryGetUserId(out var userId) || userId != dto.Kwekernr)
+        if (!TryGetUserId(out var userId))
             return Forbid();
 
         var entity = new Veilingproduct
@@ -107,9 +107,8 @@ public class VeilingproductController : ControllerBase
             CategorieNr     = dto.CategorieNr,
             Plaats          = dto.Plaats,
             Minimumprijs    = dto.Minimumprijs,
-            Kwekernr        = dto.Kwekernr,
+            Kwekernr        = userId,
             BeginDatum      = dto.BeginDatum,
-            EindDatum       = dto.EindDatum,
             Status          = ModelStatus.Active,
             ImagePath       = dto.ImagePath
         };
@@ -144,7 +143,7 @@ public class VeilingproductController : ControllerBase
         if (!TryGetUserId(out var userId) || entity.Kwekernr != userId)
             return Forbid();
 
-        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, dto.Kwekernr, ct);
+        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, ct);
         if (referenceError != null)
             return referenceError;
 
@@ -153,8 +152,6 @@ public class VeilingproductController : ControllerBase
         entity.AantalFusten    = dto.AantalFusten;
         entity.VoorraadBloemen = dto.VoorraadBloemen;
         entity.CategorieNr     = dto.CategorieNr;
-        entity.VeilingNr       = dto.VeilingNr;
-        entity.Kwekernr        = dto.Kwekernr;
         entity.ImagePath       = dto.ImagePath;
         entity.Minimumprijs    = dto.Minimumprijs;
         entity.Plaats          = dto.Plaats;
@@ -256,12 +253,9 @@ public class VeilingproductController : ControllerBase
         return false;
     }
 
-    private async Task<ActionResult?> ValidateReferencesAsync(int categorieNr, int kwekerNr, CancellationToken ct)
+    private async Task<ActionResult?> ValidateReferencesAsync(int categorieNr, CancellationToken ct)
     {
         if (!await _db.Categorieen.AnyAsync(c => c.CategorieNr == categorieNr, ct))
-            return BadRequest();
-
-        if (!await _db.Gebruikers.AnyAsync(g => g.GebruikerNr == kwekerNr, ct))
             return BadRequest();
 
         return null;
