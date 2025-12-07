@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +38,7 @@ public class VeilingproductController : ControllerBase
     }
 
     [HttpGet("kweker")]
-    [Authorize(Roles = "Kweker")]
+    [Authorize(Roles = "Bedrijf")]
     public async Task<ActionResult<IEnumerable<VeilingproductKwekerListDto>>> GetForKweker(
         [FromQuery] ModelStatus? status,
         CancellationToken ct = default)
@@ -59,7 +60,7 @@ public class VeilingproductController : ControllerBase
     }
 
     [HttpGet("veilingmeester")]
-    [Authorize(Roles = "Veilingmeester")]
+    [Authorize(Roles = "VeilingMeester")]
     public async Task<ActionResult<IEnumerable<VeilingproductVeilingmeesterListDto>>> GetForVeilingmeester(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
@@ -81,7 +82,7 @@ public class VeilingproductController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Kweker")]
+    [Authorize(Roles = "Bedrijf")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Create(
         [FromBody] VeilingproductCreateDto dto,
         CancellationToken ct = default)
@@ -127,7 +128,7 @@ public class VeilingproductController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Kweker")]
+    [Authorize(Roles = "Bedrijf")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Update(
         int id,
         [FromBody] VeilingproductUpdateDto dto,
@@ -169,10 +170,10 @@ public class VeilingproductController : ControllerBase
 
         return Ok(resultDto);
     }
-    
+
     // UPDATE (VEILINGMEESTER) – startprijs + veiling koppelen
     [HttpPut("veilingmeester/{id:int}")]
-    [Authorize(Roles = "Veilingmeester")]
+    [Authorize(Roles = "VeilingMeester")]
     public async Task<ActionResult<VeilingproductVeilingmeesterListDto>> UpdatePlanning(
         int id,
         [FromBody] VeilingproductVeilingmeesterUpdateDto dto,
@@ -243,11 +244,14 @@ public class VeilingproductController : ControllerBase
 
     private bool TryGetUserId(out int userId)
     {
-        if (int.TryParse(User?.Identity?.Name, out var parsed))
+        var idValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (int.TryParse(idValue, out var parsed))
         {
             userId = parsed;
             return true;
         }
+
         userId = 0;
         return false;
     }

@@ -1,5 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using mvc_api.Models;
 
@@ -16,7 +17,7 @@ public static class DataSeeder
                 Email          = "flora@example.nl",
                 UserName       = "flora@example.nl",
                 LaatstIngelogd = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc),
-                Soort          = "Bedrijf",
+                Soort          = "VeilingMeester",
                 Kvk            = "12345678",
                 StraatAdres    = "Bloemig 10",
                 Postcode       = "1234AB"
@@ -37,7 +38,7 @@ public static class DataSeeder
                 Postcode       = "2345BC"
             },
             "Test123!",
-            "Klant"
+            "Koper"
         ),
         (
             new Gebruiker
@@ -63,9 +64,12 @@ public static class DataSeeder
 
         var roleManager = provider.GetRequiredService<RoleManager<IdentityRole<int>>>();
         var userManager = provider.GetRequiredService<UserManager<Gebruiker>>();
-
+        var dbContext   = provider.GetRequiredService<AppDbContext>();
+        
         await EnsureRoles(roleManager);
         await EnsureUsers(userManager);
+        await EnsureVeilingproducten(dbContext, userManager);
+        await EnsureBiedingen(dbContext, userManager);
     }
 
     private static async Task EnsureRoles(RoleManager<IdentityRole<int>> roleManager)
@@ -108,5 +112,109 @@ public static class DataSeeder
                 await userManager.AddToRoleAsync(bestaand, role);
             }
         }
+    }
+    
+    private static async Task EnsureVeilingproducten(AppDbContext dbContext, UserManager<Gebruiker> userManager)
+    {
+        var kweker = await userManager.FindByEmailAsync("bedrijf@example.nl");
+        if (kweker == null)
+        {
+            return;
+        }
+
+        if (kweker.GebruikerNr != kweker.Id)
+        {
+            kweker.GebruikerNr = kweker.Id;
+            await userManager.UpdateAsync(kweker);
+        }
+
+        var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
+
+        var seedProducten = new[]
+        {
+            new Veilingproduct
+            {
+                VeilingProductNr = 101,
+                Naam             = "Tulp Mix",
+                GeplaatstDatum   = geplaatst,
+                AantalFusten     = 10,
+                VoorraadBloemen  = 500,
+                Startprijs       = 12,
+                CategorieNr      = 1,
+                VeilingNr        = 201,
+                Plaats           = "Aalsmeer",
+                Minimumprijs     = 10,
+                Kwekernr         = kweker.Id,
+                ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+            },
+            new Veilingproduct
+            {
+                VeilingProductNr = 102,
+                Naam             = "Rode Roos",
+                GeplaatstDatum   = geplaatst,
+                AantalFusten     = 10,
+                VoorraadBloemen  = 300,
+                Startprijs       = 20,
+                CategorieNr      = 2,
+                VeilingNr        = 202,
+                Plaats           = "Eelde",
+                Minimumprijs     = 15,
+                Kwekernr         = kweker.Id,
+                ImagePath        = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
+            }
+        };
+
+        foreach (var product in seedProducten)
+        {
+            var bestaat = await dbContext.Veilingproducten.AnyAsync(vp => vp.VeilingProductNr == product.VeilingProductNr);
+            if (!bestaat)
+            {
+                dbContext.Veilingproducten.Add(product);
+            }
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task EnsureBiedingen(AppDbContext dbContext, UserManager<Gebruiker> userManager)
+    {
+        var koper = await userManager.FindByEmailAsync("jan@example.nl");
+        if (koper == null)
+        {
+            return;
+        }
+
+        var seedBiedingen = new[]
+        {
+            new Bieding
+            {
+                BiedNr           = 1001,
+                BedragPerFust    = 13,
+                AantalStuks      = 5,
+                GebruikerNr      = koper.Id,
+                VeilingNr        = 201,
+                VeilingproductNr = 101
+            },
+            new Bieding
+            {
+                BiedNr           = 1002,
+                BedragPerFust    = 21,
+                AantalStuks      = 3,
+                GebruikerNr      = koper.Id,
+                VeilingNr        = 202,
+                VeilingproductNr = 102
+            }
+        };
+
+        foreach (var bieding in seedBiedingen)
+        {
+            var bestaat = await dbContext.Biedingen.AnyAsync(b => b.BiedNr == bieding.BiedNr);
+            if (!bestaat)
+            {
+                dbContext.Biedingen.Add(bieding);
+            }
+        }
+
+        await dbContext.SaveChangesAsync();
     }
 }

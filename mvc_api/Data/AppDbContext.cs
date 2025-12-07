@@ -100,59 +100,5 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
                 Status      = "active"
             }
         );
-
-        b.Entity<Veilingproduct>().HasData(
-            new Veilingproduct
-            {
-                VeilingProductNr = 101,
-                Naam             = "Tulp Mix",
-                GeplaatstDatum   = geplaatst,
-                AantalFusten     = 10,
-                VoorraadBloemen  = 500,
-                Startprijs       = 12,
-                CategorieNr      = 1,
-                VeilingNr        = 201,
-                Plaats           = "Aalsmeer",
-                Minimumprijs     = 10,
-                Kwekernr         = 1,
-                ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
-            },
-            new Veilingproduct
-            {
-                VeilingProductNr = 102,
-                Naam             = "Rode Roos",
-                GeplaatstDatum   = geplaatst,
-                AantalFusten     = 10,
-                VoorraadBloemen  = 300,
-                Startprijs       = 20,
-                CategorieNr      = 2,
-                VeilingNr        = 202,
-                Plaats           = "Eelde",
-                Minimumprijs     = 15,
-                Kwekernr         = 1,
-                ImagePath        = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
-            }
-        );
-
-        b.Entity<Bieding>().HasData(
-            new Bieding
-            {
-                BiedNr           = 1001,
-                BedragPerFust    = 13,
-                AantalStuks      = 5,
-                GebruikerNr      = 2,
-                VeilingNr        = 201,
-                VeilingproductNr = 101
-            },
-            new Bieding
-            {
-                BiedNr           = 1002,
-                BedragPerFust    = 21,
-                AantalStuks      = 3,
-                GebruikerNr      = 2,
-                VeilingNr        = 202,
-                VeilingproductNr = 102
-            }
-        );
     }
 }
