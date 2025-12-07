@@ -256,8 +256,13 @@ public class VeilingproductController : ControllerBase
     private async Task<ActionResult?> ValidateReferencesAsync(int categorieNr, CancellationToken ct)
     {
         if (!await _db.Categorieen.AnyAsync(c => c.CategorieNr == categorieNr, ct))
-            return BadRequest();
+        {
+            ModelState.AddModelError(
+                nameof(VeilingproductCreateDto.CategorieNr),
+                $"Categorie met nummer {categorieNr} bestaat niet.");
 
+            return ValidationProblem(ModelState);
+        }
         return null;
     }
 }
