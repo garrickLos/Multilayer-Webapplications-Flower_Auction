@@ -68,6 +68,7 @@ public class ProjectieVeilingController
                 p.Plaats,
                 p.CategorieNr,
                 p.AantalFusten,
+                p.VoorraadBloemen,
                 p.ImagePath
             ))
         });
@@ -100,6 +101,7 @@ public class ProjectieVeilingController
                 p.Plaats,
                 p.CategorieNr,
                 p.AantalFusten,
+                p.VoorraadBloemen,
                 p.ImagePath
             )).ToList(),
 

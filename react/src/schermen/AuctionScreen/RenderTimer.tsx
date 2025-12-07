@@ -1,25 +1,27 @@
 import { useState, useEffect } from "react";
 import { type VeilingLogica } from "./VeilingTypes";
+import { DelenDoor as convertToEuro } from "../../typeScript/RekenFuncties";
 
-interface TimerProps {
+type TimerProps =  {
     onPrijsUpdate: (prijs: number) => void;
     onProductWissel: (productIndex: number) => void; // Nieuwe prop
     item: VeilingLogica;
 }
 
 // Hulpfunctie: Bereken de gegevens van het huidige actieve product
-function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
+export function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
     if (!veiling || !veiling.producten || veiling.producten.length === 0) {
         return { prijs: 0, index: -1, isAfgelopen: true };
     }
 
     const startTijd = veiling.startIso ? new Date(veiling.startIso).getTime() : Date.now();
+    const eindTijd = veiling.endIso ? new Date(veiling.endIso).getTime() : Date.now();
     const nu = Date.now();
     
     // Veiling is nog niet begonnen
     if (nu < startTijd) {
         return { 
-            prijs: veiling.producten[0].startPrijs, 
+            prijs: veiling.producten[0].startPrijs / 100, 
             index: 0, 
             isAfgelopen: false 
         };
@@ -32,18 +34,21 @@ function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
         const product = veiling.producten[i];
         
         // 1 cent daling per seconde (standaard bloemenveiling)
-        const dalingPerSeconde = 0.01; 
+        const dalingPerSeconde = 1; 
+
+        let startprijs = product.startPrijs;
+        let minimumPrijs = product.minPrijs;
         
-        const prijsVerschil = product.startPrijs - product.minPrijs;
+        const prijsVerschil = startprijs - minimumPrijs;
         const productDuurSec = Math.floor(prijsVerschil / dalingPerSeconde);
 
         // Zitten we binnen de tijd van DIT product?
         if (verstrekenTijdInSec < productDuurSec) {
             const huidigeDaling = verstrekenTijdInSec * dalingPerSeconde;
-            const actuelePrijs = product.startPrijs - huidigeDaling;
+            const actuelePrijs = startprijs - huidigeDaling;
             
             return {
-                prijs: Number(actuelePrijs.toFixed(2)),
+                prijs: Number(convertToEuro(actuelePrijs, 100).toFixed(2)),
                 index: i,
                 isAfgelopen: false
             };
@@ -56,6 +61,7 @@ function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
 
     // Als we hier komen, zijn alle producten geweest
     const laatsteProduct = veiling.producten[veiling.producten.length - 1];
+    
     return {
         prijs: laatsteProduct.minPrijs,
         index: veiling.producten.length - 1,
@@ -64,16 +70,6 @@ function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
 }
 
 export function Timer({ onPrijsUpdate, onProductWissel, item }: TimerProps) {
-    const [, setTick] = useState(0);
-
-    // Timer loop voor de visuele update elke seconde
-    useEffect(() => {
-        const visualInterval = setInterval(() => {
-            setTick(t => t + 1);
-        }, 1000); // Check elke seconde
-        return () => clearInterval(visualInterval);
-    }, []);
-
     // Elke render de berekening opnieuw doen
     const status = berekenHuidigeVeilingStaat(item);
 

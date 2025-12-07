@@ -11,7 +11,8 @@ import { renderCards, type VeilingItem } from './RenderCards.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 
 export default function MainScreen() {
-    const refreshTimer = ApiRefresh(60000);
+    const RefreshTimeMS = 60000;
+    const refreshTimer = ApiRefresh(RefreshTimeMS);
 
     const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}`);
 

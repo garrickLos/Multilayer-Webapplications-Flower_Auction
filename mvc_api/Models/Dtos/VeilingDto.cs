@@ -64,6 +64,7 @@ public record VeilingProductDto(
     string Plaats,
     int CategorieNr,
     int AantalFusten,
+    int VoorraadBloemen,
     string ImagePath
 );
 

@@ -45,7 +45,7 @@ html, body {
     width: 100%;
     max-width: 100%;
     
-    outline: 1px solid saddlebrown;
+    outline: 1px solid var(--brand);
     outline-offset: 5px;
     
     padding: 15px;
@@ -67,30 +67,60 @@ html, body {
     border: 1px solid #ddd;
 }
 
+.Place {
+    
+}
+
+.Auction_rightSideText {
+    margin: 0 20px 0 0;
+}
+
 .Auction_klok {
     width: 200px;
     height: 200px;
 
     border-radius: 50%; 
-    border: 5px dotted saddlebrown;
+    border: 5px dotted var(--brand);
 
-    margin: 0 auto; 
+    margin: 0 20% 50px 20%; 
 
     display: flex;
     justify-content: center;
     align-items: center;
     
     font-weight: bold;
+    font-size: 1.5rem;
+    color: var(--ink);
+
+    background-color: unset;
+}
+
+.Prijs {
     font-size: 1.2rem;
-    background-color: #fff;
+    color: var(--ink);
+}
+
+#Veiling_aantalkopenstuks {
+    border-color: var(--border);
+    border-style: solid;
+    border-width: 1px;
+    
+    margin-left: 15px;
+
+    border-radius: 5px;
 }
 
 #Veiling_aantalkopenstuks::selection {
-    background: black;
+    color: var(--inverse-text);
+    background-color: var(--brand);
 }
 
 .ordenen {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
     border-bottom: 1px solid lightgray;
     margin-bottom: 8px;
     padding-bottom: 4px;
@@ -106,7 +136,7 @@ html, body {
 
 .koopNu {
     color: white;
-    background-color: saddlebrown;
+    background-color: var(--accent-light);
     border-radius: 5px;
     display: block;
     margin: 15px auto 0 auto;
@@ -115,13 +145,14 @@ html, body {
     cursor: pointer;
 }
 
+.koopNu:hover {
+    color: var(--ink-light);
+    background-color: var(--accent-muted);
+}
+
 .Auction_Body > section {
     text-align: center;
     margin-bottom: 10px;
-}
-
-.MainScreen .auctionButton {
-    
 }
 
 .MainScreen .auctionButton:hover {
@@ -177,7 +208,7 @@ html, body {
     justify-content: center;
     text-align: center;
 
-    height: 25px;
+    height: auto;
 
     color: var(--inverse-text);
 

@@ -26,3 +26,8 @@ export interface categorie{
     categorieNr: number;
     naam: string;
 }
+
+export type VeilingschermProps = {
+    actieveVeiling: VeilingLogica;
+    veilingItemNr: number;
+}
