@@ -43,7 +43,6 @@ public class Veilingproduct
 
     // Kweker bepaalt datum
     public DateOnly? BeginDatum { get; set; }
-    public DateOnly? EindDatum { get; set; }
 
     public ModelStatus Status { get; set; } = ModelStatus.Active;
 

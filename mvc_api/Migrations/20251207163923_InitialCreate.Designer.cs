@@ -390,9 +390,6 @@ namespace mvc_api.Migrations
                     b.Property<int>("CategorieNr")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateOnly?>("EindDatum")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("GeplaatstDatum")
                         .HasColumnType("TEXT");
 
