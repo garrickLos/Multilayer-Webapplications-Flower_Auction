@@ -6,6 +6,7 @@ using mvc_api.Controllers;
 using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
+using Xunit;
 
 namespace mvc_api.Tests.Controllers;
 
@@ -19,9 +20,9 @@ public class GebruikerControllerTests
         var dbContext = new AppDbContext(options);
 
         dbContext.Gebruikers.AddRange(
-            new Gebruiker { GebruikerNr = 1, BedrijfsNaam = "Bloem BV", Email = "info@bloem.nl", Soort = "Kweker", Status = ModelStatus.Active },
+            new Gebruiker { GebruikerNr = 1, BedrijfsNaam = "Bloem BV", Email = "info@bloem.nl", Soort = "Bedrijf", Status = ModelStatus.Active },
             new Gebruiker { GebruikerNr = 2, BedrijfsNaam = "Roos BV", Email = "contact@roos.nl", Soort = "Koper", Status = ModelStatus.Inactive },
-            new Gebruiker { GebruikerNr = 3, BedrijfsNaam = "Tulpen BV", Email = "sales@tulp.nl", Soort = "Kweker", Status = ModelStatus.Deleted }
+            new Gebruiker { GebruikerNr = 3, BedrijfsNaam = "Tulpen BV", Email = "sales@tulp.nl", Soort = "Bedrijf", Status = ModelStatus.Deleted }
         );
         dbContext.SaveChanges();
 
@@ -40,7 +41,7 @@ public class GebruikerControllerTests
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "1"),
-            new Claim(ClaimTypes.Role, "Kweker")
+            new Claim(ClaimTypes.Role, "Bedrijf")
         }, "mock"));
         var controller = BuildController(nameof(GetSelf_WithValidUser_ReturnsOwnDetails), user);
 
@@ -75,7 +76,7 @@ public class GebruikerControllerTests
         }, "mock"));
         var controller = BuildController(nameof(GetForAuctionTeam_AppliesRoleAndStatusFilters), user);
 
-        var response = controller.GetForAuctionTeam(role: "kweker", status: ModelStatus.Active);
+        var response = controller.GetForAuctionTeam(role: "bedrijf", status: ModelStatus.Active);
 
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var dtos = Assert.IsAssignableFrom<IEnumerable<GebruikerSummaryDto>>(okResult.Value);

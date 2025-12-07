@@ -41,7 +41,6 @@ public class Veilingproduct
     [ForeignKey(nameof(Kwekernr))]
     public Gebruiker Gebruiker { get; set; } = null!;
 
-    // Kweker bepaalt datum
     public DateOnly? BeginDatum { get; set; }
 
     public ModelStatus Status { get; set; } = ModelStatus.Active;

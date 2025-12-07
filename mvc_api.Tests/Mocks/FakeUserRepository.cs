@@ -8,9 +8,6 @@ public interface IUserRepository
     Task SaveAsync(Gebruiker gebruiker, CancellationToken ct = default);
 }
 
-/// <summary>
-/// Handgeschreven mock die via DI in services gebruikt kan worden zonder databasecalls.
-/// </summary>
 public sealed class FakeUserRepository : IUserRepository
 {
     private readonly Dictionary<int, Gebruiker> _store = new();

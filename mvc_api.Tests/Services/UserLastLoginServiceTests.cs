@@ -1,5 +1,6 @@
 using mvc_api.Models;
 using mvc_api.Tests.Mocks;
+using Xunit;
 
 namespace mvc_api.Tests.Services;
 
@@ -23,7 +24,7 @@ internal sealed class UserLastLoginService
 
 public class UserLastLoginServiceTests
 {
-    [Fact(DisplayName = "Handgeschreven mock: actieve gebruiker krijgt bijgewerkte login")] // beschrijft positieve branch
+    [Fact(DisplayName = "Handgeschreven mock: actieve gebruiker krijgt bijgewerkte login")]
     public async Task TryUpdateLoginAsync_WithActiveUser_SavesTimestamp()
     {
         var user = new Gebruiker { GebruikerNr = 10, Status = ModelStatus.Active };
@@ -38,7 +39,7 @@ public class UserLastLoginServiceTests
         Assert.Equal(now, stored!.LaatstIngelogd);
     }
 
-    [Fact(DisplayName = "Handgeschreven mock: inactieve gebruiker wordt overgeslagen")] // beschrijft afwijzingsbranch
+    [Fact(DisplayName = "Handgeschreven mock: inactieve gebruiker wordt overgeslagen")]
     public async Task TryUpdateLoginAsync_WithInactiveUser_DoesNothing()
     {
         var user = new Gebruiker { GebruikerNr = 20, Status = ModelStatus.Inactive };

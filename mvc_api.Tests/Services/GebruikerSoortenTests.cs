@@ -1,4 +1,5 @@
 using mvc_api.Models.Dtos;
+using Xunit;
 
 namespace mvc_api.Tests.Services;
 
@@ -28,9 +29,9 @@ public class GebruikerSoortenTests
     [Fact(DisplayName = "Condition coverage: bekende rol wordt hoofdletterongevoelig geaccepteerd")]
     public void TryNormalize_WithValidRole_ReturnsNormalized()
     {
-        var result = GebruikerSoorten.TryNormalize("kWeKeR", out var normalized);
+        var result = GebruikerSoorten.TryNormalize("bEdRiJf", out var normalized);
 
         Assert.True(result);
-        Assert.Equal("Kweker", normalized);
+        Assert.Equal("Bedrijf", normalized);
     }
 }

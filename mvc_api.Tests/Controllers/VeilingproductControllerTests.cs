@@ -6,6 +6,7 @@ using mvc_api.Controllers;
 using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
+using Xunit;
 
 namespace mvc_api.Tests.Controllers;
 
@@ -39,14 +40,44 @@ public class VeilingproductControllerTests
         var context = CreateContext(nameof(GetPublic_FiltersProductsByQueryAndCategory));
         context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
         context.Veilingproducten.AddRange(
-            new Veilingproduct { VeilingProductNr = 1, Naam = "Gele Tulp", CategorieNr = 1, GeplaatstDatum = DateTime.UtcNow, AantalFusten = 1, VoorraadBloemen = 10, Minimumprijs = 5, Plaats = "Aalsmeer", Kwekernr = 10, ImagePath = "img1" },
-            new Veilingproduct { VeilingProductNr = 2, Naam = "Rode Roos", CategorieNr = 2, GeplaatstDatum = DateTime.UtcNow, AantalFusten = 1, VoorraadBloemen = 10, Minimumprijs = 5, Plaats = "Aalsmeer", Kwekernr = 11, ImagePath = "img2" }
+            new Veilingproduct
+            {
+                VeilingProductNr = 1,
+                Naam = "Gele Tulp",
+                CategorieNr = 1,
+                GeplaatstDatum = DateTime.UtcNow,
+                AantalFusten = 1,
+                VoorraadBloemen = 10,
+                Minimumprijs = 5,
+                Plaats = "Aalsmeer",
+                Kwekernr = 10,
+                ImagePath = "img1"
+            },
+            new Veilingproduct
+            {
+                VeilingProductNr = 2,
+                Naam = "Rode Roos",
+                CategorieNr = 2,
+                GeplaatstDatum = DateTime.UtcNow,
+                AantalFusten = 1,
+                VoorraadBloemen = 10,
+                Minimumprijs = 5,
+                Plaats = "Aalsmeer",
+                Kwekernr = 11,
+                ImagePath = "img2"
+            }
         );
         await context.SaveChangesAsync();
 
         var controller = CreateController(context);
 
-        var result = await controller.GetPublic(q: "Tulp", categorieNr: 1, minPrice: null, maxPrice: null, createdAfter: null, title: null);
+        var result = await controller.GetPublic(
+            q: "Tulp",
+            categorieNr: 1,
+            minPrice: null,
+            maxPrice: null,
+            createdAfter: null,
+            title: null);
 
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var payload = Assert.IsAssignableFrom<IEnumerable<VeilingproductPublicListDto>>(okResult.Value);
@@ -70,6 +101,7 @@ public class VeilingproductControllerTests
                 CategorieNr = 2,
                 Status = ModelStatus.Active,
                 Startprijs = 30,
+                Minimumprijs = 30,
                 GeplaatstDatum = new DateTime(2025, 1, 1)
             },
             new Veilingproduct
@@ -79,6 +111,7 @@ public class VeilingproductControllerTests
                 CategorieNr = 1,
                 Status = ModelStatus.Inactive,
                 Startprijs = 50,
+                Minimumprijs = 50,
                 GeplaatstDatum = new DateTime(2025, 2, 1)
             },
             new Veilingproduct
@@ -88,6 +121,7 @@ public class VeilingproductControllerTests
                 CategorieNr = 1,
                 Status = ModelStatus.Active,
                 Startprijs = 75,
+                Minimumprijs = 75,
                 GeplaatstDatum = new DateTime(2025, 3, 1)
             }
         );
@@ -96,7 +130,7 @@ public class VeilingproductControllerTests
         var controller = CreateController(context);
 
         var response = await controller.GetForVeilingmeester(
-            q: "tulp",
+            q: "Tulp",
             categorieNr: 1,
             status: ModelStatus.Active,
             minPrice: 60,
@@ -165,7 +199,7 @@ public class VeilingproductControllerTests
         Assert.IsType<ForbidResult>(response.Result);
     }
 
-    [Fact(DisplayName = "Autorisatie: kweker kan product van ander niet aanpassen")] 
+    [Fact(DisplayName = "Autorisatie: bedrijf kan product van ander niet aanpassen")]
     public async Task Update_WhenUserIsNotOwner_ReturnsForbid()
     {
         var context = CreateContext(nameof(Update_WhenUserIsNotOwner_ReturnsForbid));

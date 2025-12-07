@@ -168,7 +168,7 @@ public class VeilingproductController : ControllerBase
         return Ok(resultDto);
     }
 
-    // UPDATE (VEILINGMEESTER) – startprijs + veiling koppelen
+    // startprijs + veiling koppelen
     [HttpPut("veilingmeester/{id:int}")]
     [Authorize(Roles = "VeilingMeester")]
     public async Task<ActionResult<VeilingproductVeilingmeesterListDto>> UpdatePlanning(

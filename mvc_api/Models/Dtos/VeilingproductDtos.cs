@@ -5,7 +5,6 @@ using mvc_api.Models;
 
 namespace mvc_api.Models.Dtos;
 
-// CREATE
 public record VeilingproductCreateDto
 {
     [Required, StringLength(200)]
@@ -35,7 +34,6 @@ public record VeilingproductCreateDto
     public string ImagePath { get; init; } = default!;
 }
 
-// UPDATE
 public record VeilingproductUpdateDto
 {
     [Required, StringLength(200)]
@@ -71,7 +69,7 @@ public record VeilingproductVeilingmeesterUpdateDto
     public int? VeilingNr { get; init; }
 }
 
-// PUBLIC READ (blijft hetzelfde)
+// public read
 public record VeilingproductPublicListDto(
     int VeilingProductNr,
     string Naam,
@@ -81,7 +79,7 @@ public record VeilingproductPublicListDto(
     int? Startprijs
 );
 
-// KWEKER LIST — uitgebreid zoals jij wilde
+// kweker lijst
 public record VeilingproductKwekerListDto(
     int VeilingProductNr,
     string Naam,
@@ -96,7 +94,7 @@ public record VeilingproductKwekerListDto(
     int? VeilingNr
 );
 
-// VEILINGMEESTER LIST — "alles"
+// veilingmeester lijst
 public record VeilingproductVeilingmeesterListDto(
     int VeilingProductNr,
     string Naam,
@@ -116,7 +114,6 @@ public record VeilingproductVeilingmeesterListDto(
     DateOnly? BeginDatum
 );
 
-// SELECTORS
 public static class VeilingproductDtoSelectors
 {
     public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>

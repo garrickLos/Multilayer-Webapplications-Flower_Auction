@@ -1,6 +1,7 @@
 using Moq;
 using mvc_api.Models;
 using mvc_api.Tests.Mocks;
+using Xunit;
 
 namespace mvc_api.Tests.Services;
 
@@ -28,7 +29,7 @@ internal sealed class VeilingproductPlanningService
 
 public class VeilingproductPlanningServiceTests
 {
-    [Fact(DisplayName = "Moq: actief product krijgt planning en wordt opgeslagen")] // positive branch
+    [Fact(DisplayName = "Moq: actief product krijgt planning en wordt opgeslagen")]
     public async Task ScheduleAsync_WithActiveProduct_PersistsPlanning()
     {
         var product = new Veilingproduct { VeilingProductNr = 5, Status = ModelStatus.Active };
@@ -45,7 +46,7 @@ public class VeilingproductPlanningServiceTests
         Assert.Equal(201, product.VeilingNr);
     }
 
-    [Fact(DisplayName = "Moq: products zonder actieve status of met startprijs worden geweigerd")] // rejects conditions
+    [Fact(DisplayName = "Moq: products zonder actieve status of met startprijs worden geweigerd")]
     public async Task ScheduleAsync_WhenProductInactiveOrAlreadyPlanned_ReturnsFalse()
     {
         var inactive = new Veilingproduct { VeilingProductNr = 6, Status = ModelStatus.Inactive };
