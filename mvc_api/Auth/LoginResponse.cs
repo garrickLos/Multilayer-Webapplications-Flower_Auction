@@ -1,10 +1,6 @@
-﻿namespace mvc_api.DTOs.Auth;
+using mvc_api.Models.Dtos;
 
-public sealed class LoginResponse
-{
-    public required bool Success { get; init; }
+namespace mvc_api.DTOs.Auth;
 
-    public string? Token { get; set; }
-
-    public IReadOnlyList<string> Errors { get; init; } = Array.Empty<string>();
-}
+public sealed record LoginResponse(bool Success, string? Token, IReadOnlyList<string> Errors)
+    : OperationResultDto(Success, Errors);

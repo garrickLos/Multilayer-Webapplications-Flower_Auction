@@ -1,8 +1,6 @@
+using mvc_api.Models.Dtos;
+
 namespace mvc_api.DTOs.Auth;
 
-public class RegisterResponse
-{
-    public bool Success { get; set; }
-
-    public IEnumerable<string> Errors { get; set; } = Enumerable.Empty<string>();
-}
+public sealed record RegisterResponse(bool Success, IReadOnlyList<string> Errors)
+    : OperationResultDto(Success, Errors);

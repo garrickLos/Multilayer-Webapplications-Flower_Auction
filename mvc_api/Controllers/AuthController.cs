@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using mvc_api.Auth.GenereerBearerToken;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
+using mvc_api.Models.Dtos;
 
 namespace mvc_api.Controllers;
 
@@ -33,52 +34,38 @@ public sealed class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new RegisterResponse
-            {
-                Success = false,
-                Errors  = GetModelErrors()
-            });
+            return BadRequest(new RegisterResponse(false, GetModelErrors()));
         }
 
-        var existingUser = await _userManager.FindByEmailAsync(request.Email);
-        if (existingUser is not null)
-            return Conflict(new RegisterResponse { Success = false, Errors = new[] { "Email is al in gebruik." } });
-
-        var email        = request.Email.Trim();
-        var bedrijfsNaam = request.BedrijfsNaam.Trim();
-        var soort        = request.Soort.Trim();
-        var kvk          = request.Kvk?.Trim();
-        var straatAdres  = request.StraatAdres?.Trim();
-        var postcode     = request.Postcode?.Trim();
-        var user = new Gebruiker
-            
+        if (!GebruikerSoorten.TryNormalize(request.Soort, out var normalizedSoort))
         {
-            Email        = email,
-            UserName     = email,
-            BedrijfsNaam = bedrijfsNaam,
-            Soort        = soort,
-            Kvk          = kvk,
-            StraatAdres  = straatAdres,
-            Postcode     = postcode,
+            return BadRequest(new RegisterResponse(false, new[] { "Ongeldige gebruiker soort." }));
+        }
+
+        var trimmed = request.Trimmed();
+        var existingUser = await _userManager.FindByEmailAsync(trimmed.Email);
+        if (existingUser is not null)
+            return Conflict(new RegisterResponse(false, new[] { "Email is al in gebruik." }));
+
+        var user = new Gebruiker
+        {
+            Email        = trimmed.Email,
+            UserName     = trimmed.Email,
+            BedrijfsNaam = trimmed.BedrijfsNaam,
+            Soort        = normalizedSoort,
+            Kvk          = TrimOrNull(trimmed.Kvk),
+            StraatAdres  = TrimOrNull(trimmed.StraatAdres),
+            Postcode     = TrimOrNull(trimmed.Postcode),
             Status       = ModelStatus.Active
         };
 
-        // Password wordt hier gehasht en in PasswordHash opgeslagen
-        var result = await _userManager.CreateAsync(user, request.Password);
+        var result = await _userManager.CreateAsync(user, trimmed.Password);
         if (!result.Succeeded)
         {
-            return BadRequest(new RegisterResponse
-            {
-                Success = false,
-                Errors  = result.Errors.Select(e => $"{e.Code}: {e.Description}")
-            });
+            return BadRequest(new RegisterResponse(false, result.Errors.Select(e => $"{e.Code}: {e.Description}").ToArray()));
         }
 
-        return Ok(new RegisterResponse
-        {
-            Success = true,
-            Errors  = Array.Empty<string>()
-        });
+        return Ok(new RegisterResponse(true, Array.Empty<string>()));
     }
 
     [HttpPost("login")]
@@ -87,31 +74,23 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
-
         if (!ModelState.IsValid)
         {
-            return BadRequest(new LoginResponse
-            {
-                Success = false,
-                Errors  = GetModelErrors()
-            });
+            return BadRequest(new LoginResponse(false, null, GetModelErrors()));
         }
 
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var email = request.Email.Trim();
+        var user = await _userManager.FindByEmailAsync(email);
         if (user is null)
         {
             return InvalidCredentialsResponse();
         }
 
-        if (user.Status == ModelStatus.Deleted || user.Status == ModelStatus.Inactive)
+        if (user.Status is ModelStatus.Deleted or ModelStatus.Inactive)
         {
-            return Unauthorized(new LoginResponse
-            {
-                Success = false,
-                Errors  = new[] { "Account is niet actief." }
-            });
+            return Unauthorized(new LoginResponse(false, null, new[] { "Account is niet actief." }));
         }
-        
+
         var result = await _signInManager.PasswordSignInAsync(
             user,
             request.Password,
@@ -122,14 +101,10 @@ public sealed class AuthController : ControllerBase
         {
             if (result.IsLockedOut)
             {
-                return Unauthorized(new LoginResponse
+                return Unauthorized(new LoginResponse(false, null, new[]
                 {
-                    Success = false,
-                    Errors  = new[]
-                    {
-                        "Account is tijdelijk geblokkeerd wegens te veel mislukte inlogpogingen."
-                    }
-                });
+                    "Account is tijdelijk geblokkeerd wegens te veel mislukte inlogpogingen."
+                }));
             }
 
             return InvalidCredentialsResponse();
@@ -139,16 +114,9 @@ public sealed class AuthController : ControllerBase
 
         user.LaatstIngelogd = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
-        
-        return Ok(new LoginResponse
-        {
-            Success = true,
-            Token = token,
-            Errors  = Array.Empty<string>()
-        });
-    }
 
-    // Helpers
+        return Ok(new LoginResponse(true, token, Array.Empty<string>()));
+    }
 
     private string[] GetModelErrors() =>
         ModelState.Values
@@ -157,10 +125,8 @@ public sealed class AuthController : ControllerBase
             .Where(e => !string.IsNullOrWhiteSpace(e))
             .ToArray();
 
+    private static string? TrimOrNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private UnauthorizedObjectResult InvalidCredentialsResponse() =>
-        Unauthorized(new LoginResponse
-        {
-            Success = false,
-            Errors  = new[] { "Ongeldige inloggegevens." }
-        });
+        Unauthorized(new LoginResponse(false, null, new[] { "Ongeldige inloggegevens." }));
 }
