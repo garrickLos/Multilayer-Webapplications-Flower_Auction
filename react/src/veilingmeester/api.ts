@@ -1,14 +1,16 @@
 import {
     type BiedingCreateDto,
     type BiedingUpdateDto,
+    type CategorieCreateDto,
     type CategorieDetailDto,
     type CategorieListDto,
+    type CategorieUpdateDto,
     type GebruikerAuctionViewDto,
     type VeilingCreateDto,
     type VeilingMeester_BiedingDto,
     type VeilingMeester_VeilingDto,
-    type VeilingUpdateDto,
     type VeilingProductDto,
+    type VeilingUpdateDto,
     type VeilingproductVeilingmeesterDetailDto,
     type VeilingproductVeilingmeesterListDto,
 } from "./apiTypes";
@@ -18,6 +20,7 @@ import { DomainMapper, type Auction, type Bid, type Category, type PaginatedList
 export type ApiError = { status: number; message: string };
 
 type FetchInit = RequestInit & { signal?: AbortSignal };
+type JsonRequestInit = Omit<FetchInit, "body"> & { body?: unknown };
 type ListResult<T> = { data: readonly T[]; headers: Headers };
 
 const { baseUrl, requestTimeoutMs } = appConfig.api;
@@ -68,6 +71,11 @@ async function request<T>(path: string, init?: FetchInit): Promise<{ data: T; he
     } finally {
         clearTimeout(timeout);
     }
+}
+
+async function jsonRequest<T>(path: string, init?: JsonRequestInit): Promise<{ data: T; headers: Headers }> {
+    const body = init?.body !== undefined ? JSON.stringify(init.body) : undefined;
+    return request<T>(path, { ...init, body });
 }
 
 async function normaliseError(response: Response): Promise<ApiError> {
@@ -132,11 +140,30 @@ async function fetchList<TDto, TModel>(
     return normaliseList(result, page, pageSize, map);
 }
 
+async function mutate<TDto, TModel>(
+    path: string,
+    map: (dto: TDto) => TModel,
+    init: JsonRequestInit,
+): Promise<TModel> {
+    const { data } = await jsonRequest<TDto>(path, init);
+    return map(data);
+}
+
 export async function fetchUsers(
-    params: { q?: string; page?: number; pageSize?: number },
+    params: { role?: string; status?: string; pageSize?: number } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<User>> {
-    return fetchList<GebruikerAuctionViewDto, User>("/api/Gebruiker/veilingmeester", params, DomainMapper.mapUser, { signal });
+    const query = buildQuery({ role: params.role, status: params.status });
+    const { data } = await request<readonly GebruikerAuctionViewDto[]>(`/api/Gebruiker/veilingmeester${query}`, { signal });
+    const items = (Array.isArray(data) ? data : []).map(DomainMapper.mapUser);
+    const pageSize = params.pageSize ?? items.length || 50;
+    return {
+        items,
+        page: 1,
+        pageSize,
+        hasNext: false,
+        totalResults: items.length,
+    } satisfies PaginatedList<User>;
 }
 
 export async function fetchBids(
@@ -170,7 +197,12 @@ export async function fetchAuctions(
         page: params.page,
         pageSize: params.pageSize,
     };
-    return fetchList<VeilingMeester_VeilingDto, Auction>("/api/Veiling/VeilingMeester", queryParams, DomainMapper.mapAuction, { signal });
+    return fetchList<VeilingMeester_VeilingDto, Auction>(
+        "/api/Veiling/VeilingMeester",
+        queryParams,
+        DomainMapper.mapAuction,
+        { signal },
+    );
 }
 
 export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Promise<Auction> {
@@ -213,21 +245,11 @@ export async function fetchCategoryDetail(id: number, signal?: AbortSignal): Pro
 }
 
 export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingMeester_VeilingDto>(`/api/Veiling`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapAuction(data);
+    return mutate(`/api/Veiling`, DomainMapper.mapAuction, { method: "POST", body: payload, signal });
 }
 
 export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapAuction(data);
+    return mutate(`/api/Veiling/${id}`, DomainMapper.mapAuction, { method: "PUT", body: payload, signal });
 }
 
 export async function deleteAuction(id: number, signal?: AbortSignal): Promise<void> {
@@ -235,21 +257,11 @@ export async function deleteAuction(id: number, signal?: AbortSignal): Promise<v
 }
 
 export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<Bid> {
-    const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapBid(data);
+    return mutate(`/api/Bieding`, DomainMapper.mapBid, { method: "POST", body: payload, signal });
 }
 
 export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<Bid> {
-    const { data } = await request<VeilingMeester_BiedingDto>(`/api/Bieding/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapBid(data);
+    return mutate(`/api/Bieding/${id}`, DomainMapper.mapBid, { method: "PUT", body: payload, signal });
 }
 
 export async function deleteBid(id: number, signal?: AbortSignal): Promise<void> {
@@ -257,17 +269,11 @@ export async function deleteBid(id: number, signal?: AbortSignal): Promise<void>
 }
 
 export async function createCategory(payload: CategorieCreateDto, signal?: AbortSignal): Promise<Category> {
-    const { data } = await request<CategorieDetailDto>(`/api/Categorie`, { method: "POST", body: JSON.stringify(payload), signal });
-    return DomainMapper.mapCategory(data);
+    return mutate(`/api/Categorie`, DomainMapper.mapCategory, { method: "POST", body: payload, signal });
 }
 
 export async function updateCategory(id: number, payload: CategorieUpdateDto, signal?: AbortSignal): Promise<Category> {
-    const { data } = await request<CategorieDetailDto>(`/api/Categorie/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal,
-    });
-    return DomainMapper.mapCategory(data);
+    return mutate(`/api/Categorie/${id}`, DomainMapper.mapCategory, { method: "PUT", body: payload, signal });
 }
 
 export async function deleteCategory(id: number, signal?: AbortSignal): Promise<void> {
