@@ -88,7 +88,7 @@ export async function fetchUsers(
     const query = buildQuery({ role: params.role, status: params.status });
     const { data } = await request<readonly GebruikerAuctionViewDto[]>(`/api/Gebruiker/veilingmeester${query}`, { signal });
     const items = (Array.isArray(data) ? data : []).map(mapApiUserToUser);
-    const pageSize = params.pageSize ?? items.length || prefetchPageSize;
+    const pageSize = params.pageSize ?? (items.length || prefetchPageSize);
     return {
         items,
         page: 1,
