@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
-import { fetchAuctions, fetchBids, fetchProducts, fetchUsers, type ApiError } from "../api";
-import { appConfig } from "../config";
+import { apiConfig, fetchAuctions, fetchBids, fetchProducts, fetchUsers, type ApiError } from "./api";
 
 export type LiveStats = { users: number; activeAuctions: number; products: number; bids: number };
-
-const { prefetchPageSize } = appConfig.api;
 
 export function useLiveStats() {
     const [stats, setStats] = useState<LiveStats | null>(null);
@@ -19,17 +16,17 @@ export function useLiveStats() {
             setError(null);
             try {
                 const [usersResponse, activeAuctionsResponse, productsResponse, bidsResponse] = await Promise.all([
-                    fetchUsers({ pageSize: prefetchPageSize }, controller.signal),
-                    fetchAuctions({ onlyActive: true, pageSize: prefetchPageSize }, controller.signal),
-                    fetchProducts({ pageSize: prefetchPageSize }, controller.signal),
-                    fetchBids({ pageSize: prefetchPageSize }, controller.signal),
+                    fetchUsers({ pageSize: apiConfig.defaultPageSize }, controller.signal),
+                    fetchAuctions({ onlyActive: true, pageSize: apiConfig.defaultPageSize }, controller.signal),
+                    fetchProducts({ pageSize: apiConfig.defaultPageSize }, controller.signal),
+                    fetchBids({ pageSize: apiConfig.defaultPageSize }, controller.signal),
                 ]);
 
                 setStats({
                     users: usersResponse.items.length,
                     activeAuctions: activeAuctionsResponse.items.length,
                     products: productsResponse.items.length,
-                    bids: bidsResponse.items.length, // TODO: filter laatste 24u zodra de backend een timestamp exposeert.
+                    bids: bidsResponse.items.length,
                 });
                 setLastUpdated(new Date());
             } catch (err) {

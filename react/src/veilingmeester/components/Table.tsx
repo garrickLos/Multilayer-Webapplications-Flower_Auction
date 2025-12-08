@@ -1,5 +1,11 @@
 import { useMemo, useState, type JSX, type ReactNode } from "react";
-import { paginate, cx } from "../utils";
+
+const paginate = <T,>(rows: readonly T[], page: number, pageSize: number): readonly T[] => {
+    const start = (page - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+};
+
+const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
 
 // Shared table with optional selection, filters and pagination.
 export type TableColumn<T> = {
@@ -29,6 +35,7 @@ export type TableProps<T> = {
         onTogglePage: (ids: readonly (string | number)[], checked: boolean) => void;
     };
     readonly emptyMessage?: ReactNode;
+    readonly emptyState?: ReactNode;
 };
 
 const SortIcon = ({ direction }: { readonly direction: "asc" | "desc" | null }): JSX.Element => (
@@ -53,6 +60,7 @@ export function Table<T>({
     onRowClick,
     selectable,
     emptyMessage = "Geen resultaten",
+    emptyState,
 }: TableProps<T>): JSX.Element {
     const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
@@ -129,7 +137,7 @@ export function Table<T>({
             )}
 
             {pageRows.length === 0 ? (
-                <div className="text-center text-muted py-4">{emptyMessage ?? "Geen resultaten"}</div>
+                emptyState ?? <div className="text-center text-muted py-4">{emptyMessage ?? "Geen resultaten"}</div>
             ) : (
                 <div className="table-responsive shadow-sm rounded-4 border border-success-subtle">
                     <table className="table table-hover align-middle mb-0">
