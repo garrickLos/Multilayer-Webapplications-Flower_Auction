@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, type JSX, type MouseEvent, type ReactNode } from "react";
-import { cx } from "./utils";
+
+const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
 
 // Base modal used across all Veilingmeester flows.
 type ModalProps = {

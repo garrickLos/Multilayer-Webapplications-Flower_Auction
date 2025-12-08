@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from "react";
-import { cx } from "../utils";
-import type { UiStatus, UserRole } from "../types";
+import type { UiStatus, UserRole } from "../api";
+
+const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
 
 /** Small helper input components used across the dashboard. */
 export function Field({ label, children }: { readonly label: string; readonly children: ReactNode }): JSX.Element {
