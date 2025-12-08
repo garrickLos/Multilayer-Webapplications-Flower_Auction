@@ -67,6 +67,9 @@ export type VeilingMeester_VeilingDto = {
     biedingen?: VeilingMeester_BiedingDto[] | null;
 };
 
+export type VeilingDto = VeilingMeester_VeilingDto;
+export type VeilingDetailDto = VeilingMeester_VeilingDto;
+
 export type VeilingproductVeilingmeesterListDto = {
     veilingProductNr: number;
     naam: string;

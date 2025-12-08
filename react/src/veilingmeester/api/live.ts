@@ -1,12 +1,14 @@
-import { fetchAuctionDetail } from "../api";
+import { mapApiAuctionToAuction } from "./mappers";
+import { request } from "./client";
+import type { VeilingDetailDto, VeilingDto } from "../apiTypes";
+import type { VeilingRow } from "../types";
 import { appConfig } from "../config";
-import { DomainMapper, type VeilingDetailDto, type VeilingDto, type VeilingRow } from "../types";
-
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-type MutableVeilingRow = Mutable<VeilingRow>;
 
 export type AuctionPatchHandler = (update: Partial<VeilingRow>) => void;
 export type Cleanup = () => void;
+
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type MutableVeilingRow = Mutable<VeilingRow>;
 
 const POLL_STEPS = appConfig.realtime.pollStepsMs;
 
@@ -33,7 +35,7 @@ const parseMessage = (payload: string): VeilingRow | null => {
     if (!payload) return null;
     try {
         const parsed = JSON.parse(payload) as VeilingDetailDto | VeilingDto | VeilingRow;
-        return "titel" in parsed || "veilingNaam" in parsed ? DomainMapper.mapAuction(parsed) : (parsed as VeilingRow);
+        return "titel" in parsed || "veilingNaam" in parsed ? mapApiAuctionToAuction(parsed) : (parsed as VeilingRow);
     } catch {
         return null;
     }
@@ -60,8 +62,8 @@ export function subscribeAuction(veilingId: number, onPatch: AuctionPatchHandler
 
     const fetchOnce = async () => {
         try {
-            const detail = await fetchAuctionDetail(veilingId, controller.signal);
-            applyRow(detail);
+            const { data } = await request<VeilingRow>(`/api/Veiling/${veilingId}`, { signal: controller.signal });
+            applyRow(mapApiAuctionToAuction(data as VeilingDetailDto));
         } catch (error) {
             if ((error as { name?: string }).name === "AbortError") return;
             fallbackToPolling();
