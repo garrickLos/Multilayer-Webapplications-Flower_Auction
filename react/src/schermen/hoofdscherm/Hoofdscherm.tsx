@@ -8,23 +8,15 @@ import '../../css/loadIcon.css';
 import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
 import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
 import { renderCards, type VeilingItem } from './RenderCards.tsx';
+import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 
 export default function MainScreen() {
-    const [refreshTimer, setRefreshTimer] = useState(Date.now());
+    const RefreshTimeMS = 60000;
+    const refreshTimer = ApiRefresh(RefreshTimeMS);
 
     const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}`);
 
     const safeVeilingen = data || [];
-
-    useEffect(() => {
-        // 300000 milliseconden = 5 minuten (180000 = 3 minuten)
-        const intervalId = setInterval(() => {
-            setRefreshTimer(Date.now());
-        }, 180000);
-
-        // Ruim de timer op als de component verdwijnt
-        return () => clearInterval(intervalId);
-    }, []);
 
     const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
     const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
@@ -33,7 +25,7 @@ export default function MainScreen() {
     const renderSliderContent = (data: any[]) => {
         if (loading) {
             return (
-                <div className="state-container">
+                <div className="Hoofdscherm_state-container">
                     <span className='loader'></span>
                     <br></br>
                     <p>Loading data</p>
@@ -42,7 +34,7 @@ export default function MainScreen() {
         }
         if (error) {
             return (
-                <div className="state-container">
+                <div className="Hoofdscherm_state-container">
                     <p className='mainScreen_errorCode'>Error:  kon gegevens niet vinden of database connectie bestaat niet<br></br>{String(error)}</p>
                 </div>
             );
@@ -96,22 +88,6 @@ export default function MainScreen() {
                     <button className="arrow" onClick={() => scrollSlider('alleDeals', 1)}>&#10095;</button>
                 </div>
             </section>
-
-            {/* <aside className="cookie_overlay" id="cookie_popup">
-                <div className="cookie_container">
-                    <h4>Cookie beleid</h4>
-                    <p>GEEF ONS JE DATA!!</p>
-
-                    <label className="switch">
-                        <p>Specifieke data opslaan</p>
-                        <input type="checkbox"></input>
-                        <span className="slider round"></span>
-                    </label>
-                    
-                    <button id="close_cookie_button">X Sluiten</button> 
-                    
-                </div>
-            </aside> */}
         </main>
     )
 }

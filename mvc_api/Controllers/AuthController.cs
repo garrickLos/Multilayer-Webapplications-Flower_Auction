@@ -60,8 +60,11 @@ public sealed class AuthController : ControllerBase
         };
 
         var result = await _userManager.CreateAsync(user, trimmed.Password);
-        if (!result.Succeeded)
+        
+        if (result.Succeeded)
         {
+            await _userManager.AddToRoleAsync(user, request.Soort);
+        } else {
             return BadRequest(new RegisterResponse(false, result.Errors.Select(e => $"{e.Code}: {e.Description}").ToArray()));
         }
 

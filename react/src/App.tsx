@@ -7,7 +7,7 @@ import Registration from './registratie_login/Registration.tsx'
 import Login from './registratie_login/Login.tsx'
 import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
-import AuctionScreen from './schermen/AuctionScreen/AuctionScreen.tsx';
+import AuctionScreen from './schermen/AuctionScreen/VeilingScherm.tsx';
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
 import SellerScreenInfo from "./schermen/SellerScreenInfo.tsx";

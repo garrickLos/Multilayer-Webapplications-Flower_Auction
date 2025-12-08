@@ -37,13 +37,7 @@ public record BiedingCreateDto : BaseBieding_Dto
 
 public record BiedingUpdateDto : BaseBieding_Dto;
 
-public record klantBiedingGet_dto(
-    int VeilimgProductNr,
-    int BedragPerFust,
-    int AantalStuks,
-    int GebruikerNr
-);
-// public record BiedingUpdateDto(
-//     [Range(typeof(int), "1", "9999999")] int BedragPerFust,
-//     [Range(1, int.MaxValue)] int AantalStuks
-// );
+public record KlantBiedingGet_dto : BaseBieding_Dto
+{
+    public int VeilingProductNr { get; set; }
+}

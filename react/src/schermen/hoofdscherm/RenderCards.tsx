@@ -85,7 +85,7 @@ export function beschrijving(product: Producten, item: VeilingItem) {
             Hoeveelheid bloemen: ${product.voorraad}
             prijs begint op: ${product.startprijs} euro
 
-            start tijd is: 
+            veiling startijd: 
             ${new Date(item.begintijd).toLocaleString('nl-NL', datumOpties)}
         `
     );

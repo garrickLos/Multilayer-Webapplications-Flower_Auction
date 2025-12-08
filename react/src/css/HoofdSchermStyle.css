@@ -165,10 +165,6 @@
     background-color: var(--accent-muted);
 
     color: var(--ink-light);
-/*     
-    outline-color: var(--accent-muted);
-    outline-style: solid;
-    outline-offset: 2px; */
 }
 
 .MainScreen .ImageErrorMsg {
@@ -201,9 +197,6 @@
     outline-style: solid;
     outline-offset: 0px;
     outline-color: var(--border);
-
-    /* font-size: calc(var(--fontSize) + 5px);
-    transition: font-size 0.5s; */
 }
 
 .MainScreen .slider {
@@ -231,11 +224,14 @@
     cursor: pointer;
 }
 
-.state-container {
+.Hoofdscherm_state-container {
     position: absolute;
-    display: flexbox;
+    display: flex;
 
-    color: var(--error);
+    align-items: center;
+    flex-direction: column;
+
+    color: var(--ink-light);
 
     align-self: center;
 

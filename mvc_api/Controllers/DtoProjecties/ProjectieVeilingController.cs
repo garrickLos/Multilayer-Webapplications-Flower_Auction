@@ -36,7 +36,6 @@ public class ProjectieVeilingController
                 p.VeilingProductNr,
                 p.Naam,
                 p.Startprijs,
-                p.VoorraadBloemen,
                 p.ImagePath
             ))
         });
@@ -68,8 +67,8 @@ public class ProjectieVeilingController
                 p.Minimumprijs,
                 p.Plaats,
                 p.CategorieNr,
-                p.VoorraadBloemen,
                 p.AantalFusten,
+                p.VoorraadBloemen,
                 p.ImagePath
             ))
         });
@@ -101,8 +100,8 @@ public class ProjectieVeilingController
                 p.Minimumprijs,
                 p.Plaats,
                 p.CategorieNr,
-                p.VoorraadBloemen,
                 p.AantalFusten,
+                p.VoorraadBloemen,
                 p.ImagePath
             )).ToList(),
 

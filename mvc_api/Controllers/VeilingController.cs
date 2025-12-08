@@ -11,7 +11,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize(Roles = "VeilingMeester, Koper")]
+[Authorize (Roles = "VeilingMeester, Koper, Bedrijf")]
 public class VeilingController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -73,8 +73,29 @@ public class VeilingController : ControllerBase
     {
         var now = DateTime.UtcNow;
 
+        now = now.ToLocalTime();
+
         await UpdateVeilingenEnVoorraadAsync(now, ct);
 
+        if (veilingenTeUpdaten.Any())
+        {
+            foreach (var v in veilingenTeUpdaten)
+            {
+                // Check opnieuw per item wat er moet gebeuren
+                if (now >= v.Eindtijd)
+                {
+                    // Tijd is voorbij -> Sluiten
+                    v.Status = VeilingStatus.Inactive;
+                }
+                else if (now >= v.Begintijd.Date && now < v.Eindtijd.Date)
+                {
+                    v.Status = VeilingStatus.Active;
+                }
+            }
+            // Sla alle wijzigingen in één keer op
+            await _db.SaveChangesAsync(ct);
+        }
+        
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -95,13 +116,14 @@ public class VeilingController : ControllerBase
                 .Take(pageSize);
 
         var items = await _projectie
-            .ProjectToVeiling_anonymousDto(query, now)
+            .ProjectToVeiling_anonymousDto(query,now) //roept de data op van een niet ingelogde persoon.
             .ToListAsync(ct);
 
         return Ok(items);
     }
 
     [HttpGet("VeilingMeester")]
+    [Authorize (Roles="VeilingMeester")]
     public async Task<ActionResult<IEnumerable<object>>> GetVeilingMeester(
         [FromQuery] int? veilingProduct,
         [FromQuery] DateTime? from,
@@ -112,6 +134,8 @@ public class VeilingController : ControllerBase
         CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         await UpdateVeilingenEnVoorraadAsync(now, ct);
 
@@ -160,8 +184,29 @@ public class VeilingController : ControllerBase
     {
         var now = DateTime.UtcNow;
 
+        now = now.ToLocalTime();
+
         await UpdateVeilingenEnVoorraadAsync(now, ct);
 
+        if (veilingenTeUpdaten.Any())
+        {
+            foreach (var v in veilingenTeUpdaten)
+            {
+                // Check opnieuw per item wat er moet gebeuren
+                if (now >= v.Eindtijd)
+                {
+                    // Tijd is voorbij -> Sluiten
+                    v.Status = VeilingStatus.Inactive;
+                }
+                else if (now >= v.Begintijd && now < v.Eindtijd)
+                {
+                    v.Status = VeilingStatus.Active;
+                }
+            }
+            // Sla alle wijzigingen in één keer op
+            await _db.SaveChangesAsync(ct);
+        }
+        
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -181,7 +226,8 @@ public class VeilingController : ControllerBase
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize);
 
-        if (User.Identity.IsAuthenticated && (User.IsInRole("Koper") || User.IsInRole("VeilingMeester")))
+            // --- Projectie & Execution ---
+        if (User.Identity.IsAuthenticated)
         {
             var items = await _projectie
                 .ProjectToVeiling_klantDto(query, now)
@@ -196,14 +242,15 @@ public class VeilingController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "VeilingMeester, Koper")]
+    [Authorize (Roles ="VeilingMeester, Koper, Bedrijf")]
     public async Task<ActionResult<VeilingMeester_VeilingDto>> GetById(
         int id,
         CancellationToken ct = default)
     {
+
         var now = DateTime.UtcNow;
 
-        await UpdateVeilingenEnVoorraadAsync(now, ct);
+        now = now.ToLocalTime();
 
         var query = _db.Veilingen.AsNoTracking()
             .AsQueryable();
@@ -234,6 +281,8 @@ public class VeilingController : ControllerBase
         CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
 
         var entity = new Veiling
         {
@@ -280,6 +329,10 @@ public class VeilingController : ControllerBase
         [FromBody] VeilingUpdateDto dto,
         CancellationToken ct = default)
     {
+        var now = DateTime.UtcNow;
+
+        now = now.ToLocalTime();
+
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
 
         if (entity is null)
@@ -289,7 +342,10 @@ public class VeilingController : ControllerBase
         entity.Begintijd = dto.Begintijd;
         entity.Eindtijd = dto.Eindtijd;
 
-        var now = DateTime.UtcNow;
+        // if (!string.IsNullOrWhiteSpace(dto.Status))
+        //     entity.Status = NormalizeStatus(dto.Status);
+
+        // Business Logic check
         if (entity.Eindtijd <= now && entity.Status == VeilingStatus.Active)
             entity.Status = VeilingStatus.Inactive;
 
