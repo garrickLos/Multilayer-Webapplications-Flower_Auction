@@ -26,6 +26,7 @@ export type TableProps<T> = {
     readonly page: number;
     readonly pageSize: number;
     readonly pageSizeOptions: readonly number[];
+    readonly total?: number;
     readonly onPageChange: (page: number) => void;
     readonly onPageSizeChange: (size: number) => void;
     readonly onRowClick?: (row: T) => void;
@@ -61,6 +62,7 @@ export function Table<T>({
     selectable,
     emptyMessage = "Geen resultaten",
     emptyState,
+    total,
 }: TableProps<T>): JSX.Element {
     const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
@@ -84,8 +86,9 @@ export function Table<T>({
             .map((entry) => entry.row);
     }, [columns, rows, sort]);
 
+    const totalRows = total ?? rows.length;
     const pageRows = useMemo(() => paginate(sortedRows, page, pageSize), [sortedRows, page, pageSize]);
-    const hasNext = page * pageSize < rows.length;
+    const hasNext = page * pageSize < totalRows;
     const selectedIds = selectable?.selectedIds ?? [];
     const pageIds = pageRows.map((row) => getRowId(row));
     const allPageSelected = selectable ? pageIds.every((id) => selectedIds.includes(id)) : false;
