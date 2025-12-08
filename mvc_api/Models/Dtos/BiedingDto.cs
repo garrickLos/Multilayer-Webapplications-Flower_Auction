@@ -35,6 +35,14 @@ public record BiedingCreateDto : BaseBieding_Dto
     public int VeilingproductNr { get; set; }
 }
 
+public sealed record klantBiedingGet_dto
+(
+    int VeilingProductNr,
+    int BedragPerFust,
+    int AantalStuks,
+    int GebruikerNr
+);
+
 public record BiedingUpdateDto : BaseBieding_Dto;
 
 public record KlantBiedingGet_dto : BaseBieding_Dto

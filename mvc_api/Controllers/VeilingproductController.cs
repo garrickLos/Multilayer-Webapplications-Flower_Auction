@@ -48,6 +48,7 @@ public class VeilingproductController : ControllerBase
 
         var query = _db.Veilingproducten
             .AsNoTracking()
+            .Include(v => v.Categorie)
             .Where(v => v.Kwekernr == userId &&
                         (!status.HasValue || v.Status == status.Value));
 
@@ -207,8 +208,11 @@ public class VeilingproductController : ControllerBase
         string? title,
         ModelStatus? forceStatus)
     {
-        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
-
+        var query = _db.Veilingproducten
+            .AsNoTracking()
+            .Include(v => v.Categorie)
+            .AsQueryable();
+        
         if (!string.IsNullOrWhiteSpace(q))
         {
             var term = q.Trim();
