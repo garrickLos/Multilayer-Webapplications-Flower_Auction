@@ -28,17 +28,11 @@ public class GenereerBearerToken
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.Role, user.Soort),
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-
-        var roles = await _userManager.GetRolesAsync(user);
-        foreach (var role in roles)
-        {
-            // Cruciaal: Gebruik ClaimTypes.Role zodat User.IsInRole() werkt
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
+        
         var token = new JwtSecurityToken(
             issuer:   _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
