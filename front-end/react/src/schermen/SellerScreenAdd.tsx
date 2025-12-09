@@ -18,7 +18,7 @@ export default function SellerScreenAdd() {
 
     const Data = {
         status: true,
-        Kwekernr: 3,
+        Kwekernr: 4,
         ImagePath: ""
     };
 

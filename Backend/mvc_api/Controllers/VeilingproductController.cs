@@ -75,7 +75,8 @@ public class VeilingproductController : ControllerBase
     {
         page     = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
-
+        
+        
         var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(q))
