@@ -158,7 +158,7 @@ public class BiedingController : ControllerBase
         }
 
         // wat je uiteindelijk in swagger wilt zien dat terugkomt in het beeld van wat er veranderd is en de nieuwe waardes
-        var result = new BiedingCreateDto
+        var result = new VeilingMeester_BiedingDto        
         { 
             BiedingNr        = entity.BiedNr,
             BedragPerFust    = entity.BedragPerFust,

@@ -249,7 +249,6 @@ namespace mvc_api.Migrations
                     BedragPerFust = table.Column<int>(type: "int", nullable: false),
                     AantalStuks = table.Column<int>(type: "int", nullable: false),
                     GebruikerNr = table.Column<int>(type: "int", nullable: false),
-                    VeilingNr = table.Column<int>(type: "int", nullable: false),
                     VeilingproductNr = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -261,12 +260,6 @@ namespace mvc_api.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Bieding_Veiling_VeilingNr",
-                        column: x => x.VeilingNr,
-                        principalTable: "Veiling",
-                        principalColumn: "VeilingNr",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Bieding_Veilingproduct_VeilingproductNr",
                         column: x => x.VeilingproductNr,
@@ -346,11 +339,6 @@ namespace mvc_api.Migrations
                 name: "IX_Bieding_GebruikerNr",
                 table: "Bieding",
                 column: "GebruikerNr");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Bieding_VeilingNr",
-                table: "Bieding",
-                column: "VeilingNr");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bieding_VeilingproductNr",

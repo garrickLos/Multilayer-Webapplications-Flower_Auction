@@ -172,17 +172,12 @@ namespace mvc_api.Migrations
                     b.Property<int>("GebruikerNr")
                         .HasColumnType("int");
 
-                    b.Property<int>("VeilingNr")
-                        .HasColumnType("int");
-
                     b.Property<int>("VeilingproductNr")
                         .HasColumnType("int");
 
                     b.HasKey("BiedNr");
 
                     b.HasIndex("GebruikerNr");
-
-                    b.HasIndex("VeilingNr");
 
                     b.HasIndex("VeilingproductNr");
 
@@ -521,21 +516,13 @@ namespace mvc_api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("mvc_api.Models.Veiling", "Veiling")
-                        .WithMany("Biedingen")
-                        .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("mvc_api.Models.Veilingproduct", "Veilingproduct")
-                        .WithMany()
+                        .WithMany("Biedingen")
                         .HasForeignKey("VeilingproductNr")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Gebruiker");
-
-                    b.Navigation("Veiling");
 
                     b.Navigation("Veilingproduct");
                 });
@@ -578,9 +565,12 @@ namespace mvc_api.Migrations
 
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>
                 {
-                    b.Navigation("Biedingen");
-
                     b.Navigation("Veilingproducten");
+                });
+
+            modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
+                {
+                    b.Navigation("Biedingen");
                 });
 #pragma warning restore 612, 618
         }

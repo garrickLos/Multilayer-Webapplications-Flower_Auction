@@ -135,7 +135,6 @@ public static class DataSeeder
         {
             new Veilingproduct
             {
-                VeilingProductNr = 101,
                 Naam             = "Tulp Mix",
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
@@ -151,7 +150,6 @@ public static class DataSeeder
             },
             new Veilingproduct
             {
-                VeilingProductNr = 102,
                 Naam             = "Rode Roos",
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
@@ -197,7 +195,6 @@ public static class DataSeeder
         {
             new Bieding
             {
-                BiedNr           = 1001,
                 BedragPerFust    = 13,
                 AantalStuks      = 5,
                 GebruikerNr      = koper.Id,
@@ -205,7 +202,6 @@ public static class DataSeeder
             },
             new Bieding
             {
-                BiedNr           = 1002,
                 BedragPerFust    = 21,
                 AantalStuks      = 3,
                 GebruikerNr      = koper.Id,
