@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGet";
+import {TokenOphalen} from "./Header_footer.tsx";
 
 interface CategorieType {
     categorieNr: number;
@@ -8,9 +9,12 @@ interface CategorieType {
 }
 
 export default function SellerScreenAdd() {
+    const token = TokenOphalen.getToken();
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = "../../src/assets/pictures/productBloemen/";
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+    
+
 
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
@@ -115,9 +119,11 @@ export default function SellerScreenAdd() {
         try {
             console.log(AlleGegevens.GeplaatstDatum);
             console.log(AlleGegevens);
+            console.log(token)
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                "Authorization": "Bearer " + token},
                 body: JSON.stringify(AlleGegevens),
             });
 
