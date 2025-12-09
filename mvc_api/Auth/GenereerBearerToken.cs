@@ -32,12 +32,6 @@ public class GenereerBearerToken
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var roles = await _userManager.GetRolesAsync(user);
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
         var token = new JwtSecurityToken(
             issuer:   _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
