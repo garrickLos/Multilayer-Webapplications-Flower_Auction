@@ -1,0 +1,13 @@
+[
+  {
+    "productName": "Tulp",
+    "Amount": 30,
+    "ProductCategory": "Bloem",
+    "Place": "Leiden"
+  },
+  {
+    "time": "1:00:00",
+    "price": 4,
+    "Aantal": 100
+  }
+]

@@ -1,0 +1,104 @@
+:root{
+      /* Achtergrondkleuren */
+      --bg:#f6f7f5;
+      --surface:#ffffff;
+      --card:#ffffff;
+      --section-bg:#eaf2eb;
+
+      /* Hoofdkleuren (brand) */
+      --brand:#2e4a41;
+      --brand-light:#3e6157;
+      --brand-2:#cfe5d2;
+      --brand-gradient:linear-gradient(90deg,#2e4a41 0%,#3e6157 100%);
+
+      /* Accentkleuren */
+      --accent:#25a18e;
+      --accent-light:#42b9a6;
+      --accent-muted:#a0e0d5;
+
+      /* Tekstkleuren */
+      --ink:#0f172a;
+      --ink-light:#334155;
+      --muted:#6b7280;
+      --inverse-text:#ffffff;
+
+      /* Status */
+      --error:#dc2626;
+      --error-bg:#fee2e2;
+      --success:#16a34a;
+      --success-bg:#dcfce7;
+
+      /* UI */
+      --border:#d1d5db;
+      --border-focus:#25a18e;
+      --radius:12px;
+
+      /* Buttons */
+      --btn-primary-bg:var(--accent);
+      --btn-primary-hover:var(--accent-light);
+      --btn-primary-text:var(--inverse-text);
+
+      --btn-secondary-bg:var(--brand);
+      --btn-secondary-hover:var(--brand-light);
+      --btn-secondary-text:var(--inverse-text);
+
+      /* Footer */
+      --footer-bg:#2e4a41;
+      --footer-text:#e5e7eb;
+}
+
+body {
+    margin: 0;
+}
+
+.HoofschermContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+}
+
+.logoTitel, .veilingPLaatsen, .mijnVeilingenBekijken, .klantGegevens, .uitloggen{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.floraLogo, .veilingPlaatsenLogo, .mijnVeilingenBekijkenLogo, .klantGegevensLogo {
+    width: 50px;
+    height: auto;
+    display: block;
+    border: 1px solid var(--surface);
+    outline: 1px solid var(--surface);
+}
+
+.ContactPersoonLogo, .HomeButtonLogo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  background-color: transparent;
+  padding: 5px; /* optioneel: evenwicht met andere iconen */
+}
+        
+nav ul, a {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    color: var(--muted);
+
+    text-decoration: none;
+    cursor: pointer;
+}
+
+nav ul :hover{
+    color: var(--accent)
+}
+
+header {
+    background-color: var(--surface);
+
+    min-height: 5%;
+    height: auto;
+}

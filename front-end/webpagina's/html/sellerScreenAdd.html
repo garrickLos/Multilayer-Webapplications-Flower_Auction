@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/front-end/webpagina's/css/header_footer.css">
+    <link rel="stylesheet" href="/front-end/webpagina's/css/sellerScreenAdd.css">
+    <title>Flora Holiday</title>
+</head>
+
+<body>
+<!-- header -->
+<header>
+    <div class="HoofschermContainer">
+        <div class="logoTitel">
+            <img src="/front-end/resources/pictures/webp/floraHolidayLogo.webp" alt="Royal Flora Holland logo" class="floraLogo">
+            <h1>Flora Royal Holland</h1>
+        </div>
+
+        <nav>
+            <ul>
+                <li class="mijnVeilingenBekijken">   
+                    <img src="/front-end/resources/pictures/webp/mijnVeilingenBekijken.webp" alt="foto van een blad" class="mijnVeilingenBekijkenLogo">
+                    Mijn veilingen bekijken
+                </li>
+                <li class="klantGegevens">
+                    <img src="/front-end/resources/pictures/webp/klantGegevens.webp" alt="foto van een persoon" class="klantGegevensLogo">
+                    Gegevens
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<main>
+    <section>
+        <h2>Artificial Citroen boom in deco pot</h2>
+    </section>
+
+    <section>
+        <h2>Actn:</h2>
+        <h3>A3-36638-132</h3>
+    </section>
+
+    <div class="Container">
+        <!-- Schermdeel 1 fotos van producten (nu staan ze vast later moeten ze toegevoegd worden) -->
+        <section class="schermDeel1">
+            <div class="fotoContainer">
+                <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="grote-foto">
+                <div class="kleine-fotos">
+                    <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
+                    <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
+                    <img src="/front-end/resources/pictures/webp/download.webp" alt="dababy" class="kleine-foto">
+                </div>
+            </div> 
+        </section>
+
+        <!-- Schermdeel 2 product informatie toevoegen -->
+        <section class="schermDeel2">
+            <div class="scherm2Container">
+                <div class="kopje">Product Details</div>
+                <div class="ordenen">
+                    <label for="username" class="name">Product name:</label>
+                    <input type="text" id="username" name="username"/>
+                </div>
+                <div class="ordenen">
+                    <label for="productcategory" class="category">Product category:</label>
+                    <input type="text" id="productcategory" name="productcategory"/>
+                </div>
+                <div class="ordenen">
+                    <label for="productamount" class="amount">Amount:</label>
+                    <input type="number" id="productamount" name="productamount"/>
+                </div>
+                <div class="ordenen">
+                    <label for="productplace" class="place">Place:</label>
+                    <input type="text" id="productplace" name="productplace"/>
+                </div>
+                <div class="ordenen">
+                    <label for="minimumPriceProduct" class="minimumPrice">Minimum Price:</label>
+                    <input type="number" id="minimumPriceProduct" name="minimumPriceProduct"/>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rechter deel van het scherm (miminumprijs en plaats bod) -->
+        <section class="schermDeel3">
+            <div class="scherm3Container">
+                <div class="scherm3Ordenen">
+                    <label for="startPrice" class="price">Start price:</label>
+                    <input type="number" id="startPrice" name="startPrice"/>
+                </div>
+                <div class="scherm3Ordenen">
+                    <label for="startDate" class="sDate">Start date:</label>
+                    <input type="date" id="startDate" name="startDate"/>
+                </div>
+                <div class="scherm3Ordenen">
+                    <label for="endDate" class="eDate">End date:</label>
+                    <input type="date" id="endDate" name="endDate"/>
+                </div>
+                <button class="placeProduct">Place Product</button>
+            </div>
+        </section>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+    <p>Footer item</p>
+    <div class="overlayBlock"></div>
+</footer>
+</body>
+<script src="../javascript/sellerScreenAdd.js"></script>
+<script src="../javascript/headers.js"></script>
+<script>headerItems(".mijnVeilingenBekijken", "../html/sellerScreenInfo.html")</script>
+<script>headerItems(".logoTitel", "../html/homeScreen.html")</script>
+</html>
