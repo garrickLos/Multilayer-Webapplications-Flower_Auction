@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export default function Header() {
 
     const [role, setRole] = useState<string | null>(null);
-
+    
     useEffect(() => {
         const updateRoleFromToken = () => {
             const token = sessionStorage.getItem("token");
@@ -20,11 +20,12 @@ export default function Header() {
                 const decoded: any = jwtDecode(token);
                 const RolClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
                 setRole(decoded[RolClaim] || null);
+                console.log(decoded[RolClaim]);
+                TokenOphalen.setToken(token);
             } catch {
                 setRole(null);
             }
         };
-
         updateRoleFromToken();
 
         // Eventlistener die krijgt een seintje na het inloggen dat er is ingelogd en kijkt dan opnieuw welke rol actief is
@@ -112,4 +113,16 @@ export function Footer() {
             </div>
         </footer>
     )
+}
+
+export class TokenOphalen {
+    private static token: string = "";
+    
+    static setToken(token: string) {
+        this.token = token;
+    }
+    
+    static getToken(){
+        return this.token;
+    }
 }
