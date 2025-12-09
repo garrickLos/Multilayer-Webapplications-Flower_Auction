@@ -9,35 +9,30 @@ namespace mvc_api.Auth.GenereerBearerToken;
 
 public class GenereerBearerToken
 {
+
     private readonly UserManager<Gebruiker> _userManager;
     private readonly IConfiguration _config;
 
     public GenereerBearerToken(UserManager<Gebruiker> userManager, IConfiguration config)
     {
         _userManager = userManager;
-        _config = config;
+        _config = config; 
     }
 
     public async Task<string> GenerateJwtToken(Gebruiker user)
     {
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var key     = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        var creds   = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.GebruikerNr.ToString()),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email!),
-            new(ClaimTypes.Role, user.Soort),
-            new(JwtRegisteredClaimNames.Sub, user.GebruikerNr.ToString()),
+            new Claim(ClaimTypes.Role, user.Soort),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-
-        var roles = await _userManager.GetRolesAsync(user);
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
+        
         var token = new JwtSecurityToken(
             issuer:   _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
