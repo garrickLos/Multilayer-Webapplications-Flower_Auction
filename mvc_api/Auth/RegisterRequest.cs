@@ -18,7 +18,7 @@ public sealed record RegisterRequest
     public string BedrijfsNaam { get; init; } = string.Empty;
 
     [Required, StringLength(50)]
-    [RegularExpression("^(Kweker|Koper)$", ErrorMessage = "Soort moet Kweker of Koper zijn.")]
+    [RegularExpression("^(Bedrijf|Koper)$", ErrorMessage = "Soort moet Kweker of Koper zijn.")]
     public string Soort { get; init; } = string.Empty;
 
     [StringLength(20)]

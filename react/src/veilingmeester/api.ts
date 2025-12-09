@@ -1,203 +1,107 @@
-import type {
-    BiedingCreateDto,
-    BiedingUpdateDto,
-    CategorieCreateDto,
-    CategorieDetailDto,
-    CategorieListDto,
-    CategorieUpdateDto,
-    GebruikerAuctionViewDto,
-    VeilingCreateDto,
-    VeilingMeester_BiedingDto,
-    VeilingMeester_VeilingDto,
-    VeilingUpdateDto,
-    VeilingproductVeilingmeesterDetailDto,
-    VeilingproductVeilingmeesterListDto,
-} from "./apiTypes";
-import { appConfig } from "./config";
-import {
-    mapApiAuctionToAuction,
-    mapApiBidToBid,
-    mapApiCategoryToCategory,
-    mapApiProductToProduct,
-    mapApiUserToUser,
-} from "./api/mappers";
-import { jsonRequest, request } from "./api/client";
-import type { Auction, Bid, Category, PaginatedList, Product, User } from "./types";
+const API_BASE_URL = "/api";
+const DEFAULT_PAGE_SIZE = 200;
 
-export type { ApiError } from "./types";
+export type ApiError = { status?: number; message: string };
+export type UiStatus = "active" | "inactive" | "sold" | "deleted";
+export type UserRole = "Koper" | "Kweker" | "Veilingmeester" | "Admin" | "Onbekend";
+export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd" | string;
+export type ProductStatus = "Active" | "Inactive" | "Deleted" | "Archived";
 
-// --- Centrale fetch helper -------------------------------------------------
-
-const API_BASE_PATH = "/api";
-
-export type Gebruiker = {
-    id: number;
-    naam: string;
-    email: string;
-    rol?: string;
-    kvk?: string | null;
-    status?: string | null;
+export type PaginatedList<T> = {
+    readonly items: readonly T[];
+    readonly page: number;
+    readonly pageSize: number;
+    readonly hasNext: boolean;
+    readonly totalResults?: number;
 };
 
-export type Veiling = {
-    id: number;
-    titel: string;
-    status?: string | null;
-    begintijd: string;
-    eindtijd: string;
+export type Category = { id: number; name: string };
+export type User = { id: number; name: string; email: string; role: UserRole; status: UiStatus; kvk?: string };
+export type Bid = {
+    readonly id: number;
+    readonly userId: number;
+    readonly auctionId: number;
+    readonly productId: number;
+    readonly amount: number;
+    readonly quantity: number;
+    readonly status?: UiStatus;
+    readonly date?: string;
+};
+export type Product = {
+    readonly id: number;
+    readonly name: string;
+    readonly status: ProductStatus;
+    readonly category?: string | null;
+    readonly startPrice?: number | null;
+    readonly minimumPrice: number;
+    readonly stock?: number;
+    readonly fust?: number;
+    readonly veilingNr?: number;
+    readonly growerId?: number;
+    readonly sellerName?: string;
+    readonly imagePath?: string;
+    readonly linkedAuctionId?: number;
+    readonly location?: string;
+    readonly active?: boolean;
+    readonly bids?: readonly BidSummary[];
+};
+export type BidSummary = { id: number; amount: number; quantity: number; userId: number };
+export type Auction = {
+    readonly id: number;
+    readonly title: string;
+    readonly status: UiStatus;
+    readonly rawStatus?: AuctionStatus | string;
+    readonly startDate: string;
+    readonly endDate: string;
+    readonly minPrice?: number;
+    readonly maxPrice?: number;
+    readonly linkedProductIds?: readonly number[];
+    readonly products?: readonly Product[];
+    readonly bids?: readonly Bid[];
 };
 
-export type Veilingproduct = {
-    id: number;
-    naam: string;
-    minimumprijs: number;
-    startprijs?: number | null;
-    status?: string;
-    plaats?: string;
-    veilingNr?: number | null;
-};
+export type VeilingCreateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
+export type VeilingUpdateDto = { veilingNaam: string; begintijd: string; eindtijd: string };
+export type BiedingBaseAmountDto = { bedragPerFust: number; aantalStuks: number; gebruikerNr: number };
+export type BiedingCreateDto = BiedingBaseAmountDto & { biedingNr?: number; veilingNr?: number; veilingproductNr?: number };
+export type BiedingUpdateDto = BiedingBaseAmountDto;
 
-export type Bieding = {
-    id: number;
-    gebruikerNr: number;
-    veilingNr: number;
-    veilingProductNr: number;
-    bedragPerFust: number;
-    aantalStuks: number;
-};
+const jsonHeaders = { Accept: "application/json", "Content-Type": "application/json" };
 
-type FetchOptions = RequestInit & { signal?: AbortSignal };
+function toUiStatus(value?: AuctionStatus | string | null): UiStatus {
+    const normalised = (value ?? "").toLowerCase();
+    if (normalised === "actief" || normalised === "active") return "active";
+    if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "archived") return "sold";
+    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
+    return "inactive";
+}
 
-/**
- * JSON helper die altijd via de Vite proxy (/api) gaat en geen credentials meestuurt
- * zodat strenge CORS-regels (Access-Control-Allow-Credentials) niet worden getriggerd.
- */
-export async function fetchJson<T>(path: string, init: FetchOptions = {}): Promise<T> {
-    const url = path.startsWith("http")
-        ? path
-        : `${API_BASE_PATH}${path.startsWith("/") ? "" : "/"}${path}`;
+function toRole(value?: string | null): UserRole {
+    const normalised = (value ?? "").toLowerCase();
+    if (normalised === "admin") return "Admin";
+    if (normalised === "veilingmeester") return "Veilingmeester";
+    if (normalised === "kweker" || normalised === "grower") return "Kweker";
+    if (normalised === "koper" || normalised === "buyer") return "Koper";
+    return "Onbekend";
+}
 
+async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
     const response = await fetch(url, {
         ...init,
-        // Credentials uitschakelen om CORS-issues te voorkomen; proxy verzorgt het domein.
         credentials: "omit",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            ...(init.headers ?? {}),
-        },
+        headers: { ...jsonHeaders, ...(init.headers ?? {}) },
     });
 
-    const text = await response.text();
     if (!response.ok) {
-        const message = text.trim() || response.statusText || "Request failed";
-        throw new Error(`Request failed with status ${response.status}: ${message}`);
+        const text = (await response.text()).trim();
+        throw { status: response.status, message: text || response.statusText } satisfies ApiError;
     }
 
-    if (!text) return undefined as T;
-    return JSON.parse(text) as T;
+    if (response.status === 204) return undefined as T;
+    const text = await response.text();
+    return text ? (JSON.parse(text) as T) : (undefined as T);
 }
-
-export async function fetchVeilingmeesterGebruiker(signal?: AbortSignal): Promise<Gebruiker> {
-    const data = await fetchJson<{
-        gebruikerNr: number;
-        bedrijfsNaam: string;
-        email: string;
-        soort?: string;
-        kvk?: string | null;
-        status?: string | null;
-    }>("/Gebruiker/veilingmeester", { signal });
-
-    return {
-        id: data.gebruikerNr,
-        naam: data.bedrijfsNaam,
-        email: data.email,
-        rol: data.soort,
-        kvk: data.kvk ?? null,
-        status: data.status ?? null,
-    } satisfies Gebruiker;
-}
-
-export async function fetchActieveVeilingen(signal?: AbortSignal): Promise<Veiling[]> {
-    const data = await fetchJson<
-        readonly {
-            veilingNr: number;
-            veilingNaam: string;
-            status?: string | null;
-            begintijd: string;
-            eindtijd: string;
-        }[]
-    >("/Veiling/VeilingMeester?onlyActive=true&page=1&pageSize=200", { signal });
-
-    return (data ?? []).map(
-        (veiling) =>
-            ({
-                id: veiling.veilingNr,
-                titel: veiling.veilingNaam,
-                status: veiling.status ?? null,
-                begintijd: veiling.begintijd,
-                eindtijd: veiling.eindtijd,
-            }) satisfies Veiling,
-    );
-}
-
-export async function fetchVeilingproducten(signal?: AbortSignal): Promise<Veilingproduct[]> {
-    const data = await fetchJson<
-        readonly {
-            veilingProductNr: number;
-            naam: string;
-            minimumprijs: number;
-            startprijs?: number | null;
-            status?: string;
-            plaats?: string;
-            veilingNr?: number | null;
-        }[]
-    >("/Veilingproduct/veilingmeester?pageSize=200&page=1", { signal });
-
-    return (data ?? []).map(
-        (product) =>
-            ({
-                id: product.veilingProductNr,
-                naam: product.naam,
-                minimumprijs: product.minimumprijs,
-                startprijs: product.startprijs ?? null,
-                status: product.status,
-                plaats: product.plaats,
-                veilingNr: product.veilingNr ?? null,
-            }) satisfies Veilingproduct,
-    );
-}
-
-export async function fetchBiedingen(signal?: AbortSignal): Promise<Bieding[]> {
-    const data = await fetchJson<
-        readonly {
-            biedingNr: number;
-            bedragPerFust: number;
-            aantalStuks: number;
-            gebruikerNr: number;
-            veilingNr: number;
-            veilingProductNr: number;
-        }[]
-    >("/Bieding?pageSize=200&page=1", { signal });
-
-    return (data ?? []).map(
-        (bid) =>
-            ({
-                id: bid.biedingNr,
-                bedragPerFust: bid.bedragPerFust,
-                aantalStuks: bid.aantalStuks,
-                gebruikerNr: bid.gebruikerNr,
-                veilingNr: bid.veilingNr,
-                veilingProductNr: bid.veilingProductNr,
-            }) satisfies Bieding,
-    );
-}
-
-const { prefetchPageSize } = appConfig.api;
-
-type ListResult<T> = { data: readonly T[]; headers: Headers };
-
-type PaginatedParams = { page?: number; pageSize?: number } & Record<string, unknown>;
 
 function buildQuery(params: Record<string, unknown>): string {
     const search = new URLSearchParams();
@@ -213,100 +117,130 @@ function buildQuery(params: Record<string, unknown>): string {
     return query ? `?${query}` : "";
 }
 
-function normaliseList<TDto, TModel>(
-    result: ListResult<TDto>,
-    page: number,
-    pageSize: number,
-    map: (dto: TDto) => TModel,
-): PaginatedList<TModel> {
-    const items = Array.isArray(result.data) ? result.data.map(map) : [];
-    const totalHeader = result.headers.get("X-Total-Count");
-    const totalResults = totalHeader ? Number.parseInt(totalHeader, 10) : undefined;
-    const hasNext = totalResults != null ? page * pageSize < totalResults : items.length > 0 && items.length === pageSize;
-    return { items, page, pageSize, hasNext, totalResults } satisfies PaginatedList<TModel>;
+function normaliseList<TDto, TModel>(data: readonly TDto[], page: number, pageSize: number, map: (dto: TDto) => TModel): PaginatedList<TModel> {
+    const items = Array.isArray(data) ? data.map(map) : [];
+    const hasNext = items.length === pageSize;
+    return { items, page, pageSize, hasNext, totalResults: items.length };
 }
 
 async function fetchList<TDto, TModel>(
     path: string,
-    params: PaginatedParams,
+    params: { page?: number; pageSize?: number } & Record<string, unknown>,
     map: (dto: TDto) => TModel,
     signal?: AbortSignal,
 ): Promise<PaginatedList<TModel>> {
     const page = params.page ?? 1;
-    const pageSize = params.pageSize ?? prefetchPageSize;
+    const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
     const query = buildQuery({ ...params, page, pageSize });
-    const result = await request<readonly TDto[]>(`${path}${query}`, { signal });
-    return normaliseList(result, page, pageSize, map);
+    const data = await fetchJson<readonly TDto[]>(`${path}${query}`, { signal });
+    return normaliseList(data ?? [], page, pageSize, map);
 }
 
-async function mutate<TDto, TModel>(
-    path: string,
-    map: (dto: TDto) => TModel,
-    init: { method: "POST" | "PUT" | "DELETE"; body?: unknown; signal?: AbortSignal },
-): Promise<TModel> {
-    const { data } = await jsonRequest<TDto>(path, init);
-    return map(data);
-}
+const mapBid = (dto: { biedingNr: number; veilingNr: number; veilingProductNr: number; gebruikerNr: number; bedragPerFust?: number; aantalStuks?: number }): Bid => ({
+    id: dto.biedingNr,
+    auctionId: dto.veilingNr,
+    productId: dto.veilingProductNr,
+    userId: dto.gebruikerNr,
+    amount: dto.bedragPerFust ?? 0,
+    quantity: dto.aantalStuks ?? 0,
+    status: "active",
+});
 
-export async function fetchUsers(
-    params: { role?: string; status?: string; pageSize?: number } = {},
-    signal?: AbortSignal,
-): Promise<PaginatedList<User>> {
-    const query = buildQuery({ role: params.role, status: params.status });
-    const { data } = await request<readonly GebruikerAuctionViewDto[]>(`/api/Gebruiker/veilingmeester${query}`, { signal });
-    const items = (Array.isArray(data) ? data : []).map(mapApiUserToUser);
-    const pageSize = params.pageSize ?? (items.length || prefetchPageSize);
+const mapProduct = (
+    dto: {
+        veilingProductNr: number;
+        naam?: string;
+        status?: ProductStatus;
+        veilingNr?: number | null;
+        kwekernr?: number;
+        aantalFusten?: number;
+        voorraadBloemen?: number;
+        plaats?: string;
+        minimumprijs?: number;
+        startprijs?: number | null;
+        categorieNaam?: string | null;
+        verkoperNaam?: string;
+        imagePath?: string;
+        beginDatum?: string | null;
+    },
+): Product => ({
+    id: dto.veilingProductNr,
+    name: dto.naam ?? "Onbekend product",
+    status: dto.status ?? "Inactive",
+    category: dto.categorieNaam ?? null,
+    startPrice: dto.startprijs ?? undefined,
+    minimumPrice: dto.minimumprijs ?? 0,
+    stock: dto.voorraadBloemen,
+    fust: dto.aantalFusten,
+    veilingNr: dto.veilingNr ?? undefined,
+    linkedAuctionId: dto.veilingNr ?? undefined,
+    growerId: dto.kwekernr,
+    sellerName: dto.verkoperNaam,
+    imagePath: dto.imagePath,
+    location: dto.plaats,
+    active: (dto.status ?? "Inactive") === "Active",
+});
+
+const mapUser = (dto: { gebruikerNr: number; bedrijfsNaam?: string; email: string; soort?: string; kvk?: string | null; status?: string | null }): User => ({
+    id: dto.gebruikerNr,
+    name: dto.bedrijfsNaam || dto.email,
+    email: dto.email,
+    role: toRole(dto.soort),
+    status: toUiStatus(dto.status),
+    kvk: dto.kvk ?? undefined,
+});
+
+const mapAuction = (dto: {
+    veilingNr: number;
+    veilingNaam: string;
+    status?: string | null;
+    begintijd: string;
+    eindtijd: string;
+    producten?: readonly ReturnType<typeof mapProduct>[] | null;
+    biedingen?: readonly ReturnType<typeof mapBid>[] | null;
+}): Auction => {
+    const products = dto.producten?.map(mapProduct);
+    const bids = dto.biedingen?.map(mapBid);
+    const startPrices = products?.map((product) => (typeof product.startPrice === "number" ? product.startPrice : product.minimumPrice));
+    const numericPrices = (startPrices ?? []).filter((value): value is number => typeof value === "number");
+    const minPrice = numericPrices.length > 0 ? Math.min(...numericPrices) : undefined;
+    const maxPrice = numericPrices.length > 0 ? Math.max(...numericPrices) : undefined;
+
     return {
-        items,
-        page: 1,
-        pageSize,
-        hasNext: false,
-        totalResults: items.length,
-    } satisfies PaginatedList<User>;
+        id: dto.veilingNr,
+        title: dto.veilingNaam,
+        status: toUiStatus(dto.status),
+        rawStatus: dto.status ?? undefined,
+        startDate: dto.begintijd,
+        endDate: dto.eindtijd,
+        linkedProductIds: products?.map((product) => product.id),
+        minPrice,
+        maxPrice,
+        products,
+        bids,
+    } satisfies Auction;
+};
+
+export async function fetchUsers(params: { role?: string; status?: string; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<User>> {
+    const query = buildQuery({ role: params.role, status: params.status, pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE });
+    const data = await fetchJson<readonly ReturnType<typeof mapUser>[]>(`/Gebruiker/veilingmeester${query}`, { signal });
+    const items = (Array.isArray(data) ? data : []).map(mapUser);
+    const pageSize = params.pageSize ?? (items.length || DEFAULT_PAGE_SIZE);
+    return { items, page: 1, pageSize, hasNext: false, totalResults: items.length };
 }
 
 export async function fetchBids(
-    params: {
-        gebruikerNr?: number | string;
-        veilingNr?: number | string;
-        page?: number;
-        pageSize?: number;
-    },
+    params: { gebruikerNr?: number | string; veilingNr?: number | string; page?: number; pageSize?: number } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Bid>> {
-    return fetchList<VeilingMeester_BiedingDto, Bid>("/api/Bieding", params, mapApiBidToBid, signal);
+    return fetchList("/Bieding", params, mapBid, signal);
 }
 
 export async function fetchAuctions(
-    params: {
-        veilingProduct?: number | string;
-        from?: string;
-        to?: string;
-        onlyActive?: boolean;
-        page?: number;
-        pageSize?: number;
-    },
+    params: { veilingProduct?: number | string; from?: string; to?: string; onlyActive?: boolean; page?: number; pageSize?: number } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Auction>> {
-    const queryParams = {
-        veilingProduct: params.veilingProduct,
-        from: params.from,
-        to: params.to,
-        onlyActive: params.onlyActive,
-        page: params.page,
-        pageSize: params.pageSize,
-    };
-    return fetchList<VeilingMeester_VeilingDto, Auction>(
-        "/api/Veiling/VeilingMeester",
-        queryParams,
-        mapApiAuctionToAuction,
-        signal,
-    );
-}
-
-export async function fetchAuctionDetail(id: number, signal?: AbortSignal): Promise<Auction> {
-    const { data } = await request<VeilingMeester_VeilingDto>(`/api/Veiling/${id}`, { signal });
-    return mapApiAuctionToAuction(data);
+    return fetchList("/Veiling/VeilingMeester", params, mapAuction, signal);
 }
 
 export async function fetchProducts(
@@ -320,66 +254,28 @@ export async function fetchProducts(
         title?: string;
         page?: number;
         pageSize?: number;
-    },
+    } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Product>> {
-    return fetchList<VeilingproductVeilingmeesterListDto, Product>(
-        "/api/Veilingproduct/veilingmeester",
-        params,
-        mapApiProductToProduct,
-        signal,
-    );
+    return fetchList("/Veilingproduct/veilingmeester", params, mapProduct, signal);
 }
 
-export async function fetchProductDetail(id: number, signal?: AbortSignal): Promise<Product> {
-    const { data } = await request<VeilingproductVeilingmeesterDetailDto>(`/api/Veilingproduct/veilingmeester/${id}`, { signal });
-    return mapApiProductToProduct(data);
-}
-
-export async function fetchCategories(
-    params: { q?: string; page?: number; pageSize?: number } = {},
-    signal?: AbortSignal,
-): Promise<PaginatedList<Category>> {
-    return fetchList<CategorieListDto, Category>("/api/Categorie", params, mapApiCategoryToCategory, signal);
-}
-
-export async function fetchCategoryDetail(id: number, signal?: AbortSignal): Promise<Category> {
-    const { data } = await request<CategorieDetailDto>(`/api/Categorie/${id}`, { signal });
-    return mapApiCategoryToCategory(data);
+export async function fetchCategories(params: { q?: string; page?: number; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<Category>> {
+    return fetchList("/Categorie", params, (dto: { categorieNr: number; naam?: string }) => ({ id: dto.categorieNr, name: dto.naam ?? "" }), signal);
 }
 
 export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
-    return mutate(`/api/Veiling`, mapApiAuctionToAuction, { method: "POST", body: payload, signal });
+    const data = await fetchJson<ReturnType<typeof mapAuction>>("/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
+    return mapAuction(data);
 }
 
 export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    return mutate(`/api/Veiling/${id}`, mapApiAuctionToAuction, { method: "PUT", body: payload, signal });
+    const data = await fetchJson<ReturnType<typeof mapAuction>>(`/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    return mapAuction(data);
 }
 
 export async function deleteAuction(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Veiling/${id}`, { method: "DELETE", signal });
+    await fetchJson(`/Veiling/${id}`, { method: "DELETE", signal });
 }
 
-export async function createBid(payload: BiedingCreateDto, signal?: AbortSignal): Promise<Bid> {
-    return mutate(`/api/Bieding`, mapApiBidToBid, { method: "POST", body: payload, signal });
-}
-
-export async function updateBid(id: number, payload: BiedingUpdateDto, signal?: AbortSignal): Promise<Bid> {
-    return mutate(`/api/Bieding/${id}`, mapApiBidToBid, { method: "PUT", body: payload, signal });
-}
-
-export async function deleteBid(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Bieding/${id}`, { method: "DELETE", signal });
-}
-
-export async function createCategory(payload: CategorieCreateDto, signal?: AbortSignal): Promise<Category> {
-    return mutate(`/api/Categorie`, mapApiCategoryToCategory, { method: "POST", body: payload, signal });
-}
-
-export async function updateCategory(id: number, payload: CategorieUpdateDto, signal?: AbortSignal): Promise<Category> {
-    return mutate(`/api/Categorie/${id}`, mapApiCategoryToCategory, { method: "PUT", body: payload, signal });
-}
-
-export async function deleteCategory(id: number, signal?: AbortSignal): Promise<void> {
-    await request(`/api/Categorie/${id}`, { method: "DELETE", signal });
-}
+export const apiConfig = { baseUrl: API_BASE_URL, defaultPageSize: DEFAULT_PAGE_SIZE } as const;

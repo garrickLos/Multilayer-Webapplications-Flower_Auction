@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 
-import {Veilingmeester} from './veilingmeester/Veilingmeester.tsx'
+import VeilingmeesterPage from './veilingmeester/VeilingmeesterPage.tsx'
 import Hoofdscherm from './schermen/hoofdscherm/Hoofdscherm.tsx'
 import PrivacyScherm from './schermen/privacyBeleid/privacyBeleid.tsx'
 import Registration from './registratie_login/Registration.tsx'
@@ -24,7 +24,7 @@ export default function App() {
                 <Route path="/" element={<Navigate to="/home" />} />
 
                 <Route path="/home" element={<Hoofdscherm />} />
-                <Route path="/veilingmeester" element={<Veilingmeester />} />
+                <Route path="/veilingmeester" element={<VeilingmeesterPage />} />
                 <Route path="/gegevens" element={<h2 className="h4">Gegevens pagina (coming soon)</h2>} />
                 <Route path="/veilingPlaatsen" element={<SellerScreenAdd />} />
                 <Route path="/veilingBekijken" element={<SellerScreenInfo />} />
