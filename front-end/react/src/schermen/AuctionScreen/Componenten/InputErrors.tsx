@@ -1,4 +1,4 @@
-import type { errorMessaging } from "../VeilingScherm"
+import type { errorMessaging } from "../VeilingTypes"
 
 interface feedbackError {
     isCorrect: boolean

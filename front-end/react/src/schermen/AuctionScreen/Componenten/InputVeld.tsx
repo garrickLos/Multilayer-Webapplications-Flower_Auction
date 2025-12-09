@@ -1,6 +1,6 @@
 import { type ChangeEvent } from 'react';
 import type { ProductLogica } from '../VeilingTypes';
-import type { errorMessaging } from '../VeilingScherm';
+import type { errorMessaging } from '../VeilingTypes';
 
 import '../../../css/Componenten/InputVeld.css';
 
@@ -12,7 +12,7 @@ interface InputFieldProps {
     value?: number | string;
 }
 
-export function InputField({type ,id, name, onChange, value }: InputFieldProps) {
+export function InputField({type ,id, name, onChange }: InputFieldProps) {
     return (
         <input 
             type={type} 

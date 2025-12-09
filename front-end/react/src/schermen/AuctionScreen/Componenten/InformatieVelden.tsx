@@ -1,5 +1,3 @@
-import React from 'react';
-
 import '../../../css/Componenten/InformatieVelden.css';
 
 interface InfoVeldProps {
