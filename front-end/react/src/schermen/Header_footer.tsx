@@ -19,8 +19,8 @@ export default function Header() {
             try {
                 const decoded: any = jwtDecode(token);
                 const RolClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-                setRole(decoded[RolClaim][0] || null);
-                console.log(decoded[RolClaim]);
+                setRole(decoded[RolClaim] || null);
+                console.log("token: " + decoded[RolClaim]);
                 TokenOphalen.setToken(token);
             } catch {
                 setRole(null);

@@ -13,15 +13,12 @@ export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = "../../src/assets/pictures/productBloemen/";
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
-    
-
-
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
 
     const Data = {
         status: true,
-        Kwekernr: 1,
+        Kwekernr: 3,
         ImagePath: ""
     };
 

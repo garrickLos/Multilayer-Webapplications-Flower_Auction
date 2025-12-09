@@ -21,6 +21,7 @@ export function UseDataApi<T>(url: string) {
             
             try {
                 const token = sessionStorage.getItem("token");
+                console.log("de token in de getApi is: " + token);
                 const response = await fetch(url, {
                     signal,
                     headers: token ? { Authorization: `Bearer ${token}` } : undefined // <- header toevoegen
