@@ -104,19 +104,18 @@ public class ProjectieVeilingController
                 p.VoorraadBloemen,
                 p.ImagePath
             )).ToList(),
-
-            Biedingen = v.Biedingen.Select(b => new VeilingMeester_BiedingDto
-            {
-                // Eigen properties van VeilingMeester_BiedingDto
-                BiedingNr = b.BiedNr,
-                VeilingNr = b.VeilingNr, // Of v.VeilingNr, afhankelijk van je database relatie
-                VeilingProductNr = b.VeilingproductNr,
-
-                // Properties geërfd van BaseBieding_Dto
-                AantalStuks = b.AantalStuks,
-                GebruikerNr = b.GebruikerNr,
-                BedragPerFust = b.BedragPerFust
-            }).ToList(),
+            
+            Biedingen = v.Veilingproducten
+                .SelectMany(p => p.Biedingen)
+                .Select(b => new VeilingMeester_BiedingDto
+                {
+                    BiedingNr = b.BiedNr,
+                    VeilingNr = b.Veilingproduct!.VeilingNr,
+                    VeilingProductNr = b.VeilingproductNr,
+                    AantalStuks = b.AantalStuks,
+                    GebruikerNr = b.GebruikerNr,
+                    BedragPerFust = b.BedragPerFust
+                }).ToList(),
         });
     }
 }

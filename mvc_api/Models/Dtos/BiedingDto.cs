@@ -19,9 +19,7 @@ public record VeilingMeester_BiedingDto : BaseBieding_Dto
 {
     public int BiedingNr { get; set; }
 
-    [Range(1, int.MaxValue)]
-    [Required] 
-    public int VeilingNr { get; set; }
+    public int? VeilingNr { get; set; }
     
     [Required]
     public int VeilingProductNr { get; set; }
@@ -31,7 +29,6 @@ public record BiedingCreateDto : BaseBieding_Dto
 {
     public int BiedingNr { get; set; }
     
-    public int VeilingNr { get; set; } 
     public int VeilingproductNr { get; set; }
 }
 

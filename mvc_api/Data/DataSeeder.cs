@@ -169,8 +169,10 @@ public static class DataSeeder
 
         foreach (var product in seedProducten)
         {
-            var bestaat = await dbContext.Veilingproducten.AnyAsync(vp => vp.VeilingProductNr == product.VeilingProductNr);
-            if (!bestaat)
+            var bestaand = await dbContext.Veilingproducten
+                .FirstOrDefaultAsync(vp => vp.Naam == product.Naam && vp.Kwekernr == product.Kwekernr);
+
+            if (bestaand is null)
             {
                 dbContext.Veilingproducten.Add(product);
             }
@@ -186,6 +188,10 @@ public static class DataSeeder
         {
             return;
         }
+        
+        var producten = await dbContext.Veilingproducten
+            .Where(vp => vp.Naam == "Tulp Mix" || vp.Naam == "Rode Roos")
+            .ToDictionaryAsync(vp => vp.Naam, vp => vp.VeilingProductNr);
 
         var seedBiedingen = new[]
         {
@@ -195,8 +201,7 @@ public static class DataSeeder
                 BedragPerFust    = 13,
                 AantalStuks      = 5,
                 GebruikerNr      = koper.Id,
-                VeilingNr        = 201,
-                VeilingproductNr = 101
+                VeilingproductNr = producten.GetValueOrDefault("Tulp Mix")
             },
             new Bieding
             {
@@ -204,14 +209,19 @@ public static class DataSeeder
                 BedragPerFust    = 21,
                 AantalStuks      = 3,
                 GebruikerNr      = koper.Id,
-                VeilingNr        = 202,
-                VeilingproductNr = 102
+                VeilingproductNr = producten.GetValueOrDefault("Rode Roos")
             }
         };
 
         foreach (var bieding in seedBiedingen)
         {
-            var bestaat = await dbContext.Biedingen.AnyAsync(b => b.BiedNr == bieding.BiedNr);
+            if (bieding.VeilingproductNr == 0)
+                continue;
+
+            var bestaat = await dbContext.Biedingen.AnyAsync(b =>
+                b.VeilingproductNr == bieding.VeilingproductNr &&
+                b.GebruikerNr == bieding.GebruikerNr &&
+                b.BedragPerFust == bieding.BedragPerFust);
             if (!bestaat)
             {
                 dbContext.Biedingen.Add(bieding);

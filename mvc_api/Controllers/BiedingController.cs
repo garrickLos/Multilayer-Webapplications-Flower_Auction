@@ -60,14 +60,15 @@ public class BiedingController : ControllerBase
         pageSize = Math.Clamp(pageSize, 1, 200);
 
         var query = _db.Biedingen.AsNoTracking()
-                                 .AsQueryable();
+            .Include(b => b.Veilingproduct)
+            .AsQueryable();
 
         if (gebruikerNr is int gNr)
             query = query.Where(b => b.GebruikerNr == gNr);
 
         if (veilingNr is int vNr)
-            query = query.Where(b => b.VeilingNr == vNr);
-
+            query = query.Where(b => b.Veilingproduct!.VeilingNr == vNr);
+        
         var total = await query.CountAsync(ct);
 
         var items = await query
@@ -117,15 +118,15 @@ public class BiedingController : ControllerBase
         if (!gebruikerBestaat)
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
 
-        // Veiling als tracked entity
-        var veiling = await _db.Veilingen
-            .FirstOrDefaultAsync(v => v.VeilingNr == dto.VeilingNr, ct);
-
-        if (veiling is null)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veiling bestaat niet.", 400));
-
+        var veilingproduct = await _db.Veilingproducten
+            .Include(vp => vp.Veiling)
+            .FirstOrDefaultAsync(vp => vp.VeilingProductNr == dto.VeilingproductNr, ct);
+        
+        if (veilingproduct is null)
+            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veilingproduct bestaat niet.", 400));
+        
         // Alleen bieden op actieve veilingen
-        if (!string.Equals(veiling.Status, StatusActive, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(veilingproduct.Veiling?.Status, StatusActive, StringComparison.OrdinalIgnoreCase))
             return BadRequest(CreateProblemDetails(
                 "Ongeldige status",
                 "Er kan alleen geboden worden op een actieve veiling.",
@@ -137,7 +138,6 @@ public class BiedingController : ControllerBase
             BedragPerFust    = dto.BedragPerFust,
             AantalStuks      = dto.AantalStuks,
             GebruikerNr      = dto.GebruikerNr,
-            VeilingNr        = dto.VeilingNr,
             VeilingproductNr = dto.VeilingproductNr
         };
 
@@ -164,8 +164,8 @@ public class BiedingController : ControllerBase
             BedragPerFust    = entity.BedragPerFust,
             AantalStuks      = entity.AantalStuks,
             GebruikerNr      = entity.GebruikerNr,
-            VeilingNr        = entity.VeilingNr,
-            VeilingproductNr = entity.VeilingproductNr,
+            VeilingNr        = veilingproduct.Veiling?.VeilingNr,
+            VeilingProductNr = entity.VeilingproductNr,
         };
 
         return CreatedAtAction(nameof(GetById), new { id = entity.BiedNr }, result);
@@ -233,7 +233,7 @@ public static class BiedingExtensions
         return query.Select(b => new VeilingMeester_BiedingDto
         {   // Eigen properties van VeilingMeester_BiedingDto
             BiedingNr = b.BiedNr,
-            VeilingNr = b.VeilingNr,
+            VeilingNr = b.Veilingproduct!.VeilingNr,
             VeilingProductNr = b.VeilingproductNr,
 
             // Properties geërfd van BaseBieding_Dto
