@@ -14,45 +14,45 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Flora BV",
-                Email          = "flora@example.nl",
-                UserName       = "flora@example.nl",
+                Email          = "flora@gmail.com",
+                UserName       = "flora@gmail.com",
                 LaatstIngelogd = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc),
                 Soort          = "VeilingMeester",
                 Kvk            = "12345678",
                 StraatAdres    = "Bloemig 10",
                 Postcode       = "1234AB"
             },
-            "Test123!",
+            "abcTest123!@#",
             "VeilingMeester"
         ),
         (
             new Gebruiker
             {
                 BedrijfsNaam   = "Jan Jansen",
-                Email          = "jan@example.nl",
-                UserName       = "jan@example.nl",
+                Email          = "luigi@gmail.com",
+                UserName       = "luigi@gmail.com",
                 LaatstIngelogd = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc),
                 Soort          = "Koper",
                 Kvk            = "00000000",
                 StraatAdres    = "Laan 5",
                 Postcode       = "2345BC"
             },
-            "Test123!",
+            "abcTest123!@#",
             "Koper"
         ),
         (
             new Gebruiker
             {
                 BedrijfsNaam   = "Bloemenhandel De Vrolijke Roos",
-                Email          = "bedrijf@example.nl",
-                UserName       = "bedrijf@example.nl",
+                Email          = "mario123@gmail.com",
+                UserName       = "mario123@gmail.com",
                 LaatstIngelogd = new DateTime(2025, 10, 06, 10, 0, 0, DateTimeKind.Utc),
                 Soort          = "Bedrijf",
                 Kvk            = "87654321",
                 StraatAdres    = "Handelsweg 22",
                 Postcode       = "3456CD"
             },
-            "Test123!",
+            "abcTest123!@#",
             "Bedrijf"
         )
     ];
@@ -139,7 +139,7 @@ public static class DataSeeder
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 500,
-                Startprijs       = 12,
+                Startprijs       = 1200000000,
                 CategorieNr      = 1,
                 VeilingNr        = 201,
                 Plaats           = "Aalsmeer",
@@ -154,7 +154,7 @@ public static class DataSeeder
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 300,
-                Startprijs       = 20,
+                Startprijs       = 2000000000,
                 CategorieNr      = 2,
                 VeilingNr        = 202,
                 Plaats           = "Eelde",
