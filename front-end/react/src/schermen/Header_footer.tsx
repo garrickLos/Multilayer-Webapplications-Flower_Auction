@@ -80,7 +80,7 @@ export default function Header() {
                             </div>
                         )}
 
-                        {role === "Veilingmeester" && (
+                        {role === "VeilingMeester" && (
                             <div className="veilingPLaatsen">
                                 <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
                                      alt="houten hamer"

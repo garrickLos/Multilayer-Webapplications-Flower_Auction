@@ -544,7 +544,7 @@ namespace mvc_api.Migrations
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Categorie");
 

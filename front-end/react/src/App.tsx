@@ -48,7 +48,7 @@ export default function App() {
                 <Route path="/" element={<Navigate to="/home" />} />
 
                 <Route path="/home" element={<Hoofdscherm />} />
-                <Route path="/veilingmeester" element={<ProtectedRoute allowedRoles={["Veilingmeester"]} element={<VeilingmeesterPage />} />} />                <Route path="/gegevens" element={<h2 className="h4">Gegevens pagina (coming soon)</h2>} />
+                <Route path="/veilingmeester" element={<ProtectedRoute allowedRoles={["VeilingMeester"]} element={<VeilingmeesterPage />} />} />                <Route path="/gegevens" element={<h2 className="h4">Gegevens pagina (coming soon)</h2>} />
                 <Route path="/veilingPlaatsen" element={<ProtectedRoute allowedRoles={["Bedrijf"]} element={<SellerScreenAdd />} />} />
                 <Route path="/veilingBekijken" element={<ProtectedRoute allowedRoles={["Bedrijf"]} element={<SellerScreenInfo />} />} />
                 <Route path="/klantGegevens" element={<ProtectedRoute allowedRoles={["Koper"]} element={<CustomerScreenInfo />} />} />

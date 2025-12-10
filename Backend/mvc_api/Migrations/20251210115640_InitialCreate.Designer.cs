@@ -12,7 +12,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251210101012_InitialCreate")]
+    [Migration("20251210115640_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -547,7 +547,7 @@ namespace mvc_api.Migrations
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Categorie");
 

@@ -237,7 +237,7 @@ namespace mvc_api.Migrations
                         column: x => x.VeilingNr,
                         principalTable: "Veiling",
                         principalColumn: "VeilingNr",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
