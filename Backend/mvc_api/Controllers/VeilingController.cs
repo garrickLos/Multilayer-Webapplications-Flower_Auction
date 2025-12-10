@@ -354,7 +354,7 @@ public class VeilingController : ControllerBase
             return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
 
         // Update fields
-        entity.VeilingNaam = dto.VeilingNaam;
+        entity.VeilingNaam = dto.VeilingNaam ?? entity.VeilingNaam;
         entity.Begintijd = dto.Begintijd;
         entity.Eindtijd = dto.Eindtijd;
 
