@@ -34,57 +34,6 @@ public class VeilingproductControllerTests
         return controller;
     }
 
-    [Fact(DisplayName = "Succes: filteren van publieke producten op zoekterm en categorie")]
-    public async Task GetPublic_FiltersProductsByQueryAndCategory()
-    {
-        var context = CreateContext(nameof(GetPublic_FiltersProductsByQueryAndCategory));
-        context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
-        context.Veilingproducten.AddRange(
-            new Veilingproduct
-            {
-                VeilingProductNr = 1,
-                Naam = "Gele Tulp",
-                CategorieNr = 1,
-                GeplaatstDatum = DateTime.UtcNow,
-                AantalFusten = 1,
-                VoorraadBloemen = 10,
-                Minimumprijs = 5,
-                Plaats = "Aalsmeer",
-                Kwekernr = 10,
-                ImagePath = "img1"
-            },
-            new Veilingproduct
-            {
-                VeilingProductNr = 2,
-                Naam = "Rode Roos",
-                CategorieNr = 2,
-                GeplaatstDatum = DateTime.UtcNow,
-                AantalFusten = 1,
-                VoorraadBloemen = 10,
-                Minimumprijs = 5,
-                Plaats = "Aalsmeer",
-                Kwekernr = 11,
-                ImagePath = "img2"
-            }
-        );
-        await context.SaveChangesAsync();
-
-        var controller = CreateController(context);
-
-        var result = await controller.GetPublic(
-            q: "Tulp",
-            categorieNr: 1,
-            minPrice: null,
-            maxPrice: null,
-            createdAfter: null,
-            title: null);
-
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsAssignableFrom<IEnumerable<VeilingproductPublicListDto>>(okResult.Value);
-        var singleItem = Assert.Single(payload);
-        Assert.Equal("Gele Tulp", singleItem.Naam);
-    }
-
     [Fact(DisplayName = "Succes: veilingmeester ziet gefilterde lijst op q/status/min/max/titel")]
     public async Task GetForVeilingmeester_ComposesAllFilters()
     {

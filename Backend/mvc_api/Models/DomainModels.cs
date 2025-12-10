@@ -29,14 +29,10 @@ public class Bieding
     [ForeignKey(nameof(Gebruiker))]
     public int GebruikerNr { get; set; }
 
-    [ForeignKey(nameof(Veiling))]
-    public int VeilingNr { get; set; }
-
     [ForeignKey(nameof(Veilingproduct))]
     public int VeilingproductNr { get; set; }
 
     public virtual Gebruiker? Gebruiker { get; set; }
-    public virtual Veiling? Veiling { get; set; }
     public virtual Veilingproduct? Veilingproduct { get; set; }
 }
 
@@ -71,5 +67,4 @@ public class Veiling
     public string Status { get; set; } = "inactive";
 
     public virtual ICollection<Veilingproduct> Veilingproducten { get; set; } = new List<Veilingproduct>();
-    public virtual ICollection<Bieding> Biedingen { get; set; } = new List<Bieding>();
 }

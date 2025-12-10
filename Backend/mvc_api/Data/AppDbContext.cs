@@ -28,9 +28,9 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .OnDelete(DeleteBehavior.Restrict);
 
         b.Entity<Bieding>()
-            .HasOne(x => x.Veiling)
+            .HasOne(x => x.Veilingproduct)
             .WithMany(v => v.Biedingen)
-            .HasForeignKey(x => x.VeilingNr)
+            .HasForeignKey(x => x.VeilingproductNr)
             .OnDelete(DeleteBehavior.Cascade);
 
         b.Entity<Veilingproduct>()

@@ -14,45 +14,45 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Flora BV",
-                Email          = "flora@example.nl",
-                UserName       = "flora@example.nl",
+                Email          = "flora@gmail.com",
+                UserName       = "flora@gmail.com",
                 LaatstIngelogd = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc),
                 Soort          = "VeilingMeester",
                 Kvk            = "12345678",
                 StraatAdres    = "Bloemig 10",
                 Postcode       = "1234AB"
             },
-            "Test123!",
+            "abcTest123!@#",
             "VeilingMeester"
         ),
         (
             new Gebruiker
             {
                 BedrijfsNaam   = "Jan Jansen",
-                Email          = "jan@example.nl",
-                UserName       = "jan@example.nl",
+                Email          = "luigi@gmail.com",
+                UserName       = "luigi@gmail.com",
                 LaatstIngelogd = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc),
                 Soort          = "Koper",
                 Kvk            = "00000000",
                 StraatAdres    = "Laan 5",
                 Postcode       = "2345BC"
             },
-            "Test123!",
+            "abcTest123!@#",
             "Koper"
         ),
         (
             new Gebruiker
             {
                 BedrijfsNaam   = "Bloemenhandel De Vrolijke Roos",
-                Email          = "bedrijf@example.nl",
-                UserName       = "bedrijf@example.nl",
+                Email          = "mario123@gmail.com",
+                UserName       = "mario123@gmail.com",
                 LaatstIngelogd = new DateTime(2025, 10, 06, 10, 0, 0, DateTimeKind.Utc),
                 Soort          = "Bedrijf",
                 Kvk            = "87654321",
                 StraatAdres    = "Handelsweg 22",
                 Postcode       = "3456CD"
             },
-            "Test123!",
+            "abcTest123!@#",
             "Bedrijf"
         )
     ];
@@ -135,12 +135,11 @@ public static class DataSeeder
         {
             new Veilingproduct
             {
-                VeilingProductNr = 101,
                 Naam             = "Tulp Mix",
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 500,
-                Startprijs       = 12,
+                Startprijs       = 1200000000,
                 CategorieNr      = 1,
                 VeilingNr        = 201,
                 Plaats           = "Aalsmeer",
@@ -151,12 +150,11 @@ public static class DataSeeder
             },
             new Veilingproduct
             {
-                VeilingProductNr = 102,
                 Naam             = "Rode Roos",
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 300,
-                Startprijs       = 20,
+                Startprijs       = 2000000000,
                 CategorieNr      = 2,
                 VeilingNr        = 202,
                 Plaats           = "Eelde",
@@ -169,8 +167,10 @@ public static class DataSeeder
 
         foreach (var product in seedProducten)
         {
-            var bestaat = await dbContext.Veilingproducten.AnyAsync(vp => vp.VeilingProductNr == product.VeilingProductNr);
-            if (!bestaat)
+            var bestaand = await dbContext.Veilingproducten
+                .FirstOrDefaultAsync(vp => vp.Naam == product.Naam && vp.Kwekernr == product.Kwekernr);
+
+            if (bestaand is null)
             {
                 dbContext.Veilingproducten.Add(product);
             }
@@ -186,32 +186,38 @@ public static class DataSeeder
         {
             return;
         }
+        
+        var producten = await dbContext.Veilingproducten
+            .Where(vp => vp.Naam == "Tulp Mix" || vp.Naam == "Rode Roos")
+            .ToDictionaryAsync(vp => vp.Naam, vp => vp.VeilingProductNr);
 
         var seedBiedingen = new[]
         {
             new Bieding
             {
-                BiedNr           = 1001,
                 BedragPerFust    = 13,
                 AantalStuks      = 5,
                 GebruikerNr      = koper.Id,
-                VeilingNr        = 201,
-                VeilingproductNr = 101
+                VeilingproductNr = producten.GetValueOrDefault("Tulp Mix")
             },
             new Bieding
             {
-                BiedNr           = 1002,
                 BedragPerFust    = 21,
                 AantalStuks      = 3,
                 GebruikerNr      = koper.Id,
-                VeilingNr        = 202,
-                VeilingproductNr = 102
+                VeilingproductNr = producten.GetValueOrDefault("Rode Roos")
             }
         };
 
         foreach (var bieding in seedBiedingen)
         {
-            var bestaat = await dbContext.Biedingen.AnyAsync(b => b.BiedNr == bieding.BiedNr);
+            if (bieding.VeilingproductNr == 0)
+                continue;
+
+            var bestaat = await dbContext.Biedingen.AnyAsync(b =>
+                b.VeilingproductNr == bieding.VeilingproductNr &&
+                b.GebruikerNr == bieding.GebruikerNr &&
+                b.BedragPerFust == bieding.BedragPerFust);
             if (!bestaat)
             {
                 dbContext.Biedingen.Add(bieding);

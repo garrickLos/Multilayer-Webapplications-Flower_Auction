@@ -8,10 +8,6 @@
 
 
 
-// "ConnectionStrings": {
-//     "Default": "Server=localhost;Database=BloemenVeiling;Trusted_Connection=True;TrustServerCertificate=True"
-// }
-
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -67,10 +63,18 @@ var connectionString = builder.Configuration.GetConnectionString("Default");
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
-// Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
-    // options.UseSqlServer(connectionString));
+if (builder.Environment.IsDevelopment())
+{
+    // Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("SQL_SERVER-CONNECTIONSTRING")));
+}
+
 
 // Identity configuratie (alleen registratie, verdere auth volgt later)
 builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
