@@ -211,6 +211,7 @@ public static class BiedingExtensions
             VeilingProductNr = b.VeilingproductNr,
 
             // Properties geërfd van BaseBieding_Dto
+            BedragPerFust = b.BedragPerFust,
             AantalStuks = b.AantalStuks,
             GebruikerNr = b.GebruikerNr,
         });

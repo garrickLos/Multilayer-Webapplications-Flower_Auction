@@ -182,7 +182,7 @@ public class VeilingproductController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Bedrijf, Klant, VeilingMeester")]
+    [Authorize(Roles = "Bedrijf, Koper, VeilingMeester")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Update(
         int id,
         [FromBody] VeilingproductUpdateDto dto,
