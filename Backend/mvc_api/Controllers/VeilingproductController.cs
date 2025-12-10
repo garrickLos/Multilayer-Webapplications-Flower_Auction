@@ -16,46 +16,99 @@ public class VeilingproductController : ControllerBase
     private readonly AppDbContext _db;
     public VeilingproductController(AppDbContext db) => _db = db;
 
-    [HttpGet("public")]
-    [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<VeilingproductPublicListDto>>> GetPublic(
+    //Get voor klant
+    [HttpGet("Klant")]
+    [Authorize(Roles = "Koper")]
+    public async Task<ActionResult<IEnumerable<klantVeilingproductGet_dto>>> KlantGetAll(
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
-        [FromQuery] int? minPrice,
-        [FromQuery] int? maxPrice,
-        [FromQuery] DateTime? createdAfter,
-        [FromQuery] string? title,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var query = BuildFilteredQuery(
-            q, categorieNr, null, minPrice, maxPrice, createdAfter, title, ModelStatus.Active);
+        page     = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            query = query.Where(vp => vp.Naam.Contains(term));
+        }
+
+        if (categorieNr is int cnr)
+            query = query.Where(vp => vp.CategorieNr == cnr);
+
+        var total = await query.CountAsync(ct);
 
         var items = await query
-            .Select(VeilingproductDtoSelectors.PublicList)
+            .OrderBy(vp => vp.Naam)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(v => new klantVeilingproductGet_dto(
+                v.VeilingProductNr,
+                v.Naam,
+                v.Categorie == null ? null : v.Categorie.Naam,
+                v.ImagePath,
+                v.Plaats
+            ))
             .ToListAsync(ct);
+
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
 
         return Ok(items);
     }
-
-    [HttpGet("kweker")]
+    
+    //Get voor kweker
+    [HttpGet("Kweker")]
     [Authorize(Roles = "Bedrijf")]
-    public async Task<ActionResult<IEnumerable<VeilingproductKwekerListDto>>> GetForKweker(
-        [FromQuery] ModelStatus? status,
+
+    public async Task<ActionResult<IEnumerable<kwekerVeilingproductGet_dto>>> KwekerGetAll(
+        [FromQuery] string? q,
+        [FromQuery] int? categorieNr,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
+        page     = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+        
+        
+        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
 
-        var query = _db.Veilingproducten
-            .AsNoTracking()
-            .Include(v => v.Categorie)
-            .Where(v => v.Kwekernr == userId &&
-                        (!status.HasValue || v.Status == status.Value));
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            query = query.Where(vp => vp.Naam.Contains(term));
+        }
+
+        if (categorieNr is int cnr)
+            query = query.Where(vp => vp.CategorieNr == cnr);
+
+        var total = await query.CountAsync(ct);
 
         var items = await query
-            .OrderBy(v => v.Naam)
-            .Select(VeilingproductDtoSelectors.KwekerList)
+            .OrderBy(vp => vp.Naam)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(v => new kwekerVeilingproductGet_dto(
+                v.VeilingProductNr,
+                v.Naam,
+                v.GeplaatstDatum,
+                v.AantalFusten,
+                v.VoorraadBloemen,
+                v.Categorie == null ? null : v.Categorie.Naam,
+                v.ImagePath,
+                v.Plaats
+            ))
             .ToListAsync(ct);
+
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
 
         return Ok(items);
     }

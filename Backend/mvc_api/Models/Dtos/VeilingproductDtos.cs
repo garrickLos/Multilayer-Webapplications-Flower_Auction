@@ -112,6 +112,29 @@ public record VeilingproductVeilingmeesterListDto(
     DateOnly? BeginDatum
 );
 
+//tijdelijke dtos
+//kweker get dto
+public sealed record kwekerVeilingproductGet_dto
+(
+    int VeilingProductNr,
+    string Naam,
+    DateTime GeplaatstDatum,
+    int Fust,
+    int Voorraad,
+    string? Categorie,
+    string ImagePath,
+    string Plaats
+);
+//info voor klant
+public sealed record klantVeilingproductGet_dto
+(
+    int VeilingProductNr,
+    string Naam,
+    string Categorie,
+    string ImagePath,
+    string Plaats
+);
+
 public static class VeilingproductDtoSelectors
 {
     public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>
