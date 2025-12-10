@@ -15,7 +15,7 @@ export default function SellerScreenInfo() {
         imagePath: string;
         plaats: string;
     }
-    console.log(productLijst.map(c=>c.plaats));
+    console.log(productLijst);
     return (
         <main className="SellerScreenInfo">
             <section className="productScroller">
