@@ -101,7 +101,7 @@ public class BiedingController : ControllerBase
 
     // POST: api/Bieding
     [HttpPost]
-    [Authorize (Roles ="VeilingMeester")]
+    [Authorize (Roles ="VeilingMeester, Klant, Bedrijf")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> Create(
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
