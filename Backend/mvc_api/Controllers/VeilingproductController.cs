@@ -11,6 +11,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles ="Bedrijf, Koper")]
 public class VeilingproductController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -197,18 +198,30 @@ public class VeilingproductController : ControllerBase
         if (!TryGetUserId(out var userId) || entity.Kwekernr != userId)
             return Forbid();
 
-        var referenceError = await ValidateReferencesAsync(dto.CategorieNr, ct);
-        if (referenceError != null)
-            return referenceError;
+        if (dto.CategorieNr != null)
+        {
+            var referenceError = await ValidateReferencesAsync((int)dto.CategorieNr, ct);
+            if (referenceError != null)
+                return referenceError;   
+        }
 
-        entity.Naam            = dto.Naam.Trim();
+        if (!string.IsNullOrEmpty(dto.Naam))
+        {
+            entity.Naam = dto.Naam.Trim();
+        }
+
         entity.GeplaatstDatum  = dto.GeplaatstDatum ?? entity.GeplaatstDatum;
-        entity.AantalFusten    = dto.AantalFusten;
-        entity.VoorraadBloemen = dto.VoorraadBloemen;
-        entity.CategorieNr     = dto.CategorieNr;
-        entity.ImagePath       = dto.ImagePath;
-        entity.Minimumprijs    = dto.Minimumprijs;
-        entity.Plaats          = dto.Plaats;
+        entity.AantalFusten    = dto.AantalFusten ?? entity.AantalFusten;
+        entity.VoorraadBloemen = dto.VoorraadBloemen ?? entity.VoorraadBloemen;
+        entity.CategorieNr     = dto.CategorieNr ?? entity.CategorieNr;
+
+        if (!string.IsNullOrEmpty(dto.ImagePath))
+        {
+            entity.ImagePath       = dto.ImagePath;      
+        }
+
+        entity.Minimumprijs    = dto.Minimumprijs ?? entity.Minimumprijs;
+        entity.Plaats          = dto.Plaats ?? entity.Plaats;
 
         await _db.SaveChangesAsync(ct);
 

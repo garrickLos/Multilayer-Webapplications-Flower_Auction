@@ -36,27 +36,29 @@ public record VeilingproductCreateDto
 
 public record VeilingproductUpdateDto
 {
-    [Required, StringLength(200)]
-    public string Naam { get; init; } = default!;
+    // String is nu nullable (string?) en Required is weg.
+    [StringLength(200)]
+    public string? Naam { get; init; }
 
     public DateTime? GeplaatstDatum { get; init; }
 
+    // Int is nu nullable (int?). Range werkt nog steeds als er wel een getal wordt ingevuld.
     [Range(1, int.MaxValue)]
-    public int AantalFusten { get; init; }
+    public int? AantalFusten { get; init; }
 
     [Range(0, int.MaxValue)]
-    public int VoorraadBloemen { get; init; }
+    public int? VoorraadBloemen { get; init; }
 
     [Range(1, int.MaxValue)]
-    public int CategorieNr { get; init; }
+    public int? CategorieNr { get; init; }
 
-    [Required, StringLength(200)]
-    public string ImagePath { get; init; } = default!;
+    [StringLength(200)]
+    public string? ImagePath { get; init; }
 
     [Range(1, 999_999_999)]
-    public int Minimumprijs { get; init; }
+    public int? Minimumprijs { get; init; }
 
-    public string Plaats { get; init; } = string.Empty;
+    public string? Plaats { get; init; }
 }
 
 // VEILINGMEESTER UPDATE
@@ -81,16 +83,16 @@ public record VeilingproductPublicListDto(
 
 // kweker lijst
 public record VeilingproductKwekerListDto(
-    int VeilingProductNr,
-    string Naam,
-    DateTime GeplaatstDatum,
-    int AantalFusten,
-    int VoorraadBloemen,
+    int? VeilingProductNr,
+    string? Naam,
+    DateTime? GeplaatstDatum,
+    int? AantalFusten,
+    int? VoorraadBloemen,
     string? CategorieNaam,
-    string ImagePath,
-    string Plaats,
+    string? ImagePath,
+    string? Plaats,
     int? Startprijs,
-    int Minimumprijs,
+    int? Minimumprijs,
     int? VeilingNr
 );
 
