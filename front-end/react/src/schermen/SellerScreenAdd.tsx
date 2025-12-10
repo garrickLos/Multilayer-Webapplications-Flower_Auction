@@ -19,7 +19,7 @@ export default function SellerScreenAdd() {
     const Data = {
         status: true,
         Kwekernr: 4,
-        ImagePath: ""
+        ImagePath: Default_ImagePlaceholder
     };
 
     const [product, setProduct] = useState({
@@ -29,7 +29,7 @@ export default function SellerScreenAdd() {
         CategorieNr: "",
         Plaats: "",
         Minimumprijs: "",
-        beginDatum: "",
+        BeginDatum: "",
         GeplaatstDatum: ""
     });
 
@@ -39,7 +39,7 @@ export default function SellerScreenAdd() {
         VoorraadBloemen: "",
         CategorieNr: "",
         Plaats: "",
-        beginDatum: "",
+        BeginDatum: "",
         Minimumprijs: ""
     });
 
@@ -62,7 +62,7 @@ export default function SellerScreenAdd() {
             case "Plaats":
                 if (!value) error = "Selecteer een plaats";
                 break;
-            case "beginDatum":
+            case "BeginDatum":
                 if (!value) error = "Datum mag niet leeg zijn";
                 break;
                 case "Minimumprijs":
@@ -100,7 +100,7 @@ export default function SellerScreenAdd() {
     const huidigeTijd = new Date().toISOString();
     
     const GegevensVersturen = async () => {
-        const allValid = Object.keys(errors).every(key => validateField(key, (product as any)[key]));
+        const allValid = Object.keys(errors).every(key => validateField(key, (product as never)[key]));
         if (!allValid) {
             alert("Controleer de velden in rood!");
             return;
@@ -207,9 +207,9 @@ export default function SellerScreenAdd() {
                         <section className="schermDeel3">
                             <div className="scherm3Container">
                                 <div className="ordenen">
-                                    <label htmlFor="beginDatum" className="sDate">Datum:</label>
-                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={verwerkInput} />
-                                    {errors.beginDatum && <span className="error">{errors.beginDatum}</span>}
+                                    <label htmlFor="BeginDatum" className="sDate">Datum:</label>
+                                    <input type="date" id="BeginDatum" value={product.BeginDatum} onChange={verwerkInput} />
+                                    {errors.BeginDatum && <span className="error">{errors.BeginDatum}</span>}
                                 </div>
                                 <button className="placeProduct" onClick={GegevensVersturen}>
                                     Product Plaatsen
