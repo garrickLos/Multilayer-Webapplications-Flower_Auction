@@ -1,0 +1,15 @@
+.ordenen {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    border-bottom: 1px solid lightgray;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+}
+
+.Prijs {
+    font-size: 1.2rem;
+    color: var(--ink);
+}
