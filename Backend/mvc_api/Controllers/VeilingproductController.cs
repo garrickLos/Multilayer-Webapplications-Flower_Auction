@@ -182,7 +182,7 @@ public class VeilingproductController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Bedrijf")]
+    [Authorize(Roles = "Bedrijf, Klant, VeilingMeester")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Update(
         int id,
         [FromBody] VeilingproductUpdateDto dto,
@@ -194,9 +194,13 @@ public class VeilingproductController : ControllerBase
         var entity = await _db.Veilingproducten.FindAsync(id);
         if (entity == null)
             return NotFound();
+            
+        bool userFound = TryGetUserId(out var userId);
 
-        if (!TryGetUserId(out var userId) || entity.Kwekernr != userId)
-            return Forbid();
+        if (!userFound) 
+        {
+            return BadRequest($"Kan User ID niet uit token halen. Claims in token: {string.Join(", ", User.Claims.Select(c => c.Type + ":" + c.Value))}");
+        }
 
         if (dto.CategorieNr != null)
         {

@@ -96,6 +96,8 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     const minimumPrijs = huidigProduct?.minPrijs || 0;
     const categorie = huidigProduct?.categorieNaam;
 
+    const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
+
     const [errors, setErrors] = useState<error>({});
 
     // Event handlers
@@ -106,7 +108,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     let [koopItem, setKoopItem] = useState<boolean>(true);
 
     const handleKlik = async () => {
-        const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
 
         const isGeldig = checkInputField(InvoerAantal, huidigProduct, errors);
         setKoopItem(isGeldig);

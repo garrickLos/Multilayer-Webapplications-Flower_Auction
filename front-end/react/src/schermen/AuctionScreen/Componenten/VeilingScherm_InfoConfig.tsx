@@ -4,13 +4,15 @@ import type { VeilingLogica } from "../VeilingSchermTypes";
 import type { ProductLogica } from "../VeilingSchermTypes";
 
 export interface VeilingproductUpdate_props {
-    Naam?: string;
-    GeplaatsteDatum?: Date;
+    // string | null zorgt dat je eventueel wel null mag sturen als dat ooit nodig is
+    Naam?: string | null;
+    GeplaatstDatum?: Date | null;
     VoorraadBloemen: number;
     AantalFusten: number;
-    ImagePath?: string;
-    MinimumPrijs?: number;
-    Plaats?: string;
+    CategorieNr?: number | null;
+    ImagePath?: string | null;
+    Minimumprijs?: number | null;
+    Plaats?: string | null;
 }
 
 export function mapData(safeData: any[]): VeilingLogica[] {
@@ -64,13 +66,8 @@ export async function VeilingProductitem_Update(isGeldig: boolean, huidigProduct
             const nieuweVoorraad_Bloemen = huidigeVoorraad_Bloemen - teVerwijderenBloemen;
 
             const dataOmTeSturen: VeilingproductUpdate_props = {
-                Naam: huidigProduct.naam,
-                GeplaatsteDatum: huidigProduct.GeplaatsteDatum,
-                AantalFusten: nieuweVoorraad_Fusten,
                 VoorraadBloemen: nieuweVoorraad_Bloemen,
-                ImagePath: huidigProduct.imagePath,
-                MinimumPrijs: huidigProduct.minPrijs,
-                Plaats: huidigProduct.plaats
+                AantalFusten: nieuweVoorraad_Fusten
             };
 
             try {
