@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import { Timer } from './Componenten/RenderTimer'; // Zorg dat imports kloppen
-import { type errorMessaging, type ProductLogica, type categorie as veilingCategorie, type VeilingLogica, type VeilingschermProps } from './VeilingTypes';
+import { type errorMessaging, type ProductLogica, type categorie as veilingCategorie, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
 
 //api calls
 import { UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
-import { UpdateVeilingApi as Api_UpdateVeilingProduct, UpdateVeilingApi } from '../../typeScript/ApiPost';
+import { UpdateVeilingApi as Api_UpdateVeilingProduct } from '../../typeScript/ApiPost';
 import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 
 //componenten
@@ -14,15 +14,10 @@ import { DelenDoor as ConvertToEuro } from '../../typeScript/RekenFuncties';
 import { InfoVeld } from './Componenten/InformatieVelden';
 import { VeilingProductitem_Update, mapData } from './Componenten/VeilingScherm_InfoConfig';
 
-import '../../css/AuctionScreen.css';
+import '../../css/VeilingScherm.css';
 
 const token = Token();
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
-
-export interface VeilingproductUpdateDto {
-    VoorraadBloemen?: number;
-    AantalFusten?: number;
-}
 
 export default function AuctionScreen() {
     const [toonEindScherm, setToonEindScherm] = useState(false);
@@ -96,23 +91,22 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     let [InvoerAantal, setAantal] = useState(0);
     const [huidigePrijs, setHuidigePrijs] = useState(0);
     const aantalFusten = huidigProduct?.aantalFusten;
+    const voorraadBloemen = huidigProduct?.voorraadBloemen;
     const totaalPrijs = (InvoerAantal * huidigePrijs).toFixed(2);
     const minimumPrijs = huidigProduct?.minPrijs || 0;
+    const categorie = huidigProduct?.categorieNaam;
 
     const [errors, setErrors] = useState<error>({});
 
     // Event handlers
     const verwerkVerandering = (e: React.ChangeEvent<HTMLInputElement>) => {
         setAantal(Number(e.target.value));        
-    };    
-
-    const { data: catData } = GetVeilingen<veilingCategorie>(`/api/Categorie/${huidigProduct?.categorieNr}`);
-    const categorie = catData || null;
+    };
 
     let [koopItem, setKoopItem] = useState<boolean>(true);
 
     const handleKlik = async () => {
-        const url = `/api/VeilingProduct/KlantUpdate/${huidigProduct?.veilingProductNr}`;
+        const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
 
         const isGeldig = checkInputField(InvoerAantal, huidigProduct, errors);
         setKoopItem(isGeldig);
@@ -145,13 +139,13 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         <InfoVeld Titel={'Product naam:'} Bericht={huidigProduct?.naam}
                                 BerichtClass={'rightSideText'}/>
                         
-                        <InfoVeld Titel={'Product categorie:'} Bericht={categorie?.naam}
+                        <InfoVeld Titel={'Product categorie:'} Bericht={categorie}
                                 secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
                         
-                        <InfoVeld Titel={'AantalFusten:'} Bericht={huidigProduct?.aantalFusten}
+                        <InfoVeld Titel={'AantalFusten:'} Bericht={aantalFusten}
                                 secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
                         
-                        <InfoVeld Titel={'Vooraad bloemen:'} Bericht={huidigProduct?.voorraadBloemen}
+                        <InfoVeld Titel={'Vooraad bloemen:'} Bericht={voorraadBloemen}
                                 secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
                         
                         <InfoVeld Titel={'Plaats:'} Bericht={huidigProduct?.plaats}

@@ -1,13 +1,11 @@
 // Let op: GEEN imports van 'react' hier. Dit is een pure hulpfunctie.
 
-export async function UpdateVeilingApi<T>(url: string, changedData: any, token: string | null): Promise<T> {
+export async function UpdateVeilingApi<T>(url: string, changedData: T, token: string | null): Promise<T> {
     
-    // 1. Validatie direct uitvoeren
     if (!token) {
         throw new Error("Geen token gevonden. Log opnieuw in.");
     }
 
-    // 2. Fetch uitvoeren
     const response = await fetch(url, {
         method: 'PUT',
         headers: {
@@ -18,7 +16,6 @@ export async function UpdateVeilingApi<T>(url: string, changedData: any, token: 
         body: JSON.stringify(changedData)
     });
 
-    // 3. Foutafhandeling
     if (!response.ok) {
         let foutmelding = 'Er ging iets mis bij het updaten';
         
@@ -33,6 +30,5 @@ export async function UpdateVeilingApi<T>(url: string, changedData: any, token: 
         throw new Error(foutmelding);
     }
 
-    // 4. Resultaat teruggeven
     return await response.json();
 }

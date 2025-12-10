@@ -3,13 +3,16 @@ export interface ProductLogica {
     imagePath: string;
     naam: string;
     
-    // Zorg dat dit numbers zijn, geen strings
-    categorieNr: number | string; 
+    categorieNaam: string; 
+    categorieNr: number;
+
     aantalFusten: number;    
     voorraadBloemen: number;
 
+    GeplaatsteDatum: Date;
+
     startPrijs: number;
-    minPrijs: number; // Let op: consistentie in naamgeving (minPrijs vs minimumPrijs)
+    minPrijs: number;
     
     plaats: string;
 }
@@ -31,3 +34,8 @@ export type VeilingschermProps = {
     actieveVeiling: VeilingLogica;
     veilingItemNr: number;
 }
+
+export type errorMessaging = {
+    verkeerdeWaarde?: string;
+    correcteWaarde?: string;
+};

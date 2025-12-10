@@ -1,8 +1,17 @@
 import { UpdateVeilingApi } from "../../../typeScript/ApiPost";
 
-import type { VeilingLogica } from "../VeilingTypes";
-import type { VeilingproductUpdateDto } from "../VeilingScherm";
-import type { ProductLogica } from "../VeilingTypes";
+import type { VeilingLogica } from "../VeilingSchermTypes";
+import type { ProductLogica } from "../VeilingSchermTypes";
+
+export interface VeilingproductUpdate_props {
+    Naam?: string;
+    GeplaatsteDatum?: Date;
+    VoorraadBloemen: number;
+    AantalFusten: number;
+    ImagePath?: string;
+    MinimumPrijs?: number;
+    Plaats?: string;
+}
 
 export function mapData(safeData: any[]): VeilingLogica[] {
     return safeData.map((item) => ({
@@ -15,7 +24,8 @@ export function mapData(safeData: any[]): VeilingLogica[] {
             veilingProductNr: prod.veilingProductNr || prod.VeilingProductNr || "productNummer is niet gevonden",
             naam: prod.naam,
             
-            categorieNr: prod.CategorieNr || prod.categorieNr || "Geen categorie gevonden", 
+            categorieNaam: prod.CategorieNaam || prod.categorieNaam || "Geen categorie gevonden", 
+            categorieNr: prod.CategorieNr || prod.categorieNr || "Geen categorie gevonden",
             
             aantalFusten: prod.AantalFusten || prod.aantalFusten || 0,
             voorraadBloemen: prod.VoorraadBloemen || prod.voorraadBloemen || 0,
@@ -53,13 +63,18 @@ export async function VeilingProductitem_Update(isGeldig: boolean, huidigProduct
             const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
             const nieuweVoorraad_Bloemen = huidigeVoorraad_Bloemen - teVerwijderenBloemen;
 
-            const dataOmTeSturen: VeilingproductUpdateDto = {
+            const dataOmTeSturen: VeilingproductUpdate_props = {
+                Naam: huidigProduct.naam,
+                GeplaatsteDatum: huidigProduct.GeplaatsteDatum,
                 AantalFusten: nieuweVoorraad_Fusten,
-                VoorraadBloemen: nieuweVoorraad_Bloemen
+                VoorraadBloemen: nieuweVoorraad_Bloemen,
+                ImagePath: huidigProduct.imagePath,
+                MinimumPrijs: huidigProduct.minPrijs,
+                Plaats: huidigProduct.plaats
             };
 
             try {
-                await UpdateVeilingApi<VeilingproductUpdateDto>(url, dataOmTeSturen, token);
+                await UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token);
                 
             } catch (error) {
                 console.error("API Error details:", error);

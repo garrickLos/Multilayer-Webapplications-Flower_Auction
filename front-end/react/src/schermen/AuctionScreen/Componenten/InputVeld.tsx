@@ -1,6 +1,6 @@
 import { type ChangeEvent } from 'react';
-import type { ProductLogica } from '../VeilingTypes';
-import type { errorMessaging } from '../VeilingTypes';
+import type { ProductLogica } from '../VeilingSchermTypes';
+import type { errorMessaging } from '../VeilingSchermTypes';
 
 import '../../../css/Componenten/InputVeld.css';
 
