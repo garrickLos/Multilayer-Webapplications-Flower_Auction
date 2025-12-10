@@ -9,6 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles ="Koper, Bedrijf, VeilingMeester")]
 public class BiedingController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -102,7 +103,7 @@ public class BiedingController : ControllerBase
 
     // POST: api/Bieding
     [HttpPost]
-    [Authorize (Roles ="VeilingMeester")]
+    [Authorize (Roles ="Koper")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> Create(
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
@@ -169,33 +170,6 @@ public class BiedingController : ControllerBase
         };
 
         return CreatedAtAction(nameof(GetById), new { id = entity.BiedNr }, result);
-    }
-
-    // PUT: api/Bieding/1001
-    [HttpPut("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
-    public async Task<ActionResult<VeilingMeester_BiedingDto>> Update(
-        int id,
-        [FromBody] BiedingUpdateDto dto,
-        CancellationToken ct = default)
-    {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
-
-        var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
-
-        entity.BedragPerFust = dto.BedragPerFust;
-        entity.AantalStuks   = dto.AantalStuks;
-
-        await _db.SaveChangesAsync(ct);
-
-        return Ok(new BiedingUpdateDto
-        {
-            BedragPerFust = entity.BedragPerFust,
-            AantalStuks = entity.AantalStuks,
-        });
     }
 
     // DELETE: api/Bieding/1001

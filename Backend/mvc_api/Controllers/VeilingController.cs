@@ -175,6 +175,7 @@ public class VeilingController : ControllerBase
     }
 
     [HttpGet("klant")]
+    [Authorize (Roles ="Koper")]
     public async Task<ActionResult<IEnumerable<object>>> GetKlant(
 
         [FromQuery] int? veilingProduct,
@@ -289,6 +290,7 @@ public class VeilingController : ControllerBase
 
     // POST: api/Veiling
     [HttpPost]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingCreateDto>> Create(
         [FromBody] VeilingCreateDto dto, 
         CancellationToken ct = default)
@@ -339,6 +341,7 @@ public class VeilingController : ControllerBase
 
     // PUT: api/Veiling/{id}
     [HttpPut("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingUpdateDto>> Update(
         int id, 
         [FromBody] VeilingUpdateDto dto, 
@@ -380,7 +383,7 @@ public class VeilingController : ControllerBase
     // DELETE: api/Veiling/{id}
     //verwijderd ook alle producten die in de veiling zitten (mss handig om een softdelete te gebruiken)
     [HttpDelete("{id:int}")]
-    [Authorize (Roles ="VeilingMeester, Koper")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);

@@ -43,7 +43,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasMany(v => v.Veilingproducten)
             .WithOne(p => p.Veiling)
             .HasForeignKey(p => p.VeilingNr)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Indexen en status-mapping
         b.Entity<Gebruiker>()
