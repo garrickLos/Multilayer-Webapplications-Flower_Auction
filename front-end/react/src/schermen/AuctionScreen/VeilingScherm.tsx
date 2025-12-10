@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { Timer } from './RenderTimer'; // Zorg dat imports kloppen
-import { type ProductLogica, type categorie as veilingCategorie, type VeilingLogica, type VeilingschermProps } from './VeilingTypes';
+import { Timer } from './Componenten/RenderTimer'; // Zorg dat imports kloppen
+import { type errorMessaging, type ProductLogica, type categorie as veilingCategorie, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
 
+//api calls
 import { UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
-import { UpdateVeilingApi as Api_UpdateVeilingProduct, UpdateVeilingApi } from '../../typeScript/ApiPost';
+import { UpdateVeilingApi as Api_UpdateVeilingProduct } from '../../typeScript/ApiPost';
 import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 
-import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from './RenderTimer';
+//componenten
+import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from './Componenten/RenderTimer';
 import { DelenDoor as ConvertToEuro } from '../../typeScript/RekenFuncties';
+import { InfoVeld } from './Componenten/InformatieVelden';
+import { VeilingProductitem_Update, mapData } from './Componenten/VeilingScherm_InfoConfig';
 
-import '../../css/AuctionScreen.css';
+import '../../css/VeilingScherm.css';
 
 const token = Token();
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
-
-type error = {
-    verkeerdeWaarde?: string;
-};
 
 export default function AuctionScreen() {
     const [toonEindScherm, setToonEindScherm] = useState(false);
@@ -87,8 +87,14 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
     const [actieveProductIndex, setActieveProductIndex] = useState(0);
     const huidigProduct = getHuidigeProduct(actieveVeiling, actieveProductIndex);
+
     let [InvoerAantal, setAantal] = useState(0);
     const [huidigePrijs, setHuidigePrijs] = useState(0);
+    const aantalFusten = huidigProduct?.aantalFusten;
+    const voorraadBloemen = huidigProduct?.voorraadBloemen;
+    const totaalPrijs = (InvoerAantal * huidigePrijs).toFixed(2);
+    const minimumPrijs = huidigProduct?.minPrijs || 0;
+    const categorie = huidigProduct?.categorieNaam;
 
     const [errors, setErrors] = useState<error>({});
 
@@ -97,30 +103,21 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
         setAantal(Number(e.target.value));        
     };
 
-    const aantalFusten = huidigProduct?.aantalFusten;
-
-    const totaalPrijs = (InvoerAantal * huidigePrijs).toFixed(2);
-
-    const { data: catData } = GetVeilingen<veilingCategorie>(`/api/Categorie/${huidigProduct?.categorieNr}`);
-    const categorie = catData || null;
-
     let [koopItem, setKoopItem] = useState<boolean>(true);
 
     const handleKlik = async () => {
-        const url = `/api/VeilingProduct/KlantUpdate/${huidigProduct?.veilingProductNr}`;
+        const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
 
         const isGeldig = checkInputField(InvoerAantal, huidigProduct, errors);
         setKoopItem(isGeldig);
 
-        VeilingProductitem_Update(isGeldig, huidigProduct, InvoerAantal, url);
+        VeilingProductitem_Update(isGeldig, huidigProduct, InvoerAantal, url, token);
     };
-
-    const minimumPrijs = huidigProduct?.minPrijs || 0;
 
     return (
         <main className='Auction_Body'>
             <section>
-                <h2>Artificial Citroen boom in deco pot</h2>
+                <h1>Flora holland veiling: {huidigProduct?.naam}</h1>
             </section>
 
             <section>
@@ -139,26 +136,20 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                 <section className="schermDeel2">
                     <div className="scherm2Container">
                         <div className="kopje">Product Details</div>
-                        <div className="ordenen">
-                            <span>Product naam: </span>
-                            <span className='Auction_rightSideText'>{huidigProduct?.naam}</span>
-                        </div>
-                        <div className="ordenen hoeveelheid">
-                            <span>Product categorie: </span>
-                            <span className='Auction_rightSideText'>{categorie?.naam}</span>
-                        </div>
-                        <div className="ordenen hoeveelheid">
-                            <span>AantalFusten:</span> 
-                            <span className='Auction_rightSideText'>{huidigProduct?.aantalFusten}</span>
-                        </div>
-                        <div className="ordenen hoeveelheid">
-                            <span>Vooraad bloemen:</span>
-                            <span className='Auction_rightSideText'>{huidigProduct?.voorraadBloemen}</span>
-                        </div>
-                        <div className="ordenen">
-                            <span>Plaats:</span>
-                            <span className='Auction_rightSideText'>{huidigProduct?.plaats}</span>
-                        </div>
+                        <InfoVeld Titel={'Product naam:'} Bericht={huidigProduct?.naam}
+                                BerichtClass={'rightSideText'}/>
+                        
+                        <InfoVeld Titel={'Product categorie:'} Bericht={categorie}
+                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
+                        
+                        <InfoVeld Titel={'AantalFusten:'} Bericht={aantalFusten}
+                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
+                        
+                        <InfoVeld Titel={'Vooraad bloemen:'} Bericht={voorraadBloemen}
+                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
+                        
+                        <InfoVeld Titel={'Plaats:'} Bericht={huidigProduct?.plaats}
+                                BerichtClass={'rightSideText'}/>
                     </div>
                 </section>
 
@@ -178,16 +169,14 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         )}
                         </div>
                         
-                        <div className="ordenen">
-                           <span>Price: </span>
-                           <span className='Auction_rightSideText Prijs'> € {huidigePrijs.toFixed(2)}</span>
-                        </div>
-                        <div className="ordenen">
-                            <span className='MinimumPrijs:'>MinimumPrijs</span>
-                            <span className='Auction_rightSideText Prijs'> € {ConvertToEuro(minimumPrijs, 100).toFixed(2)}</span>
-                        </div>
+                        <InfoVeld Titel={'Prijs:'} Bericht={`€ ${huidigePrijs.toFixed(2)}`}
+                                BerichtClass={["rightSideText", "Prijs"]}/>
+                        
+                        <InfoVeld Titel={'MinimumPrijs:'} Bericht={` € ${ConvertToEuro(minimumPrijs, 100).toFixed(2)}`}
+                                BerichtClass={['rightSideText', 'Prijs']}/>
 
                         <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal fusten:</label>
+                        
                         <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}
                                 min={0}
                         />
@@ -209,12 +198,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     );
 }
 
-export interface VeilingproductUpdateDto {
-    VoorraadBloemen?: number;
-    AantalFusten?: number;
-}
-
-function checkInputField(input: number, huidigProduct: ProductLogica, err: error) {
+function checkInputField(input: number, huidigProduct: ProductLogica, err: errorMessaging) {
     if (input > 0 && input <= huidigProduct.aantalFusten) {
         return true
     } else if (input > huidigProduct.aantalFusten) {
@@ -226,44 +210,6 @@ function checkInputField(input: number, huidigProduct: ProductLogica, err: error
     }
 }
 
-async function VeilingProductitem_Update(isGeldig: boolean, huidigProduct: ProductLogica, InvoerAantal: number, url: string) {
-    if (isGeldig && huidigProduct) {
-            const productId = Number(huidigProduct.veilingProductNr);
-            
-            if (!productId || productId === 0) {
-                console.error("FOUT: Product ID is 0 of ongeldig");
-                return;
-            }
-
-            const huidigeVoorraad_Fusten = Number(huidigProduct.aantalFusten) || 0;
-            const huidigeVoorraad_Bloemen = Number(huidigProduct.voorraadBloemen) || 0;
-
-            const inhoudPerFust = huidigeVoorraad_Fusten > 0 
-                ? huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten 
-                : 0;
-            
-            //berekend de nieuwe voorraad van fusten
-            const nieuweVoorraad_Fusten = huidigeVoorraad_Fusten - InvoerAantal;
-            
-            // berekend de nieuwe voorraad van bloemen
-            // math.round of math.floor om de kommagetallen weg te houden
-            const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
-            const nieuweVoorraad_Bloemen = huidigeVoorraad_Bloemen - teVerwijderenBloemen;
-
-            const dataOmTeSturen: VeilingproductUpdateDto = {
-                AantalFusten: nieuweVoorraad_Fusten,
-                VoorraadBloemen: nieuweVoorraad_Bloemen
-            };
-
-            try {
-                await UpdateVeilingApi<VeilingproductUpdateDto>(url, dataOmTeSturen, token);
-                
-            } catch (error) {
-                console.error("API Error details:", error);
-            }
-        }
-}
-
 function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: number) {
 
     let actieveVeiling = activeVeiling && activeVeiling.producten[actieveProductIndex] 
@@ -271,29 +217,4 @@ function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: nu
         : null;
 
     return actieveVeiling;
-}
-
-function mapData(safeData: any[]): VeilingLogica[] {
-    return safeData.map((item) => ({
-        veilingNr: item.veilingNr,
-        status: item.status,
-        startIso: item.begintijd,
-        endIso: item.eindtijd,
-        
-        producten: (item.producten || []).map((prod: any) => ({
-            veilingProductNr: prod.veilingProductNr || prod.VeilingProductNr || "productNummer is niet gevonden",
-            naam: prod.naam,
-            
-            categorieNr: prod.CategorieNr || prod.categorieNr || "Geen categorie gevonden", 
-            
-            aantalFusten: prod.AantalFusten || prod.aantalFusten || 0,
-            voorraadBloemen: prod.VoorraadBloemen || prod.voorraadBloemen || 0,
-            
-            startPrijs: prod.startprijs || 'startprijs is niet bekend',
-            minPrijs: prod.Minimumprijs || prod.minimumprijs || 'prijs is onbekend',
-
-            plaats: prod.Plaats || prod.plaats || "Onbekende plaats",
-            imagePath: prod.ImagePath || prod.imagePath || ""
-        }))
-    }));
 }

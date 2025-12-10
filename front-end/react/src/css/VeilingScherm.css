@@ -67,14 +67,6 @@ html, body {
     border: 1px solid #ddd;
 }
 
-.Place {
-    
-}
-
-.Auction_rightSideText {
-    margin: 0 20px 0 0;
-}
-
 .Auction_klok {
     width: 200px;
     height: 200px;
@@ -93,11 +85,6 @@ html, body {
     color: var(--ink);
 
     background-color: unset;
-}
-
-.Prijs {
-    font-size: 1.2rem;
-    color: var(--ink);
 }
 
 #Veiling_aantalkopenstuks {

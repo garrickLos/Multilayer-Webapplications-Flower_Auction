@@ -1,4 +1,5 @@
 using mvc_api.Models;
+using mvc_api.Models.Dtos;
 
 namespace mvc_api.Controllers;
 
@@ -32,11 +33,13 @@ public class ProjectieVeilingController
                         ? VeilingStatus.Active
                         : VeilingStatus.Inactive)),
             
-            Producten = v.Veilingproducten.Select(p => new VeilingProductDto_anonymous(
+            Producten = v.Veilingproducten.Select(p => new VeilingproductPublicListDto(
                 p.VeilingProductNr,
                 p.Naam,
-                p.Startprijs,
-                p.ImagePath
+                p.ImagePath,
+                p.VoorraadBloemen,
+                p.VeilingNr,
+                p.Startprijs
             ))
         });
     }
@@ -60,16 +63,18 @@ public class ProjectieVeilingController
                         ? VeilingStatus.Active
                         : VeilingStatus.Inactive)),
             
-            Producten = v.Veilingproducten.Select(p => new VeilingProductDto(
+            Producten = v.Veilingproducten.Select(p => new VeilingproductKwekerListDto(
                 p.VeilingProductNr,
                 p.Naam,
-                p.Startprijs,
-                p.Minimumprijs,
-                p.Plaats,
-                p.CategorieNr,
+                p.GeplaatstDatum,
                 p.AantalFusten,
                 p.VoorraadBloemen,
-                p.ImagePath
+                p.Categorie == null ? null : p.Categorie.Naam,
+                p.ImagePath,
+                p.Plaats,
+                p.Startprijs,
+                p.Minimumprijs,
+                p.VeilingNr
             ))
         });
     }
@@ -93,16 +98,21 @@ public class ProjectieVeilingController
                         ? VeilingStatus.Active
                         : VeilingStatus.Inactive)),
 
-            Producten = v.Veilingproducten.Select(p => new VeilingProductDto(
+            Producten = v.Veilingproducten.Select(p => new VeilingproductVeilingmeesterListDto(
                 p.VeilingProductNr,
                 p.Naam,
-                p.Startprijs,
-                p.Minimumprijs,
-                p.Plaats,
-                p.CategorieNr,
+                p.Categorie == null ? null : p.Categorie.Naam,
+                p.Status,
+                p.VeilingNr,
+                p.Kwekernr,
                 p.AantalFusten,
                 p.VoorraadBloemen,
-                p.ImagePath
+                p.Plaats,
+                p.Minimumprijs,
+                p.Startprijs,
+                p.GeplaatstDatum,
+                p.ImagePath,
+                p.BeginDatum
             )).ToList(),
             
             Biedingen = v.Veilingproducten

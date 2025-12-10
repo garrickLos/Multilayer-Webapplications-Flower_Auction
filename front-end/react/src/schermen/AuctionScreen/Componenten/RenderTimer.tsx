@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { type VeilingLogica } from "./VeilingTypes";
-import { DelenDoor as convertToEuro } from "../../typeScript/RekenFuncties";
+import { useEffect } from "react";
+import { type VeilingLogica } from "../VeilingSchermTypes";
+import { DelenDoor as convertToEuro } from "../../../typeScript/RekenFuncties";
 
 type TimerProps =  {
     onPrijsUpdate: (prijs: number) => void;
@@ -19,7 +19,7 @@ export function berekenHuidigeVeilingStaat(veiling: VeilingLogica) {
     const nu = Date.now();
     
     // Veiling is nog niet begonnen
-    if (nu < startTijd) {
+    if (nu < startTijd && nu < eindTijd) {
         return { 
             prijs: veiling.producten[0].startPrijs / 100, 
             index: 0, 
