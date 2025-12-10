@@ -11,7 +11,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="Bedrijf, Koper")]
+[Authorize (Roles ="Bedrijf, Koper, VeilingMeester")]
 public class VeilingproductController : ControllerBase
 {
     private readonly AppDbContext _db;

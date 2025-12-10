@@ -9,7 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester, Bedrijf")]
+[Authorize (Roles ="VeilingMeester, Bedrijf, Koper")]
 public class CategorieController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -17,6 +17,7 @@ public class CategorieController : ControllerBase
     
     // GET: api/Categorie?q=roos&page=1&pageSize=50
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<CList>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] int page = 1,
@@ -52,6 +53,7 @@ public class CategorieController : ControllerBase
 
     // GET: api/Categorie/123
     [HttpGet("{id:int}")]
+    [Authorize]
     public async Task<ActionResult<CDetail>> GetById(int id, CancellationToken ct = default)
     {
         var dto = await _db.Categorieen.AsNoTracking()
@@ -66,6 +68,7 @@ public class CategorieController : ControllerBase
 
     // POST: api/Categorie
     [HttpPost]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<CDetail>> Create(
         [FromBody] CategorieCreateDto dto,
         CancellationToken ct = default)
@@ -84,6 +87,7 @@ public class CategorieController : ControllerBase
 
     // PUT: api/Categorie/123
     [HttpPut("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<CDetail>> Update(
         int id,
         [FromBody] CategorieUpdateDto dto,
@@ -104,6 +108,7 @@ public class CategorieController : ControllerBase
 
     // DELETE: api/Categorie/123
     [HttpDelete("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
         var e = await _db.Categorieen.FindAsync(new object[] { id }, ct);
