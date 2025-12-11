@@ -109,12 +109,11 @@ public class VeilingproductControllerTests
         Assert.IsType<ForbidResult>(response.Result);
     }
 
-    [Fact(DisplayName = "Autorisatie: bedrijf kan product van ander niet aanpassen")]
-    public async Task Update_WhenUserIsNotOwner_ReturnsForbid()
+    [Fact(DisplayName = "Autorisatie: bedrijf kan product van ander aanpassen")]
+    public async Task Update_WhenUserIsNotOwner_AllowsUpdate()
     {
         // arrange: product met andere eigenaar
-        var context = CreateContext(nameof(Update_WhenUserIsNotOwner_ReturnsForbid));
-        context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
+        var context = CreateContext(nameof(Update_WhenUserIsNotOwner_AllowsUpdate));        context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
         context.Veilingproducten.Add(new Veilingproduct
         {
             VeilingProductNr = 7,
@@ -137,8 +136,8 @@ public class VeilingproductControllerTests
         // act
         var response = await controller.Update(7, dto);
 
-        // assert: user is geen eigenaar → Forbid
-        Assert.IsType<ForbidResult>(response.Result);
+        // assert: user is geen eigenaar → update toegestaan
+        Assert.IsType<OkObjectResult>(response.Result);
     }
 
     [Fact(DisplayName = "Fout: bijwerken van ontbrekend product geeft NotFound")]

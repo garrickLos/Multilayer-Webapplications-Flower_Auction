@@ -231,8 +231,7 @@ public class VeilingproductController : ControllerBase
 
         var resultDto = await _db.Veilingproducten
             .AsNoTracking()
-            .Where(v => v.VeilingProductNr == id &&
-                        v.Kwekernr == userId)
+            .Where(v => v.VeilingProductNr == id)
             .Select(VeilingproductDtoSelectors.KwekerList)
             .SingleAsync(ct);
 
