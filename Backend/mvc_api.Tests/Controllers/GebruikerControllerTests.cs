@@ -12,13 +12,14 @@ namespace mvc_api.Tests.Controllers;
 
 public class GebruikerControllerTests
 {
+    // lokale memory DB + controller met fake user
     private static GebruikerController BuildController(string dbName, ClaimsPrincipal user)
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(dbName)
-            .Options;
-        var dbContext = new AppDbContext(options);
+            .UseInMemoryDatabase(dbName);
+        var dbContext = new AppDbContext(options.Options);
 
+        // seed gebruikers
         dbContext.Gebruikers.AddRange(
             new Gebruiker { GebruikerNr = 1, BedrijfsNaam = "Bloem BV", Email = "info@bloem.nl", Soort = "Bedrijf", Status = ModelStatus.Active },
             new Gebruiker { GebruikerNr = 2, BedrijfsNaam = "Roos BV", Email = "contact@roos.nl", Soort = "Koper", Status = ModelStatus.Inactive },
@@ -26,6 +27,7 @@ public class GebruikerControllerTests
         );
         dbContext.SaveChanges();
 
+        // koppel fake user aan HttpContext
         return new GebruikerController(dbContext)
         {
             ControllerContext = new ControllerContext
@@ -38,6 +40,7 @@ public class GebruikerControllerTests
     [Fact(DisplayName = "Succes: geautoriseerde gebruiker haalt eigen details op")]
     public void GetSelf_WithValidUser_ReturnsOwnDetails()
     {
+        // arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "1"),
@@ -45,8 +48,10 @@ public class GebruikerControllerTests
         }, "mock"));
         var controller = BuildController(nameof(GetSelf_WithValidUser_ReturnsOwnDetails), user);
 
+        // act
         var response = controller.GetSelf();
 
+        // assert
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var dto = Assert.IsType<GebruikerDetailDto>(okResult.Value);
         Assert.Equal(1, dto.GebruikerNr);
@@ -55,20 +60,24 @@ public class GebruikerControllerTests
     [Fact(DisplayName = "Fout: onbekende identiteit leidt tot Unauthorized")]
     public void GetSelf_WithUnknownUser_ReturnsUnauthorized()
     {
+        // arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "999")
         }, "mock"));
         var controller = BuildController(nameof(GetSelf_WithUnknownUser_ReturnsUnauthorized), user);
 
+        // act
         var response = controller.GetSelf();
 
+        // assert
         Assert.IsType<UnauthorizedResult>(response.Result);
     }
 
     [Fact(DisplayName = "Beslissingsdekking: filters op rol en status worden gecombineerd")]
     public void GetForAuctionTeam_AppliesRoleAndStatusFilters()
     {
+        // arrange: veilingmeester
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "42"),
@@ -76,8 +85,10 @@ public class GebruikerControllerTests
         }, "mock"));
         var controller = BuildController(nameof(GetForAuctionTeam_AppliesRoleAndStatusFilters), user);
 
+        // act: filters rol + status
         var response = controller.GetForAuctionTeam(role: "bedrijf", status: ModelStatus.Active);
 
+        // assert
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var dtos = Assert.IsAssignableFrom<IEnumerable<GebruikerSummaryDto>>(okResult.Value);
         var single = Assert.Single(dtos);
@@ -87,6 +98,7 @@ public class GebruikerControllerTests
     [Fact(DisplayName = "Fout: gedeactiveerde gebruiker kan zichzelf niet ophalen")]
     public void GetSelf_WithInactiveUser_ReturnsUnauthorized()
     {
+        // arrange: inactive gebruiker
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "2"),
@@ -94,14 +106,17 @@ public class GebruikerControllerTests
         }, "mock"));
         var controller = BuildController(nameof(GetSelf_WithInactiveUser_ReturnsUnauthorized), user);
 
+        // act
         var response = controller.GetSelf();
 
+        // assert
         Assert.IsType<UnauthorizedResult>(response.Result);
     }
 
     [Fact(DisplayName = "Beslissingsdekking: verwijderde gebruikers worden uitgesloten in teamlijst")]
     public void GetForAuctionTeam_ExcludesDeletedUsers()
     {
+        // arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "42"),
@@ -109,8 +124,10 @@ public class GebruikerControllerTests
         }, "mock"));
         var controller = BuildController(nameof(GetForAuctionTeam_ExcludesDeletedUsers), user);
 
+        // act
         var response = controller.GetForAuctionTeam(role: null, status: null);
 
+        // assert: geen Deleted in resultaat
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var dtos = Assert.IsAssignableFrom<IEnumerable<GebruikerSummaryDto>>(okResult.Value);
         Assert.DoesNotContain(dtos, d => d.Status == ModelStatus.Deleted);

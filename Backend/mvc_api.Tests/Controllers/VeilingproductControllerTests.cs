@@ -1,4 +1,3 @@
-/*
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,72 +12,47 @@ namespace mvc_api.Tests.Controllers;
 
 public class VeilingproductControllerTests
 {
+    // lokale memory DB
     private static AppDbContext CreateContext(string dbName)
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: dbName)
+            .UseInMemoryDatabase(dbName)
             .Options;
 
-        var context = new AppDbContext(options);
-        return context;
+        return new AppDbContext(options);
     }
 
+    // controller met fake user
     private static VeilingproductController CreateController(AppDbContext context, ClaimsPrincipal? user = null)
     {
-        var controller = new VeilingproductController(context)
+        return new VeilingproductController(context)
         {
             ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = user ?? new ClaimsPrincipal() }
             }
         };
-        return controller;
     }
 
     [Fact(DisplayName = "Succes: veilingmeester ziet gefilterde lijst op q/status/min/max/titel")]
     public async Task GetForVeilingmeester_ComposesAllFilters()
     {
+        // arrange: seed data + filterscenario
         var context = CreateContext(nameof(GetForVeilingmeester_ComposesAllFilters));
         context.Categorieen.AddRange(
             new Categorie { CategorieNr = 1, Naam = "Tulpen" },
             new Categorie { CategorieNr = 2, Naam = "Rozen" }
         );
         context.Veilingproducten.AddRange(
-            new Veilingproduct
-            {
-                VeilingProductNr = 1,
-                Naam = "Rode Roos Feest",
-                CategorieNr = 2,
-                Status = ModelStatus.Active,
-                Startprijs = 30,
-                Minimumprijs = 30,
-                GeplaatstDatum = new DateTime(2025, 1, 1)
-            },
-            new Veilingproduct
-            {
-                VeilingProductNr = 2,
-                Naam = "Gele Tulp Voorjaars",
-                CategorieNr = 1,
-                Status = ModelStatus.Inactive,
-                Startprijs = 50,
-                Minimumprijs = 50,
-                GeplaatstDatum = new DateTime(2025, 2, 1)
-            },
-            new Veilingproduct
-            {
-                VeilingProductNr = 3,
-                Naam = "Gele Tulp Deluxe Voorjaars",
-                CategorieNr = 1,
-                Status = ModelStatus.Active,
-                Startprijs = 75,
-                Minimumprijs = 75,
-                GeplaatstDatum = new DateTime(2025, 3, 1)
-            }
+            new Veilingproduct { VeilingProductNr = 1, Naam = "Rode Roos Feest", CategorieNr = 2, Status = ModelStatus.Active, Startprijs = 30, Minimumprijs = 30, GeplaatstDatum = new DateTime(2025,1,1) },
+            new Veilingproduct { VeilingProductNr = 2, Naam = "Gele Tulp Voorjaars", CategorieNr = 1, Status = ModelStatus.Inactive, Startprijs = 50, Minimumprijs = 50, GeplaatstDatum = new DateTime(2025,2,1) },
+            new Veilingproduct { VeilingProductNr = 3, Naam = "Gele Tulp Deluxe Voorjaars", CategorieNr = 1, Status = ModelStatus.Active, Startprijs = 75, Minimumprijs = 75, GeplaatstDatum = new DateTime(2025,3,1) }
         );
         await context.SaveChangesAsync();
 
         var controller = CreateController(context);
 
+        // act
         var response = await controller.GetForVeilingmeester(
             q: "Tulp",
             categorieNr: 1,
@@ -88,15 +62,16 @@ public class VeilingproductControllerTests
             createdAfter: new DateTime(2025, 2, 1),
             title: "Voorjaars");
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        var dtos = Assert.IsAssignableFrom<IEnumerable<VeilingproductVeilingmeesterListDto>>(okResult.Value);
-        var single = Assert.Single(dtos);
-        Assert.Equal(3, single.VeilingProductNr);
+        // assert: alleen product 3 matcht alle filters
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var list = Assert.IsAssignableFrom<IEnumerable<VeilingproductVeilingmeesterListDto>>(ok.Value);
+        Assert.Equal(3, Assert.Single(list).VeilingProductNr);
     }
 
     [Fact(DisplayName = "Fout: onbekende categorie resulteert in validatiefout bij aanmaak")]
     public async Task Create_UnknownCategory_ReturnsValidationProblem()
     {
+        // arrange: fake bedrijf + verkeerde categorie
         var context = CreateContext(nameof(Create_UnknownCategory_ReturnsValidationProblem));
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
@@ -105,20 +80,12 @@ public class VeilingproductControllerTests
         }, "mock"));
         var controller = CreateController(context, user);
 
-        var dto = new VeilingproductCreateDto
-        {
-            Naam = "Nieuwe Roos",
-            AantalFusten = 2,
-            VoorraadBloemen = 50,
-            CategorieNr = 99,
-            Plaats = "Aalsmeer",
-            Minimumprijs = 10,
-            BeginDatum = new DateOnly(2025, 1, 1),
-            ImagePath = "image.png"
-        };
+        var dto = new VeilingproductCreateDto { Naam="Nieuwe Roos", AantalFusten=2, VoorraadBloemen=50, CategorieNr=99, Plaats="Aalsmeer", Minimumprijs=10, BeginDatum=new DateOnly(2025,1,1), ImagePath="image.png" };
 
+        // act
         var response = await controller.Create(dto);
 
+        // assert: validatiefout op categorie
         Assert.IsType<ObjectResult>(response.Result);
         Assert.True(controller.ModelState.ContainsKey(nameof(VeilingproductCreateDto.CategorieNr)));
     }
@@ -126,46 +93,34 @@ public class VeilingproductControllerTests
     [Fact(DisplayName = "Fout: ontbrekende gebruiker resulteert in Forbid bij aanmaak")]
     public async Task Create_WithoutUser_ReturnsForbid()
     {
+        // arrange: geen user identity
         var context = CreateContext(nameof(Create_WithoutUser_ReturnsForbid));
         context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
         await context.SaveChangesAsync();
 
-        var controller = CreateController(context, user: new ClaimsPrincipal());
+        var controller = CreateController(context, new ClaimsPrincipal());
 
-        var dto = new VeilingproductCreateDto
-        {
-            Naam = "Nieuwe Roos",
-            AantalFusten = 2,
-            VoorraadBloemen = 50,
-            CategorieNr = 1,
-            Plaats = "Aalsmeer",
-            Minimumprijs = 10,
-            BeginDatum = new DateOnly(2025, 1, 1),
-            ImagePath = "image.png"
-        };
+        var dto = new VeilingproductCreateDto { Naam="Nieuwe Roos", AantalFusten=2, VoorraadBloemen=50, CategorieNr=1, Plaats="Aalsmeer", Minimumprijs=10, BeginDatum=new DateOnly(2025,1,1), ImagePath="image.png" };
 
+        // act
         var response = await controller.Create(dto);
 
+        // assert: geen geldige user → Forbid
         Assert.IsType<ForbidResult>(response.Result);
     }
 
     [Fact(DisplayName = "Autorisatie: bedrijf kan product van ander niet aanpassen")]
     public async Task Update_WhenUserIsNotOwner_ReturnsForbid()
     {
+        // arrange: product met andere eigenaar
         var context = CreateContext(nameof(Update_WhenUserIsNotOwner_ReturnsForbid));
         context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
         context.Veilingproducten.Add(new Veilingproduct
         {
             VeilingProductNr = 7,
             Naam = "Andermans Tulp",
-            GeplaatstDatum = DateTime.UtcNow,
-            AantalFusten = 3,
-            VoorraadBloemen = 30,
             CategorieNr = 1,
-            Plaats = "Aalsmeer",
-            Minimumprijs = 5,
-            ImagePath = "pad",
-            Kwekernr = 777
+            Kwekernr = 777 // eigenaar ≠ ingelogde user
         });
         await context.SaveChangesAsync();
 
@@ -174,28 +129,22 @@ public class VeilingproductControllerTests
             new Claim(ClaimTypes.NameIdentifier, "42"),
             new Claim(ClaimTypes.Role, "Bedrijf")
         }, "mock"));
+
         var controller = CreateController(context, user);
 
-        var dto = new VeilingproductUpdateDto
-        {
-            Naam = "Nieuwe Naam",
-            GeplaatstDatum = DateTime.UtcNow,
-            AantalFusten = 1,
-            VoorraadBloemen = 10,
-            CategorieNr = 1,
-            ImagePath = "image.png",
-            Minimumprijs = 1,
-            Plaats = "Aalsmeer"
-        };
+        var dto = new VeilingproductUpdateDto { Naam="Nieuwe Naam", CategorieNr=1 };
 
+        // act
         var response = await controller.Update(7, dto);
 
+        // assert: user is geen eigenaar → Forbid
         Assert.IsType<ForbidResult>(response.Result);
     }
 
     [Fact(DisplayName = "Fout: bijwerken van ontbrekend product geeft NotFound")]
     public async Task Update_WithUnknownProduct_ReturnsNotFound()
     {
+        // arrange: product-id bestaat niet
         var context = CreateContext(nameof(Update_WithUnknownProduct_ReturnsNotFound));
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
@@ -204,21 +153,12 @@ public class VeilingproductControllerTests
         }, "mock"));
         var controller = CreateController(context, user);
 
-        var dto = new VeilingproductUpdateDto
-        {
-            Naam = "Bestaat Niet",
-            GeplaatstDatum = DateTime.UtcNow,
-            AantalFusten = 1,
-            VoorraadBloemen = 10,
-            CategorieNr = 1,
-            ImagePath = "image.png",
-            Minimumprijs = 1,
-            Plaats = "Aalsmeer"
-        };
+        var dto = new VeilingproductUpdateDto { Naam="Bestaat Niet", CategorieNr=1 };
 
+        // act
         var response = await controller.Update(404, dto);
 
+        // assert: NotFound
         Assert.IsType<NotFoundResult>(response.Result);
     }
 }
-*/
