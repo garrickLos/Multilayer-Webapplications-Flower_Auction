@@ -6,6 +6,7 @@ import {
     fetchBids,
     fetchProducts,
     fetchUsers,
+    updateProductPlanning,
     type ApiError,
     type Auction,
     type Bid,
@@ -28,8 +29,6 @@ import {
 import { useLiveStats } from "./useLiveStats";
 
 const TABLE_PAGE_SIZES = [10, 25, 50];
-const MODAL_PAGE_SIZES = [10, 25, 50];
-const DASHBOARD_SAMPLE_SIZE = 8;
 const CLOCK_TICK_MS = 5000;
 
 // ---- Kleine helpers & hooks -------------------------------------------------
@@ -64,7 +63,7 @@ function useTicker(stepMs = 1000): Date {
 }
 
 const filterRows = <T, F>(rows: readonly T[], search: string, filters: F, predicate: (row: T, term: string, filters: F) => boolean): readonly T[] => {
-    const term = search.trim().toLowerCase();
+    const term = (typeof search === "string" ? search : "").trim().toLowerCase();
     return rows.filter((row) => predicate(row, term, filters));
 };
 
@@ -177,9 +176,11 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
                 const matchesFrom = Number.isFinite(start) ? start >= from : true;
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
-                const matchesSearch = !search || row.title.toLowerCase().includes(search.toLowerCase());
+                const title = typeof row.title === "string" ? row.title.toLowerCase() : "";
+                const searchTerm = search.toLowerCase();
+                const matchesSearch = !search || title.includes(searchTerm);
                 const matchesVeilingProduct =
-                    !currentFilters.veilingProduct || row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
+                    !currentFilters.veilingProduct || !!row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
                 return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesVeilingProduct;
             }),
         [auctions, filters, now, search],
@@ -433,33 +434,90 @@ function NewAuctionModal({ onSave, onClose }: { onSave: (auction: AuctionFormSta
     );
 }
 
-function LinkProductsModal({ auction, products, onClose, onSave }: { auction: Auction; products: readonly Product[]; onClose: () => void; onSave: (productIds: readonly number[]) => void }) {
-    const [selected, setSelected] = useState<readonly number[]>(auction.linkedProductIds ?? []);
+function LinkProductsModal({ auction, products, onClose, onSave }: { auction: Auction; products: readonly Product[]; onClose: () => void; onSave: (productId: number, startPrice: number) => void }) {
+    const availableProducts = useMemo(() => products.filter((product) => !product.linkedAuctionId), [products]);
+    const [productId, setProductId] = useState<string>(() => (availableProducts[0]?.id ? String(availableProducts[0].id) : ""));
+    const [startPrice, setStartPrice] = useState<string>(() => {
+        const first = availableProducts[0];
+        return first ? String(first.startPrice ?? first.minimumPrice ?? 0) : "";
+    });
+    const [formError, setFormError] = useState<string | null>(null);
 
-    const toggle = (productId: number) =>
-        setSelected((prev) => (prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]));
+    useEffect(() => {
+        const selected = availableProducts.find((product) => product.id === Number(productId));
+        if (selected) {
+            setStartPrice(String(selected.startPrice ?? selected.minimumPrice ?? 0));
+            setFormError(null);
+        }
+    }, [availableProducts, productId]);
+
+    const handleSave = () => {
+        if (!productId) {
+            setFormError("Selecteer een product om te koppelen.");
+            return;
+        }
+
+        const numericStartPrice = Math.round(Number(startPrice));
+        if (!Number.isFinite(numericStartPrice) || numericStartPrice <= 0) {
+            setFormError("Voer een geldige startprijs in.");
+            return;
+        }
+
+        onSave(Number(productId), numericStartPrice);
+    };
 
     return (
         <Modal
-            title={`Koppel producten aan ${auction.title}`}
+            title={`Koppel product aan ${auction.title}`}
             onClose={onClose}
             footer={
-                <button type="button" className="btn btn-success" onClick={() => onSave(selected)}>
+                <button type="button" className="btn btn-success" onClick={handleSave} disabled={availableProducts.length === 0}>
                     Opslaan
                 </button>
             }
         >
             <div className="d-flex flex-column gap-3">
-                <p className="text-muted mb-0">Selecteer producten om te koppelen.</p>
-                <div className="d-flex flex-column gap-2">
-                    {products.map((product) => (
-                        <label key={product.id} className="d-flex align-items-center gap-2">
-                            <input type="checkbox" checked={selected.includes(product.id)} onChange={() => toggle(product.id)} />
-                            <span className="fw-semibold">{product.name}</span>
-                            <span className="text-muted small">#{product.id}</span>
-                        </label>
-                    ))}
-                </div>
+                <p className="text-muted mb-0">Kies een product dat nog niet is gekoppeld en vul de startprijs in.</p>
+                {availableProducts.length === 0 ? (
+                    <EmptyState title="Geen beschikbare producten" description="Alle producten zijn al gekoppeld aan een veiling." />
+                ) : (
+                    <div className="row g-3">
+                        <div className="col-12">
+                            <Field label="Product" htmlFor="link-product">
+                                <Select
+                                    id="link-product"
+                                    value={productId}
+                                    onChange={(event) => {
+                                        setProductId(event.target.value);
+                                        setFormError(null);
+                                    }}
+                                >
+                                    <option value="" disabled>
+                                        Kies een product
+                                    </option>
+                                    {availableProducts.map((product) => (
+                                        <option key={product.id} value={product.id}>
+                                            {product.name} (#{product.id})
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                        </div>
+                        <div className="col-12">
+                            <Field label="Startprijs" htmlFor="link-startprice">
+                                <Input
+                                    id="link-startprice"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={startPrice}
+                                    onChange={(event) => setStartPrice(event.target.value)}
+                                />
+                            </Field>
+                        </div>
+                        {formError && <div className="col-12 alert alert-danger mb-0">{formError}</div>}
+                    </div>
+                )}
             </div>
         </Modal>
     );
@@ -501,9 +559,11 @@ function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
         () =>
             filterRows(products, filters.search, filters, (row, term, current) => {
                 const matchesStatus = current.status === "all" || mapProductStatusToUiStatus(row.status) === current.status;
-                const matchesSeller = !current.seller || row.sellerName?.toLowerCase().includes(current.seller.toLowerCase());
+                const sellerName = typeof row.sellerName === "string" ? row.sellerName.toLowerCase() : "";
+                const matchesSeller = !current.seller || sellerName.includes(current.seller.toLowerCase());
                 const matchesAuction = !current.auctionId || row.linkedAuctionId === Number(current.auctionId);
-                const matchesSearch = !term || row.name.toLowerCase().includes(term);
+                const productName = typeof row.name === "string" ? row.name.toLowerCase() : "";
+                const matchesSearch = !term || productName.includes(term);
                 return matchesStatus && matchesSeller && matchesAuction && matchesSearch;
             }),
         [filters, products],
@@ -842,17 +902,27 @@ export function VeilingmeesterPage() {
         }
     };
 
-    const handleLinkProducts = (auctionId: number, productIds: readonly number[]) => {
-        setAuctions((prev) => prev.map((auction) => (auction.id === auctionId ? { ...auction, linkedProductIds: productIds } : auction)));
-        setProducts((prev) =>
-            prev.map((product) =>
-                productIds.includes(product.id)
-                    ? { ...product, linkedAuctionId: auctionId }
-                    : product.linkedAuctionId === auctionId
-                    ? { ...product, linkedAuctionId: undefined }
-                    : product,
-            ),
-        );
+    const handleLinkProducts = async (auctionId: number, productId: number, startPrice: number) => {
+        try {
+            const updatedProduct = await updateProductPlanning(productId, { startprijs: startPrice, veilingNr: auctionId });
+            setProducts((prev) => prev.map((product) => (product.id === updatedProduct.id ? updatedProduct : product)));
+            setAuctions((prev) =>
+                prev.map((auction) =>
+                    auction.id === auctionId
+                        ? {
+                              ...auction,
+                              linkedProductIds: Array.from(new Set([...(auction.linkedProductIds ?? []), updatedProduct.id])),
+                              products: auction.products
+                                  ? [...auction.products.filter((product) => product.id !== updatedProduct.id), updatedProduct]
+                                  : [updatedProduct],
+                          }
+                        : auction,
+                ),
+            );
+            setActiveModal(null);
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Product kon niet gekoppeld worden.");
+        }
     };
 
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
@@ -953,7 +1023,7 @@ export function VeilingmeesterPage() {
                         auction={activeAuction}
                         products={products}
                         onClose={() => setActiveModal(null)}
-                        onSave={(productIds) => handleLinkProducts(activeAuction.id, productIds)}
+                        onSave={(productId, startPrice) => void handleLinkProducts(activeAuction.id, productId, startPrice)}
                     />
                 )}
                 {activeModal?.key === "userBids" && activeUser && (
