@@ -69,7 +69,7 @@ export type BiedingUpdateDto = BiedingBaseAmountDto;
 const jsonHeaders = { Accept: "application/json", "Content-Type": "application/json" };
 
 function toUiStatus(value?: AuctionStatus | string | null): UiStatus {
-    const normalised = (value ?? "").toLowerCase();
+    const normalised = typeof value === "string" ? value.toLowerCase() : "";
     if (normalised === "actief" || normalised === "active") return "active";
     if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "archived") return "sold";
     if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
@@ -77,7 +77,7 @@ function toUiStatus(value?: AuctionStatus | string | null): UiStatus {
 }
 
 function toRole(value?: string | null): UserRole {
-    const normalised = (value ?? "").toLowerCase();
+    const normalised = typeof value === "string" ? value.toLowerCase() : "";
     if (normalised === "admin") return "Admin";
     if (normalised === "veilingmeester") return "Veilingmeester";
     if (normalised === "kweker" || normalised === "grower") return "Kweker";
@@ -152,40 +152,48 @@ const mapBid = (dto: { biedingNr: number; veilingNr: number; veilingProductNr: n
     status: "active",
 });
 
-const mapProduct = (
-    dto: {
-        veilingProductNr: number;
-        naam?: string;
-        status?: ProductStatus;
-        veilingNr?: number | null;
-        kwekernr?: number;
-        aantalFusten?: number;
-        voorraadBloemen?: number;
-        plaats?: string;
-        minimumprijs?: number;
-        startprijs?: number | null;
-        categorieNaam?: string | null;
-        verkoperNaam?: string;
-        imagePath?: string;
-        beginDatum?: string | null;
-    },
-): Product => ({
-    id: dto.veilingProductNr,
-    name: dto.naam ?? "Onbekend product",
-    status: dto.status ?? "Inactive",
-    category: dto.categorieNaam ?? null,
-    startPrice: dto.startprijs ?? undefined,
-    minimumPrice: dto.minimumprijs ?? 0,
-    stock: dto.voorraadBloemen,
-    fust: dto.aantalFusten,
-    veilingNr: dto.veilingNr ?? undefined,
-    linkedAuctionId: dto.veilingNr ?? undefined,
-    growerId: dto.kwekernr,
-    sellerName: dto.verkoperNaam,
-    imagePath: dto.imagePath,
-    location: dto.plaats,
-    active: (dto.status ?? "Inactive") === "Active",
-});
+type ProductDto = {
+    veilingProductNr: number;
+    naam?: string;
+    status?: ProductStatus;
+    veilingNr?: number | null;
+    kwekernr?: number;
+    aantalFusten?: number;
+    voorraadBloemen?: number;
+    plaats?: string;
+    minimumprijs?: number | string;
+    startprijs?: number | string | null;
+    categorieNaam?: string | null;
+    verkoperNaam?: string;
+    imagePath?: string;
+    beginDatum?: string | null;
+};
+
+const mapProduct = (dto: ProductDto): Product => {
+    const parsedStart =
+        dto.startprijs === null || dto.startprijs === undefined ? undefined : Number.isFinite(Number(dto.startprijs)) ? Number(dto.startprijs) : undefined;
+    const parsedMinimum = Number.isFinite(Number(dto.minimumprijs)) ? Number(dto.minimumprijs) : 0;
+
+    return {
+        id: dto.veilingProductNr,
+        name: dto.naam ?? "Onbekend product",
+        status: dto.status ?? "Inactive",
+        category: dto.categorieNaam ?? null,
+        startPrice: parsedStart,
+        minimumPrice: parsedMinimum,
+        stock: dto.voorraadBloemen,
+        fust: dto.aantalFusten,
+        veilingNr: dto.veilingNr ?? undefined,
+        linkedAuctionId: dto.veilingNr ?? undefined,
+        growerId: dto.kwekernr,
+        sellerName: dto.verkoperNaam,
+        imagePath: dto.imagePath,
+        location: dto.plaats,
+        active: (dto.status ?? "Inactive") === "Active",
+    };
+};
+
+type BidDto = Parameters<typeof mapBid>[0];
 
 const mapUser = (dto: { gebruikerNr: number; bedrijfsNaam?: string; email: string; soort?: string; kvk?: string | null; status?: string | null }): User => ({
     id: dto.gebruikerNr,
@@ -202,8 +210,8 @@ const mapAuction = (dto: {
     status?: string | null;
     begintijd: string;
     eindtijd: string;
-    producten?: readonly ReturnType<typeof mapProduct>[] | null;
-    biedingen?: readonly ReturnType<typeof mapBid>[] | null;
+    producten?: readonly ProductDto[] | null;
+    biedingen?: readonly BidDto[] | null;
 }): Auction => {
     const products = dto.producten?.map(mapProduct);
     const bids = dto.biedingen?.map(mapBid);
@@ -226,6 +234,8 @@ const mapAuction = (dto: {
         bids,
     } satisfies Auction;
 };
+
+type AuctionDto = Parameters<typeof mapAuction>[0];
 
 export async function fetchUsers(params: { role?: string; status?: string; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<User>> {
     const query = buildQuery({ role: params.role, status: params.status, pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE });
@@ -270,13 +280,26 @@ export async function fetchCategories(params: { q?: string; page?: number; pageS
     return fetchList("/Categorie", params, (dto: { categorieNr: number; naam?: string }) => ({ id: dto.categorieNr, name: dto.naam ?? "" }), signal);
 }
 
+export async function updateProductPlanning(
+    id: number,
+    payload: { startprijs?: number | null; veilingNr?: number | null },
+    signal?: AbortSignal,
+): Promise<Product> {
+    const data = await fetchJson<ProductDto>(`/Veilingproduct/veilingmeester/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        signal,
+    });
+    return mapProduct(data);
+}
+
 export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
-    const data = await fetchJson<ReturnType<typeof mapAuction>>("/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
+    const data = await fetchJson<AuctionDto>("/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
     return mapAuction(data);
 }
 
 export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    const data = await fetchJson<ReturnType<typeof mapAuction>>(`/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    const data = await fetchJson<AuctionDto>(`/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
     return mapAuction(data);
 }
 

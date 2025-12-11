@@ -28,7 +28,7 @@ export const paginate = <T,>(rows: readonly T[], page: number, pageSize: number)
 };
 
 export const mapAuctionStatusToBadge = (status: string | UiStatus): UiStatus => {
-    const normalised = (status ?? "").toLowerCase();
+    const normalised = typeof status === "string" ? status.toLowerCase() : "";
     if (normalised === "actief" || normalised === "active") return "active";
     if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "sold" || normalised === "archived")
         return "sold";
@@ -43,7 +43,7 @@ export const uiStatusToAuctionStatus = (status: UiStatus): string => {
     return "inactive";
 };
 
-export const mapProductStatusToUiStatus = (status: string): UiStatus => {
+export const mapProductStatusToUiStatus = (status: string | null | undefined): UiStatus => {
     if (status === "Deleted") return "deleted";
     if (status === "Archived") return "sold";
     if (status === "Active") return "active";
