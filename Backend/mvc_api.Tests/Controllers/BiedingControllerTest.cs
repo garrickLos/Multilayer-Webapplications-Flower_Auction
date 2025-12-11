@@ -1,97 +1,22 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
-using mvc_api.Controllers;
-using mvc_api.Data;
-using mvc_api.Models;
-using mvc_api.Models.Dtos;
+using mvc_api.Tests.Mocks;
 using Xunit;
-using Xunit.Sdk;
 
 namespace mvc_api.Tests.Controllers;
 
-public class BiedingControllerTests
+public class BiedingControllerTests: IStatic_Variable
 {
-    private const string rol_VeilingMeester = "VeilingMeester";
-    private const string rol_Koper = "Koper";
-    private const string rol_Bedrijf = "Bedrijf";
-
-    private const string StatusActive = "Active";
-    private const string StatusInactive = "Inactive";
-
-    private static BiedingController BuildController(string dbName, ClaimsPrincipal? user = null)
-    {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(dbName)
-            .Options;
-        var dbContext = new AppDbContext(options);
-
-        // zorgt ervoor dat die leeg begint.
-        dbContext.Database.EnsureCreated();
-
-        if (!dbContext.Biedingen.Any())
-        {
-            // Genereert gebruikers voor de testen
-            dbContext.Gebruikers.AddRange(
-                new Gebruiker { GebruikerNr = 1, BedrijfsNaam = "Koper Een", Soort = rol_Koper },
-                new Gebruiker { GebruikerNr = 2, BedrijfsNaam = "Koper Twee", Soort = rol_Koper },
-                new Gebruiker { GebruikerNr = 3, BedrijfsNaam = "Bedrijf Drie", Soort = rol_Bedrijf },
-                new Gebruiker { GebruikerNr = 4, BedrijfsNaam = "VeilingMeester", Soort = rol_VeilingMeester}
-            );
-
-            // genereert veilingen die gebruikt kunnen worden
-            // 1 actief en 1 inactief voor het testen van beide stellingen
-            dbContext.Veilingen.AddRange(
-                new Veiling { VeilingNr = 10, Status = StatusActive },
-                new Veiling { VeilingNr = 20, Status = StatusInactive }
-            );
-
-            dbContext.Veilingproducten.AddRange(
-                // Verschillende producten die gebruikt worden
-                new Veilingproduct { VeilingProductNr = 101, VeilingNr = 10, Naam = "Tulp Rood" },
-                new Veilingproduct { VeilingProductNr = 102, VeilingNr = 10, Naam = "Tulp Geel" },
-                new Veilingproduct { VeilingProductNr = 103, VeilingNr = 10, Naam = "Roos Wit" },
-                new Veilingproduct { VeilingProductNr = 104, VeilingNr = 10, Naam = "Roos Rood" },
-                new Veilingproduct { VeilingProductNr = 105, VeilingNr = 20, Naam = "Oude Tulp" } 
-            );
-
-            // genereert biedingen met verschillende waardes voor de verschillende soorten routes
-            dbContext.Biedingen.AddRange(
-                new Bieding { BiedNr = 1, BedragPerFust = 150, AantalStuks = 10, GebruikerNr = 1, VeilingproductNr = 101 },
-                new Bieding { BiedNr = 2, BedragPerFust = 5000, AantalStuks = 1000, GebruikerNr = 1, VeilingproductNr = 101 },
-                new Bieding { BiedNr = 3, BedragPerFust = 1, AantalStuks = 1, GebruikerNr = 2, VeilingproductNr = 102 },
-                new Bieding { BiedNr = 4, BedragPerFust = 1250, AantalStuks = 50, GebruikerNr = 2, VeilingproductNr = 103 },
-                new Bieding { BiedNr = 5, BedragPerFust = 300, AantalStuks = 20, GebruikerNr = 1, VeilingproductNr = 104 },
-                new Bieding { BiedNr = 6, BedragPerFust = 999999, AantalStuks = 5, GebruikerNr = 3, VeilingproductNr = 101 },
-                new Bieding { BiedNr = 7, BedragPerFust = 225, AantalStuks = 13, GebruikerNr = 3, VeilingproductNr = 102 },
-                new Bieding { BiedNr = 8, BedragPerFust = 151, AantalStuks = 10, GebruikerNr = 2, VeilingproductNr = 101 },
-                new Bieding { BiedNr = 9, BedragPerFust = 50, AantalStuks = 5000, GebruikerNr = 1, VeilingproductNr = 105 },
-                new Bieding { BiedNr = 10, BedragPerFust = 750, AantalStuks = 100, GebruikerNr = 3, VeilingproductNr = 105 }
-            );
-
-            dbContext.SaveChanges();
-        }
-
-        return new BiedingController(dbContext)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user ?? new ClaimsPrincipal() }
-            }
-        };
-    }
 
     [Fact(DisplayName = "Succes: Koper haalt eigen biedingen op")]
     public async Task GetBiedingKlant_WithValidUser_ReturnsList()
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
-            new Claim(ClaimTypes.Role, rol_Koper)
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper)
         }, "mock"));
 
-        var controller = BuildController(nameof(GetBiedingKlant_WithValidUser_ReturnsList), user);
+        var controller = BiedingMockData.BuildController(nameof(GetBiedingKlant_WithValidUser_ReturnsList), user);
 
         var response = await controller.GetKlantBiedingen(gebruikerNr: 1, veilingProductNr: null);
 
@@ -108,10 +33,10 @@ public class BiedingControllerTests
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
         { 
-            new Claim(ClaimTypes.Role, rol_VeilingMeester) 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
         }, "Mock"));
 
-        var controller = BuildController(nameof(GetBiedingKlant_WithValidUser_ReturnSpecificItem), user);
+        var controller = BiedingMockData.BuildController(nameof(GetBiedingKlant_WithValidUser_ReturnSpecificItem), user);
         var response = await controller.GetKlantBiedingen(gebruikerNr: 2, veilingProductNr: 103);
 
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
@@ -123,23 +48,23 @@ public class BiedingControllerTests
         Assert.Single(items);
     }
 
-    [Fact(DisplayName = "GetAll: Veilingmeester ziet gepagineerde lijst")]
+    [Fact(DisplayName = "GetAll: Veilingmeester ziet lijst terug")]
     public async Task GetAll_AsVeilingMeester_ReturnsPagedList()
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
         { 
-            new Claim(ClaimTypes.Role, rol_VeilingMeester) 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
         }, "Mock"));
         
-        var controller = BuildController(nameof(GetAll_AsVeilingMeester_ReturnsPagedList), user);
+        var controller = BiedingMockData.BuildController(nameof(GetAll_AsVeilingMeester_ReturnsPagedList), user);
 
         // Vraag pagina 1, grootte 5
-        var response = await controller.GetVeilingMeester_Biedingen(null, null, 1, 5);
+        var response = await controller.GetVeilingMeester_Biedingen(1, null);
 
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var items = Assert.IsAssignableFrom<IEnumerable<VeilingMeester_BiedingDto>>(okResult.Value);
         
-        Assert.Equal(5, items.Count()); // We hebben 10 items, vragen er 5
+        Assert.Equal(4, items.Count()); // We hebben 10 items, vragen er 5
         Assert.True(controller.Response.Headers.ContainsKey("X-Total-Count"));
     }
 
@@ -151,9 +76,9 @@ public class BiedingControllerTests
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
         { 
-            new Claim(ClaimTypes.Role, rol_VeilingMeester) 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
         }, "Mock"));
-        var controller = BuildController(nameof(GetById_ExistingId_ReturnMultiple), user);
+        var controller = BiedingMockData.BuildController(nameof(GetById_ExistingId_ReturnMultiple), user);
 
         var response = await controller.GetById(IngevoerdeBiedNr); // Bieding 10 bestaat
 
@@ -167,10 +92,10 @@ public class BiedingControllerTests
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
         { 
-            new Claim(ClaimTypes.Role, rol_Koper)
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper)
         }, "Mock"));
         
-        var controller = BuildController(nameof(Create_ValidBieding_ReturnsCreated), user);
+        var controller = BiedingMockData.BuildController(nameof(Create_ValidBieding_ReturnsCreated), user);
 
         var input = new BiedingCreateDto
         {
@@ -195,9 +120,9 @@ public class BiedingControllerTests
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
         { 
-            new Claim(ClaimTypes.Role, rol_Koper) 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper) 
         }, "Mock"));
-        var controller = BuildController(nameof(Create_InactiveVeiling_ReturnsBadRequest), user);
+        var controller = BiedingMockData.BuildController(nameof(Create_InactiveVeiling_ReturnsBadRequest), user);
 
         var input = new BiedingCreateDto
         {
@@ -218,9 +143,9 @@ public class BiedingControllerTests
     {
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
         { 
-            new Claim(ClaimTypes.Role, rol_VeilingMeester) 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
         }, "Mock"));
-        var controller = BuildController(nameof(Delete_ExistingId_ReturnsNoContent), user);
+        var controller = BiedingMockData.BuildController(nameof(Delete_ExistingId_ReturnsNoContent), user);
 
         var response = await controller.Delete(1);
 

@@ -51,7 +51,7 @@ public class BiedingController : ControllerBase
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
     [HttpGet]
     [Authorize (Roles ="VeilingMeester")]
-    public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetAll(
+    public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetVeilingMeester_Biedingen(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingNr,
         [FromQuery] int page = 1,
