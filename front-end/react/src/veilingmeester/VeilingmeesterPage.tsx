@@ -693,7 +693,7 @@ const roleLabels: Record<User["role"], string> = {
     Onbekend: "Onbekend",
 };
 
-function UsersTab({ users, bids, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
+function UsersTab({ users, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
     const [filters, setFilters] = useState<{ role: User["role"] | "all"; status: UiStatus | "all" }>({ role: "all", status: "all" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(TABLE_PAGE_SIZES[0]);
