@@ -42,6 +42,7 @@ export default function SellerScreenAdd() {
         BeginDatum: "",
         Minimumprijs: ""
     });
+    console.log(categorieLijst);
 
     const [imagePath, setImagePath] = useState(Data.ImagePath);
 

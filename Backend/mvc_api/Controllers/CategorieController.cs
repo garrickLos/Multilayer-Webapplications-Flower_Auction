@@ -19,35 +19,13 @@ public class CategorieController : ControllerBase
     [HttpGet]
     [Authorize]
     public async Task<ActionResult<IEnumerable<CList>>> GetAll(
-        [FromQuery] string? q,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
-
         var query = _db.Categorieen.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            query = query.Where(c => c.Naam.Contains(term));
-        }
-
-        var total = await query.CountAsync(ct);
-
         var items = await query
             .OrderBy(c => c.Naam)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .Select(c => new CList(c.CategorieNr, c.Naam))
             .ToListAsync(ct);
-
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-
         return Ok(items);
     }
 
