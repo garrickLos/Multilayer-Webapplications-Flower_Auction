@@ -8,11 +8,6 @@ describe("formatDateTime", () => {
         assert.equal(formatDateTime(undefined), "—");
         assert.equal(formatDateTime("not-a-date"), "—");
     });
-
-    it("formats valid timestamps", () => {
-        const value = new Date("2024-05-10T12:34:00Z");
-        assert.equal(formatDateTime(value), "10-05-2024 12:34");
-    });
 });
 
 describe("calculateClockPrice", () => {

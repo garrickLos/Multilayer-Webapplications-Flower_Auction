@@ -87,15 +87,21 @@ function toRole(value?: string | null): UserRole {
 
 async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    const token = sessionStorage.getItem("token");
     const response = await fetch(url, {
         ...init,
         credentials: "omit",
-        headers: { ...jsonHeaders, ...(init.headers ?? {}) },
+        headers: {
+            ...jsonHeaders,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(init.headers ?? {}),
+        },
     });
 
     if (!response.ok) {
         const text = (await response.text()).trim();
-        throw { status: response.status, message: text || response.statusText } satisfies ApiError;
+        const defaultMessage = response.status === 401 || response.status === 403 ? "Geen toegang" : response.statusText;
+        throw { status: response.status, message: text || defaultMessage } satisfies ApiError;
     }
 
     if (response.status === 204) return undefined as T;

@@ -17,11 +17,10 @@ export default function Header() {
             }
 
             try {
-                const decoded: any = jwtDecode(token);
+                const decoded: never = jwtDecode(token);
                 const RolClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
                 setRole(decoded[RolClaim] || null);
-                console.log("token: " + decoded[RolClaim]);
 
                 TokenOphalen.setToken(token);
             } catch {
@@ -30,16 +29,15 @@ export default function Header() {
         };
         updateRoleFromToken();
 
-        // Eventlistener die krijgt een seintje na het inloggen dat er is ingelogd en kijkt dan opnieuw welke rol actief is
         const handleLogin = () => updateRoleFromToken();
         window.addEventListener('login', handleLogin);
 
-        // Maakt hem weer leeg voor de volgende inlog
         return () => {
             window.removeEventListener('login', handleLogin);
         };
     }, []);
 
+    const isLoggedIn = !!role;
 
     return (
         <header>
@@ -78,20 +76,48 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/klantGegevens.webp"
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
-                                <NavLink to='/klantGegevens'>Klantgegevens</NavLink>
+                                <NavLink to='/klantGegevens'>overzicht biedingen</NavLink>
                             </div>
                         )}
-                        <div className="uitloggen">
-                            <img src="/src/assets/pictures/webp/klantGegevens.webp"
-                                 alt="foto van een persoon"
-                                 className="klantGegevensLogo" />
-                            <NavLink to="/home" onClick={() => {
-                                sessionStorage.removeItem("token");
-                                setRole(null); // direct UI bijwerken
-                            }}>
-                                Uitloggen
-                            </NavLink>
-                        </div>
+
+                        {role === "VeilingMeester" && (
+                            <div className="veilingPLaatsen">
+                                <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
+                                     alt="houten hamer"
+                                     className="veilingPlaatsenLogo" />
+                                <NavLink to='/veilingmeester'>Veilingmeester</NavLink>
+                            </div>
+                        )}
+
+                        {!isLoggedIn && (
+                            <div className="uitloggen">
+                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                     alt="foto van een persoon"
+                                     className="klantGegevensLogo" />
+                                <NavLink to="/inloggen">Inloggen</NavLink>
+                            </div>
+                        )}
+                        {!isLoggedIn && (
+                            <div className="uitloggen">
+                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                     alt="foto van een persoon"
+                                     className="klantGegevensLogo" />
+                                <NavLink to="/registreren">Registreren</NavLink>
+                            </div>
+                        )}
+
+                        {isLoggedIn && (
+                            <div className="uitloggen">
+                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                     alt="foto van een persoon"
+                                     className="klantGegevensLogo" />
+                                <NavLink to="/home" onClick={() => {
+                                    sessionStorage.removeItem("token");
+                                    setRole(null);
+                                }}>
+                                    Uitloggen
+                                </NavLink>                            </div>
+                        )}
                     </ul>
                 </nav>
             </div>

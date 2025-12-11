@@ -152,7 +152,12 @@ function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
                 onAuctionsLoaded(response.items as Auction[]);
             } catch (err) {
                 if ((err as { name?: string }).name === "AbortError") return;
-                setError((err as { message?: string }).message ?? "Kan veilingen niet laden.");
+                const apiError = err as ApiError;
+                if (apiError.status === 401 || apiError.status === 403) {
+                    setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+                } else {
+                    setError((apiError as { message?: string }).message ?? "Kan veilingen niet laden.");
+                }
             } finally {
                 setLoading(false);
             }

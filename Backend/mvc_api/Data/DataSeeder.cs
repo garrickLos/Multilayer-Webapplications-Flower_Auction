@@ -116,7 +116,7 @@ public static class DataSeeder
     
     private static async Task EnsureVeilingproducten(AppDbContext dbContext, UserManager<Gebruiker> userManager)
     {
-        var kweker = await userManager.FindByEmailAsync("bedrijf@example.nl");
+        var kweker = await userManager.FindByEmailAsync("mario123@gmail.com");
         if (kweker == null)
         {
             return;
@@ -139,7 +139,7 @@ public static class DataSeeder
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 500,
-                Startprijs       = 1200000000,
+                Startprijs       = 120000000,
                 CategorieNr      = 1,
                 VeilingNr        = 201,
                 Plaats           = "Aalsmeer",
@@ -154,7 +154,7 @@ public static class DataSeeder
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 300,
-                Startprijs       = 2000000000,
+                Startprijs       = 200000000,
                 CategorieNr      = 2,
                 VeilingNr        = 202,
                 Plaats           = "Eelde",
@@ -181,7 +181,7 @@ public static class DataSeeder
 
     private static async Task EnsureBiedingen(AppDbContext dbContext, UserManager<Gebruiker> userManager)
     {
-        var koper = await userManager.FindByEmailAsync("jan@example.nl");
+        var koper = await userManager.FindByEmailAsync("luigi@gmail.com");
         if (koper == null)
         {
             return;
