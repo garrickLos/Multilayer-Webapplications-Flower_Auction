@@ -1,29 +1,18 @@
+using Microsoft.EntityFrameworkCore;
+using Moq;
 using mvc_api.Models;
 
 namespace mvc_api.Tests.Mocks;
 
-public interface IBiedingRepository
+public class BiedingMockData
 {
-    Task<Bieding?> FindByAsync(int biedingNr, CancellationToken ct = default);
-
-    Task SaveAsync(Bieding bieding, CancellationToken ct = default);
-}
-
-public class NepBiedingData : IBiedingRepository
-{
-    private readonly Dictionary<int, Bieding> _store = new();
-    public List<int> SavedBiedingIds { get; } = new();
-
-    public Task<Bieding?> FindByAsync(int biedingNr, CancellationToken ct = default)
+    public static Mock<DbSet<Bieding>> CreateMock(IEnumerable<Bieding> biedingen)
     {
-        _store.TryGetValue(biedingNr, out var bieding);
-        return Task.FromResult<Bieding?>(bieding);
-    }
+        var queryable = biedingen.AsQueryable();
+        var mockset = new Mock<DbSet<Bieding>>();
 
-    public Task SaveAsync(Bieding bieding, CancellationToken ct = default)
-    {
-        _store[bieding.BiedNr] = bieding;
-        SavedBiedingIds.Add(bieding.BiedNr);
-        return Task.CompletedTask;
+        mockset.As<IQueryable<Bieding>>().Setup(m => m.Provider).Returns(queryable.Provider);
+
+        return mockset;
     }
 }

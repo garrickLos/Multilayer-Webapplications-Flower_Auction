@@ -28,9 +28,12 @@ public class BiedingControllerTests
             .Options;
         var dbContext = new AppDbContext(options);
 
+        // zorgt ervoor dat die leeg begint.
+        dbContext.Database.EnsureCreated();
+
         if (!dbContext.Biedingen.Any())
         {
-            // 1. Seed Gebruikers (Nodig voor Create checks)
+            // Genereert gebruikers voor de testen
             dbContext.Gebruikers.AddRange(
                 new Gebruiker { GebruikerNr = 1, BedrijfsNaam = "Koper Een", Soort = rol_Koper },
                 new Gebruiker { GebruikerNr = 2, BedrijfsNaam = "Koper Twee", Soort = rol_Koper },
@@ -38,14 +41,15 @@ public class BiedingControllerTests
                 new Gebruiker { GebruikerNr = 4, BedrijfsNaam = "VeilingMeester", Soort = rol_VeilingMeester}
             );
 
-            // 2. Seed Veilingen en Producten (Nodig voor Create checks en Includes)
+            // genereert veilingen die gebruikt kunnen worden
+            // 1 actief en 1 inactief voor het testen van beide stellingen
             dbContext.Veilingen.AddRange(
                 new Veiling { VeilingNr = 10, Status = StatusActive },
                 new Veiling { VeilingNr = 20, Status = StatusInactive }
             );
 
             dbContext.Veilingproducten.AddRange(
-                // Producten in actieve veiling
+                // Verschillende producten die gebruikt worden
                 new Veilingproduct { VeilingProductNr = 101, VeilingNr = 10, Naam = "Tulp Rood" },
                 new Veilingproduct { VeilingProductNr = 102, VeilingNr = 10, Naam = "Tulp Geel" },
                 new Veilingproduct { VeilingProductNr = 103, VeilingNr = 10, Naam = "Roos Wit" },
@@ -53,7 +57,7 @@ public class BiedingControllerTests
                 new Veilingproduct { VeilingProductNr = 105, VeilingNr = 20, Naam = "Oude Tulp" } 
             );
 
-            // 3. Seed Biedingen (Jouw originele data)
+            // genereert biedingen met verschillende waardes voor de verschillende soorten routes
             dbContext.Biedingen.AddRange(
                 new Bieding { BiedNr = 1, BedragPerFust = 150, AantalStuks = 10, GebruikerNr = 1, VeilingproductNr = 101 },
                 new Bieding { BiedNr = 2, BedragPerFust = 5000, AantalStuks = 1000, GebruikerNr = 1, VeilingproductNr = 101 },
@@ -130,7 +134,7 @@ public class BiedingControllerTests
         var controller = BuildController(nameof(GetAll_AsVeilingMeester_ReturnsPagedList), user);
 
         // Vraag pagina 1, grootte 5
-        var response = await controller.GetAll(null, null, 1, 5);
+        var response = await controller.GetVeilingMeester_Biedingen(null, null, 1, 5);
 
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var items = Assert.IsAssignableFrom<IEnumerable<VeilingMeester_BiedingDto>>(okResult.Value);

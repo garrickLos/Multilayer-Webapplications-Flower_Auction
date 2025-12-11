@@ -188,16 +188,3 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
-
-/*
-{
-  "email": "whater@gmail.com",
-  "password": "abcTest123!@#",
-  "confirmPassword": "abcTest123!@#",
-  "bedrijfsNaam": "naam",
-  "soort": "VeilingMeester",
-  "kvk": "12345678",
-  "straatAdres": "malie 3",
-  "postcode": "1232GT"
-}
-*/
