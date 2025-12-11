@@ -8,6 +8,7 @@ using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
 using Xunit;
+using Xunit.Sdk;
 
 namespace mvc_api.Tests.Controllers;
 
@@ -49,7 +50,6 @@ public class BiedingControllerTests
                 new Veilingproduct { VeilingProductNr = 102, VeilingNr = 10, Naam = "Tulp Geel" },
                 new Veilingproduct { VeilingProductNr = 103, VeilingNr = 10, Naam = "Roos Wit" },
                 new Veilingproduct { VeilingProductNr = 104, VeilingNr = 10, Naam = "Roos Rood" },
-                // Product in inactieve veiling
                 new Veilingproduct { VeilingProductNr = 105, VeilingNr = 20, Naam = "Oude Tulp" } 
             );
 

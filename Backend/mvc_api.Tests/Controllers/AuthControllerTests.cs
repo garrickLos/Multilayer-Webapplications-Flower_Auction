@@ -17,8 +17,6 @@ public class AuthControllerTests
     private readonly Mock<UserManager<Gebruiker>> _mockUserManager;
     private readonly Mock<SignInManager<Gebruiker>> _mockSignInManager;
     private readonly Mock<GenereerBearerToken> _mockTokenService;
-    
-    // De System Under Test (SUT)
     private readonly AuthController _controller;
 
     public AuthControllerTests()
