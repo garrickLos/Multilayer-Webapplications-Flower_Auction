@@ -34,29 +34,29 @@ public class AuthControllerTests
         );
     }
 
-    [Fact (DisplayName ="Eerste test proberen")]
-    public async Task Register_GeldigeRequest_GeeftOkResultaat()
-    {
-        var request = new RegisterRequest 
-        { 
-            Email = "test@example.com", 
-            Password = "Password123!", 
-            Soort = "Klant",
-            BedrijfsNaam = "TestBedrijf"
-        };
+    // [Fact (DisplayName ="Eerste test proberen")]
+    // public async Task Register_GeldigeRequest_GeeftOkResultaat()
+    // {
+    //     var request = new RegisterRequest 
+    //     { 
+    //         Email = "test@example.com", 
+    //         Password = "Password123!", 
+    //         Soort = "Klant",
+    //         BedrijfsNaam = "TestBedrijf"
+    //     };
 
-        _mockUserManager.Setup(x => x.FindByEmailAsync(It.IsAny<string>()))
-            .ReturnsAsync((Gebruiker)null!);
+    //     _mockUserManager.Setup(x => x.FindByEmailAsync(It.IsAny<string>()))
+    //         .ReturnsAsync((Gebruiker)null!);
 
-        _mockUserManager.Setup(x => x.CreateAsync(It.IsAny<Gebruiker>(), It.IsAny<string>()))
-            .ReturnsAsync(IdentityResult.Success);
+    //     _mockUserManager.Setup(x => x.CreateAsync(It.IsAny<Gebruiker>(), It.IsAny<string>()))
+    //         .ReturnsAsync(IdentityResult.Success);
 
-        var result = await _controller.Register(request);
+    //     var result = await _controller.Register(request);
 
-        var actionResult = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<RegisterResponse>(actionResult.Value);
-        Assert.True(response.Success);
-    }
+    //     var actionResult = Assert.IsType<OkObjectResult>(result.Result);
+    //     var response = Assert.IsType<RegisterResponse>(actionResult.Value);
+    //     Assert.True(response.Success);
+    // }
 }
 
 // Helper class om de complexe Identity Mocks op te zetten

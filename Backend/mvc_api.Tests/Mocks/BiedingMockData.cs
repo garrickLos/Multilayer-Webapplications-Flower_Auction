@@ -21,18 +21,16 @@ public interface IStatic_Variable
 
 public class BiedingMockData : IStatic_Variable
 {
-    public static Mock<DbSet<Bieding>> CreateMock(IEnumerable<Bieding> biedingen)
+    public static Mock CreateMock(ClaimsPrincipal user)
     {
         // Converteer de lijst naar een IQueryable zodat we de eigenschappen kunnen kopiëren
-        var queryable = biedingen.AsQueryable();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+        .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
+        .Options;
         
-        var mockSet = new Mock<DbSet<Bieding>>();
-
-        // Configureer de mock zodat deze zich gedraagt als de queryable lijst
-        mockSet.As<IQueryable<Bieding>>().Setup(m => m.Provider).Returns(queryable.Provider);
-        mockSet.As<IQueryable<Bieding>>().Setup(m => m.Expression).Returns(queryable.Expression);
-        mockSet.As<IQueryable<Bieding>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-        mockSet.As<IQueryable<Bieding>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
+        var mockSet = new Mock<AppDbContext>(options);
+        
+        mockSet.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new DbUpdateException());
 
         return mockSet;
     }
