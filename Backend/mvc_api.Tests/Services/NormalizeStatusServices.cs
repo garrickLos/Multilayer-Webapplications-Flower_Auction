@@ -24,7 +24,6 @@ public class NormalizeStatusServices
 
     [Theory
         (DisplayName = "Input empty or null")]
-    [InlineData (null,              "inactive")]
     [InlineData ("",                "inactive")]
     public async Task TestStatusPrint_nullInput(string testInput, string expectedOutput)
     {

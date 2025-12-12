@@ -25,8 +25,8 @@ public class BiedingMockData : IStatic_Variable
     {
         // Converteer de lijst naar een IQueryable zodat we de eigenschappen kunnen kopiëren
         var options = new DbContextOptionsBuilder<AppDbContext>()
-        .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
-        .Options;
+                            .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
+                            .Options;
         
         var mockSet = new Mock<AppDbContext>(options);
         
