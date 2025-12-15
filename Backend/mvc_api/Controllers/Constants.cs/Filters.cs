@@ -1,15 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
+using mvc_api.statusPrinter;
 
 namespace ApiGetFilters;
 
 public class VeilingControllerFilter
 {
-    // 1. De eigenschap waar het resultaat in wordt opgeslagen
+    // De eigenschap waar het resultaat in wordt opgeslagen
     public IQueryable<Veiling> ResultaatQuery { get; private set; }
 
-    // 2. Constructor met extra parameter 'now'
+    // Constructor met extra parameter 'now'
     public VeilingControllerFilter(AppDbContext _db, 
                                     int? veilingProduct, 
                                     DateTime? from, 
@@ -33,10 +34,10 @@ public class VeilingControllerFilter
         if (onlyActive)
         {
             // Hier wordt de parameter 'now' gebruikt
-            query = query.Where(v => v.Status == VeilingStatus.Active && v.Eindtijd > now);
+            query = query.Where(v => v.Status == NormalizeStatus.Active && v.Eindtijd > now);
         }
 
-        // 3. Sla de lokale variabele op in de publieke eigenschap
+        // Sla de lokale variabele op in de publieke eigenschap
         ResultaatQuery = query;
     }
 }

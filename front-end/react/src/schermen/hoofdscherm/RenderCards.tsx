@@ -83,10 +83,14 @@ export function beschrijving(product: Producten, item: VeilingItem) {
             lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}
 
             Hoeveelheid bloemen: ${product.voorraad}
-            prijs begint op: ${product.startprijs} euro
+            prijs begint op: ${ devide(product.startprijs).toFixed(2)} euro
 
             veiling startijd: 
             ${new Date(item.begintijd).toLocaleString('nl-NL', datumOpties)}
         `
     );
+}
+
+function devide(input: number) {
+    return input / 100;
 }

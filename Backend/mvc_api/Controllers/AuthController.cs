@@ -1,11 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using mvc_api.Auth.GenereerBearerToken;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
 
 namespace mvc_api.Controllers;
+
+public interface IGenereerBearerToken
+{
+    Task<string> GenerateJwtToken(Gebruiker gebruiker); 
+}
 
 [ApiController]
 [Route("auth")]
@@ -14,12 +18,12 @@ public sealed class AuthController : ControllerBase
 {
     private readonly UserManager<Gebruiker> _userManager;
     private readonly SignInManager<Gebruiker> _signInManager;
-    private readonly GenereerBearerToken _bearerToken;
+    private readonly IGenereerBearerToken _bearerToken;
 
     public AuthController(
         UserManager<Gebruiker> userManager,
         SignInManager<Gebruiker> signInManager,
-        GenereerBearerToken bearerTokenService)
+        IGenereerBearerToken bearerTokenService)
     {
         _userManager   = userManager   ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
@@ -37,6 +41,7 @@ public sealed class AuthController : ControllerBase
             return BadRequest(new RegisterResponse(false, GetModelErrors()));
         }
 
+        // Wanneer een soort verkeerd is
         if (!GebruikerSoorten.TryNormalize(request.Soort, out var normalizedSoort))
         {
             return BadRequest(new RegisterResponse(false, new[] { "Ongeldige gebruiker soort." }));
@@ -44,6 +49,8 @@ public sealed class AuthController : ControllerBase
 
         var trimmed = request.Trimmed();
         var existingUser = await _userManager.FindByEmailAsync(trimmed.Email);
+
+        // Wanneer er al een bestaande gebruiker is
         if (existingUser is not null)
             return Conflict(new RegisterResponse(false, new[] { "Email is al in gebruik." }));
 

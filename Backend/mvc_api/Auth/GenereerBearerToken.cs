@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using mvc_api.Controllers;
 using mvc_api.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -7,16 +8,15 @@ using System.Text;
 
 namespace mvc_api.Auth.GenereerBearerToken;
 
-public class GenereerBearerToken
+public class GenereerBearerToken : IGenereerBearerToken
 {
-    private readonly UserManager<Gebruiker> _userManager;
     private readonly IConfiguration _config;
 
-    public GenereerBearerToken(UserManager<Gebruiker> userManager, IConfiguration config)
+    public GenereerBearerToken(IConfiguration config)
     {
-        _userManager = userManager;
         _config = config;
     }
+    public GenereerBearerToken(){}
 
     public async Task<string> GenerateJwtToken(Gebruiker user)
     {
