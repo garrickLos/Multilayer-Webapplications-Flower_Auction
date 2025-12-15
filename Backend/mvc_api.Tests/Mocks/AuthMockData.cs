@@ -22,18 +22,19 @@ public class AuthMocks
 public static class AuthMockData
 {
     // Bouwt een set van mocks en retourneert een geconfigureerde AuthController
-    public static AuthMocks Build(string dbName)
+    public static AuthMocks Build(string dbName, Gebruiker? fakeUser)
     {
         var userManagerMock = MockHelpers.MockUserManager<Gebruiker>();
-        var signInManagerMock = MockHelpers.MockSignInManager(userManagerMock.Object);
+        var signInManager = MockHelpers.MockSignInManager(userManagerMock.Object);
         var tokenMock = new Mock<IGenereerBearerToken>();
 
-        tokenMock.Setup(x => x.GenerateJwtToken(It.IsAny<Gebruiker>()))
-             .ReturnsAsync("fake-jwt-token");
+        /*
+            Mock voor de userManager
+        */
 
         // Default: geen bestaande gebruiker
         userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>()))
-            .ReturnsAsync((Gebruiker?)null);
+            .ReturnsAsync(fakeUser);
 
         userManagerMock.Setup(x => x.CreateAsync(It.IsAny<Gebruiker>(), It.IsAny<string>()))
             .ReturnsAsync(IdentityResult.Success);
@@ -44,13 +45,25 @@ public static class AuthMockData
         userManagerMock.Setup(x => x.UpdateAsync(It.IsAny<Gebruiker>()))
             .ReturnsAsync(IdentityResult.Success);
 
-        var controller = new AuthController(userManagerMock.Object, signInManagerMock.Object, tokenMock.Object);
+        /*
+            Mock voor de signInManager
+        */
+
+        /*
+            Mock voor de tokenService
+        */
+
+        tokenMock
+            .Setup(x => x.GenerateJwtToken(It.IsAny<Gebruiker>()))
+            .ReturnsAsync("valid-test-token");
+        
+        var controller = new AuthController(userManagerMock.Object, signInManager.Object, tokenMock.Object);
 
         return new AuthMocks
         {
             Controller = controller,
             UserManager = userManagerMock,
-            SignInManager = signInManagerMock,
+            SignInManager = signInManager,
             TokenService = tokenMock
         };
     }
@@ -71,12 +84,14 @@ public static class AuthMockData
                     GebruikerNr = 1,
                     BedrijfsNaam = "Flora BV",
                     Email = "flora@gmail.com",
+                    PasswordHash = "Password123",
                     UserName = "flora@gmail.com",
                     LaatstIngelogd = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc),
                     Soort = "VeilingMeester",
                     Kvk = "12345678",
                     StraatAdres = "Bloemig 10",
-                    Postcode = "1234AB"
+                    Postcode = "1234AB",
+                    Status = ModelStatus.Active
                 }
             );
 

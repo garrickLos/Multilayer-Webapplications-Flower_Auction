@@ -10,12 +10,10 @@ namespace mvc_api.Auth.GenereerBearerToken;
 
 public class GenereerBearerToken : IGenereerBearerToken
 {
-    private readonly UserManager<Gebruiker> _userManager;
     private readonly IConfiguration _config;
 
-    public GenereerBearerToken(UserManager<Gebruiker> userManager, IConfiguration config)
+    public GenereerBearerToken(IConfiguration config)
     {
-        _userManager = userManager;
         _config = config;
     }
     public GenereerBearerToken(){}
