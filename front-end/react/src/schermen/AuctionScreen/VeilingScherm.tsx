@@ -91,9 +91,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     let [InvoerAantal, setAantal] = useState(0);
     const [huidigePrijs, setHuidigePrijs] = useState(0);
     const aantalFusten = huidigProduct?.aantalFusten;
-    const voorraadBloemen = huidigProduct?.voorraadBloemen;
     const totaalPrijs = (InvoerAantal * huidigePrijs).toFixed(2);
-    const minimumPrijs = huidigProduct?.minPrijs || 0;
     const categorie = huidigProduct?.categorieNaam;
 
     const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
@@ -111,7 +109,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
         const isGeldig = checkInputField(InvoerAantal, huidigProduct, errors);
         setKoopItem(isGeldig);
-
+        
         VeilingProductitem_Update(isGeldig, huidigProduct, InvoerAantal, url, token);
     };
 
@@ -146,9 +144,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         <InfoVeld Titel={'AantalFusten:'} Bericht={aantalFusten}
                                 secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
                         
-                        <InfoVeld Titel={'Vooraad bloemen:'} Bericht={voorraadBloemen}
-                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
-                        
                         <InfoVeld Titel={'Plaats:'} Bericht={huidigProduct?.plaats}
                                 BerichtClass={'rightSideText'}/>
                     </div>
@@ -172,9 +167,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         
                         <InfoVeld Titel={'Prijs:'} Bericht={`€ ${huidigePrijs.toFixed(2)}`}
                                 BerichtClass={["rightSideText", "Prijs"]}/>
-                        
-                        <InfoVeld Titel={'MinimumPrijs:'} Bericht={` € ${ConvertToEuro(minimumPrijs, 100).toFixed(2)}`}
-                                BerichtClass={['rightSideText', 'Prijs']}/>
 
                         <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal fusten:</label>
                         

@@ -194,7 +194,7 @@ public class AuthControllerTests
             RememberMe = true
         };
 
-        mocks.SignInManager
+        mocks.SignInManager 
             .Setup(x => x.PasswordSignInAsync(It.IsAny<Gebruiker>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
 

@@ -7,7 +7,6 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using mvc_api.Data;
-using Microsoft.AspNetCore.Identity.Data;
 
 namespace mvc_api.Tests.Mocks;
 
