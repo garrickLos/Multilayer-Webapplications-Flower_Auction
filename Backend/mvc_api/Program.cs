@@ -18,6 +18,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using mvc_api.Auth.GenereerBearerToken;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -74,7 +75,6 @@ else
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("SQL_SERVER-CONNECTIONSTRING")));
 }
-
 
 // Identity configuratie (alleen registratie, verdere auth volgt later)
 builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
@@ -145,7 +145,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 // // Nodig zodat UserManager/SignInManager goed werken
 // builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
-builder.Services.AddScoped<mvc_api.Auth.GenereerBearerToken.GenereerBearerToken>();
+builder.Services.AddScoped<IGenereerBearerToken, GenereerBearerToken>();
 
 var app = builder.Build();
 

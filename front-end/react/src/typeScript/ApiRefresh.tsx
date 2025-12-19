@@ -6,7 +6,7 @@ export function useAutorefresh(intervalTime: number) {
 
     useEffect(() => {
         const intervalId = setInterval(() => {
-            setRefreshTrigger(Date.now);
+            setRefreshTrigger(Date.now());
         }, intervalTime);
 
         return () => clearInterval(intervalId);

@@ -11,6 +11,7 @@ interface LoginRequest {
 interface LoginResponse {
     success: boolean;
     token?: string;
+    refreshToken?: string;
     errors: string[];
 }
 
@@ -128,9 +129,11 @@ export default function Login() {
                 });
                 return;
             }
-
-            if (payload?.success && payload.token) {
+            
+            //plaatst jwt en refresh token in session storage
+            if (payload?.success && payload.token && payload.refreshToken) {
                 sessionStorage.setItem('token', payload.token);
+                sessionStorage.setItem('refreshToken', payload.refreshToken);
                 
                 window.dispatchEvent(new Event('login'));
             }

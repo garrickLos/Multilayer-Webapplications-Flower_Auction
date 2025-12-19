@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -101,6 +100,7 @@ public class BiedingController : ControllerBase
             ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
             : Ok(dto);
     }
+
 
     // POST: api/Bieding
     [HttpPost]
