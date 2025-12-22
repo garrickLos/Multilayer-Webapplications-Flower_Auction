@@ -10,6 +10,8 @@ import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
 import { renderCards, type VeilingItem } from './RenderCards.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 
+import '../../css/Componenten/knop.css';
+
 export default function MainScreen() {
     const RefreshTimeMS = 60000;
     const refreshTimer = ApiRefresh(RefreshTimeMS);

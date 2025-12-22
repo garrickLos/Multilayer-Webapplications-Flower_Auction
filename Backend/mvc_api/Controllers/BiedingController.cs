@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
+// using mvc_api.Repo.BiedingRepo;
 
 namespace mvc_api.Controllers;
 
@@ -28,7 +29,11 @@ public class BiedingController : ControllerBase
         [FromQuery] int? veilingProductNr,
         CancellationToken ct = default)
     {
+        // BiedingRepository BiedingItems = new BiedingRepository(_db, ct); 
+
         var query = _db.Biedingen.AsNoTracking().AsQueryable();
+
+        // var query2 = BiedingItems.GetBieding(gebruikerNr);
 
         if (gebruikerNr.HasValue)
             query = query.Where(b => b.GebruikerNr == gebruikerNr.Value);
@@ -43,9 +48,11 @@ public class BiedingController : ControllerBase
                 b.AantalStuks,
                 b.GebruikerNr
             ))
-            .ToListAsync(ct);
+        .ToListAsync(ct);
 
-        return Ok(items);
+        // await query2;
+
+        return Ok(query);
     }
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=

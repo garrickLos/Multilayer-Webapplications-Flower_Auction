@@ -9,6 +9,7 @@ namespace mvc_api.Data;
 public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<RefreshToken>  RefreshTokens { get; set; }
 
     public DbSet<Gebruiker>      Gebruikers       => Set<Gebruiker>();
     public DbSet<Bieding>        Biedingen        => Set<Bieding>();

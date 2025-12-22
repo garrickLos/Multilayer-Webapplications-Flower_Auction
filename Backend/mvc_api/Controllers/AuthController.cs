@@ -3,13 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
-
+using mvc_api.Auth.GenereerBearerToken;
 namespace mvc_api.Controllers;
-
-public interface IGenereerBearerToken
-{
-    Task<string> GenerateJwtToken(Gebruiker gebruiker); 
-}
 
 [ApiController]
 [Route("auth")]
@@ -18,16 +13,16 @@ public sealed class AuthController : ControllerBase
 {
     private readonly UserManager<Gebruiker> _userManager;
     private readonly SignInManager<Gebruiker> _signInManager;
-    private readonly IGenereerBearerToken _bearerToken;
+    private readonly IGenereerBearerToken _tokenService;
 
     public AuthController(
         UserManager<Gebruiker> userManager,
         SignInManager<Gebruiker> signInManager,
-        IGenereerBearerToken bearerTokenService)
+        IGenereerBearerToken tokenService)
     {
-        _userManager   = userManager   ?? throw new ArgumentNullException(nameof(userManager));
-        _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
-        _bearerToken   = bearerTokenService ?? throw new ArgumentNullException(nameof(bearerTokenService));
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _tokenService = tokenService;
     }
 
     [HttpPost("register")]
@@ -86,7 +81,7 @@ public sealed class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new LoginResponse(false, null, GetModelErrors()));
+            return BadRequest(new LoginResponse(false, null, null, GetModelErrors()));
         }
 
         var email = request.Email.Trim();
@@ -98,7 +93,7 @@ public sealed class AuthController : ControllerBase
 
         if (user.Status is ModelStatus.Deleted or ModelStatus.Inactive)
         {
-            return Unauthorized(new LoginResponse(false, null, new[] { "Account is niet actief." }));
+            return Unauthorized(new LoginResponse(false, null, null, new[] { "Account is niet actief." }));
         }
 
         var result = await _signInManager.PasswordSignInAsync(
@@ -111,7 +106,7 @@ public sealed class AuthController : ControllerBase
         {
             if (result.IsLockedOut)
             {
-                return Unauthorized(new LoginResponse(false, null, new[]
+                return Unauthorized(new LoginResponse(false, null, null, new[]
                 {
                     "Account is tijdelijk geblokkeerd wegens te veel mislukte inlogpogingen."
                 }));
@@ -120,12 +115,37 @@ public sealed class AuthController : ControllerBase
             return InvalidCredentialsResponse();
         }
 
-        var token = await _bearerToken.GenerateJwtToken(user);
+        var token = await _tokenService.GenerateJwtToken(user);
+        var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user);
 
         user.LaatstIngelogd = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);
 
-        return Ok(new LoginResponse(true, token, Array.Empty<string>()));
+        return Ok(new LoginResponse(true, token, refreshToken, Array.Empty<string>()));
+    }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshRequest request)
+    {
+        var storedToken = await _tokenService.GetStoredRefreshToken(request.RefreshToken);
+
+        if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
+        {
+            return Unauthorized(new LoginResponse(false, null, null, new[] { "Refresh token is ongeldig." }));
+        }
+
+        var user = await _userManager.FindByIdAsync(storedToken.User_Id.ToString());
+        if (user == null)
+        {
+            return Unauthorized(new LoginResponse(false, null, null, new[] { "Gebruiker niet gevonden." }));
+        }
+
+        var newJwtToken = await _tokenService.GenerateJwtToken(user);
+        var newRefreshToken = await _tokenService.GenerateRefreshTokenAsync(user);
+
+        storedToken.IsRevoked = true;
+
+        return Ok(new LoginResponse(true, newJwtToken, newRefreshToken, Array.Empty<string>()));
     }
 
     private string[] GetModelErrors() =>
@@ -138,5 +158,5 @@ public sealed class AuthController : ControllerBase
     private static string? TrimOrNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private UnauthorizedObjectResult InvalidCredentialsResponse() =>
-        Unauthorized(new LoginResponse(false, null, new[] { "Ongeldige inloggegevens." }));
+        Unauthorized(new LoginResponse(false, null, null, new[] { "Ongeldige inloggegevens." }));
 }

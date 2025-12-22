@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { Timer } from './Componenten/RenderTimer'; // Zorg dat imports kloppen
-import { type errorMessaging, type ProductLogica, type categorie as veilingCategorie, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
+import { Timer } from '../../Componenten/RenderTimer'; // Zorg dat imports kloppen
+import { type errorMessaging, type ProductLogica, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
 
 //api calls
 import { UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
-import { UpdateVeilingApi as Api_UpdateVeilingProduct } from '../../typeScript/ApiPost';
 import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 
 //componenten
-import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from './Componenten/RenderTimer';
-import { DelenDoor as ConvertToEuro } from '../../typeScript/RekenFuncties';
-import { InfoVeld } from './Componenten/InformatieVelden';
-import { VeilingProductitem_Update, mapData } from './Componenten/VeilingScherm_InfoConfig';
+import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../../Componenten/RenderTimer';
+import { InfoVeld } from '../../Componenten/InformatieVelden';
+import { VeilingProductitem_Update, mapData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
 import '../../css/VeilingScherm.css';
 
@@ -91,9 +89,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     let [InvoerAantal, setAantal] = useState(0);
     const [huidigePrijs, setHuidigePrijs] = useState(0);
     const aantalFusten = huidigProduct?.aantalFusten;
-    const voorraadBloemen = huidigProduct?.voorraadBloemen;
     const totaalPrijs = (InvoerAantal * huidigePrijs).toFixed(2);
-    const minimumPrijs = huidigProduct?.minPrijs || 0;
     const categorie = huidigProduct?.categorieNaam;
 
     const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
@@ -111,7 +107,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
         const isGeldig = checkInputField(InvoerAantal, huidigProduct, errors);
         setKoopItem(isGeldig);
-
+        
         VeilingProductitem_Update(isGeldig, huidigProduct, InvoerAantal, url, token);
     };
 
@@ -146,9 +142,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         <InfoVeld Titel={'AantalFusten:'} Bericht={aantalFusten}
                                 secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
                         
-                        <InfoVeld Titel={'Vooraad bloemen:'} Bericht={voorraadBloemen}
-                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
-                        
                         <InfoVeld Titel={'Plaats:'} Bericht={huidigProduct?.plaats}
                                 BerichtClass={'rightSideText'}/>
                     </div>
@@ -172,9 +165,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         
                         <InfoVeld Titel={'Prijs:'} Bericht={`€ ${huidigePrijs.toFixed(2)}`}
                                 BerichtClass={["rightSideText", "Prijs"]}/>
-                        
-                        <InfoVeld Titel={'MinimumPrijs:'} Bericht={` € ${ConvertToEuro(minimumPrijs, 100).toFixed(2)}`}
-                                BerichtClass={['rightSideText', 'Prijs']}/>
 
                         <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal fusten:</label>
                         

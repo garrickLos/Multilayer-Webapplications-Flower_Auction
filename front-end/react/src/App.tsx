@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { jwtDecode } from 'jwt-decode'
 import type { JSX } from 'react'
+import { useState, useEffect } from 'react'
 
 import VeilingmeesterPage from './veilingmeester/VeilingmeesterPage.tsx'
 import Hoofdscherm from './schermen/hoofdscherm/Hoofdscherm.tsx'
@@ -10,6 +11,9 @@ import Login from './registratie_login/Login.tsx'
 import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
 import AuctionScreen from './schermen/AuctionScreen/VeilingScherm.tsx';
+
+import { UpdateApi } from './typeScript/ApiPost.tsx'
+import { useAutorefresh } from './typeScript/ApiRefresh.tsx'
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
 import SellerScreenInfo from "./schermen/SellerScreenInfo.tsx";
@@ -38,7 +42,39 @@ const ProtectedRoute = ({ element, allowedRoles }: { element: JSX.Element, allow
     return element;
 }
 
+async function performSilentRefresh() {
+    const token = sessionStorage.getItem('token');
+    const refreshToken = sessionStorage.getItem('refreshToken');
+
+    if (!token || !refreshToken) return;
+
+    try {
+        const response = await fetch("http://localhost:5105/auth/refresh", { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, refreshToken })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('refreshToken', data.refreshToken);
+        }
+    } catch (error) {
+        console.error("Refresh fout:", error);
+    }
+}
+
 export default function App() {
+    const refreshTijd = 342 * 10000; // miliseconden * 10000 = minuten
+    
+    const trigger = useAutorefresh(refreshTijd);
+
+    useEffect(() => {
+        performSilentRefresh();
+    }, [trigger]);
+
     return (
         <>
             <Header />

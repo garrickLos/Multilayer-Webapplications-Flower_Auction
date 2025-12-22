@@ -1,0 +1,17 @@
+.Button{
+    height: 45px;
+
+    align-items: center;
+    justify-content: center;
+
+    background-color: var(--accent-light);
+    color: var(--inverse-text);
+
+    border-radius: 5px;
+}
+
+.Button:hover {
+    background-color: var(--accent-muted);
+
+    color: var(--ink-light);
+}

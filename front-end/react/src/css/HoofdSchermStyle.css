@@ -149,24 +149,6 @@
     overflow-y: hidden;
 }
 
-.MainScreen .auctionButton {
-    height: 45px;
-
-    align-items: center;
-    justify-content: center;
-
-    background-color: var(--accent-light);
-    color: var(--inverse-text);
-
-    border-radius: 5px;
-}
-
-.MainScreen .auctionButton:hover {
-    background-color: var(--accent-muted);
-
-    color: var(--ink-light);
-}
-
 .MainScreen .ImageErrorMsg {
     position: absolute;
 
