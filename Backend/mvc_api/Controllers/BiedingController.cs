@@ -52,7 +52,7 @@ public class BiedingController : ControllerBase
 
         // await query2;
 
-        return Ok(query);
+        return Ok(items);
     }
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=

@@ -18,8 +18,8 @@ public class VeilingproductRepository : IVeilingproductRepository
         await _db.Veilingproducten.FindAsync(new object[] { veilingproductNr }, ct);
 
     public Task<bool> CategorieExistsAsync(int categorieNr, CancellationToken ct) =>
-        _db.Categorieen.AsNoTracking().AnyAsync(c => c.CategorieNr == categorieNr, ct);
-
+        _db.Categorieen.AnyAsync(c => c.CategorieNr == categorieNr, ct);
+    
     public void Add(Veilingproduct entity) => _db.Veilingproducten.Add(entity);
 
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
@@ -125,10 +125,8 @@ public class VeilingproductRepository : IVeilingproductRepository
             .SingleAsync(ct);
 
     private IQueryable<Veilingproduct> QueryWithCategorie() =>
-        _db.Veilingproducten
-            .AsNoTracking()
-            .Include(v => v.Categorie);
-
+        _db.Veilingproducten;
+    
     private static IQueryable<Veilingproduct> ApplySearchFilters(
         IQueryable<Veilingproduct> query,
         string? q,
