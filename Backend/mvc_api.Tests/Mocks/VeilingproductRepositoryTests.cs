@@ -318,6 +318,22 @@ public class VeilingproductRepositoryTests
 
         public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
+            var resultType = typeof(TResult);
+            if (resultType.IsGenericType && resultType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var innerType = resultType.GetGenericArguments()[0];
+                var executeMethod = typeof(IQueryProvider)
+                    .GetMethods()
+                    .Single(method => method.Name == nameof(IQueryProvider.Execute) && method.IsGenericMethod)
+                    .MakeGenericMethod(innerType);
+                var executionResult = executeMethod.Invoke(_inner, new object[] { expression });
+                var taskFromResult = typeof(Task)
+                    .GetMethod(nameof(Task.FromResult))?
+                    .MakeGenericMethod(innerType)
+                    .Invoke(null, new[] { executionResult });
+                return (TResult)taskFromResult!;
+            }
+            
             return Execute<TResult>(expression);
         }
 
