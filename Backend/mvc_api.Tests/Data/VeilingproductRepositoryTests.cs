@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -287,8 +288,7 @@ public class VeilingproductRepositoryTests
         return dbSet;
     }
 
-    private sealed class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
-    {
+    private sealed class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider    {
         private readonly IQueryProvider _inner;
 
         public TestAsyncQueryProvider(IQueryProvider inner)
