@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using mvc_api.Data;
 using mvc_api.Models;
+using mvc_api.Models.Dtos;
 using Xunit;
 
 namespace mvc_api.Tests.Data;
@@ -74,37 +76,191 @@ public class VeilingproductRepositoryTests
     }
 
     [Fact]
-    public void Query_ReturnsAllItems()
+    public async Task GetKlantAsync_WithFilters_ReturnsPagedResults()
     {
         var products = new List<Veilingproduct>
         {
-            new() { VeilingProductNr = 1, Naam = "Roos" },
-            new() { VeilingProductNr = 2, Naam = "Tulp" }
+            new()
+            {
+                VeilingProductNr = 1,
+                Naam = "Rode Roos",
+                CategorieNr = 1,
+                Categorie = new Categorie { Naam = "Rozen" },
+                ImagePath = "roos.png",
+                Plaats = "Aalsmeer"
+            },
+            new()
+            {
+                VeilingProductNr = 2,
+                Naam = "Gele Tulp",
+                CategorieNr = 2,
+                Categorie = new Categorie { Naam = "Tulpen" },
+                ImagePath = "tulp.png",
+                Plaats = "Lisse"
+            }
         };
         var productSet = CreateMockDbSet(products);
         var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
         var repository = new VeilingproductRepository(context.Object);
 
-        var result = repository.Query().ToList();
+        var result = await repository.GetKlantAsync("Tulp", 2, 1, 50, CancellationToken.None);
 
-        Assert.Equal(2, result.Count);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(1, result.Items.Count);
+        Assert.Equal(2, result.Items[0].VeilingProductNr);
+        Assert.Equal("Tulpen", result.Items[0].Categorie);
     }
 
     [Fact]
-    public void QueryWithCategorie_ReturnsAllItems()
+    public async Task GetKwekerAsync_WithFilters_ReturnsPagedResults()
     {
         var products = new List<Veilingproduct>
         {
-            new() { VeilingProductNr = 3, Naam = "Lelie" }
+            new()
+            {
+                VeilingProductNr = 3,
+                Naam = "Witte Lelie",
+                CategorieNr = 3,
+                Categorie = new Categorie { Naam = "Lelies" },
+                GeplaatstDatum = new DateTime(2025, 2, 1),
+                AantalFusten = 2,
+                VoorraadBloemen = 100,
+                ImagePath = "lelie.png",
+                Plaats = "Naaldwijk"
+            }
         };
         var productSet = CreateMockDbSet(products);
         var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
         var repository = new VeilingproductRepository(context.Object);
 
-        var result = repository.QueryWithCategorie().ToList();
+        var result = await repository.GetKwekerAsync("Lelie", 3, 1, 50, CancellationToken.None);
+
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(1, result.Items.Count);
+        Assert.Equal(3, result.Items[0].VeilingProductNr);
+        Assert.Equal("Lelies", result.Items[0].Categorie);
+    }
+
+    [Fact]
+    public async Task GetForVeilingmeesterAsync_WithFilters_ReturnsExpectedItems()
+    {
+        var products = new List<Veilingproduct>
+        {
+            new()
+            {
+                VeilingProductNr = 4,
+                Naam = "Rode Roos Deluxe",
+                CategorieNr = 1,
+                Categorie = new Categorie { Naam = "Rozen" },
+                Status = ModelStatus.Active,
+                Minimumprijs = 40,
+                Startprijs = 45,
+                GeplaatstDatum = new DateTime(2025, 3, 1),
+                Kwekernr = 7,
+                AantalFusten = 2,
+                VoorraadBloemen = 60,
+                Plaats = "Aalsmeer",
+                ImagePath = "roos.png",
+                BeginDatum = new DateOnly(2025, 3, 1)
+            },
+            new()
+            {
+                VeilingProductNr = 5,
+                Naam = "Gele Tulp",
+                CategorieNr = 2,
+                Categorie = new Categorie { Naam = "Tulpen" },
+                Status = ModelStatus.Inactive,
+                Minimumprijs = 20,
+                Startprijs = 20,
+                GeplaatstDatum = new DateTime(2025, 1, 1),
+                Kwekernr = 9,
+                AantalFusten = 1,
+                VoorraadBloemen = 20,
+                Plaats = "Lisse",
+                ImagePath = "tulp.png",
+                BeginDatum = new DateOnly(2025, 1, 1)
+            }
+        };
+        var productSet = CreateMockDbSet(products);
+        var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
+        var repository = new VeilingproductRepository(context.Object);
+
+        var result = await repository.GetForVeilingmeesterAsync(
+            "Roos",
+            1,
+            ModelStatus.Active,
+            40,
+            60,
+            new DateTime(2025, 2, 1),
+            "Deluxe",
+            CancellationToken.None);
 
         Assert.Single(result);
-        Assert.Equal("Lelie", result[0].Naam);
+        Assert.Equal(4, result[0].VeilingProductNr);
+        Assert.Equal("Rozen", result[0].CategorieNaam);
+    }
+
+    [Fact]
+    public async Task GetKwekerListByIdAsync_ReturnsKwekerDto()
+    {
+        var products = new List<Veilingproduct>
+        {
+            new()
+            {
+                VeilingProductNr = 7,
+                Naam = "Nieuwe Naam",
+                CategorieNr = 1,
+                Categorie = new Categorie { Naam = "Rozen" },
+                AantalFusten = 3,
+                VoorraadBloemen = 30,
+                Minimumprijs = 20,
+                Plaats = "Lisse",
+                ImagePath = "new.png",
+                Kwekernr = 42
+            }
+        };
+        var productSet = CreateMockDbSet(products);
+        var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
+        var repository = new VeilingproductRepository(context.Object);
+
+        var result = await repository.GetKwekerListByIdAsync(7, 42, CancellationToken.None);
+
+        Assert.Equal(7, result.VeilingProductNr);
+        Assert.Equal("Rozen", result.CategorieNaam);
+        Assert.Equal("Lisse", result.Plaats);
+    }
+
+    [Fact]
+    public async Task GetVeilingmeesterListByIdAsync_ReturnsVeilingmeesterDto()
+    {
+        var products = new List<Veilingproduct>
+        {
+            new()
+            {
+                VeilingProductNr = 10,
+                Naam = "Planning",
+                CategorieNr = 1,
+                Categorie = new Categorie { Naam = "Tulpen" },
+                Status = ModelStatus.Active,
+                Minimumprijs = 30,
+                GeplaatstDatum = new DateTime(2025, 1, 1),
+                Kwekernr = 5,
+                AantalFusten = 2,
+                VoorraadBloemen = 40,
+                Plaats = "Aalsmeer",
+                ImagePath = "img.png",
+                BeginDatum = new DateOnly(2025, 1, 1)
+            }
+        };
+        var productSet = CreateMockDbSet(products);
+        var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
+        var repository = new VeilingproductRepository(context.Object);
+
+        var result = await repository.GetVeilingmeesterListByIdAsync(10, CancellationToken.None);
+
+        Assert.Equal(10, result.VeilingProductNr);
+        Assert.Equal("Tulpen", result.CategorieNaam);
+        Assert.Equal(ModelStatus.Active, result.Status);
     }
 
     private static Mock<AppDbContext> CreateContext(DbSet<Veilingproduct> productSet, DbSet<Categorie> categorieSet)
