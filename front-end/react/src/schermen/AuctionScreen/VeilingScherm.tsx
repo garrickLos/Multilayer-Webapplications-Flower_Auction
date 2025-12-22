@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { Timer } from './Componenten/RenderTimer'; // Zorg dat imports kloppen
-import { type errorMessaging, type ProductLogica, type categorie as veilingCategorie, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
+import { Timer } from '../../Componenten/RenderTimer'; // Zorg dat imports kloppen
+import { type errorMessaging, type ProductLogica, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
 
 //api calls
 import { UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
-import { UpdateVeilingApi as Api_UpdateVeilingProduct } from '../../typeScript/ApiPost';
 import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 
 //componenten
-import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from './Componenten/RenderTimer';
-import { DelenDoor as ConvertToEuro } from '../../typeScript/RekenFuncties';
-import { InfoVeld } from './Componenten/InformatieVelden';
-import { VeilingProductitem_Update, mapData } from './Componenten/VeilingScherm_InfoConfig';
+import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../../Componenten/RenderTimer';
+import { InfoVeld } from '../../Componenten/InformatieVelden';
+import { VeilingProductitem_Update, mapData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
 import '../../css/VeilingScherm.css';
 

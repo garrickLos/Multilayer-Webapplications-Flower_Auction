@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { type VeilingLogica } from "../VeilingSchermTypes";
-import { DelenDoor as convertToEuro } from "../../../typeScript/RekenFuncties";
+import type { VeilingLogica } from "../schermen/AuctionScreen/VeilingSchermTypes";
+import { DelenDoor as convertToEuro } from "../typeScript/RekenFuncties";
 
 type TimerProps =  {
     onPrijsUpdate: (prijs: number) => void;

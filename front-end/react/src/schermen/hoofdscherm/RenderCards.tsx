@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Navigate, NavLink } from "react-router-dom";
+
+import { GenereerKnop } from "../../Componenten/Knop";
 
 export interface VeilingItem {
     veilingNr: number
@@ -52,15 +54,18 @@ export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }:
 
   return (
     <div className='card'>
-      <img src={currentSrc} alt={`De foto laat zien: ${headerText}`} onError={handleError} />
-      <div className='text-container'>
-        {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
-        <h3>{headerText}</h3>
-        <p className='Description'>{paragraafText}</p>
-      </div>
-      <NavLink to={`/auction/${veilingnr}`} state={{veilingnr: veilingnr}} 
-              type="button" className='auctionButton' 
-              aria-label={`Ga naar de veiling van: ${headerText}`}>naar de veiling</NavLink>
+        <img src={currentSrc} alt={`De foto laat zien: ${headerText}`} onError={handleError} />
+        <div className='text-container'>
+            {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
+            <h3>{headerText}</h3>
+            <p className='Description'>{paragraafText}</p>
+        </div>
+
+        <GenereerKnop 
+            classNames={'Button'} 
+            bericht={'naar de veiling'} 
+            to={`/auction/${veilingnr}`} 
+        />
     </div>
   );
 }

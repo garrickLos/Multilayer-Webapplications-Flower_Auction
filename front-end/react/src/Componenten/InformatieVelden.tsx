@@ -1,4 +1,4 @@
-import '../../../css/Componenten/InformatieVelden.css';
+import '../css/Componenten/InformatieVelden.css';
 
 interface InfoVeldProps {
     Titel: string;
