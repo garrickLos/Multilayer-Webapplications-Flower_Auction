@@ -129,14 +129,9 @@ public sealed class AuthController : ControllerBase
     {
         var storedToken = await _tokenService.GetStoredRefreshToken(request.RefreshToken);
 
-        if (storedToken == null)
+        if (storedToken == null || storedToken.ExpiryDate < DateTime.UtcNow)
         {
             return Unauthorized(new LoginResponse(false, null, null, new[] { "Refresh token is ongeldig." }));
-        }
-
-        if (storedToken.ExpiryDate < DateTime.UtcNow)
-        {
-            return Unauthorized(new LoginResponse(false, null, null, new[] { "Refresh token is verlopen." }));
         }
 
         var user = await _userManager.FindByIdAsync(storedToken.User_Id.ToString());

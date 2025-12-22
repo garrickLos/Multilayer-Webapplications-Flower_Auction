@@ -58,24 +58,45 @@ public class GenereerBearerToken : IGenereerBearerToken
 
     public async Task<string> GenerateRefreshTokenAsync(Gebruiker user)
     {
-        var refreshToken = new RefreshToken
-        {
-            Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-            User_Id = user.Id,
-            Email = user.Email,
-            ExpiryDate = DateTime.UtcNow.AddDays(7),
-            IsRevoked = false
-        };
+        // checked of de RefreshToken bestaat of niet op basis van gebruiker Id
+        var existingToken = await _dbContext.RefreshTokens.SingleOrDefaultAsync(t => t.User_Id == user.Id);
 
-        _dbContext.RefreshTokens.Add(refreshToken);
+        // maakt een nieuwe token waarde aan
+        var NewToken_Waarde = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        // maakt een nieuwe verval datum aan
+        var NewDate_expired = DateTime.UtcNow.AddDays(7);
+
+        // checked of de token er is. Zo niet dan maakt die een nieuwe aan
+        if (existingToken != null)
+        {
+            existingToken.Token = NewToken_Waarde;
+            existingToken.ExpiryDate = NewDate_expired;
+            existingToken.IsRevoked = false;
+
+        } else
+        {   
+            // genereert een nieuwe refresh token
+            var refreshToken = new RefreshToken
+            {
+                Token = NewToken_Waarde,
+                User_Id = user.Id,
+                Email = user.Email,
+                ExpiryDate = NewDate_expired,
+                IsRevoked = false
+            };
+
+            _dbContext.RefreshTokens.Add(refreshToken);   
+        }
+
+        // Zorgt ervoor dat er of een nieuwe item in de database staat of dat het veranderd is
         await _dbContext.SaveChangesAsync();
 
-        return refreshToken.Token;
+        return NewToken_Waarde;
     }
 
     public async Task<RefreshToken?> GetStoredRefreshToken(string token)
-{
-    return await _dbContext.RefreshTokens
-        .FirstOrDefaultAsync(t => t.Token == token && !t.IsRevoked);
-}
+    {
+        return await _dbContext.RefreshTokens
+            .FirstOrDefaultAsync(t => t.Token == token && !t.IsRevoked);
+    }
 }
