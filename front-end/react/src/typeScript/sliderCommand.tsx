@@ -1,19 +1,53 @@
-export function scrollSlider(id: string, direction: number): void {
-    const slider = document.getElementById(id) as HTMLElement | null; 
+let currentPage: number = 1; // huidige pagina
+let maxPage: number = 0; // maximale pagina's die er zijn
 
-    if (!slider) {
-        console.error(`Slider met ID "${id}" niet gevonden.`);
-        return;
-    }
+let OutPutClass: string = '';
 
-    const scrollAmount = 300;
-    const maxScroll = slider.scrollWidth - slider.clientWidth;
+function updatePageCount(){
+    // zoekt de destination element op basis van de class
+    const destinationEl = document.getElementsByClassName(OutPutClass)[0];
 
-    if (direction > 0 && slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 5) {
-        slider.scrollTo({ left: 0, behavior: 'smooth' });
-    } else if (direction < 0 && slider.scrollLeft <= 5) {
-        slider.scrollTo({ left: maxScroll, behavior: 'smooth' });
-    } else {
-        slider.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+    // als de destination element gevonde is dan print hij het
+    if (destinationEl){
+        destinationEl.textContent = 'Pagina ' + currentPage + ' van ' + maxPage;
     }
 }
+
+export function scrollSlider(id: string, direction: number): void {
+    const slider = document.getElementById(id);
+
+    if (!slider) return;
+    if (maxPage <= 0) return;
+
+    const pageWidth = slider.clientWidth;
+
+    // bereken nieuwe pagina en wrap/clamp
+    let newPage = currentPage + direction;
+    if (newPage > maxPage) newPage = 1;
+    if (newPage < 1) newPage = maxPage;
+    
+    const targetLeft = (newPage - 1) * pageWidth;
+    slider.scrollTo({ left: targetLeft, behavior: 'smooth' });
+
+    currentPage = newPage;
+    updatePageCount();
+}
+
+export function CountPages(countClass: string, DestinationClass: string) {
+    OutPutClass = DestinationClass;
+
+    const elementsToCount = document.getElementsByClassName(countClass);
+    maxPage = elementsToCount.length || 0;
+
+    if (maxPage === 0) {
+        currentPage = 0;
+    } else {
+        currentPage = Math.min(Math.max(1, currentPage), maxPage);
+    }
+
+    updatePageCount();
+
+    console.log("Totaal aantal pagina's gemeten: " + maxPage);
+}
+
+CountPages("grid-container", 'AmountOfPages');

@@ -1,13 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 
 import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
 import '../../css/loadIcon.css';
 
-import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
+import { CountPages, scrollSlider } from '../../typeScript/sliderCommand.tsx';
 import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
-import { renderCards, type VeilingItem } from './RenderCards.tsx';
+import { beschrijving, AuctionCard, type VeilingItem } from './RenderCards.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 
 import '../../css/Componenten/knop.css';
@@ -21,27 +20,42 @@ export default function MainScreen() {
     const safeVeilingen = data || [];
 
     const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
-    const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
-    const allDeals = safeVeilingen;
 
-    const renderSliderContent = (data: any[]) => {
-        if (loading) {
-            return (
-                <div className="Hoofdscherm_state-container">
-                    <span className='loader'></span>
-                    <br></br>
-                    <p>Loading data</p>
-                </div>
-            );
+    const renderSliderContent = (dataToRender: VeilingItem[]) => {
+        // 1. Maak een platte lijst van alle producten van alle veilingen
+        // We voegen de veilinginformatie toe aan elk product-object
+        const alleProducten = dataToRender.flatMap(veiling => 
+            veiling.producten.map(product => ({
+                ...product,
+                parentVeiling: veiling // Bewaar de referentie naar de veiling voor de beschrijving
+            }))
+        );
+
+        const itemsPerPage = 10;
+        const pages = [];
+        
+        // 2. Verdeel de platte lijst met PRODUCTEN in groepen van 10
+        for (let i = 0; i < alleProducten.length; i += itemsPerPage) {
+            pages.push(alleProducten.slice(i, i + itemsPerPage));
         }
-        if (error) {
-            return (
-                <div className="Hoofdscherm_state-container">
-                    <p className='mainScreen_errorCode'>Error:  kon gegevens niet vinden of database connectie bestaat niet<br></br>{String(error)}</p>
-                </div>
-            );
-        }
-        return renderCards(data);
+        
+        return (
+            <>
+                {pages.map((pageItems, pageIndex) => (
+                    <div key={`page-${pageIndex}`} className="grid-container">
+                        {pageItems.map((item, index) => (
+                            <AuctionCard
+                                key={`${item.parentVeiling.veilingNr}-${item.veilingProductNr}-${index}`}
+                                imagePath={item.imagePath}
+                                headerText={item.naam || 'Geen Titel'}
+                                paragraafText={beschrijving(item, item.parentVeiling)}
+                                veilingnr={item.parentVeiling.veilingNr} 
+                            />
+                        ))}
+                    </div>
+                ))}
+            </>
+        );
     };
 
     return (
@@ -59,35 +73,14 @@ export default function MainScreen() {
             </div>
 
             <section>
-                <h2>Actieve veilingen</h2>
+                <h2>Flora veilingen</h2>
+                <div className="AmountOfPages"></div>
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('lastChance', -1)}>&#10094;</button>
                     <div className="slider" id="lastChance">
                         {renderSliderContent(actieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('lastChance', 1)}>&#10095;</button>
-                </div>
-            </section>
-
-            <section>
-                <h2>Inactieve veilingen</h2>
-                <div className="slider-container">
-                    <button className="arrow" onClick={() => scrollSlider('upcoming', -1)}>&#10094;</button>
-                    <div className="slider" id="upcoming">
-                        {renderSliderContent(inactieveVeilingen)}
-                    </div>
-                    <button className="arrow" onClick={() => scrollSlider('upcoming', 1)}>&#10095;</button>
-                </div>
-            </section>
-
-            <section>
-                <h2>All deals</h2>
-                <div className="slider-container alle_deals ">
-                    <button className="arrow" onClick={() => scrollSlider('alleDeals', -1)}>&#10094;</button>
-                    <div className="slider" id="alleDeals">
-                        {renderSliderContent(allDeals)}
-                    </div>
-                    <button className="arrow" onClick={() => scrollSlider('alleDeals', 1)}>&#10095;</button>
                 </div>
             </section>
         </main>
