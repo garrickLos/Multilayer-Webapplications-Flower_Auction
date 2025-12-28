@@ -15,13 +15,22 @@ namespace mvc_api.Controllers;
 public class VeilingController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ProjectieVeilingController _projectie;
+    private readonly NormalizeStatus _statusNormalize;
+    private readonly IVeilingControllerFilter _filter;
 
-    public VeilingController(AppDbContext db) => _db = db;
-
-    private static readonly ProjectieVeilingController _projectie = new ProjectieVeilingController();
-
-    private static readonly NormalizeStatus _statusNormalize = new NormalizeStatus();
-
+    public VeilingController(
+        AppDbContext db,
+        ProjectieVeilingController projectie,
+        NormalizeStatus statusNormalize,
+        IVeilingControllerFilter filter)
+    {
+        _db = db;
+        _projectie = projectie;
+        _statusNormalize = statusNormalize;
+        _filter = filter;
+    }
+    
     // GET: api/Veiling
     [HttpGet("anonymous")]
     [AllowAnonymous]
@@ -69,11 +78,8 @@ public class VeilingController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var filter = new VeilingControllerFilter(_db, veilingProduct, from, to, onlyActive, DateTime.Now);
-
-        // filtert de query items.
-        var query = filter.ResultaatQuery;
-
+        var query = _filter.Apply(veilingProduct, from, to, onlyActive, DateTime.Now);
+        
         // --- Count & Paging ---
         var total = await query.CountAsync(ct);
         
@@ -142,11 +148,9 @@ public class VeilingController : ControllerBase
         
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
-
-        var filter = new VeilingControllerFilter(_db, veilingProduct, from, to, onlyActive, DateTime.Now);
-
-        var query = filter.ResultaatQuery;
-
+        
+        var query = _filter.Apply(veilingProduct, from, to, onlyActive, DateTime.Now);
+        
         // --- Count & Paging ---
         var total = await query.CountAsync(ct);
         
@@ -221,10 +225,8 @@ public class VeilingController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var filter = new VeilingControllerFilter(_db, veilingProduct, from, to, onlyActive, DateTime.Now);
-
-        var query = filter.ResultaatQuery;
-
+        var query = _filter.Apply(veilingProduct, from, to, onlyActive, DateTime.Now);
+        
         // --- Count & Paging ---
         var total = await query.CountAsync(ct);
         

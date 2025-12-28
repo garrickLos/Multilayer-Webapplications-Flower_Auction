@@ -7,8 +7,6 @@
 // dotnet ef database update
 
 
-
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -19,7 +17,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using mvc_api.Auth.GenereerBearerToken;
-
+using ApiGetFilters;
+using mvc_api.statusPrinter;
+using mvc_api.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,6 +146,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 // builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IGenereerBearerToken, GenereerBearerToken>();
+builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>();
+builder.Services.AddScoped<IVeilingControllerFilter, VeilingControllerFilter>();
+builder.Services.AddTransient<ProjectieVeilingController>();
+builder.Services.AddSingleton<NormalizeStatus>();
 
 var app = builder.Build();
 

@@ -1,5 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api.Tests/Controllers/AuthControllerTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api.Tests/Controllers/AuthControllerTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api.Tests/Mocks/AuthMockData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api.Tests/Mocks/AuthMockData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api.Tests/Services/GenereerBearerTokenTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api.Tests/Services/GenereerBearerTokenTest.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/Constants.cs/Filters.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/Constants.cs/Filters.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/VeilingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/VeilingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Program.cs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DpaMonitoringSettings">
+    <option name="firstShow" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 4
+}]]></component>
+  <component name="ProjectId" id="37TmH5GzFb5aY2SeX6bcTgclRAe" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Launch Settings Profile.mvc_api: http.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "sprint7__Bayram",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
   <component name="RunManager" selected=".NET Launch Settings Profile.mvc_api: http">
     <configuration name="mvc_api: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/mvc_api/mvc_api.csproj" />
@@ -34,4 +81,19 @@
       </method>
     </configuration>
   </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="" />
+      <created>1766935350300</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1766935350300</updated>
+      <workItem from="1766935353369" duration="1441000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
 </project>
