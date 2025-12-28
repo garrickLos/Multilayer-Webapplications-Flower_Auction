@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { Navigate, NavLink } from "react-router-dom";
 
 import { GenereerKnop } from "../../Componenten/Knop";
+import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
+
+// css
+import '../../css/Componenten/AuctionCards.css';
 
 export interface VeilingItem {
     veilingNr: number
@@ -9,7 +12,7 @@ export interface VeilingItem {
     eindtijd: string
     status: string
     minimumPrijs: number
-    producten: Producten[]
+    producten: Producten
 }
 
 export interface Producten {
@@ -30,18 +33,37 @@ interface CardItems {
 
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
-export const renderCards = (items: VeilingItem[]) =>
-    items.flatMap((item: VeilingItem, veilingIndex: number) =>
-        item.producten.map((product: Producten, index: number) => (
-            <AuctionCard
-                key={`${veilingIndex}-${index}`}
-                imagePath={product.imagePath}
-                headerText={product.naam || 'Geen Titel'}
-                paragraafText={beschrijving(product, item)}
-                veilingnr={item.veilingNr} 
-            />
-        ))
-); 
+// export function renderCards (items: VeilingItem[]){
+//     console.log(items);
+
+//     let product = items[0].producten;
+
+//     console.log("product: " + product);
+
+//     return (<AuctionCard
+//         imagePath={product.imagePath}
+//         headerText={product.naam || 'Geen Titel'}
+//         paragraafText={beschrijving(product, items[0])}
+//         veilingnr={items[0].veilingNr} 
+//     />
+//     );
+// }
+
+// export function renderCards (veiling: VeilingItem[]){
+//     if (!veiling.producten || !Array.isArray(veiling.producten)) {
+//         return null;
+//     }
+
+//     return veiling.producten.map((product, index) => (
+//         <AuctionCard
+//             key={`${veiling.veilingNr}-${product.veilingProductNr}-${index}`}
+//             imagePath={product.imagePath}
+//             headerText={product.naam || 'Geen Titel'}
+//             paragraafText={beschrijving(product, veiling)}
+//             veilingnr={veiling.veilingNr} 
+//         />
+//     ));
+// }
 
 export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }: CardItems) {
   const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);
@@ -53,7 +75,7 @@ export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }:
   };
 
   return (
-    <div className='card'>
+    <div className='card grid-item'>
         <img src={currentSrc} alt={`De foto laat zien: ${headerText}`} onError={handleError} />
         <div className='text-container'>
             {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
@@ -88,14 +110,10 @@ export function beschrijving(product: Producten, item: VeilingItem) {
             lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}
 
             Hoeveelheid bloemen: ${product.voorraad}
-            prijs begint op: ${ devide(product.startprijs).toFixed(2)} euro
+            prijs begint op: ${ SetEuro(product.startprijs, 100).toFixed(2)} euro
 
             veiling startijd: 
             ${new Date(item.begintijd).toLocaleString('nl-NL', datumOpties)}
         `
     );
-}
-
-function devide(input: number) {
-    return input / 100;
 }
