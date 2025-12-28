@@ -58,7 +58,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
                                      alt="houten hamer"
                                      className="veilingPlaatsenLogo" />
-                                <NavLink to='/veilingPlaatsen'>Veiling plaatsen</NavLink>
+                                <NavLink to='/productPlaatsen'>Product plaatsen</NavLink>
                             </div>
                         )}
 
@@ -67,7 +67,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/mijnVeilingenBekijken.webp"
                                      alt="foto van een blad"
                                      className="mijnVeilingenBekijkenLogo" />
-                                <NavLink to='/veilingBekijken'>Mijn veilingen bekijken</NavLink>
+                                <NavLink to='/productBekijken'>Mijn producten bekijken</NavLink>
                             </div>
                         )}
 

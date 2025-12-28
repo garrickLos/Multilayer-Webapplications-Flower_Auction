@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { jwtDecode } from 'jwt-decode'
 import type { JSX } from 'react'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 
 import VeilingmeesterPage from './veilingmeester/VeilingmeesterPage.tsx'
 import Hoofdscherm from './schermen/hoofdscherm/Hoofdscherm.tsx'
@@ -12,7 +12,6 @@ import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
 import AuctionScreen from './schermen/AuctionScreen/VeilingScherm.tsx';
 
-import { UpdateApi } from './typeScript/ApiPost.tsx'
 import { useAutorefresh } from './typeScript/ApiRefresh.tsx'
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
@@ -85,8 +84,8 @@ export default function App() {
 
                 <Route path="/home" element={<Hoofdscherm />} />
                 <Route path="/veilingmeester" element={<ProtectedRoute allowedRoles={["VeilingMeester"]} element={<VeilingmeesterPage />} />} />                <Route path="/gegevens" element={<h2 className="h4">Gegevens pagina (coming soon)</h2>} />
-                <Route path="/veilingPlaatsen" element={<ProtectedRoute allowedRoles={["Bedrijf"]} element={<SellerScreenAdd />} />} />
-                <Route path="/veilingBekijken" element={<ProtectedRoute allowedRoles={["Bedrijf"]} element={<SellerScreenInfo />} />} />
+                <Route path="/productPlaatsen" element={<ProtectedRoute allowedRoles={["Bedrijf"]} element={<SellerScreenAdd />} />} />
+                <Route path="/productBekijken" element={<ProtectedRoute allowedRoles={["Bedrijf"]} element={<SellerScreenInfo />} />} />
                 <Route path="/klantGegevens" element={<ProtectedRoute allowedRoles={["Koper"]} element={<CustomerScreenInfo />} />} />
                 <Route path="/registreren" element={<Registration />} />
                 <Route path="/inloggen" element={<Login />} />
