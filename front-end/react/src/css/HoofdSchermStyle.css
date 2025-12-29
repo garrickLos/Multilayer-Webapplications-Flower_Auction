@@ -105,8 +105,9 @@
 }
 
 .MainScreen section h2 {
-    font-size: 20px;
-    margin-bottom: 15px;
+    font-size: 25px;
+
+    margin: 1% 0 0 10%;
 }
 
 /* SLIDER */

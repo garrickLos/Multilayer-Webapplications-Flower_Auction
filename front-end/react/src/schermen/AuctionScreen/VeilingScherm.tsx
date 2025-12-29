@@ -4,17 +4,19 @@ import { Timer } from '../../Componenten/RenderTimer'; // Zorg dat imports klopp
 import { type errorMessaging, type ProductLogica, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
 
 //api calls
-import { UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
+import { getRefreshToken as refreshToken, UseDataApi as GetVeilingen, getBearerToken as Token } from '../../typeScript/ApiGet';
 import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 
 //componenten
+import { checkInputField } from '../../Componenten/InputVeld';
 import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../../Componenten/RenderTimer';
 import { InfoVeld } from '../../Componenten/InformatieVelden';
 import { VeilingProductitem_Update, mapData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
 import '../../css/VeilingScherm.css';
 
-const token = Token();
+const token = Token() || "";
+const token_refresh = refreshToken() || "";
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
 export default function AuctionScreen() {
@@ -33,12 +35,16 @@ export default function AuctionScreen() {
 
     // Data mappen en direct sorteren
     const veilingenLijst = mapData(safeData).sort((a, b) => a.veilingNr - b.veilingNr);
-    const actieveVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr) || undefined;
+    const actieveVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr) || null;
 
-    let isAfgelopen = huidigeVeilingStaat(actieveVeiling).isAfgelopen;
+    let veilingIsOngeldig = false;
 
-    const veilingIsOngeldig = actieveVeiling?.status == 'inactive' || token == null || isAfgelopen;
+    if (actieveVeiling != null) {
+        let isAfgelopen = huidigeVeilingStaat(actieveVeiling).isAfgelopen;
 
+        veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null || isAfgelopen;
+    }
+    
     const timerInSec = 0.6 * 1000; // van miliseconden naar seconden
 
     // zodat er een timer is die afteld totdat de error scherm er is nadat een veiling is afgelopen.
@@ -94,21 +100,22 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
     const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
 
-    const [errors, setErrors] = useState<error>({});
-
     // Event handlers
     const verwerkVerandering = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setAantal(Number(e.target.value));        
-    };
+        const rauweInvoer = e.target.value;
+        const max = huidigProduct?.aantalFusten || 0;
 
-    let [koopItem, setKoopItem] = useState<boolean>(true);
+        // Valideer en corrigeer de invoer direct
+        const gecorrigeerdeWaarde = checkInputField(rauweInvoer, max);
+        
+        setAantal(gecorrigeerdeWaarde);        
+    };
 
     const handleKlik = async () => {
 
-        const isGeldig = checkInputField(InvoerAantal, huidigProduct, errors);
-        setKoopItem(isGeldig);
-        
-        VeilingProductitem_Update(isGeldig, huidigProduct, InvoerAantal, url, token);
+        if (huidigProduct != null) {
+            VeilingProductitem_Update(huidigProduct, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
+        }
     };
 
     return (
@@ -169,13 +176,8 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         <label htmlFor="aantalkopenstuks" className="aantalKopen">Aantal fusten:</label>
                         
                         <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}
-                                min={0}
+                            min={0} value={InvoerAantal}
                         />
-
-                        <div>
-                            {koopItem == false && 
-                            <p className='AuctionScreen_errorInput'>{errors.verkeerdeWaarde}</p>}
-                        </div>
                         
                         <div className="tekstVoorKopen">
                             Je koopt {InvoerAantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
@@ -187,18 +189,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
             </div>
         </main>
     );
-}
-
-function checkInputField(input: number, huidigProduct: ProductLogica, err: errorMessaging) {
-    if (input > 0 && input <= huidigProduct.aantalFusten) {
-        return true
-    } else if (input > huidigProduct.aantalFusten) {
-        err.verkeerdeWaarde = "de invoer heeft meer fusten geselecteerd dan mogelijk"
-        return false
-    }else {
-        err.verkeerdeWaarde = "Minimale input van 1 verwacht";
-        return false;
-    }
 }
 
 function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: number) {

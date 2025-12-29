@@ -143,7 +143,6 @@ public class BiedingController : ControllerBase
 
         var entity = new Bieding
         {
-            BiedNr           = dto.BiedingNr,
             BedragPerFust    = dto.BedragPerFust,
             AantalStuks      = dto.AantalStuks,
             GebruikerNr      = dto.GebruikerNr,

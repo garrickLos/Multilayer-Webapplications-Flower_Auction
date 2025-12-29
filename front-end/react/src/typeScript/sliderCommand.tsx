@@ -17,7 +17,6 @@ export function scrollSlider(id: string, direction: number): void {
     const slider = document.getElementById(id);
 
     if (!slider) return;
-    if (maxPage <= 0) return;
 
     const pageWidth = slider.clientWidth;
 
@@ -46,8 +45,4 @@ export function CountPages(countClass: string, DestinationClass: string) {
     }
 
     updatePageCount();
-
-    console.log("Totaal aantal pagina's gemeten: " + maxPage);
 }
-
-CountPages("grid-container", 'AmountOfPages');

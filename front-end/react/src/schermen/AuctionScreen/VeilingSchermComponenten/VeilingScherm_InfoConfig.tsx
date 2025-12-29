@@ -1,4 +1,7 @@
-import { UpdateVeilingApi } from "../../../typeScript/ApiPost";
+import { jwtDecode } from "jwt-decode";
+import { UpdateApi as UpdateVeilingApi, PostApi as NieuweBiedingMaken } from "../../../typeScript/ApiPut";
+
+import { Vermenigvuldigen as naarCenten } from "../../../typeScript/RekenFuncties";
 
 import type { VeilingLogica } from "../VeilingSchermTypes";
 import type { ProductLogica } from "../VeilingSchermTypes";
@@ -13,6 +16,20 @@ export interface VeilingproductUpdate_props {
     ImagePath?: string | null;
     Minimumprijs?: number | null;
     Plaats?: string | null;
+}
+
+interface nieuweBieding {
+    BedragPerFust: number,
+    AantalStuks: number,
+    GebruikerNr: string,
+    VeilingProductNr: number
+}
+
+interface MyTokenPayload {
+    GebruikerNr: string; // Of number, afhankelijk van je API
+    exp: number;
+    iat: number;
+    [key: string]: any; // Voor overige onbekende velden
 }
 
 export function mapData(safeData: any[]): VeilingLogica[] {
@@ -41,40 +58,67 @@ export function mapData(safeData: any[]): VeilingLogica[] {
     }));
 }
 
-export async function VeilingProductitem_Update(isGeldig: boolean, huidigProduct: ProductLogica, InvoerAantal: number, url: string, token: string) {
-    if (isGeldig && huidigProduct) {
-            const productId = Number(huidigProduct.veilingProductNr);
-            
-            if (!productId || productId === 0) {
-                console.error("FOUT: Product ID is 0 of ongeldig");
-                return;
-            }
+export async function VeilingProductitem_Update(
+    huidigProduct: ProductLogica, 
+    InvoerAantal: number,
+    HuidigePrijs: number,
+    url: string, 
+    token: string,
+    refreshToken: string
+) {
+    if (!huidigProduct) return;
 
-            const huidigeVoorraad_Fusten = Number(huidigProduct.aantalFusten) || 0;
-            const huidigeVoorraad_Bloemen = Number(huidigProduct.voorraadBloemen) || 0;
+    const productId = Number(huidigProduct.veilingProductNr);
+    if (!productId || productId === 0) {
+        console.error("FOUT: Product ID is 0 of ongeldig");
+        return;
+    }
 
-            const inhoudPerFust = huidigeVoorraad_Fusten > 0 
-                ? huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten 
-                : 0;
-            
-            //berekend de nieuwe voorraad van fusten
-            const nieuweVoorraad_Fusten = huidigeVoorraad_Fusten - InvoerAantal;
-            
-            // berekend de nieuwe voorraad van bloemen
-            // math.round of math.floor om de kommagetallen weg te houden
-            const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
-            const nieuweVoorraad_Bloemen = huidigeVoorraad_Bloemen - teVerwijderenBloemen;
+    const huidigeVoorraad_Fusten = Number(huidigProduct.aantalFusten) || 0;
+    const huidigeVoorraad_Bloemen = Number(huidigProduct.voorraadBloemen) || 0;
 
-            const dataOmTeSturen: VeilingproductUpdate_props = {
-                VoorraadBloemen: nieuweVoorraad_Bloemen,
-                AantalFusten: nieuweVoorraad_Fusten
-            };
+    // Correctie voor laatste item: als alles wordt gekocht, zet voorraad op 0
+    let nieuweVoorraad_Fusten = huidigeVoorraad_Fusten - InvoerAantal;
+    let nieuweVoorraad_Bloemen: number;
 
-            try {
-                await UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token);
-                
-            } catch (error) {
-                console.error("API Error details:", error);
-            }
-        }
+    if (nieuweVoorraad_Fusten <= 0) {
+        nieuweVoorraad_Fusten = 0;
+        nieuweVoorraad_Bloemen = 0;
+    } else {
+        const inhoudPerFust = huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten;
+        const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
+        nieuweVoorraad_Bloemen = Math.max(0, huidigeVoorraad_Bloemen - teVerwijderenBloemen);
+    }
+
+    // Controleer of de API alle velden vereist (inclusief degene die niet veranderen)
+    const dataOmTeSturen: VeilingproductUpdate_props = {
+        VoorraadBloemen: nieuweVoorraad_Bloemen,
+        AantalFusten: nieuweVoorraad_Fusten,
+    };
+
+    const decoded = jwtDecode<MyTokenPayload>(token);
+
+    let totaalPrijs = Math.round(naarCenten(HuidigePrijs, 100));
+
+    totaalPrijs = Math.trunc(totaalPrijs);
+
+    const BiedingAanmaken: nieuweBieding = {
+        BedragPerFust: totaalPrijs, // Gebruik de prijs van de klok
+        AantalStuks: InvoerAantal,
+        GebruikerNr: decoded.sub,
+        VeilingProductNr: productId
+    };
+
+    try {
+        await Promise.all([
+            // update de voorraad 
+            UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token, refreshToken),
+
+            //nieuwe bieding aanmaken
+            NieuweBiedingMaken<nieuweBieding>("/api/Bieding", BiedingAanmaken, token, refreshToken)
+        ]);
+
+    } catch (error) {
+        console.error("API Error details:", error);
+    }
 }

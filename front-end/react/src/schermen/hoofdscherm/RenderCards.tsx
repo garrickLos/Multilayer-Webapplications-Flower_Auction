@@ -75,9 +75,9 @@ export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }:
   };
 
   return (
-    <div className='card grid-item'>
+    <div className='RenderCard grid-item'>
         <img src={currentSrc} alt={`De foto laat zien: ${headerText}`} onError={handleError} />
-        <div className='text-container'>
+        <div className='RenderCard_text-container'>
             {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
             <h3>{headerText}</h3>
             <p className='Description'>{paragraafText}</p>

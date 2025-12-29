@@ -12,6 +12,7 @@ import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
 import AuctionScreen from './schermen/AuctionScreen/VeilingScherm.tsx';
 
+// import { UpdateApi } from './typeScript/ApiPut.tsx'
 import { useAutorefresh } from './typeScript/ApiRefresh.tsx'
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
@@ -41,6 +42,7 @@ const ProtectedRoute = ({ element, allowedRoles }: { element: JSX.Element, allow
     return element;
 }
 
+// door middel van een post haalt het een nieuwe refresh token op en stopt de refresh en jwt token in session storage
 async function performSilentRefresh() {
     const token = sessionStorage.getItem('token');
     const refreshToken = sessionStorage.getItem('refreshToken');
@@ -67,9 +69,11 @@ async function performSilentRefresh() {
 
 export default function App() {
     const refreshTijd = 342 * 10000; // miliseconden * 10000 = minuten
-    
+
+    // geeft een trigger timer die een auto refresh geeft aan wanneer de refresh token wordt herladen
     const trigger = useAutorefresh(refreshTijd);
 
+    // zoekt een nieuwe refresh token
     useEffect(() => {
         performSilentRefresh();
     }, [trigger]);
