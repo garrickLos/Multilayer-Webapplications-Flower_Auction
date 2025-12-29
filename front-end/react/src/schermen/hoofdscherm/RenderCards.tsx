@@ -4,7 +4,7 @@ import { GenereerKnop } from "../../Componenten/Knop";
 import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
 
 // css
-import '../../css/Componenten/AuctionCards.module.css';
+import '../../css/Componenten/AuctionCards.css';
 
 export interface VeilingItem {
     veilingNr: number
