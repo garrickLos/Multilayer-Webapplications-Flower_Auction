@@ -9,6 +9,7 @@ namespace mvc_api.Data;
 public interface IVeilingproductRepository
 {
     Task<Veilingproduct?> FindAsync(int veilingproductNr, CancellationToken ct);
+    Task<Veiling?> GetVeilingAsync(int veilingNr, CancellationToken ct);
     Task<bool> CategorieExistsAsync(int categorieNr, CancellationToken ct);
     void Add(Veilingproduct entity);
     Task SaveChangesAsync(CancellationToken ct);

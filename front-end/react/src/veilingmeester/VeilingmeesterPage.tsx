@@ -24,7 +24,6 @@ import {
     formatDateTime,
     mapProductStatusToUiStatus,
     paginate,
-    uiStatusToAuctionStatus,
 } from "./helpers";
 import { useLiveStats } from "./useLiveStats";
 
@@ -33,6 +32,33 @@ const CLOCK_TICK_MS = 5000;
 
 // ---- Kleine helpers & hooks -------------------------------------------------
 const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
+const pad = (value: number): string => value.toString().padStart(2, "0");
+const formatDateInput = (date: Date): string => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const formatTimeInput = (date: Date): string => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+const formatDateTimeInput = (date: Date): string => `${formatDateInput(date)}T${formatTimeInput(date)}`;
+
+const buildDateTime = (dateValue: string, timeValue: string): Date | null => {
+    if (!dateValue || !timeValue) return null;
+    const [year, month, day] = dateValue.split("-").map(Number);
+    const [hours, minutes] = timeValue.split(":").map(Number);
+    if ([year, month, day, hours, minutes].some((value) => Number.isNaN(value))) return null;
+    return new Date(year, month - 1, day, hours, minutes, 0, 0);
+};
+
+const getNextFullHour = (base = new Date()): Date => {
+    const next = new Date(base);
+    next.setMinutes(0, 0, 0);
+    if (next <= base) {
+        next.setHours(next.getHours() + 1);
+    }
+    return next;
+};
+
+const normaliseCurrency = (value: string): string => value.replace(",", ".").replace(/[^\d.]/g, "");
+const parseCurrencyValue = (value: string): number | null => {
+    const parsed = Number.parseFloat(normaliseCurrency(value));
+    return Number.isFinite(parsed) ? parsed : null;
+};
 
 function useOffline(): boolean {
     const [offline, setOffline] = useState(() => (typeof navigator === "undefined" ? false : !navigator.onLine));
@@ -118,7 +144,8 @@ function DashboardMetrics(): JSX.Element {
 }
 // ---- Auctions ---------------------------------------------------------------
 type AuctionFilters = { onlyActive: boolean; from: string; to: string; veilingProduct: string };
-type AuctionFormState = { title: string; startTime: string; endTime: string; status: UiStatus };
+type AuctionFormState = { title: string; date: string; startTime: string; durationHours: 1 | 2 | 3 };
+type AuctionPayload = { title: string; startIso: string; endIso: string };
 
 function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
     const [auctions, setAuctions] = useState<readonly Auction[]>([]);
@@ -263,30 +290,34 @@ function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsLoaded }
         {
             key: "actions",
             header: "Acties",
-            render: (row) => (
-                <div className="d-flex justify-content-end gap-2">
-                    <button
-                        type="button"
-                        className="btn btn-outline-success btn-sm"
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            onOpenLinkProducts(row.id);
-                        }}
-                    >
-                        Koppel producten
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            void handleCancel(row.id);
-                        }}
-                    >
-                        Annuleer
-                    </button>
-                </div>
-            ),
+            render: (row) => {
+                const isActive = deriveAuctionUiStatus(row, now) === "active";
+                return (
+                    <div className="d-flex justify-content-end gap-2">
+                        <button
+                            type="button"
+                            className="btn btn-outline-success btn-sm"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onOpenLinkProducts(row.id);
+                            }}
+                            disabled={isActive}
+                        >
+                            Koppel producten
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                void handleCancel(row.id);
+                            }}
+                        >
+                            Annuleer
+                        </button>
+                    </div>
+                );
+            },
         },
     ];
 
@@ -374,13 +405,54 @@ function AuctionsTab({ onCreateRequested, onOpenLinkProducts, onAuctionsLoaded }
     );
 }
 
-function NewAuctionModal({ onSave, onClose }: { onSave: (auction: AuctionFormState) => void; onClose: () => void }) {
-    const [draft, setDraft] = useState<AuctionFormState>({ title: "", startTime: "", endTime: "", status: "inactive" });
+function NewAuctionModal({ onSave, onClose }: { onSave: (auction: AuctionPayload) => void; onClose: () => void }) {
+    const [draft, setDraft] = useState<AuctionFormState>({ title: "", date: "", startTime: "", durationHours: 1 });
     const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const nextHour = getNextFullHour();
+        setDraft((prev) => ({
+            ...prev,
+            date: formatDateInput(nextHour),
+            startTime: formatTimeInput(nextHour),
+            durationHours: 1,
+        }));
+    }, []);
+
+    const startDateTime = useMemo(() => buildDateTime(draft.date, draft.startTime), [draft.date, draft.startTime]);
+    const endDateTime = useMemo(() => {
+        if (!startDateTime) return null;
+        const end = new Date(startDateTime);
+        end.setHours(end.getHours() + draft.durationHours);
+        return end;
+    }, [draft.durationHours, startDateTime]);
 
     const handleSubmit = async () => {
+        setFormError(null);
+        if (!draft.title.trim()) {
+            setFormError("Vul een titel in voor de veiling.");
+            return;
+        }
+        if (!startDateTime || !endDateTime) {
+            setFormError("Kies een geldige starttijd.");
+            return;
+        }
+        if (startDateTime < new Date()) {
+            setFormError("De starttijd mag niet in het verleden liggen.");
+            return;
+        }
+        if (endDateTime.getDate() !== startDateTime.getDate() || endDateTime.getMonth() !== startDateTime.getMonth() || endDateTime.getFullYear() !== startDateTime.getFullYear()) {
+            setFormError("De eindtijd moet op dezelfde datum vallen als de starttijd.");
+            return;
+        }
+
         setSubmitting(true);
-        await onSave(draft);
+        await onSave({
+            title: draft.title,
+            startIso: formatDateTimeInput(startDateTime),
+            endIso: formatDateTimeInput(endDateTime),
+        });
         setSubmitting(false);
     };
 
@@ -396,46 +468,70 @@ function NewAuctionModal({ onSave, onClose }: { onSave: (auction: AuctionFormSta
                     />
                 </Field>
                 <div className="row g-3">
-                    <div className="col-12 col-md-6">
+                    <div className="col-12 col-md-4">
+                        <Field label="Datum" htmlFor="auction-date">
+                            <Input
+                                id="auction-date"
+                                type="date"
+                                value={draft.date}
+                                onChange={(event) => setDraft((prev) => ({ ...prev, date: event.target.value }))}
+                            />
+                        </Field>
+                    </div>
+                    <div className="col-12 col-md-4">
                         <Field label="Starttijd" htmlFor="auction-start">
                             <Input
                                 id="auction-start"
-                                type="datetime-local"
+                                type="time"
                                 value={draft.startTime}
                                 onChange={(event) => setDraft((prev) => ({ ...prev, startTime: event.target.value }))}
                             />
                         </Field>
                     </div>
-                    <div className="col-12 col-md-6">
-                        <Field label="Eindtijd" htmlFor="auction-end">
-                            <Input
-                                id="auction-end"
-                                type="datetime-local"
-                                value={draft.endTime}
-                                onChange={(event) => setDraft((prev) => ({ ...prev, endTime: event.target.value }))}
-                            />
+                    <div className="col-12 col-md-4">
+                        <Field label="Duur" htmlFor="auction-duration">
+                            <Select
+                                id="auction-duration"
+                                value={String(draft.durationHours)}
+                                onChange={(event) => setDraft((prev) => ({ ...prev, durationHours: Number(event.target.value) as 1 | 2 | 3 }))}
+                            >
+                                <option value="1">1 uur</option>
+                                <option value="2">2 uur</option>
+                                <option value="3">3 uur</option>
+                            </Select>
                         </Field>
                     </div>
                 </div>
-                <Field label="Status" htmlFor="auction-status">
-                    <Select
-                        id="auction-status"
-                        value={draft.status}
-                        onChange={(event) => setDraft((prev) => ({ ...prev, status: event.target.value as UiStatus }))}
-                    >
-                        <option value="inactive">Inactief</option>
-                        <option value="active">Actief</option>
-                        <option value="sold">Verkocht</option>
-                        <option value="deleted">Geannuleerd</option>
-                    </Select>
+                <Field label="Eindtijd" htmlFor="auction-end">
+                    <Input
+                        id="auction-end"
+                        type="time"
+                        value={endDateTime ? formatTimeInput(endDateTime) : ""}
+                        readOnly
+                    />
                 </Field>
+                {formError && <div className="alert alert-danger mb-0">{formError}</div>}
             </div>
         </Modal>
     );
 }
 
-function LinkProductsModal({ auction, products, onClose, onSave }: { auction: Auction; products: readonly Product[]; onClose: () => void; onSave: (productId: number, startPrice: number) => void }) {
+function LinkProductsModal({
+    auction,
+    products,
+    onClose,
+    onSave,
+    onUnlink,
+}: {
+    auction: Auction;
+    products: readonly Product[];
+    onClose: () => void;
+    onSave: (productId: number, startPrice: number) => void;
+    onUnlink: (productId: number) => void;
+}) {
+    const isActive = deriveAuctionUiStatus(auction, new Date()) === "active";
     const availableProducts = useMemo(() => products.filter((product) => !product.linkedAuctionId), [products]);
+    const linkedProducts = useMemo(() => products.filter((product) => product.linkedAuctionId === auction.id), [auction.id, products]);
     const [productId, setProductId] = useState<string>(() => (availableProducts[0]?.id ? String(availableProducts[0].id) : ""));
     const [startPrice, setStartPrice] = useState<string>(() => {
         const first = availableProducts[0];
@@ -452,19 +548,25 @@ function LinkProductsModal({ auction, products, onClose, onSave }: { auction: Au
     }, [availableProducts, productId]);
 
     const handleSave = () => {
+        if (isActive) {
+            setFormError("Aanpassingen zijn niet toegestaan tijdens een actieve veiling.");
+            return;
+        }
         if (!productId) {
             setFormError("Selecteer een product om te koppelen.");
             return;
         }
 
-        const numericStartPrice = Math.round(Number(startPrice));
-        if (!Number.isFinite(numericStartPrice) || numericStartPrice <= 0) {
+        const numericStartPrice = parseCurrencyValue(startPrice);
+        if (numericStartPrice === null || numericStartPrice <= 0) {
             setFormError("Voer een geldige startprijs in.");
             return;
         }
 
         onSave(Number(productId), numericStartPrice);
     };
+
+    const selectedProduct = availableProducts.find((product) => product.id === Number(productId));
 
     return (
         <Modal
@@ -478,6 +580,31 @@ function LinkProductsModal({ auction, products, onClose, onSave }: { auction: Au
         >
             <div className="d-flex flex-column gap-3">
                 <p className="text-muted mb-0">Kies een product dat nog niet is gekoppeld en vul de startprijs in.</p>
+                {isActive && <div className="alert alert-warning mb-0">Deze veiling is actief. Koppelen of ontkoppelen is nu niet mogelijk.</div>}
+                <div>
+                    <p className="text-uppercase text-muted small mb-2">Gekoppelde producten</p>
+                    {linkedProducts.length === 0 ? (
+                        <p className="text-muted mb-0">Nog geen gekoppelde producten.</p>
+                    ) : (
+                        <div className="d-flex flex-wrap gap-2">
+                            {linkedProducts.map((product) => (
+                                <span key={product.id} className="badge text-bg-success-subtle border border-success-subtle">
+                                    {product.name} (#{product.id})
+                                    {!isActive && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-link text-danger ms-2 p-0"
+                                            onClick={() => onUnlink(product.id)}
+                                            aria-label={`Ontkoppel ${product.name}`}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
                 {availableProducts.length === 0 ? (
                     <EmptyState title="Geen beschikbare producten" description="Alle producten zijn al gekoppeld aan een veiling." />
                 ) : (
@@ -491,27 +618,51 @@ function LinkProductsModal({ auction, products, onClose, onSave }: { auction: Au
                                         setProductId(event.target.value);
                                         setFormError(null);
                                     }}
+                                    disabled={isActive}
                                 >
                                     <option value="" disabled>
                                         Kies een product
                                     </option>
                                     {availableProducts.map((product) => (
                                         <option key={product.id} value={product.id}>
-                                            {product.name} (#{product.id})
+                                            {product.name} (#{product.id}) · {product.category ?? "Onbekend"} · {formatCurrency(product.minimumPrice)} · {product.stock ?? 0} stuks
                                         </option>
                                     ))}
                                 </Select>
                             </Field>
                         </div>
+                        {selectedProduct && (
+                            <div className="col-12">
+                                <div className="d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4">
+                                    <img
+                                        src={selectedProduct.imagePath ?? "/src/assets/pictures/webp/MissingPicture.webp"}
+                                        alt={selectedProduct.name}
+                                        className="rounded-3"
+                                        style={{ width: 120, height: 90, objectFit: "cover" }}
+                                    />
+                                    <div className="flex-grow-1">
+                                        <p className="mb-1 fw-semibold">{selectedProduct.name}</p>
+                                        <p className="mb-1 text-muted">
+                                            {selectedProduct.category ?? "Onbekende categorie"} · {selectedProduct.location ?? "Onbekende locatie"}
+                                        </p>
+                                        <p className="mb-0 text-muted">
+                                            Min. prijs {formatCurrency(selectedProduct.minimumPrice)} · Start {formatCurrency(selectedProduct.startPrice ?? selectedProduct.minimumPrice)}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="col-12">
                             <Field label="Startprijs" htmlFor="link-startprice">
                                 <Input
                                     id="link-startprice"
                                     type="number"
                                     min="0"
-                                    step="1"
+                                    step="0.01"
+                                    inputMode="decimal"
                                     value={startPrice}
                                     onChange={(event) => setStartPrice(event.target.value)}
+                                    disabled={isActive}
                                 />
                             </Field>
                         </div>
@@ -687,7 +838,7 @@ type UsersTabProps = {
 
 const roleLabels: Record<User["role"], string> = {
     Koper: "Koper",
-    Kweker: "Kweker",
+    Bedrijf: "Bedrijf",
     Veilingmeester: "Veilingmeester",
     Admin: "Admin",
     Onbekend: "Onbekend",
@@ -701,6 +852,7 @@ function UsersTab({ users, onViewBids, onViewProducts }: UsersTabProps): JSX.Ele
     const filtered = useMemo(
         () =>
             filterRows(users, "", filters, (row, _term, current) => {
+                if (row.role !== "Koper" && row.role !== "Bedrijf") return false;
                 const matchesRole = current.role === "all" || row.role === current.role;
                 const matchesStatus = current.status === "all" || row.status === current.status;
                 return matchesRole && matchesStatus;
@@ -717,12 +869,16 @@ function UsersTab({ users, onViewBids, onViewProducts }: UsersTabProps): JSX.Ele
             header: "Acties",
             render: (row) => (
                 <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewProducts(row.id)}>
-                        Producten
-                    </button>
-                    <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => onViewBids(row.id)}>
-                        Biedingen
-                    </button>
+                    {row.role === "Bedrijf" && (
+                        <button type="button" className="btn btn-outline-success btn-sm" onClick={() => onViewProducts(row.id)}>
+                            Producten
+                        </button>
+                    )}
+                    {row.role === "Koper" && (
+                        <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => onViewBids(row.id)}>
+                            Biedingen
+                        </button>
+                    )}
                 </div>
             ),
         },
@@ -743,9 +899,7 @@ function UsersTab({ users, onViewBids, onViewProducts }: UsersTabProps): JSX.Ele
                             >
                                 <option value="all">Alle</option>
                                 <option value="Koper">Koper</option>
-                                <option value="Kweker">Kweker</option>
-                                <option value="Veilingmeester">Veilingmeester</option>
-                                <option value="Admin">Admin</option>
+                                <option value="Bedrijf">Bedrijf</option>
                             </Select>
                         </Field>
                     </div>
@@ -887,13 +1041,12 @@ export function VeilingmeesterPage() {
         [activeModal, users],
     );
 
-    const handleCreateAuction = async (draft: AuctionFormState) => {
+    const handleCreateAuction = async (draft: AuctionPayload) => {
         try {
             const created = await createAuction({
                 veilingNaam: draft.title,
-                begintijd: draft.startTime,
-                eindtijd: draft.endTime,
-                status: uiStatusToAuctionStatus(draft.status),
+                begintijd: draft.startIso,
+                eindtijd: draft.endIso,
             });
             setAuctions((prev) => [created, ...prev]);
             setActiveModal(null);
@@ -922,6 +1075,26 @@ export function VeilingmeesterPage() {
             setActiveModal(null);
         } catch (err) {
             setError((err as { message?: string }).message ?? "Product kon niet gekoppeld worden.");
+        }
+    };
+
+    const handleUnlinkProduct = async (auctionId: number, productId: number) => {
+        try {
+            const updatedProduct = await updateProductPlanning(productId, { startprijs: null, veilingNr: null });
+            setProducts((prev) => prev.map((product) => (product.id === updatedProduct.id ? updatedProduct : product)));
+            setAuctions((prev) =>
+                prev.map((auction) =>
+                    auction.id === auctionId
+                        ? {
+                              ...auction,
+                              linkedProductIds: (auction.linkedProductIds ?? []).filter((id) => id !== updatedProduct.id),
+                              products: auction.products ? auction.products.filter((product) => product.id !== updatedProduct.id) : auction.products,
+                          }
+                        : auction,
+                ),
+            );
+        } catch (err) {
+            setError((err as { message?: string }).message ?? "Product kon niet ontkoppeld worden.");
         }
     };
 
@@ -1024,6 +1197,7 @@ export function VeilingmeesterPage() {
                         products={products}
                         onClose={() => setActiveModal(null)}
                         onSave={(productId, startPrice) => void handleLinkProducts(activeAuction.id, productId, startPrice)}
+                        onUnlink={(productId) => void handleUnlinkProduct(activeAuction.id, productId)}
                     />
                 )}
                 {activeModal?.key === "userBids" && activeUser && (

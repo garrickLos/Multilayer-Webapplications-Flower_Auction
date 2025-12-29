@@ -3,7 +3,7 @@ const DEFAULT_PAGE_SIZE = 200;
 
 export type ApiError = { status?: number; message: string };
 export type UiStatus = "active" | "inactive" | "sold" | "deleted";
-export type UserRole = "Koper" | "Kweker" | "Veilingmeester" | "Admin" | "Onbekend";
+export type UserRole = "Koper" | "Bedrijf" | "Veilingmeester" | "Admin" | "Onbekend";
 export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd" | string;
 export type ProductStatus = "Active" | "Inactive" | "Deleted" | "Archived";
 
@@ -80,7 +80,7 @@ function toRole(value?: string | null): UserRole {
     const normalised = typeof value === "string" ? value.toLowerCase() : "";
     if (normalised === "admin") return "Admin";
     if (normalised === "veilingmeester") return "Veilingmeester";
-    if (normalised === "kweker" || normalised === "grower") return "Kweker";
+    if (normalised === "bedrijf" || normalised === "kweker" || normalised === "grower") return "Bedrijf";
     if (normalised === "koper" || normalised === "buyer") return "Koper";
     return "Onbekend";
 }
