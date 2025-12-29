@@ -186,7 +186,53 @@ public class VeilingproductController : ControllerBase
         if (entity == null)
             return NotFound();
 
-        entity.Startprijs = dto.Startprijs;
+        var now = DateTime.UtcNow.ToLocalTime();
+
+        if (dto.VeilingNr.HasValue)
+        {
+            if (!dto.Startprijs.HasValue)
+            {
+                return BadRequest(CreateProblemDetails(
+                    "Startprijs vereist",
+                    "Geef een startprijs op om een product te koppelen.",
+                    400));
+            }
+
+            var veiling = await _repository.GetVeilingAsync(dto.VeilingNr.Value, ct);
+            if (veiling is null)
+            {
+                return BadRequest(CreateProblemDetails(
+                    "Ongeldige veiling",
+                    $"Veiling met ID {dto.VeilingNr.Value} bestaat niet.",
+                    400));
+            }
+
+            var isActive = veiling.Begintijd <= now && veiling.Eindtijd > now;
+            if (isActive)
+            {
+                return BadRequest(CreateProblemDetails(
+                    "Actieve veiling",
+                    "Koppelen of ontkoppelen is niet toegestaan tijdens een actieve veiling.",
+                    400));
+            }
+        }
+        else if (entity.VeilingNr.HasValue)
+        {
+            var currentVeiling = await _repository.GetVeilingAsync(entity.VeilingNr.Value, ct);
+            if (currentVeiling is not null)
+            {
+                var isActive = currentVeiling.Begintijd <= now && currentVeiling.Eindtijd > now;
+                if (isActive)
+                {
+                    return BadRequest(CreateProblemDetails(
+                        "Actieve veiling",
+                        "Koppelen of ontkoppelen is niet toegestaan tijdens een actieve veiling.",
+                        400));
+                }
+            }
+        }
+
+        entity.Startprijs = dto.VeilingNr.HasValue ? dto.Startprijs : null;
         entity.VeilingNr  = dto.VeilingNr;
 
         await _repository.SaveChangesAsync(ct);
@@ -230,4 +276,13 @@ public class VeilingproductController : ControllerBase
         }
         return null;
     }
+
+    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
+        new()
+        {
+            Title    = title,
+            Detail   = detail,
+            Status   = statusCode,
+            Instance = HttpContext?.Request?.Path
+        };
 }

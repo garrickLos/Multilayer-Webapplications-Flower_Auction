@@ -144,7 +144,7 @@ export function StatusBadge({ status }: { readonly status: UiStatus }): JSX.Elem
 }
 
 export function RoleBadge({ role }: { readonly role: UserRole }): JSX.Element {
-    const variant = role === "Admin" || role === "Veilingmeester" ? "success" : role === "Kweker" ? "primary" : "secondary";
+    const variant = role === "Admin" || role === "Veilingmeester" ? "success" : role === "Bedrijf" ? "primary" : "secondary";
     return <span className={`badge bg-${variant}-subtle text-${variant}-emphasis`}>{role}</span>;
 }
 
