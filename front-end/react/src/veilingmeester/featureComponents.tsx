@@ -464,7 +464,7 @@ export function ProductsTab({ auctions }: ProductsTabProps): JSX.Element {
 export function UsersTab({ users, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
     const [filters, setFilters] = useState<UserFilters>({ role: "all", status: "all" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(TABLE_PAGE_SIZES[0]);
+    const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);
 
     const filtered = useMemo(() => users.filter((user) => matchesUserFilters(user, filters)), [filters, users]);
 

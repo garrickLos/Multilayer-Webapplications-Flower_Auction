@@ -162,8 +162,7 @@ export function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void)
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", veilingProduct: "" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(TABLE_PAGE_SIZES[0]);
-    const now = useTicker(CLOCK_TICK_MS);
+    const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);    const now = useTicker(CLOCK_TICK_MS);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -259,7 +258,7 @@ export function useProductsPage() {
     const [error, setError] = useState<string | null>(null);
     const [filters, setFilters] = useState<ProductFilters>({ status: "all", seller: "", auctionId: "", search: "" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(TABLE_PAGE_SIZES[0]);
+    const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);
 
     useEffect(() => {
         const controller = new AbortController();
