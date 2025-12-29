@@ -18,11 +18,18 @@ import { Table, type TableColumn } from "./components/Table";
 import { Modal } from "./components/Modal";
 import { Chip, EmptyState, Field, Input, Select, StatusBadge, UserBadge } from "./components/ui";
 import {
+    buildDateTime,
     calculateClockPrice,
     deriveAuctionUiStatus,
+    filterRows,
     formatCurrency,
+    formatDateInput,
+    formatDateTimeInput,
     formatDateTime,
+    formatTimeInput,
+    getNextFullHour,
     mapProductStatusToUiStatus,
+    parseCurrencyValue,
     paginate,
 } from "./helpers";
 import { useLiveStats } from "./useLiveStats";
@@ -32,33 +39,6 @@ const CLOCK_TICK_MS = 5000;
 
 // ---- Kleine helpers & hooks -------------------------------------------------
 const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
-const pad = (value: number): string => value.toString().padStart(2, "0");
-const formatDateInput = (date: Date): string => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-const formatTimeInput = (date: Date): string => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-const formatDateTimeInput = (date: Date): string => `${formatDateInput(date)}T${formatTimeInput(date)}`;
-
-const buildDateTime = (dateValue: string, timeValue: string): Date | null => {
-    if (!dateValue || !timeValue) return null;
-    const [year, month, day] = dateValue.split("-").map(Number);
-    const [hours, minutes] = timeValue.split(":").map(Number);
-    if ([year, month, day, hours, minutes].some((value) => Number.isNaN(value))) return null;
-    return new Date(year, month - 1, day, hours, minutes, 0, 0);
-};
-
-const getNextFullHour = (base = new Date()): Date => {
-    const next = new Date(base);
-    next.setMinutes(0, 0, 0);
-    if (next <= base) {
-        next.setHours(next.getHours() + 1);
-    }
-    return next;
-};
-
-const normaliseCurrency = (value: string): string => value.replace(",", ".").replace(/[^\d.]/g, "");
-const parseCurrencyValue = (value: string): number | null => {
-    const parsed = Number.parseFloat(normaliseCurrency(value));
-    return Number.isFinite(parsed) ? parsed : null;
-};
 
 function useOffline(): boolean {
     const [offline, setOffline] = useState(() => (typeof navigator === "undefined" ? false : !navigator.onLine));
@@ -87,11 +67,6 @@ function useTicker(stepMs = 1000): Date {
 
     return now;
 }
-
-const filterRows = <T, F>(rows: readonly T[], search: string, filters: F, predicate: (row: T, term: string, filters: F) => boolean): readonly T[] => {
-    const term = (typeof search === "string" ? search : "").trim().toLowerCase();
-    return rows.filter((row) => predicate(row, term, filters));
-};
 
 // ---- Dashboard ---------------------------------------------------------------
 function DashboardMetrics(): JSX.Element {

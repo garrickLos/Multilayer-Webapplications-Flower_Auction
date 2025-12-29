@@ -1,3 +1,5 @@
+import { getBearerToken } from "../typeScript/ApiGet";
+
 const API_BASE_URL = "/api";
 const DEFAULT_PAGE_SIZE = 200;
 
@@ -87,7 +89,7 @@ function toRole(value?: string | null): UserRole {
 
 async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
-    const token = sessionStorage.getItem("token");
+    const token = getBearerToken();
     const response = await fetch(url, {
         ...init,
         credentials: "omit",
