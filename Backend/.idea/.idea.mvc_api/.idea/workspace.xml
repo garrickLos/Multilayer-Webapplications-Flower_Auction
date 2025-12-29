@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20251228155727_InitialCreate.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20251228155727_InitialCreate.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/css/Componenten/AuctionCards.module.css" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/css/Componenten/AuctionCards.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/schermen/hoofdscherm/RenderCards.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/schermen/hoofdscherm/RenderCards.tsx" afterDir="false" />
-    </list>
+    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -87,7 +81,7 @@
       <option name="presentableId" value="Default" />
       <updated>1766935350300</updated>
       <workItem from="1766935353369" duration="3663000" />
-      <workItem from="1767014430917" duration="673000" />
+      <workItem from="1767014430917" duration="1235000" />
     </task>
     <servers />
   </component>
