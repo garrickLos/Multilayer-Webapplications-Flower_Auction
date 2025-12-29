@@ -43,7 +43,7 @@ public record VeilingproductUpdateDto
     public DateTime? GeplaatstDatum { get; init; }
 
     // Int is nu nullable (int?). Range werkt nog steeds als er wel een getal wordt ingevuld.
-    [Range(1, int.MaxValue)]
+    [Range(0, int.MaxValue)]
     public int? AantalFusten { get; init; }
 
     [Range(0, int.MaxValue)]

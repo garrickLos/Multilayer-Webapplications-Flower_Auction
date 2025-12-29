@@ -41,40 +41,46 @@ export function mapData(safeData: any[]): VeilingLogica[] {
     }));
 }
 
-export async function VeilingProductitem_Update(isGeldig: boolean, huidigProduct: ProductLogica, InvoerAantal: number, url: string, token: string) {
-    if (isGeldig && huidigProduct) {
-            const productId = Number(huidigProduct.veilingProductNr);
-            
-            if (!productId || productId === 0) {
-                console.error("FOUT: Product ID is 0 of ongeldig");
-                return;
-            }
+export async function VeilingProductitem_Update(
+    isGeldig: boolean, 
+    huidigProduct: ProductLogica, 
+    InvoerAantal: number, 
+    url: string, 
+    token: string
+) {
+    if (!isGeldig || !huidigProduct) return;
 
-            const huidigeVoorraad_Fusten = Number(huidigProduct.aantalFusten) || 0;
-            const huidigeVoorraad_Bloemen = Number(huidigProduct.voorraadBloemen) || 0;
+    const productId = Number(huidigProduct.veilingProductNr);
+    if (!productId || productId === 0) {
+        console.error("FOUT: Product ID is 0 of ongeldig");
+        return;
+    }
 
-            const inhoudPerFust = huidigeVoorraad_Fusten > 0 
-                ? huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten 
-                : 0;
-            
-            //berekend de nieuwe voorraad van fusten
-            const nieuweVoorraad_Fusten = huidigeVoorraad_Fusten - InvoerAantal;
-            
-            // berekend de nieuwe voorraad van bloemen
-            // math.round of math.floor om de kommagetallen weg te houden
-            const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
-            const nieuweVoorraad_Bloemen = huidigeVoorraad_Bloemen - teVerwijderenBloemen;
+    const huidigeVoorraad_Fusten = Number(huidigProduct.aantalFusten) || 0;
+    const huidigeVoorraad_Bloemen = Number(huidigProduct.voorraadBloemen) || 0;
 
-            const dataOmTeSturen: VeilingproductUpdate_props = {
-                VoorraadBloemen: nieuweVoorraad_Bloemen,
-                AantalFusten: nieuweVoorraad_Fusten
-            };
+    // Correctie voor laatste item: als alles wordt gekocht, zet voorraad op 0
+    let nieuweVoorraad_Fusten = huidigeVoorraad_Fusten - InvoerAantal;
+    let nieuweVoorraad_Bloemen: number;
 
-            try {
-                await UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token);
-                
-            } catch (error) {
-                console.error("API Error details:", error);
-            }
-        }
+    if (nieuweVoorraad_Fusten <= 0) {
+        nieuweVoorraad_Fusten = 0;
+        nieuweVoorraad_Bloemen = 0;
+    } else {
+        const inhoudPerFust = huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten;
+        const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
+        nieuweVoorraad_Bloemen = Math.max(0, huidigeVoorraad_Bloemen - teVerwijderenBloemen);
+    }
+
+    // Controleer of de API alle velden vereist (inclusief degene die niet veranderen)
+    const dataOmTeSturen: VeilingproductUpdate_props = {
+        VoorraadBloemen: nieuweVoorraad_Bloemen,
+        AantalFusten: nieuweVoorraad_Fusten,
+    };
+
+    try {
+        await UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token);
+    } catch (error) {
+        console.error("API Error details:", error);
+    }
 }

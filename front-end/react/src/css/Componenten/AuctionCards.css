@@ -1,6 +1,6 @@
-.card {
-    height: 550px;
-    /* max-height: 650px; */
+.RenderCard {
+    height: 500px;
+    max-height: 550px;
 
     width: 100%;
     max-width: 500px;
@@ -20,7 +20,7 @@
     margin: 0 auto;
 }
 
-.card img {
+.RenderCard img {
     width: 100%;
     max-width: 180px;
     height: 180px;
@@ -31,17 +31,17 @@
     flex-shrink: 0;
 }
 
-.card .ImageErrorMsg {
+.RenderCard .ImageErrorMsg {
     margin: 0;
 }
 
-.card h3 {
+.RenderCard h3 {
     font-size: 17px;
 
     margin: 5px 0 0 0;
 }
 
-.card p {
+.RenderCard p {
     font-size: clamp(0.2rem, 15px, 1rem);
 
     color: var(--ink-light);

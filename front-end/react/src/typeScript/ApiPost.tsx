@@ -1,5 +1,3 @@
-// Let op: GEEN imports van 'react' hier. Dit is een pure hulpfunctie.
-
 export async function UpdateVeilingApi<T>(url: string, changedData: T, token: string | null): Promise<T> {
     
     if (!token) {

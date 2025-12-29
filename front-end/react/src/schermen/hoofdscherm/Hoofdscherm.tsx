@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
@@ -10,6 +11,12 @@ import { beschrijving, AuctionCard, type VeilingItem } from './RenderCards.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 
 import '../../css/Componenten/knop.css';
+
+/*
+    to do:
+    * foto kan niet gevonden worden error (positioneerd boven alles en niet op kaart)
+*/
+
 
 export default function MainScreen() {
     const RefreshTimeMS = 60000;
@@ -57,7 +64,7 @@ export default function MainScreen() {
             </>
         );
     };
-
+    
     return (
         <main className='MainScreen'>
 
@@ -71,8 +78,9 @@ export default function MainScreen() {
                     </div>
                 </div>
             </div>
+            
+            <section ref={(node) => { if (node) {CountPages("grid-container", 'AmountOfPages');}}}>
 
-            <section>
                 <h2>Flora veilingen</h2>
                 <div className="AmountOfPages"></div>
                 <div className="slider-container">
