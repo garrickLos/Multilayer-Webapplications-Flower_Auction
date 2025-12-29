@@ -1,5 +1,3 @@
-import type { Auction, Product, UiStatus } from "./api";
-
 const currencyFormatter = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
 export const pad = (value: number): string => (value < 10 ? `0${value}` : String(value));
@@ -66,62 +64,4 @@ export const filterRows = <T, F>(
 ): readonly T[] => {
     const term = (typeof search === "string" ? search : "").trim().toLowerCase();
     return rows.filter((row) => predicate(row, term, filters));
-};
-
-export const mapAuctionStatusToBadge = (status: string | UiStatus): UiStatus => {
-    const normalised = typeof status === "string" ? status.toLowerCase() : "";
-    if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "sold" || normalised === "archived")
-        return "sold";
-    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
-    return "inactive";
-};
-
-export const uiStatusToAuctionStatus = (status: UiStatus): string => {
-    if (status === "active") return "active";
-    if (status === "sold") return "sold";
-    if (status === "deleted") return "deleted";
-    return "inactive";
-};
-
-export const mapProductStatusToUiStatus = (status: string | null | undefined): UiStatus => {
-    if (status === "Deleted") return "deleted";
-    if (status === "Archived") return "sold";
-    if (status === "Active") return "active";
-    return "inactive";
-};
-
-export const aggregateProductStock = (products?: readonly Product[]): number =>
-    products?.reduce((sum, product) => sum + (product.stock ?? 0), 0) ?? 0;
-
-export const deriveAuctionUiStatus = (auction: Auction, now: Date = new Date()): UiStatus => {
-    const mappedStatus = auction.rawStatus ? mapAuctionStatusToBadge(auction.rawStatus) : auction.status;
-    if (mappedStatus === "deleted") return "deleted";
-
-    const start = new Date(auction.startDate);
-    const end = new Date(auction.endDate);
-    const totalStock = aggregateProductStock(auction.products);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return mappedStatus;
-    if (now < start) return "inactive";
-    if (totalStock === 0 || mappedStatus === "sold") return "sold";
-    if (now >= start && now <= end) return "active";
-    return mappedStatus;
-};
-
-export const calculateClockPrice = (
-    startPrice: number,
-    minPrice: number,
-    start: Date,
-    end: Date,
-    now: Date,
-): number => {
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return startPrice;
-    if (now <= start) return startPrice;
-    if (now >= end) return minPrice;
-    const total = end.getTime() - start.getTime();
-    const elapsed = now.getTime() - start.getTime();
-    const ratio = Math.min(Math.max(elapsed / total, 0), 1);
-    const price = startPrice - (startPrice - minPrice) * ratio;
-    return Math.max(price, minPrice);
 };
