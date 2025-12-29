@@ -45,6 +45,4 @@ export function CountPages(countClass: string, DestinationClass: string) {
     }
 
     updatePageCount();
-
-    console.log("Totaal aantal pagina's gemeten: " + maxPage);
 }

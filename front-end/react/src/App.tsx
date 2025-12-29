@@ -12,7 +12,7 @@ import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
 import AuctionScreen from './schermen/AuctionScreen/VeilingScherm.tsx';
 
-import { UpdateApi } from './typeScript/ApiPost.tsx'
+import { UpdateApi } from './typeScript/ApiPut.tsx'
 import { useAutorefresh } from './typeScript/ApiRefresh.tsx'
 
 import Header, {Footer} from './schermen/Header_footer.tsx'

@@ -4,8 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 public abstract record BaseBieding_Dto
 {
-
-    [Range(typeof(int), "1", "9999999")] 
+    [Range(1, int.MaxValue)]
     public int BedragPerFust { get; set; }
     
     [Range(1, int.MaxValue)] 
@@ -27,7 +26,7 @@ public record VeilingMeester_BiedingDto : BaseBieding_Dto
 
 public record BiedingCreateDto : BaseBieding_Dto
 {
-    public int BiedingNr { get; set; }
+    public int? BiedingNr { get; set; }
     
     public int VeilingproductNr { get; set; }
 }

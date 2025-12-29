@@ -1,8 +1,7 @@
 import { type ChangeEvent } from 'react';
-import type { ProductLogica } from '../VeilingSchermTypes';
-import type { errorMessaging } from '../VeilingSchermTypes';
+import type { ProductLogica, errorMessaging } from '../schermen/AuctionScreen/VeilingSchermTypes';
 
-import '../../../css/Componenten/InputVeld.css';
+import '../css/Componenten/InputVeld.css';
 
 interface InputFieldProps {
     type: string;
@@ -25,18 +24,23 @@ export function InputField({type ,id, name, onChange }: InputFieldProps) {
     );
 }
 
-export function checkInputField(input: number, huidigProduct: ProductLogica, err: errorMessaging): boolean {
-    if (input > 0 && input <= huidigProduct.aantalFusten) {
-        err.correcteWaarde = "Waarde wordt verstuurd";
-        return true
-    } else if (input > huidigProduct.aantalFusten) {
-        err.verkeerdeWaarde = "de invoer is meer dan verwacht is"
-        return false
-    } else if(!input.valueOf) {
-        err.verkeerdeWaarde = "Invoer moet een getal zijn"
-        return false;
-    } else {
-        err.verkeerdeWaarde = "Minimale input van 1 verwacht";
-        return false;
+export function checkInputField(
+    inputStr: string, 
+    maxAantal: number
+): number | "" {
+    if (inputStr === "") {
+        return "";
     }
+
+    let waarde = Number(inputStr);
+
+    if (waarde < 0) {
+        return 0;
+    }
+
+    if (waarde > maxAantal) {
+        return maxAantal;
+    }
+
+    return waarde;
 }
