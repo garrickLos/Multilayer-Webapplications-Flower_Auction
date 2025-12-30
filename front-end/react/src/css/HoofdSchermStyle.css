@@ -36,29 +36,6 @@
     border-radius: 0 0 1% 1%;
 }
 
-.grid-container {
-
-    display: grid;
-
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    grid-auto-rows: auto;
-
-    justify-content: start;
-
-    column-gap: 1%;
-    row-gap: 1%;
-
-    margin-bottom: 5%;
-    margin-right: 2%;
-
-    width: 100%;
-
-    scroll-snap-align: start;
-
-    padding: 0;
-
-}
-
 .MainScreen .banner-content {
     display: flex;
     flex-direction: column;
@@ -218,7 +195,7 @@
     z-index: 1;
 }
 
-.grid-container {
+.MainScreen .grid-container {
     display: grid;
 
     grid-template-columns: repeat(5, 1fr);
@@ -240,7 +217,7 @@
     scroll-snap-align: start;
 }
 
-.AmountOfPages {
+.MainScreen .AmountOfPages {
     display: flex;
 
     color: var(--ink);
