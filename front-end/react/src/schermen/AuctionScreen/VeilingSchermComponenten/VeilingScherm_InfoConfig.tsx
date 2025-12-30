@@ -4,6 +4,7 @@ import { ApiRequest } from "../../../typeScript/ApiRequest";
 import { Vermenigvuldigen as naarCenten } from "../../../typeScript/RekenFuncties";
 
 import type { VeilingLogica, ProductLogica } from "../VeilingSchermTypes";
+import { GetDate } from "../../../typeScript/FetchDate";
 
 export interface VeilingproductUpdate {
     // string | null zorgt dat je eventueel wel null mag sturen als dat ooit nodig is
@@ -15,6 +16,12 @@ export interface VeilingproductUpdate {
     ImagePath?: string | null;
     Minimumprijs?: number | null;
     Plaats?: string | null;
+}
+
+interface VeilingUpdate {
+    veilingNaam?: string | null,
+    beginTijd?: Date | null,
+    eindTijd?: Date | null,
 }
 
 interface NieuweBieding {
@@ -115,6 +122,10 @@ export async function VeilingProductitem_Update(
         VeilingProductNr: productId
     };
 
+    // const UpdateVeilingKlok: VeilingUpdate = {
+    //     beginTijd: GetDate("", 'nl-NL')
+    // };
+
     try {
         await Promise.all([
             // update de voorraad
@@ -123,6 +134,9 @@ export async function VeilingProductitem_Update(
 
             //nieuwe bieding aanmaken
             ApiRequest<NieuweBieding>("/api/Bieding", "POST" , BiedingAanmaken, token, refreshToken)
+
+            // To-Do: update starttijd van veiling
+            
         ]);
 
     } catch (error) {
