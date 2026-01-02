@@ -63,7 +63,7 @@ export type Auction = {
 };
 
 export type VeilingCreateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
-export type VeilingUpdateDto = { veilingNaam: string; begintijd: string; eindtijd: string };
+export type VeilingUpdateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
 export type BiedingBaseAmountDto = { bedragPerFust: number; aantalStuks: number; gebruikerNr: number };
 export type BiedingCreateDto = BiedingBaseAmountDto & { biedingNr?: number; veilingNr?: number; veilingproductNr?: number };
 export type BiedingUpdateDto = BiedingBaseAmountDto;
