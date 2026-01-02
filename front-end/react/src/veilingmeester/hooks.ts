@@ -1,17 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-    deleteAuction,
-    fetchAuctions,
-    fetchBids,
-    fetchProducts,
-    fetchUsers,
-    type ApiError,
-    type Auction,
-    type Bid,
-    type Product,
-    type UiStatus,
-    type User,
-} from "./api";
+import { fetchAuctions, fetchBids, fetchProducts, fetchUsers, type ApiError, type Auction, type Bid, type Product, type UiStatus, type User } from "./api";
 import { deriveAuctionUiStatus, mapProductStatusToUiStatus } from "./rules";
 import { filterRows } from "./helpers";
 
@@ -102,39 +90,39 @@ export function useVeilingmeesterData() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const refreshAll = useCallback(async (signal?: AbortSignal) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [userResponse, auctionResponse, productResponse, bidResponse] = await Promise.all([
+                fetchUsers({ pageSize: 200 }, signal),
+                fetchAuctions({ pageSize: 200 }, signal),
+                fetchProducts({ pageSize: 200 }, signal),
+                fetchBids({ pageSize: 200 }, signal),
+            ]);
+
+            setUsers([...userResponse.items]);
+            setAuctions([...auctionResponse.items]);
+            setProducts([...productResponse.items]);
+            setBids([...bidResponse.items]);
+        } catch (err) {
+            if ((err as { name?: string }).name === "AbortError") return;
+            const apiError = err as ApiError;
+            if (apiError.status === 401 || apiError.status === 403) {
+                setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+            } else {
+                setError((apiError as { message?: string }).message ?? "Kan gegevens niet laden");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         const controller = new AbortController();
-        const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const [userResponse, auctionResponse, productResponse, bidResponse] = await Promise.all([
-                    fetchUsers({ pageSize: 200 }, controller.signal),
-                    fetchAuctions({ pageSize: 200 }, controller.signal),
-                    fetchProducts({ pageSize: 200 }, controller.signal),
-                    fetchBids({ pageSize: 200 }, controller.signal),
-                ]);
-
-                setUsers([...userResponse.items]);
-                setAuctions([...auctionResponse.items]);
-                setProducts([...productResponse.items]);
-                setBids([...bidResponse.items]);
-            } catch (err) {
-                if ((err as { name?: string }).name === "AbortError") return;
-                const apiError = err as ApiError;
-                if (apiError.status === 401 || apiError.status === 403) {
-                    setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
-                } else {
-                    setError((apiError as { message?: string }).message ?? "Kan gegevens niet laden");
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        void load();
+        void refreshAll(controller.signal);
         return () => controller.abort();
-    }, []);
+    }, [refreshAll]);
 
     const handleAuctionsLoaded = useCallback((items: Auction[]) => setAuctions(items), []);
 
@@ -150,55 +138,18 @@ export function useVeilingmeesterData() {
         setProducts,
         setBids,
         handleAuctionsLoaded,
+        refreshAll,
     };
 }
 
 export type AuctionFilters = { onlyActive: boolean; from: string; to: string; veilingProduct: string };
 
-export function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void) {
-    const [auctions, setAuctions] = useState<readonly Auction[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export function useAuctionsPage(auctions: readonly Auction[]) {
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", veilingProduct: "" });
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);    const now = useTicker(CLOCK_TICK_MS);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await fetchAuctions(
-                    {
-                        from: filters.from || undefined,
-                        to: filters.to || undefined,
-                        onlyActive: filters.onlyActive || undefined,
-                        veilingProduct: filters.veilingProduct ? Number(filters.veilingProduct) : undefined,
-                        page: 1,
-                        pageSize: 200,
-                    },
-                    controller.signal,
-                );
-                setAuctions(response.items);
-                onAuctionsLoaded(response.items as Auction[]);
-            } catch (err) {
-                if ((err as { name?: string }).name === "AbortError") return;
-                const apiError = err as ApiError;
-                if (apiError.status === 401 || apiError.status === 403) {
-                    setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
-                } else {
-                    setError((apiError as { message?: string }).message ?? "Kan veilingen niet laden.");
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        void load();
-        return () => controller.abort();
-    }, [filters.from, filters.onlyActive, filters.to, filters.veilingProduct, onAuctionsLoaded]);
+    const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);
+    const now = useTicker(CLOCK_TICK_MS);
 
     const filteredRows = useMemo(
         () =>
@@ -220,23 +171,8 @@ export function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void)
         [auctions, filters, now, search],
     );
 
-    const handleCancel = async (auctionId: number) => {
-        try {
-            await deleteAuction(auctionId);
-            setAuctions((prev) => {
-                const next = prev.filter((auction) => auction.id !== auctionId);
-                onAuctionsLoaded([...next]);
-                return next;
-            });
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Veiling kon niet worden geannuleerd.");
-        }
-    };
-
     return {
-        auctions: filteredRows,
-        loading,
-        error,
+        filtered: filteredRows,
         search,
         filters,
         now,
@@ -246,39 +182,15 @@ export function useAuctionsPage(onAuctionsLoaded: (auctions: Auction[]) => void)
         setFilters,
         setPage,
         setPageSize,
-        handleCancel,
     };
 }
 
 export type ProductFilters = { status: UiStatus | "all"; seller: string; auctionId: string; search: string };
 
-export function useProductsPage() {
-    const [products, setProducts] = useState<readonly Product[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export function useProductsPage(products: readonly Product[]) {
     const [filters, setFilters] = useState<ProductFilters>({ status: "all", seller: "", auctionId: "", search: "" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        const load = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await fetchProducts({ page: 1, pageSize: 200 }, controller.signal);
-                setProducts(response.items);
-            } catch (err) {
-                if ((err as { name?: string }).name === "AbortError") return;
-                setError((err as { message?: string }).message ?? "Kan producten niet laden.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        void load();
-        return () => controller.abort();
-    }, []);
 
     const filtered = useMemo(
         () =>
@@ -295,10 +207,7 @@ export function useProductsPage() {
     );
 
     return {
-        products,
         filtered,
-        loading,
-        error,
         filters,
         page,
         pageSize,
