@@ -224,7 +224,7 @@ namespace mvc_api.Migrations
                     GeplaatstDatum = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AantalFusten = table.Column<int>(type: "int", nullable: false),
                     VoorraadBloemen = table.Column<int>(type: "int", nullable: false),
-                    Startprijs = table.Column<int>(type: "int", nullable: true),
+                    Startprijs = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     CategorieNr = table.Column<int>(type: "int", nullable: false),
                     VeilingNr = table.Column<int>(type: "int", nullable: true),
                     Plaats = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),

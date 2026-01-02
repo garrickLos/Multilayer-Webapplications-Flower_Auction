@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/uitleg.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/helpers.test.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20250215120000_UpdateStartprijsDecimal.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20251229132355_InitialCreate.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20251229132355_InitialCreate.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/AppDbContextModelSnapshot.cs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,6 +87,7 @@
       <updated>1766935350300</updated>
       <workItem from="1766935353369" duration="3663000" />
       <workItem from="1767014430917" duration="4734000" />
+      <workItem from="1767368084491" duration="518000" />
     </task>
     <servers />
   </component>

@@ -12,7 +12,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251229132355_InitialCreate")]
+    [Migration("20260102154101_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -463,8 +463,9 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int?>("Startprijs")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("Startprijs")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Status")
                         .IsRequired()
