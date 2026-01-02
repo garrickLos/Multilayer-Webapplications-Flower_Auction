@@ -1,12 +1,12 @@
 import { jwtDecode } from "jwt-decode";
-import { UpdateApi as UpdateVeilingApi, PostApi as NieuweBiedingMaken } from "../../../typeScript/ApiPut";
+import { ApiRequest } from "../../../typeScript/ApiRequest";
 
 import { Vermenigvuldigen as naarCenten } from "../../../typeScript/RekenFuncties";
 
-import type { VeilingLogica } from "../VeilingSchermTypes";
-import type { ProductLogica } from "../VeilingSchermTypes";
+import type { VeilingLogica, ProductLogica } from "../VeilingSchermTypes";
+import { GetDate } from "../../../typeScript/FetchDate";
 
-export interface VeilingproductUpdate_props {
+export interface VeilingproductUpdate {
     // string | null zorgt dat je eventueel wel null mag sturen als dat ooit nodig is
     Naam?: string | null;
     GeplaatstDatum?: Date | null;
@@ -18,7 +18,13 @@ export interface VeilingproductUpdate_props {
     Plaats?: string | null;
 }
 
-interface nieuweBieding {
+interface VeilingUpdate {
+    veilingNaam?: string | null,
+    beginTijd?: Date | null,
+    eindTijd?: Date | null,
+}
+
+interface NieuweBieding {
     BedragPerFust: number,
     AantalStuks: number,
     GebruikerNr: string,
@@ -27,11 +33,14 @@ interface nieuweBieding {
 
 interface MyTokenPayload {
     GebruikerNr: string; // Of number, afhankelijk van je API
-    exp: number;
-    iat: number;
+    expiration: number; // wanneer de token verloopt
+    IssuedAt: number; // de datum dat het is vrij gegeven
     [key: string]: any; // Voor overige onbekende velden
 }
 
+// mapt de data voor de veilingscherm
+// dit zorgt ervoor dat er altijd info staat. Indien het niet gevonden kan worden (error tijdens de get)
+// geeft het een default waarde om te tonen in plaats van lege vlakken
 export function mapData(safeData: any[]): VeilingLogica[] {
     return safeData.map((item) => ({
         veilingNr: item.veilingNr,
@@ -81,17 +90,21 @@ export async function VeilingProductitem_Update(
     let nieuweVoorraad_Fusten = huidigeVoorraad_Fusten - InvoerAantal;
     let nieuweVoorraad_Bloemen: number;
 
+    // als de voorraad fusten kleiner is dan 0 
+    // fusten en bloemenvoorraad worden op 0 gezet
     if (nieuweVoorraad_Fusten <= 0) {
         nieuweVoorraad_Fusten = 0;
         nieuweVoorraad_Bloemen = 0;
+
     } else {
-        const inhoudPerFust = huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten;
-        const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust);
-        nieuweVoorraad_Bloemen = Math.max(0, huidigeVoorraad_Bloemen - teVerwijderenBloemen);
+        // als het niet kleiner is dan 0 zet het de oude getallen om in nieuwe waardes
+        const inhoudPerFust = huidigeVoorraad_Bloemen / huidigeVoorraad_Fusten; // berekend hoeveel bloemen 1 fust heeft
+        const teVerwijderenBloemen = Math.round(InvoerAantal * inhoudPerFust); // berekend hoeveel bloemen verwijderd moeten worden
+        nieuweVoorraad_Bloemen = Math.max(0, huidigeVoorraad_Bloemen - teVerwijderenBloemen); // haal de hoeveelheid bloemen van de voorraad af
     }
 
     // Controleer of de API alle velden vereist (inclusief degene die niet veranderen)
-    const dataOmTeSturen: VeilingproductUpdate_props = {
+    const dataOmTeSturen: VeilingproductUpdate = {
         VoorraadBloemen: nieuweVoorraad_Bloemen,
         AantalFusten: nieuweVoorraad_Fusten,
     };
@@ -102,20 +115,28 @@ export async function VeilingProductitem_Update(
 
     totaalPrijs = Math.trunc(totaalPrijs);
 
-    const BiedingAanmaken: nieuweBieding = {
+    const BiedingAanmaken: NieuweBieding = {
         BedragPerFust: totaalPrijs, // Gebruik de prijs van de klok
         AantalStuks: InvoerAantal,
         GebruikerNr: decoded.sub,
         VeilingProductNr: productId
     };
 
+    // const UpdateVeilingKlok: VeilingUpdate = {
+    //     beginTijd: GetDate("", 'nl-NL')
+    // };
+
     try {
         await Promise.all([
-            // update de voorraad 
-            UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token, refreshToken),
+            // update de voorraad
+            ApiRequest<VeilingproductUpdate>(url, 'PUT', dataOmTeSturen, token, refreshToken),
+            //UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token, refreshToken),
 
             //nieuwe bieding aanmaken
-            NieuweBiedingMaken<nieuweBieding>("/api/Bieding", BiedingAanmaken, token, refreshToken)
+            ApiRequest<NieuweBieding>("/api/Bieding", "POST" , BiedingAanmaken, token, refreshToken)
+
+            // To-Do: update starttijd van veiling
+            
         ]);
 
     } catch (error) {
