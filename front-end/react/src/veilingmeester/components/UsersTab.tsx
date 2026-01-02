@@ -1,10 +1,11 @@
 import { useMemo, useState, type JSX } from "react";
-import type { Bid, UiStatus, User } from "../api";
+import type { User } from "../api";
 import { TABLE_PAGE_SIZES } from "../hooks";
 import { getUserActions, matchesUserFilters, type UserFilters } from "../rules";
 import { paginate } from "../helpers";
 import { Table, type TableColumn } from "./Table";
-import { EmptyState, Field, Select, StatusBadge, UserBadge } from "./ui";
+import { EmptyState, StatusBadge, UserBadge } from "./ui";
+import { UsersFilters } from "./UsersFilters";
 
 const roleLabels: Record<User["role"], string> = {
     Koper: "Koper",
@@ -16,11 +17,11 @@ const roleLabels: Record<User["role"], string> = {
 
 type UsersTabProps = {
     readonly users: readonly User[];
-    readonly bids: readonly Bid[];
     readonly loading: boolean;
     readonly error: string | null;
     readonly onViewBids: (userId: number) => void;
     readonly onViewProducts: (userId: number) => void;
+    readonly onRefresh: () => void;
 };
 
 const UserActionButtons = ({
@@ -46,7 +47,7 @@ const UserActionButtons = ({
     </>
 );
 
-export function UsersTab({ users, bids, loading, error, onViewBids, onViewProducts }: UsersTabProps): JSX.Element {
+export function UsersTab({ users, loading, error, onViewBids, onViewProducts, onRefresh }: UsersTabProps): JSX.Element {
     const [filters, setFilters] = useState<UserFilters>({ role: "all", status: "all" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);
@@ -76,36 +77,7 @@ export function UsersTab({ users, bids, loading, error, onViewBids, onViewProduc
     return (
         <section className="card border-0 shadow-sm rounded-4" aria-label="Gebruikers">
             <div className="card-body p-4 d-flex flex-column gap-3">
-                <div className="row g-3">
-                    <div className="col-12 col-md-6">
-                        <Field label="Rol" htmlFor="user-role">
-                            <Select
-                                id="user-role"
-                                value={filters.role}
-                                onChange={(event) => setFilters((prev) => ({ ...prev, role: event.target.value as User["role"] | "all" }))}
-                            >
-                                <option value="all">Alle</option>
-                                <option value="Koper">Koper</option>
-                                <option value="Bedrijf">Bedrijf</option>
-                            </Select>
-                        </Field>
-                    </div>
-                    <div className="col-12 col-md-6">
-                        <Field label="Status" htmlFor="user-status">
-                            <Select
-                                id="user-status"
-                                value={filters.status}
-                                onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value as UiStatus | "all" }))}
-                            >
-                                <option value="all">Alle</option>
-                                <option value="active">Actief</option>
-                                <option value="inactive">Inactief</option>
-                                <option value="sold">Verkocht</option>
-                                <option value="deleted">Geannuleerd</option>
-                            </Select>
-                        </Field>
-                    </div>
-                </div>
+                <UsersFilters filters={filters} onFiltersChange={setFilters} onRefresh={onRefresh} />
 
                 {loading && <div className="alert alert-info mb-0">Gebruikers laden…</div>}
                 {error && <div className="alert alert-danger mb-0">{error}</div>}

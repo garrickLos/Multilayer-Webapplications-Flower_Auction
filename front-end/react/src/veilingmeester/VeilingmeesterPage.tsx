@@ -1,5 +1,5 @@
 import { useMemo, useState, type JSX } from "react";
-import { createAuction, updateAuction, updateProductPlanning } from "./api";
+import { useAuctionActions } from "./auctionActions";
 import { AuctionsTab } from "./components/AuctionsTab";
 import { DashboardMetrics } from "./components/DashboardMetrics";
 import { LinkProductsModal } from "./components/LinkProductsModal";
@@ -9,7 +9,6 @@ import { UserBidsModal } from "./components/UserBidsModal";
 import { UserProductsModal } from "./components/UserProductsModal";
 import { UsersTab } from "./components/UsersTab";
 import { useOffline, useVeilingmeesterData } from "./hooks";
-import type { AuctionPayload } from "./types";
 
 const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
 
@@ -26,7 +25,20 @@ export function VeilingmeesterPage() {
     const [activeTab, setActiveTab] = useState<TabKey>("auctions");
     const [activeModal, setActiveModal] = useState<ModalState | null>(null);
 
-    const { users, auctions, products, bids, loading, error, setError, setAuctions, setProducts, refreshAll } = useVeilingmeesterData();
+    const {
+        users,
+        auctions,
+        products,
+        bids,
+        loading,
+        error,
+        setError,
+        setAuctions,
+        setProducts,
+        refreshAuctions,
+        refreshProducts,
+        refreshUsers,
+    } = useVeilingmeesterData();
     const activeAuction = useMemo(
         () => (activeModal && "auctionId" in activeModal ? auctions.find((entry) => entry.id === activeModal.auctionId) ?? null : null),
         [activeModal, auctions],
@@ -36,81 +48,12 @@ export function VeilingmeesterPage() {
         [activeModal, users],
     );
 
-    const handleCreateAuction = async (draft: AuctionPayload) => {
-        try {
-            const created = await createAuction({
-                veilingNaam: draft.title,
-                begintijd: draft.startIso,
-                eindtijd: draft.endIso,
-            });
-            setAuctions((prev) => [created, ...prev]);
-            setActiveModal(null);
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Veiling kon niet worden aangemaakt");
-        }
-    };
-
-    const handleLinkProducts = async (auctionId: number, productId: number, startPrice: number) => {
-        try {
-            const updatedProduct = await updateProductPlanning(productId, { startprijs: startPrice, veilingNr: auctionId });
-            setProducts((prev) => prev.map((product) => (product.id === updatedProduct.id ? updatedProduct : product)));
-            setAuctions((prev) =>
-                prev.map((auction) =>
-                    auction.id === auctionId
-                        ? {
-                              ...auction,
-                              linkedProductIds: Array.from(new Set([...(auction.linkedProductIds ?? []), updatedProduct.id])),
-                              products: auction.products
-                                  ? [...auction.products.filter((product) => product.id !== updatedProduct.id), updatedProduct]
-                                  : [updatedProduct],
-                          }
-                        : auction,
-                ),
-            );
-            setActiveModal(null);
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Product kon niet gekoppeld worden.");
-        }
-    };
-
-    const handleUnlinkProduct = async (auctionId: number, productId: number) => {
-        try {
-            const updatedProduct = await updateProductPlanning(productId, { startprijs: null, veilingNr: null });
-            setProducts((prev) => prev.map((product) => (product.id === updatedProduct.id ? updatedProduct : product)));
-            setAuctions((prev) =>
-                prev.map((auction) =>
-                    auction.id === auctionId
-                        ? {
-                              ...auction,
-                              linkedProductIds: (auction.linkedProductIds ?? []).filter((id) => id !== updatedProduct.id),
-                              products: auction.products ? auction.products.filter((product) => product.id !== updatedProduct.id) : auction.products,
-                          }
-                        : auction,
-                ),
-            );
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Product kon niet ontkoppeld worden.");
-        }
-    };
-
-    const handleCancelAuction = async (auctionId: number) => {
-        const current = auctions.find((auction) => auction.id === auctionId);
-        if (!current) {
-            setError("Veiling kon niet worden gevonden.");
-            return;
-        }
-        try {
-            const updated = await updateAuction(auctionId, {
-                veilingNaam: current.title,
-                begintijd: current.startDate,
-                eindtijd: current.endDate,
-                status: "Geannuleerd",
-            });
-            setAuctions((prev) => prev.map((auction) => (auction.id === updated.id ? updated : auction)));
-        } catch (err) {
-            setError((err as { message?: string }).message ?? "Veiling kon niet worden geannuleerd.");
-        }
-    };
+    const { handleCreateAuction, handleLinkProducts, handleUnlinkProduct, handleCancelAuction } = useAuctionActions({
+        auctions,
+        setAuctions,
+        setProducts,
+        setError,
+    });
 
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
         {
@@ -124,21 +67,28 @@ export function VeilingmeesterPage() {
                     onCreateRequested={() => setActiveModal({ key: "newAuction" })}
                     onOpenLinkProducts={(auctionId) => setActiveModal({ key: "linkProducts", auctionId })}
                     onCancelAuction={handleCancelAuction}
+                    onRefresh={() => void refreshAuctions()}
                 />
             ),
         },
-        { key: "products", label: "Producten", render: () => <ProductsTab auctions={auctions} products={products} loading={loading} error={error} /> },
+        {
+            key: "products",
+            label: "Producten",
+            render: () => (
+                <ProductsTab auctions={auctions} products={products} loading={loading} error={error} onRefresh={() => void refreshProducts()} />
+            ),
+        },
         {
             key: "users",
             label: "Gebruikers",
             render: () => (
                 <UsersTab
                     users={users}
-                    bids={bids}
                     loading={loading}
                     error={error}
                     onViewBids={(userId) => setActiveModal({ key: "userBids", userId })}
                     onViewProducts={(userId) => setActiveModal({ key: "userProducts", userId })}
+                    onRefresh={() => void refreshUsers()}
                 />
             ),
         },
@@ -150,9 +100,6 @@ export function VeilingmeesterPage() {
                 <nav className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4" aria-label="Hoofdnavigatie veilingmeester">
                     <span className="navbar-brand fw-semibold text-success">Veilingmeester</span>
                     <div className="ms-auto d-flex align-items-center gap-3">
-                        <button type="button" className="btn btn-outline-success btn-sm" onClick={() => void refreshAll()}>
-                            Ververs
-                        </button>
                         <div className="text-muted small">Simpel beheer voor veilingen, producten en gebruikers</div>
                     </div>
                 </nav>
@@ -214,13 +161,17 @@ export function VeilingmeesterPage() {
                     </section>
                 ))}
 
-                {activeModal?.key === "newAuction" && <NewAuctionModal onClose={() => setActiveModal(null)} onSave={handleCreateAuction} />}
+                {activeModal?.key === "newAuction" && (
+                    <NewAuctionModal onClose={() => setActiveModal(null)} onSave={(draft) => handleCreateAuction(draft, () => setActiveModal(null))} />
+                )}
                 {activeModal?.key === "linkProducts" && activeAuction && (
                     <LinkProductsModal
                         auction={activeAuction}
                         products={products}
                         onClose={() => setActiveModal(null)}
-                        onSave={(productId, startPrice) => void handleLinkProducts(activeAuction.id, productId, startPrice)}
+                        onSave={(productId, startPrice) =>
+                            void handleLinkProducts(activeAuction.id, productId, startPrice, () => setActiveModal(null))
+                        }
                         onUnlink={(productId) => void handleUnlinkProduct(activeAuction.id, productId)}
                     />
                 )}
@@ -228,6 +179,8 @@ export function VeilingmeesterPage() {
                     <UserBidsModal
                         user={activeUser}
                         bids={bids.filter((bid) => bid.userId === activeUser.id)}
+                        products={products}
+                        auctions={auctions}
                         onClose={() => setActiveModal(null)}
                     />
                 )}

@@ -4,19 +4,27 @@ import { TABLE_PAGE_SIZES, useProductsPage } from "../hooks";
 import { mapProductStatusToUiStatus } from "../rules";
 import { formatCurrency, paginate } from "../helpers";
 import { Table, type TableColumn } from "./Table";
-import { EmptyState, Field, Input, Select, StatusBadge } from "./ui";
+import { EmptyState, StatusBadge } from "./ui";
+import { ProductsFilters } from "./ProductsFilters";
+import { ProductThumbnail } from "./ProductCard";
 
 type ProductsTabProps = {
     readonly auctions: readonly Auction[];
     readonly products: readonly Product[];
     readonly loading: boolean;
     readonly error: string | null;
+    readonly onRefresh: () => void;
 };
 
-export function ProductsTab({ auctions, products, loading, error }: ProductsTabProps): JSX.Element {
+export function ProductsTab({ auctions, products, loading, error, onRefresh }: ProductsTabProps): JSX.Element {
     const { filtered, filters, page, pageSize, setFilters, setPage, setPageSize } = useProductsPage(products);
 
     const columns: TableColumn<Product>[] = [
+        {
+            key: "image",
+            header: "",
+            render: (row) => <ProductThumbnail product={row} />,
+        },
         { key: "name", header: "Product", sortable: true, render: (row) => row.name, getValue: (row) => row.name },
         { key: "category", header: "Categorie", render: (row) => row.category ?? "—", getValue: (row) => row.category ?? "" },
         {
@@ -51,59 +59,7 @@ export function ProductsTab({ auctions, products, loading, error }: ProductsTabP
     return (
         <section className="card border-0 shadow-sm rounded-4" aria-label="Producten">
             <div className="card-body p-4 d-flex flex-column gap-3">
-                <div className="row g-3">
-                    <div className="col-12 col-md-3">
-                        <Field label="Status" htmlFor="product-status">
-                            <Select
-                                id="product-status"
-                                value={filters.status}
-                                onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value as typeof filters.status }))}
-                            >
-                                <option value="all">Alle</option>
-                                <option value="active">Actief</option>
-                                <option value="inactive">Inactief</option>
-                                <option value="sold">Verkocht</option>
-                                <option value="deleted">Geannuleerd</option>
-                            </Select>
-                        </Field>
-                    </div>
-                    <div className="col-12 col-md-3">
-                        <Field label="Verkoper" htmlFor="product-seller">
-                            <Input
-                                id="product-seller"
-                                value={filters.seller}
-                                onChange={(event) => setFilters((prev) => ({ ...prev, seller: event.target.value }))}
-                                placeholder="Naam verkoper"
-                            />
-                        </Field>
-                    </div>
-                    <div className="col-12 col-md-3">
-                        <Field label="Veiling" htmlFor="product-auction">
-                            <Select
-                                id="product-auction"
-                                value={filters.auctionId}
-                                onChange={(event) => setFilters((prev) => ({ ...prev, auctionId: event.target.value }))}
-                            >
-                                <option value="">Alle veilingen</option>
-                                {auctions.map((auction) => (
-                                    <option key={auction.id} value={auction.id}>
-                                        {auction.title}
-                                    </option>
-                                ))}
-                            </Select>
-                        </Field>
-                    </div>
-                    <div className="col-12 col-md-3">
-                        <Field label="Zoek" htmlFor="product-search">
-                            <Input
-                                id="product-search"
-                                value={filters.search}
-                                onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
-                                placeholder="Zoek product"
-                            />
-                        </Field>
-                    </div>
-                </div>
+                <ProductsFilters auctions={auctions} filters={filters} onFiltersChange={setFilters} onRefresh={onRefresh} />
 
                 {loading && <div className="alert alert-info mb-0">Producten laden…</div>}
                 {error && <div className="alert alert-danger mb-0">{error}</div>}
