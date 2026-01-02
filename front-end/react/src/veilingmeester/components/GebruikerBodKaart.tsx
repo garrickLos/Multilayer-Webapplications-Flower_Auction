@@ -4,38 +4,48 @@ import { formatCurrency, formatDateTime } from "../helpers";
 import { mapProductStatusToUiStatus } from "../rules";
 import { StatusBadge } from "./ui";
 
+// Fallback-afbeelding bij ontbrekende productfoto
 const fallbackImage = "/src/assets/pictures/webp/MissingPicture.webp";
 
+// Gedeelde card-styling
 const cardClass = "d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4";
 
-export function UserBidCard({
-    bid,
-    product,
-    auction,
-}: {
+// Kaart met informatie over een bod van een gebruiker
+export function UserBidCard({bid, product, auction,}: {
     readonly bid: Bid;
     readonly product?: Product;
     readonly auction?: Auction;
 }): JSX.Element {
+    // Fallback status als deze ontbreekt
     const status = bid.status ?? "active";
+
     return (
         <div className={cardClass}>
+            {/* Productafbeelding */}
             <img
                 src={product?.imagePath ?? fallbackImage}
                 alt={product?.name ?? `Product ${bid.productId}`}
                 className="rounded-3 flex-shrink-0"
                 style={{ width: 120, height: 90, objectFit: "cover" }}
             />
+
+            {/* Bod-informatie */}
             <div className="flex-grow-1">
                 <div className="d-flex justify-content-between gap-2 flex-wrap">
                     <div>
-                        <p className="mb-1 fw-semibold">{product?.name ?? `Product #${bid.productId}`}</p>
+                        <p className="mb-1 fw-semibold">
+                            {product?.name ?? `Product #${bid.productId}`}
+                        </p>
                         <p className="mb-1 text-muted">
                             Veiling {auction ? auction.title : `#${bid.auctionId}`} · Bod #{bid.id}
                         </p>
                     </div>
+
+                    {/* Status van het bod */}
                     <StatusBadge status={status} />
                 </div>
+
+                {/* Aantal, bedrag en datum */}
                 <div className="d-flex flex-wrap gap-3 text-muted">
                     <span>
                         {bid.quantity} × {formatCurrency(bid.amount)}
@@ -47,26 +57,43 @@ export function UserBidCard({
     );
 }
 
-export function UserProductCard({ product }: { readonly product: Product }): JSX.Element {
+// Kaart met product informatie voor gebruikers detail
+export function UserProductCard({
+                                    product,
+                                }: {
+    readonly product: Product;
+}): JSX.Element {
     return (
         <div className={cardClass}>
+            {/* Productafbeelding */}
             <img
                 src={product.imagePath ?? fallbackImage}
                 alt={product.name}
                 className="rounded-3 flex-shrink-0"
                 style={{ width: 120, height: 90, objectFit: "cover" }}
             />
+
+            {/* Productinformatie */}
             <div className="flex-grow-1">
                 <div className="d-flex justify-content-between gap-2 flex-wrap">
                     <div>
                         <p className="mb-1 fw-semibold">{product.name}</p>
                         <p className="mb-1 text-muted">
-                            {product.category ?? "Onbekende categorie"} · {product.location ?? "Onbekende locatie"}
+                            {product.category ?? "Onbekende categorie"} ·{" "}
+                            {product.location ?? "Onbekende locatie"}
                         </p>
                     </div>
-                    <StatusBadge status={mapProductStatusToUiStatus(product.status)} />
+
+                    {/* Productstatus */}
+                    <StatusBadge
+                        status={mapProductStatusToUiStatus(product.status)}
+                    />
                 </div>
-                <p className="mb-0 text-muted">Min. prijs {formatCurrency(product.minimumPrice)}</p>
+
+                {/* Prijsinformatie */}
+                <p className="mb-0 text-muted">
+                    Min. prijs {formatCurrency(product.minimumPrice)}
+                </p>
             </div>
         </div>
     );

@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import type { Product, User } from "../api";
 import { Modal } from "./Modal";
 import { EmptyState } from "./ui";
-import { UserProductCard } from "./UserDetailCards";
+import { UserProductCard } from "./GebruikerBodKaart.tsx";
 
 type UserProductsModalProps = { readonly user: User; readonly products: readonly Product[]; readonly onClose: () => void };
 

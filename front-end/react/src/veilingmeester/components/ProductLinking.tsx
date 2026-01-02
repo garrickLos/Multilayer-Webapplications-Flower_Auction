@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import type { Product } from "../api";
-import { ProductCard } from "./ProductCard";
+import { ProductKaart } from "./ProductKaart.tsx";
 
 type LinkedProductsListProps = {
     readonly products: readonly Product[];
@@ -16,7 +16,7 @@ export function LinkedProductsList({ products, canUnlink, onUnlink }: LinkedProd
     return (
         <div className="d-flex flex-column gap-2">
             {products.map((product) => (
-                <ProductCard
+                <ProductKaart
                     key={product.id}
                     product={product}
                     showStartPrice={false}
@@ -39,5 +39,5 @@ export function LinkedProductsList({ products, canUnlink, onUnlink }: LinkedProd
 }
 
 export function LinkedProductPreview({ product }: { readonly product: Product }): JSX.Element {
-    return <ProductCard product={product} />;
+    return <ProductKaart product={product} />;
 }

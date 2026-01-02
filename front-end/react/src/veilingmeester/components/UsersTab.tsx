@@ -5,7 +5,7 @@ import { getUserActions, matchesUserFilters, type UserFilters } from "../rules";
 import { paginate } from "../helpers";
 import { Table, type TableColumn } from "./Table";
 import { EmptyState, StatusBadge, UserBadge } from "./ui";
-import { UsersFilters } from "./UsersFilters";
+import { GebruikersFilters } from "./GebruikersFilters.tsx";
 
 const roleLabels: Record<User["role"], string> = {
     Koper: "Koper",
@@ -77,7 +77,7 @@ export function UsersTab({ users, loading, error, onViewBids, onViewProducts, on
     return (
         <section className="card border-0 shadow-sm rounded-4" aria-label="Gebruikers">
             <div className="card-body p-4 d-flex flex-column gap-3">
-                <UsersFilters filters={filters} onFiltersChange={setFilters} onRefresh={onRefresh} />
+                <GebruikersFilters filters={filters} onFiltersChange={setFilters} onRefresh={onRefresh} />
 
                 {loading && <div className="alert alert-info mb-0">Gebruikers laden…</div>}
                 {error && <div className="alert alert-danger mb-0">{error}</div>}

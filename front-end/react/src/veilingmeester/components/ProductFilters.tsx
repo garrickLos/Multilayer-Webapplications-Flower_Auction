@@ -10,15 +10,21 @@ type ProductsFiltersProps = {
     readonly onRefresh: () => void;
 };
 
-export function ProductsFilters({ auctions, filters, onFiltersChange, onRefresh }: ProductsFiltersProps): JSX.Element {
+export function ProductFilters({auctions, filters, onFiltersChange, onRefresh,}: ProductsFiltersProps): JSX.Element {
     return (
         <div className="row g-3 align-items-end">
+            {/* Statusfilter */}
             <div className="col-12 col-md-3">
                 <Field label="Status" htmlFor="product-status">
                     <Select
                         id="product-status"
                         value={filters.status}
-                        onChange={(event) => onFiltersChange((prev) => ({ ...prev, status: event.target.value as typeof filters.status }))}
+                        onChange={(event) =>
+                            onFiltersChange((prev) => ({
+                                ...prev,
+                                status: event.target.value as typeof filters.status,
+                            }))
+                        }
                     >
                         <option value="all">Alle</option>
                         <option value="active">Actief</option>
@@ -28,22 +34,36 @@ export function ProductsFilters({ auctions, filters, onFiltersChange, onRefresh 
                     </Select>
                 </Field>
             </div>
+
+            {/* Verkoper */}
             <div className="col-12 col-md-3">
                 <Field label="Verkoper" htmlFor="product-seller">
                     <Input
                         id="product-seller"
                         value={filters.seller}
-                        onChange={(event) => onFiltersChange((prev) => ({ ...prev, seller: event.target.value }))}
+                        onChange={(event) =>
+                            onFiltersChange((prev) => ({
+                                ...prev,
+                                seller: event.target.value,
+                            }))
+                        }
                         placeholder="Naam verkoper"
                     />
                 </Field>
             </div>
+
+            {/* Veilingfilter */}
             <div className="col-12 col-md-3">
                 <Field label="Veiling" htmlFor="product-auction">
                     <Select
                         id="product-auction"
                         value={filters.auctionId}
-                        onChange={(event) => onFiltersChange((prev) => ({ ...prev, auctionId: event.target.value }))}
+                        onChange={(event) =>
+                            onFiltersChange((prev) => ({
+                                ...prev,
+                                auctionId: event.target.value,
+                            }))
+                        }
                     >
                         <option value="">Alle veilingen</option>
                         {auctions.map((auction) => (
@@ -54,18 +74,31 @@ export function ProductsFilters({ auctions, filters, onFiltersChange, onRefresh 
                     </Select>
                 </Field>
             </div>
+
+            {/* Vrij zoeken */}
             <div className="col-12 col-md-3">
                 <Field label="Zoek" htmlFor="product-search">
                     <Input
                         id="product-search"
                         value={filters.search}
-                        onChange={(event) => onFiltersChange((prev) => ({ ...prev, search: event.target.value }))}
+                        onChange={(event) =>
+                            onFiltersChange((prev) => ({
+                                ...prev,
+                                search: event.target.value,
+                            }))
+                        }
                         placeholder="Zoek product"
                     />
                 </Field>
             </div>
+
+            {/* Handmatige refresh */}
             <div className="col-12 col-md-3">
-                <button type="button" className="btn btn-outline-success w-100" onClick={onRefresh}>
+                <button
+                    type="button"
+                    className="btn btn-outline-success w-100"
+                    onClick={onRefresh}
+                >
                     Ververs
                 </button>
             </div>

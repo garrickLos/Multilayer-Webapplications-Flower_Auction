@@ -5,8 +5,8 @@ import { mapProductStatusToUiStatus } from "../rules";
 import { formatCurrency, paginate } from "../helpers";
 import { Table, type TableColumn } from "./Table";
 import { EmptyState, StatusBadge } from "./ui";
-import { ProductsFilters } from "./ProductsFilters";
-import { ProductThumbnail } from "./ProductCard";
+import { ProductFilters } from "./ProductFilters.tsx";
+import { ProductThumbnail } from "./ProductKaart.tsx";
 
 type ProductsTabProps = {
     readonly auctions: readonly Auction[];
@@ -16,7 +16,7 @@ type ProductsTabProps = {
     readonly onRefresh: () => void;
 };
 
-export function ProductsTab({ auctions, products, loading, error, onRefresh }: ProductsTabProps): JSX.Element {
+export function ProductenOverzicht({ auctions, products, loading, error, onRefresh }: ProductsTabProps): JSX.Element {
     const { filtered, filters, page, pageSize, setFilters, setPage, setPageSize } = useProductsPage(products);
 
     const columns: TableColumn<Product>[] = [
@@ -59,7 +59,7 @@ export function ProductsTab({ auctions, products, loading, error, onRefresh }: P
     return (
         <section className="card border-0 shadow-sm rounded-4" aria-label="Producten">
             <div className="card-body p-4 d-flex flex-column gap-3">
-                <ProductsFilters auctions={auctions} filters={filters} onFiltersChange={setFilters} onRefresh={onRefresh} />
+                <ProductFilters auctions={auctions} filters={filters} onFiltersChange={setFilters} onRefresh={onRefresh} />
 
                 {loading && <div className="alert alert-info mb-0">Producten laden…</div>}
                 {error && <div className="alert alert-danger mb-0">{error}</div>}

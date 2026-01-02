@@ -9,15 +9,25 @@ type UsersFiltersProps = {
     readonly onRefresh: () => void;
 };
 
-export function UsersFilters({ filters, onFiltersChange, onRefresh }: UsersFiltersProps): JSX.Element {
+export function GebruikersFilters({
+                                 filters,
+                                 onFiltersChange,
+                                 onRefresh,
+                             }: UsersFiltersProps): JSX.Element {
     return (
         <div className="row g-3 align-items-end">
+            {/* Rolfilter */}
             <div className="col-12 col-md-4">
                 <Field label="Rol" htmlFor="user-role">
                     <Select
                         id="user-role"
                         value={filters.role}
-                        onChange={(event) => onFiltersChange((prev) => ({ ...prev, role: event.target.value as User["role"] | "all" }))}
+                        onChange={(event) =>
+                            onFiltersChange((prev) => ({
+                                ...prev,
+                                role: event.target.value as User["role"] | "all",
+                            }))
+                        }
                     >
                         <option value="all">Alle</option>
                         <option value="Koper">Koper</option>
@@ -25,12 +35,19 @@ export function UsersFilters({ filters, onFiltersChange, onRefresh }: UsersFilte
                     </Select>
                 </Field>
             </div>
+
+            {/* Statusfilter */}
             <div className="col-12 col-md-4">
                 <Field label="Status" htmlFor="user-status">
                     <Select
                         id="user-status"
                         value={filters.status}
-                        onChange={(event) => onFiltersChange((prev) => ({ ...prev, status: event.target.value as UiStatus | "all" }))}
+                        onChange={(event) =>
+                            onFiltersChange((prev) => ({
+                                ...prev,
+                                status: event.target.value as UiStatus | "all",
+                            }))
+                        }
                     >
                         <option value="all">Alle</option>
                         <option value="active">Actief</option>
@@ -40,8 +57,14 @@ export function UsersFilters({ filters, onFiltersChange, onRefresh }: UsersFilte
                     </Select>
                 </Field>
             </div>
+
+            {/* Handmatige refresh */}
             <div className="col-12 col-md-4">
-                <button type="button" className="btn btn-outline-success w-100" onClick={onRefresh}>
+                <button
+                    type="button"
+                    className="btn btn-outline-success w-100"
+                    onClick={onRefresh}
+                >
                     Ververs
                 </button>
             </div>

@@ -1,11 +1,11 @@
 import { useMemo, useState, type JSX } from "react";
 import { useAuctionActions } from "./auctionActions";
-import { AuctionsTab } from "./components/AuctionsTab";
-import { DashboardMetrics } from "./components/DashboardMetrics";
-import { LinkProductsModal } from "./components/LinkProductsModal";
-import { NewAuctionModal } from "./components/NewAuctionModal";
-import { ProductsTab } from "./components/ProductsTab";
-import { UserBidsModal } from "./components/UserBidsModal";
+import { VeilingenOverzicht } from "./components/VeilingenOverzicht.tsx";
+import { DashboardStatistiek } from "./components/DashboardStatistiek.tsx";
+import { ProductKoppelenModal } from "./components/ProductKoppelenModal.tsx";
+import { NieuweVeilingModal } from "./components/NieuweVeilingModal.tsx";
+import { ProductenOverzicht } from "./components/ProductenOverzicht.tsx";
+import { GebruikerBiedingenModal } from "./components/GebruikerBiedingenModal.tsx";
 import { UserProductsModal } from "./components/UserProductsModal";
 import { UsersTab } from "./components/UsersTab";
 import { useOffline, useVeilingmeesterData } from "./hooks";
@@ -60,7 +60,7 @@ export function VeilingmeesterPage() {
             key: "auctions",
             label: "Veilingen",
             render: () => (
-                <AuctionsTab
+                <VeilingenOverzicht
                     auctions={auctions}
                     loading={loading}
                     error={error}
@@ -75,7 +75,7 @@ export function VeilingmeesterPage() {
             key: "products",
             label: "Producten",
             render: () => (
-                <ProductsTab auctions={auctions} products={products} loading={loading} error={error} onRefresh={() => void refreshProducts()} />
+                <ProductenOverzicht auctions={auctions} products={products} loading={loading} error={error} onRefresh={() => void refreshProducts()} />
             ),
         },
         {
@@ -120,7 +120,7 @@ export function VeilingmeesterPage() {
                     </div>
                 )}
 
-                <DashboardMetrics />
+                <DashboardStatistiek />
 
                 <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
                     <div className="card-body p-4 d-flex flex-column gap-3">
@@ -162,10 +162,10 @@ export function VeilingmeesterPage() {
                 ))}
 
                 {activeModal?.key === "newAuction" && (
-                    <NewAuctionModal onClose={() => setActiveModal(null)} onSave={(draft) => handleCreateAuction(draft, () => setActiveModal(null))} />
+                    <NieuweVeilingModal onClose={() => setActiveModal(null)} onSave={(draft) => handleCreateAuction(draft, () => setActiveModal(null))} />
                 )}
                 {activeModal?.key === "linkProducts" && activeAuction && (
-                    <LinkProductsModal
+                    <ProductKoppelenModal
                         auction={activeAuction}
                         products={products}
                         onClose={() => setActiveModal(null)}
@@ -176,7 +176,7 @@ export function VeilingmeesterPage() {
                     />
                 )}
                 {activeModal?.key === "userBids" && activeUser && (
-                    <UserBidsModal
+                    <GebruikerBiedingenModal
                         user={activeUser}
                         bids={bids.filter((bid) => bid.userId === activeUser.id)}
                         products={products}
