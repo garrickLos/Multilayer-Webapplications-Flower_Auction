@@ -1,26 +1,29 @@
 import type { JSX } from "react";
-import type { Bid, User } from "../api";
-import { formatCurrency } from "../helpers";
+import type { Auction, Bid, Product, User } from "../api";
 import { Modal } from "./Modal";
-import { Chip, EmptyState } from "./ui";
+import { EmptyState } from "./ui";
+import { UserBidCard } from "./UserDetailCards";
 
-type UserBidsModalProps = { readonly user: User; readonly bids: readonly Bid[]; readonly onClose: () => void };
+type UserBidsModalProps = {
+    readonly user: User;
+    readonly bids: readonly Bid[];
+    readonly products: readonly Product[];
+    readonly auctions: readonly Auction[];
+    readonly onClose: () => void;
+};
 
-export function UserBidsModal({ user, bids, onClose }: UserBidsModalProps): JSX.Element {
+export function UserBidsModal({ user, bids, products, auctions, onClose }: UserBidsModalProps): JSX.Element {
     return (
         <Modal title={`Biedingen van ${user.name}`} onClose={onClose}>
             <div className="d-flex flex-column gap-3">
                 {bids.length === 0 && <EmptyState title="Geen biedingen" description="Deze gebruiker heeft nog geen biedingen." />}
                 {bids.map((bid) => (
-                    <div key={bid.id} className="d-flex justify-content-between align-items-center p-3 bg-body-secondary rounded-4">
-                        <div>
-                            <p className="mb-1 fw-semibold">Bod #{bid.id}</p>
-                            <p className="mb-0 text-muted">
-                                {bid.quantity} x {formatCurrency(bid.amount)} op veiling #{bid.auctionId}
-                            </p>
-                        </div>
-                        <Chip label={bid.status ?? "actief"} />
-                    </div>
+                    <UserBidCard
+                        key={bid.id}
+                        bid={bid}
+                        product={products.find((product) => product.id === bid.productId)}
+                        auction={auctions.find((auction) => auction.id === bid.auctionId)}
+                    />
                 ))}
             </div>
         </Modal>

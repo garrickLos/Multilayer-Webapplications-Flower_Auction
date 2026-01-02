@@ -4,6 +4,7 @@ import { canUnlinkProduct, isProductLinkingLocked } from "../rules";
 import { formatCurrency, parseCurrencyValue } from "../helpers";
 import { Modal } from "./Modal";
 import { EmptyState, Field, Input, Select } from "./ui";
+import { LinkedProductPreview, LinkedProductsList } from "./ProductLinking";
 
 type LinkProductsModalProps = {
     readonly auction: Auction;
@@ -13,59 +14,6 @@ type LinkProductsModalProps = {
     readonly onUnlink: (productId: number) => void;
 };
 
-const LinkedProductChips = ({
-    products,
-    canUnlink,
-    onUnlink,
-}: {
-    products: readonly Product[];
-    canUnlink: boolean;
-    onUnlink: (productId: number) => void;
-}) => {
-    if (products.length === 0) {
-        return <p className="text-muted mb-0">Nog geen gekoppelde producten.</p>;
-    }
-
-    return (
-        <div className="d-flex flex-wrap gap-2">
-            {products.map((product) => (
-                <span key={product.id} className="badge text-bg-success-subtle border border-success-subtle">
-                    {product.name} (#{product.id})
-                    {canUnlink && (
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-link text-danger ms-2 p-0"
-                            onClick={() => onUnlink(product.id)}
-                            aria-label={`Ontkoppel ${product.name}`}
-                        >
-                            ✕
-                        </button>
-                    )}
-                </span>
-            ))}
-        </div>
-    );
-};
-
-const ProductSelectionRow = ({ product }: { product: Product }): JSX.Element => (
-    <div className="d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4">
-        <img
-            src={product.imagePath ?? "/src/assets/pictures/webp/MissingPicture.webp"}
-            alt={product.name}
-            className="rounded-3"
-            style={{ width: 120, height: 90, objectFit: "cover" }}
-        />
-        <div className="flex-grow-1">
-            <p className="mb-1 fw-semibold">{product.name}</p>
-            <p className="mb-1 text-muted">
-                {product.category ?? "Onbekende categorie"} · {product.location ?? "Onbekende locatie"}
-            </p>
-            <p className="mb-0 text-muted">
-                Min. prijs {formatCurrency(product.minimumPrice)} · Start {formatCurrency(product.startPrice ?? product.minimumPrice)}
-            </p>
-        </div>
-    </div>
-);
 
 export function LinkProductsModal({ auction, products, onClose, onSave, onUnlink }: LinkProductsModalProps): JSX.Element {
     const isLocked = isProductLinkingLocked(auction);
@@ -122,7 +70,7 @@ export function LinkProductsModal({ auction, products, onClose, onSave, onUnlink
                 {isLocked && <div className="alert alert-warning mb-0">Deze veiling is actief. Koppelen of ontkoppelen is nu niet mogelijk.</div>}
                 <div>
                     <p className="text-uppercase text-muted small mb-2">Gekoppelde producten</p>
-                    <LinkedProductChips products={linkedProducts} canUnlink={canUnlinkProduct(auction)} onUnlink={onUnlink} />
+                    <LinkedProductsList products={linkedProducts} canUnlink={canUnlinkProduct(auction)} onUnlink={onUnlink} />
                 </div>
                 {availableProducts.length === 0 ? (
                     <EmptyState title="Geen beschikbare producten" description="Alle producten zijn al gekoppeld aan een veiling." />
@@ -152,7 +100,7 @@ export function LinkProductsModal({ auction, products, onClose, onSave, onUnlink
                         </div>
                         {selectedProduct && (
                             <div className="col-12">
-                                <ProductSelectionRow product={selectedProduct} />
+                                <LinkedProductPreview product={selectedProduct} />
                             </div>
                         )}
                         <div className="col-12">

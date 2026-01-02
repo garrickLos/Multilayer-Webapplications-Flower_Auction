@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchAuctions, fetchBids, fetchProducts, fetchUsers, type ApiError, type Auction, type Bid, type Product, type UiStatus, type User } from "./api";
 import { deriveAuctionUiStatus, mapProductStatusToUiStatus } from "./rules";
-import { filterRows } from "./helpers";
+import { filterRows, formatCurrency, formatDateTime } from "./helpers";
 
 export const TABLE_PAGE_SIZES = [10, 25, 50] as const;
 const CLOCK_TICK_MS = 5000;
@@ -118,6 +118,67 @@ export function useVeilingmeesterData() {
         }
     }, []);
 
+    const refreshAuctions = useCallback(async (signal?: AbortSignal) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const auctionResponse = await fetchAuctions({ pageSize: 200 }, signal);
+            setAuctions([...auctionResponse.items]);
+        } catch (err) {
+            if ((err as { name?: string }).name === "AbortError") return;
+            const apiError = err as ApiError;
+            if (apiError.status === 401 || apiError.status === 403) {
+                setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+            } else {
+                setError((apiError as { message?: string }).message ?? "Kan veilingen niet laden");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const refreshProducts = useCallback(async (signal?: AbortSignal) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const productResponse = await fetchProducts({ pageSize: 200 }, signal);
+            setProducts([...productResponse.items]);
+        } catch (err) {
+            if ((err as { name?: string }).name === "AbortError") return;
+            const apiError = err as ApiError;
+            if (apiError.status === 401 || apiError.status === 403) {
+                setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+            } else {
+                setError((apiError as { message?: string }).message ?? "Kan producten niet laden");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const refreshUsers = useCallback(async (signal?: AbortSignal) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [userResponse, bidResponse] = await Promise.all([
+                fetchUsers({ pageSize: 200 }, signal),
+                fetchBids({ pageSize: 200 }, signal),
+            ]);
+            setUsers([...userResponse.items]);
+            setBids([...bidResponse.items]);
+        } catch (err) {
+            if ((err as { name?: string }).name === "AbortError") return;
+            const apiError = err as ApiError;
+            if (apiError.status === 401 || apiError.status === 403) {
+                setError("Je bent uitgelogd of hebt geen toegang. Log opnieuw in om verder te gaan.");
+            } else {
+                setError((apiError as { message?: string }).message ?? "Kan gebruikers niet laden");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         const controller = new AbortController();
         void refreshAll(controller.signal);
@@ -139,6 +200,9 @@ export function useVeilingmeesterData() {
         setBids,
         handleAuctionsLoaded,
         refreshAll,
+        refreshAuctions,
+        refreshProducts,
+        refreshUsers,
     };
 }
 
@@ -153,7 +217,7 @@ export function useAuctionsPage(auctions: readonly Auction[]) {
 
     const filteredRows = useMemo(
         () =>
-            filterRows(auctions, "", filters, (row, _term, currentFilters) => {
+            filterRows(auctions, search, filters, (row, term, currentFilters) => {
                 const computedStatus = deriveAuctionUiStatus(row, now);
                 const matchesStatus = !currentFilters.onlyActive || computedStatus === "active";
                 const start = Date.parse(row.startDate);
@@ -161,9 +225,28 @@ export function useAuctionsPage(auctions: readonly Auction[]) {
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
                 const matchesFrom = Number.isFinite(start) ? start >= from : true;
                 const matchesTo = Number.isFinite(start) ? start <= to : true;
-                const title = typeof row.title === "string" ? row.title.toLowerCase() : "";
-                const searchTerm = search.toLowerCase();
-                const matchesSearch = !search || title.includes(searchTerm);
+                const productCount = row.linkedProductIds?.length ?? row.products?.length ?? 0;
+                const startPrice = row.maxPrice ?? row.minPrice ?? 0;
+                const minPrice = row.minPrice ?? 0;
+                const rawStatus = typeof row.rawStatus === "string" ? row.rawStatus : "";
+                const searchValues = [
+                    row.title,
+                    computedStatus,
+                    rawStatus,
+                    formatCurrency(startPrice),
+                    formatCurrency(minPrice),
+                    String(startPrice),
+                    String(minPrice),
+                    String(productCount),
+                    row.startDate,
+                    row.endDate,
+                    formatDateTime(row.startDate),
+                    formatDateTime(row.endDate),
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+                const matchesSearch = !term || searchValues.includes(term);
                 const matchesVeilingProduct =
                     !currentFilters.veilingProduct || !!row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
                 return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesVeilingProduct;
