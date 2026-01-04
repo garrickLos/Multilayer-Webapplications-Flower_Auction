@@ -5,26 +5,42 @@ import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 
 export default function Header() {
+    interface JwtClaims {
+    "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"?: string;
+}
 
     const [role, setRole] = useState<string | null>(null);
+    const [gebruikerNummer, setGebruikerNummer] = useState<string | null>(null);
     
     useEffect(() => {
         const updateRoleFromToken = () => {
             const token = sessionStorage.getItem("token");
             if (!token) {
                 setRole(null);
+                setGebruikerNummer(null);
                 return;
             }
 
             try {
-                const decoded: never = jwtDecode(token);
+                const decoded = jwtDecode<JwtClaims>(token);
                 const RolClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-
+                const gebruikerClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
                 setRole(decoded[RolClaim] || null);
+                
+                const nummer = decoded[gebruikerClaim] || null;
+                setGebruikerNummer(nummer);
 
+                if(nummer != null){
+                    sessionStorage.setItem("gebruikerNummer", nummer);
+                }
+
+                console.log("gebruiker nummer = " + sessionStorage.getItem("gebruikerNummer"));
+            
                 TokenOphalen.setToken(token);
             } catch {
                 setRole(null);
+                setGebruikerNummer(null);
             }
         };
         updateRoleFromToken();
@@ -58,7 +74,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
                                      alt="houten hamer"
                                      className="veilingPlaatsenLogo" />
-                                <NavLink to='/veilingPlaatsen'>Veiling plaatsen</NavLink>
+                                <NavLink to='/veilingPlaatsen'>Product toevoegen</NavLink>
                             </div>
                         )}
 
@@ -67,7 +83,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/mijnVeilingenBekijken.webp"
                                      alt="foto van een blad"
                                      className="mijnVeilingenBekijkenLogo" />
-                                <NavLink to='/veilingBekijken'>Mijn veilingen bekijken</NavLink>
+                                <NavLink to='/veilingBekijken'>Mijn producten bekijken</NavLink>
                             </div>
                         )}
 
@@ -76,7 +92,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/klantGegevens.webp"
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
-                                <NavLink to='/klantGegevens'>overzicht biedingen</NavLink>
+                                <NavLink to='/klantGegevens'>Mijn biedingen</NavLink>
                             </div>
                         )}
 

@@ -65,3 +65,25 @@
 .SellerScreenInfo {
     align-self: flex-start;
 }
+
+.productToevoegenKnop_container {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    padding-right: 30px;
+}
+
+.productToevoegenKnop {
+    display: inline-flex;
+    color: var(--inverse-text);
+    background-color: var(--accent-light);
+    margin: 10px 0 0 0 ;
+    padding: 5px 50px;
+    border-radius: 5px;
+}
+ .productToevoegenKnop:hover {
+    background-color: var(--accent-muted);
+    color: var(--ink-light);
+    border-radius: 5px;
+ }
+

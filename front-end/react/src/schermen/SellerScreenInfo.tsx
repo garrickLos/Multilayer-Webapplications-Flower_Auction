@@ -1,8 +1,11 @@
 import "../css/SellerScreenInfo.css";
 import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
+import { NavLink } from 'react-router-dom';
+
 
 export default function SellerScreenInfo() {
-    const { data: ProductData } = GetProduct('/api/Veilingproduct/kweker');
+    const nummer = sessionStorage.getItem("gebruikerNummer");
+    const { data: ProductData } = GetProduct('/api/Veilingproduct/kweker?Nummer=${nummer}');
     const productLijst = (ProductData as ProductType[]) || [];
 
     interface ProductType {
@@ -14,10 +17,13 @@ export default function SellerScreenInfo() {
         categorie: string | null;
         imagePath: string;
         plaats: string;
-    }
-    console.log(productLijst);
+    } 
     return (
         <main className="SellerScreenInfo">
+            <div className="productToevoegenKnop_container">    
+                <NavLink to='/veilingPlaatsen'
+                className="productToevoegenKnop">Product toevoegen</NavLink>
+            </div>
             <section className="productScroller">
                 {productLijst.map((product) => (
                     <div key={product.veilingProductNr} className="rij">
