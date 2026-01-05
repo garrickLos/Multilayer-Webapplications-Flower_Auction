@@ -52,7 +52,10 @@ public class CategorieController : ControllerBase
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
+            return ValidationProblem(new ValidationProblemDetails
+            {
+                Detail = "Je hebt een lege of te lange categorie toegevoegd."
+            });
 
         var e = new Categorie { Naam = dto.Naam.Trim() };
 
