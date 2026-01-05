@@ -23,11 +23,21 @@ export default function CustomerScreenInfo() {
         imagePath: string; 
         plaats: string; 
     }
-    console.log(biedingLijst);
+
+    const nummer = sessionStorage.getItem("gebruikerNummer")
+    if(!nummer)
+    {
+        return null;
+    }
+
+    const nieuweNummer = Number.parseInt(nummer, 10);
+    const mijnBiedingen = biedingLijst.filter(b => b.gebruikerNr === nieuweNummer);
+
+    
     return (
         <main className="SellerScreenInfo">
             <section className="productScroller">
-                {biedingLijst.map((bieding) => {
+                {mijnBiedingen.map((bieding) => {
                     const product = productLijst.find(
                         (p) => p.veilingProductNr === bieding.veilingProductNr
                     );

@@ -68,6 +68,7 @@ public class VeilingproductController : ControllerBase
     [Authorize(Roles = "Bedrijf")]
 
     public async Task<ActionResult<IEnumerable<kwekerVeilingproductGet_dto>>> KwekerGetAll(
+        [FromQuery] int Nummer,
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
         [FromQuery] int page = 1,
@@ -84,6 +85,11 @@ public class VeilingproductController : ControllerBase
         {
             var term = q.Trim();
             query = query.Where(vp => vp.Naam.Contains(term));
+        }
+
+        if(Nummer != 0)
+        {
+            query = query.Where(vp => vp.Kwekernr == Nummer);
         }
 
         if (categorieNr is int cnr)
