@@ -1,5 +1,5 @@
 .Button{
-    height: 45px;
+    height: auto;
 
     align-items: center;
     justify-content: center;
@@ -7,7 +7,17 @@
     background-color: var(--accent-light);
     color: var(--inverse-text);
 
+    border: none;
     border-radius: 5px;
+
+    cursor: pointer;
+
+    font-size: clamp(0.9rem, 70%, 0.8rem);
+
+    margin: 2%;
+    padding: 8px 16px;
+
+    flex: 1;
 }
 
 .Button:hover {

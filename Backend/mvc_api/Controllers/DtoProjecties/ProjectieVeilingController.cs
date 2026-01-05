@@ -1,5 +1,6 @@
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
+using SQLitePCL;
 
 namespace mvc_api.Controllers;
 
@@ -37,9 +38,10 @@ public class ProjectieVeilingController
                 p.VeilingProductNr,
                 p.Naam,
                 p.ImagePath,
-                p.VoorraadBloemen,
+                p.AantalFusten,
                 p.VeilingNr,
-                p.Startprijs
+                p.Startprijs,
+                p.Kwekernr
             ))
         });
     }

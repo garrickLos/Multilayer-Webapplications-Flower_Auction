@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
@@ -51,6 +52,25 @@ public class GebruikerController : ControllerBase
         return Ok(dto);
     }
 
+    [HttpGet("kwekerNaam")]
+    [AllowAnonymous]
+    public ActionResult<GebruikerAnonymousDto> GetgebruikerNaam(
+    [FromQuery] int GebruikerNr
+    )    
+    {
+        var dto = QueryGebruikers()
+            .Where(g => g.GebruikerNr == GebruikerNr)
+            .Select(MapToAnonymous)
+            .FirstOrDefault();
+        
+        if (dto is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(dto);
+    }
+
     private IQueryable<Gebruiker> QueryGebruikers() => _db.Gebruikers.AsNoTracking();
 
     private static IQueryable<Gebruiker> Filter(
@@ -87,6 +107,9 @@ public class GebruikerController : ControllerBase
 
     private static GebruikerDetailDto MapToDetail(Gebruiker g) =>
         new(g.GebruikerNr, g.BedrijfsNaam, g.Email!, g.Soort, g.Kvk, g.Status, g.StraatAdres, g.Postcode, g.LaatstIngelogd);
+
+    private static GebruikerAnonymousDto MapToAnonymous(Gebruiker g) =>
+        new(g.GebruikerNr, g.BedrijfsNaam);
 
     private bool TryGetGebruikerNr(out int gebruikerNr)
     {

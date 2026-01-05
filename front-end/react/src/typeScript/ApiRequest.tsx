@@ -4,9 +4,9 @@ export async function ApiRequest<T>(
     data: any | null, token: string | null, refreshToken: string | null
     ): Promise<T> {
 
-    if (!isValidToken(token)) {
-        throw new Error("Geen geldig token gevonden.");
-    }
+    // if (!isValidToken(token)) {
+    //     throw new Error("Geen geldig token gevonden.");
+    // }
 
     let response = await RequestFetch(url, method, data, token as string); 
 
@@ -15,7 +15,7 @@ export async function ApiRequest<T>(
             // haalt een nieuwe refreshToken op als er een error is van 401
             const nieuweTokens = await TokenRefresh(token as string, refreshToken);
 
-            // zet de nieuwe token in de session storage
+            // zet de nieuwe tokens in de session storage
             sessionStorage.setItem("token", nieuweTokens.token);
             sessionStorage.setItem("refreshToken", nieuweTokens.refreshToken);
 
@@ -42,7 +42,10 @@ export async function ApiRequest<T>(
 async function RequestFetch(url: string, method: string, data: any, token: string): Promise <Response> {
     const headers: HeadersInit = {
         'Content-type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    }
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
     }
 
     const config: RequestInit = {

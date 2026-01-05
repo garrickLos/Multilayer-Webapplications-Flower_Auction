@@ -1,9 +1,10 @@
 .RenderCard {
-    height: 500px;
-    max-height: 550px;
+    min-height: 50%;
+    height: auto;
+    max-height: 1fr;
 
-    width: 100%;
-    max-width: 500px;
+    width: auto;
+    max-width: 100%;
 
     box-sizing: border-box;
 
@@ -17,6 +18,7 @@
 
     display: flex;
     flex-direction: column;
+
     margin: 0 auto;
 }
 
@@ -42,13 +44,18 @@
 }
 
 .RenderCard p {
-    font-size: clamp(0.2rem, 15px, 1rem);
+    min-height: 0;
+    height: auto;
+    max-height: 1fr;
 
+    /* Verwijder vw om te voorkomen dat tekst groeit op grote schermen */
+    font-size: clamp(1rem, 0.5rem, 1rem);
+    
     color: var(--ink-light);
-
     text-align: center;
     text-wrap: balance;
     white-space: pre-line;
-
     overflow-wrap: break-word;
+
+    overflow-y: auto;
 }

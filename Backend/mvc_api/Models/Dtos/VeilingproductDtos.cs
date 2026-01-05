@@ -76,9 +76,10 @@ public record VeilingproductPublicListDto(
     int VeilingProductNr,
     string Naam,
     string ImagePath,
-    int VoorraadBloemen,
+    int AantalFusten,
     int? VeilingNr,
-    int? Startprijs
+    int? Startprijs,
+    int? GebruikerNr
 );
 
 // kweker lijst
@@ -146,7 +147,8 @@ public static class VeilingproductDtoSelectors
             v.ImagePath,
             v.VoorraadBloemen,
             v.VeilingNr,
-            v.Startprijs
+            v.Startprijs,
+            v.Kwekernr
         );
 
     public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerListDto>> KwekerList = v =>

@@ -48,3 +48,8 @@ public record GebruikerDetailDto(
     string? Postcode,
     DateTime? LaatstIngelogd
 ) : GebruikerSummaryDto(GebruikerNr, BedrijfsNaam, Email, Soort, Kvk, Status);
+
+public record GebruikerAnonymousDto (
+    int GebruikerNr,
+    string? BedrijfsNaam
+);
