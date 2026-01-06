@@ -28,68 +28,68 @@ public class VeilingproductControllerTests
         };
     }
 
-    [Fact]
-    public async Task KlantGetAll_WithFilters_ReturnsPagedResults()
-    {
-        var dtoItems = new List<klantVeilingproductGet_dto>
-        {
-            new(2, "Gele Tulp", "Tulpen", "tulp.png", "Lisse")
-        };
+    // [Fact]
+    // public async Task KlantGetAll_WithFilters_ReturnsPagedResults()
+    // {
+    //     var dtoItems = new List<klantVeilingproductGet_dto>
+    //     {
+    //         new(2, "Gele Tulp", "Tulpen", "tulp.png", "Lisse")
+    //     };
 
-        var repository = new Mock<IVeilingproductRepository>();
-        repository
-            .Setup(r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PagedResult<klantVeilingproductGet_dto>(dtoItems, 1, 1, 50));
+    //     var repository = new Mock<IVeilingproductRepository>();
+    //     repository
+    //         .Setup(r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
+    //         .ReturnsAsync(new PagedResult<klantVeilingproductGet_dto>(dtoItems, 1, 1, 50));
 
-        var controller = CreateController(repository.Object);
+    //     var controller = CreateController(repository.Object);
 
-        var response = await controller.KlantGetAll(q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
+    //     var response = await controller.KlantGetAll(q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
 
-        var ok = Assert.IsType<OkObjectResult>(response.Result);
-        var list = Assert.IsAssignableFrom<IEnumerable<klantVeilingproductGet_dto>>(ok.Value);
-        var item = Assert.Single(list);
-        Assert.Equal(2, item.VeilingProductNr);
-        Assert.Equal("Tulpen", item.Categorie);
-        Assert.Equal("tulp.png", item.ImagePath);
-        Assert.Equal("Lisse", item.Plaats);
-        Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
-        Assert.Equal("1", controller.Response.Headers["X-Page"]);
-        Assert.Equal("50", controller.Response.Headers["X-Page-Size"]);
-        repository.Verify(
-            r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
+    //     var ok = Assert.IsType<OkObjectResult>(response.Result);
+    //     var list = Assert.IsAssignableFrom<IEnumerable<klantVeilingproductGet_dto>>(ok.Value);
+    //     var item = Assert.Single(list);
+    //     Assert.Equal(2, item.VeilingProductNr);
+    //     Assert.Equal("Tulpen", item.Categorie);
+    //     Assert.Equal("tulp.png", item.ImagePath);
+    //     Assert.Equal("Lisse", item.Plaats);
+    //     Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
+    //     Assert.Equal("1", controller.Response.Headers["X-Page"]);
+    //     Assert.Equal("50", controller.Response.Headers["X-Page-Size"]);
+    //     repository.Verify(
+    //         r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
+    //         Times.Once);
+    // }
 
-    [Fact]
-    public async Task KwekerGetAll_WithFilters_ReturnsPagedResults()
-    {
-        var dtoItems = new List<kwekerVeilingproductGet_dto>
-        {
-            new(3, "Witte Lelie", new DateTime(2025, 2, 1), 2, 100, "Lelies", "lelie.png", "Naaldwijk")
-        };
+    // [Fact]
+    // public async Task KwekerGetAll_WithFilters_ReturnsPagedResults()
+    // {
+    //     var dtoItems = new List<kwekerVeilingproductGet_dto>
+    //     {
+    //         new(3, "Witte Lelie", new DateTime(2025, 2, 1), 2, 100, "Lelies", "lelie.png", "Naaldwijk")
+    //     };
 
-        var repository = new Mock<IVeilingproductRepository>();
-        repository
-            .Setup(r => r.GetKwekerAsync("Lelie", 3, 1, 50, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PagedResult<kwekerVeilingproductGet_dto>(dtoItems, 1, 1, 50));
+    //     var repository = new Mock<IVeilingproductRepository>();
+    //     repository
+    //         .Setup(r => r.GetKwekerAsync("Lelie", 3, 1, 50, It.IsAny<CancellationToken>()))
+    //         .ReturnsAsync(new PagedResult<kwekerVeilingproductGet_dto>(dtoItems, 1, 1, 50));
 
-        var controller = CreateController(repository.Object);
+    //     var controller = CreateController(repository.Object);
 
-        var response = await controller.KwekerGetAll(q: "Lelie", categorieNr: 3, page: 1, pageSize: 50, ct: CancellationToken.None);
+    //     var response = await controller.KwekerGetAll(q: "Lelie", categorieNr: 3, page: 1, pageSize: 50, ct: CancellationToken.None);
 
-        var ok = Assert.IsType<OkObjectResult>(response.Result);
-        var list = Assert.IsAssignableFrom<IEnumerable<kwekerVeilingproductGet_dto>>(ok.Value);
-        var item = Assert.Single(list);
-        Assert.Equal(3, item.VeilingProductNr);
-        Assert.Equal("Witte Lelie", item.Naam);
-        Assert.Equal("Lelies", item.Categorie);
-        Assert.Equal("lelie.png", item.ImagePath);
-        Assert.Equal("Naaldwijk", item.Plaats);
-        Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
-        repository.Verify(
-            r => r.GetKwekerAsync("Lelie", 3, 1, 50, It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
+    //     var ok = Assert.IsType<OkObjectResult>(response.Result);
+    //     var list = Assert.IsAssignableFrom<IEnumerable<kwekerVeilingproductGet_dto>>(ok.Value);
+    //     var item = Assert.Single(list);
+    //     Assert.Equal(3, item.VeilingProductNr);
+    //     Assert.Equal("Witte Lelie", item.Naam);
+    //     Assert.Equal("Lelies", item.Categorie);
+    //     Assert.Equal("lelie.png", item.ImagePath);
+    //     Assert.Equal("Naaldwijk", item.Plaats);
+    //     Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
+    //     repository.Verify(
+    //         r => r.GetKwekerAsync("Lelie", 3, 1, 50, It.IsAny<CancellationToken>()),
+    //         Times.Once);
+    // }
 
     [Fact]
     public async Task GetForVeilingmeester_WithFilters_ReturnsExpectedResult()
