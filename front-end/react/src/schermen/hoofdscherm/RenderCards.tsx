@@ -112,7 +112,8 @@ export function beschrijving(product: Producten, item: VeilingItem, kwekerInfo: 
 
     // de items die worden getoond als een grote tekst onder de foto
     return (
-        `lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}, aanvoerder: ${kwekerNaam}
+        `lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}, 
+        aanvoerder: ${kwekerNaam}
 
         Fusten over: ${product.aantalFusten}
         

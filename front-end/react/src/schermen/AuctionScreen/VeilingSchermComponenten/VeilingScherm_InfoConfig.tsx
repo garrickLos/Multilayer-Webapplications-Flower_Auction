@@ -80,11 +80,19 @@ export async function VeilingProductitem_Update(
         nieuweVoorraad_Bloemen = Math.max(0, huidigeVoorraad_Bloemen - teVerwijderenBloemen); // haal de hoeveelheid bloemen van de voorraad af
     }
 
+    // **********************************
+    // * invullen van bloemen en fusten *
+    // **********************************
+
     // Controleer of de API alle velden vereist (inclusief degene die niet veranderen)
     const dataOmTeSturen: VeilingproductUpdate = {
         VoorraadBloemen: nieuweVoorraad_Bloemen,
         AantalFusten: nieuweVoorraad_Fusten,
     };
+
+    // ****************************
+    // * invullen van een bieding *
+    // ****************************
 
     const decoded = jwtDecode<MyTokenPayload>(token);
 
@@ -98,6 +106,10 @@ export async function VeilingProductitem_Update(
         GebruikerNr: decoded.sub,
         VeilingProductNr: productId
     };
+
+    // ********************************
+    // * invullen van een nieuwe tijd *
+    // ********************************
 
     const UpdateBeginTijd: VeilingTijdUpdate = {
         // maakt een nieuwe tijd aan op basis van de TijdZone waar de server in zit. (Europe/Amsterdam)

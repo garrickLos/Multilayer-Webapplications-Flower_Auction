@@ -4,11 +4,11 @@ import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
 
 import { CountPages, scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { beschrijving, AuctionCard, type VeilingItem, type aanvoerderInfo } from './RenderCards.tsx';
+import { AuctionCard, type VeilingItem } from './RenderCards.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import '../../css/Componenten/knop.css';
 import { Laadscherm } from '../AuctionScreen/VeilingSchermComponenten/Laadscherm.tsx';
