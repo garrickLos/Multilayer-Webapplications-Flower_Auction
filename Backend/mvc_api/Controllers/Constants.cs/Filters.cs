@@ -5,18 +5,28 @@ using mvc_api.statusPrinter;
 
 namespace ApiGetFilters;
 
-public class VeilingControllerFilter
+public interface IVeilingControllerFilter
 {
-    // De eigenschap waar het resultaat in wordt opgeslagen
-    public IQueryable<Veiling> ResultaatQuery { get; private set; }
+    IQueryable<Veiling> Apply(
+        int? veilingProduct,
+        DateTime? from,
+        DateTime? to,
+        bool onlyActive,
+        DateTime now);
+}
 
-    // Constructor met extra parameter 'now'
-    public VeilingControllerFilter(AppDbContext _db, 
-                                    int? veilingProduct, 
-                                    DateTime? from, 
-                                    DateTime? to, 
-                                    bool onlyActive, 
-                                    DateTime now)
+public class VeilingControllerFilter : IVeilingControllerFilter
+{
+    private readonly AppDbContext _db;
+
+    public VeilingControllerFilter(AppDbContext db) => _db = db;
+
+    public IQueryable<Veiling> Apply(
+        int? veilingProduct,
+        DateTime? from,
+        DateTime? to,
+        bool onlyActive,
+        DateTime now)
     {
         // Start de query
         var query = _db.Veilingen.AsNoTracking().AsQueryable();
@@ -37,7 +47,6 @@ public class VeilingControllerFilter
             query = query.Where(v => v.Status == NormalizeStatus.Active && v.Eindtijd > now);
         }
 
-        // Sla de lokale variabele op in de publieke eigenschap
-        ResultaatQuery = query;
+        return query;
     }
 }

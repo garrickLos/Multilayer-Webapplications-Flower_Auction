@@ -64,8 +64,8 @@ public record VeilingproductUpdateDto
 // VEILINGMEESTER UPDATE
 public record VeilingproductVeilingmeesterUpdateDto
 {
-    [Range(1, 999_999_999)]
-    public int? Startprijs { get; init; }
+    [Range(typeof(decimal), "0.01", "999999999")]
+    public decimal? Startprijs { get; init; }
 
     [Range(1, int.MaxValue)]
     public int? VeilingNr { get; init; }
@@ -92,7 +92,7 @@ public record VeilingproductKwekerListDto(
     string? CategorieNaam,
     string? ImagePath,
     string? Plaats,
-    int? Startprijs,
+    decimal? Startprijs,
     int? Minimumprijs,
     int? VeilingNr
 );
@@ -109,7 +109,7 @@ public record VeilingproductVeilingmeesterListDto(
     int VoorraadBloemen,
     string Plaats,
     int Minimumprijs,
-    int? Startprijs,
+    decimal? Startprijs,
     DateTime GeplaatstDatum,
     string ImagePath,
     DateOnly? BeginDatum

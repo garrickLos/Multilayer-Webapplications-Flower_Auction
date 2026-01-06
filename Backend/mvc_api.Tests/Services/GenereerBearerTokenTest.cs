@@ -4,7 +4,6 @@ using Xunit;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
-using mvc_api.Controllers;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 

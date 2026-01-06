@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
@@ -14,8 +13,10 @@ namespace mvc_api.Controllers;
 [Authorize (Roles ="Bedrijf, Koper, VeilingMeester")]
 public class VeilingproductController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    public VeilingproductController(AppDbContext db) => _db = db;
+    private readonly IVeilingproductRepository _repository;
+
+    public VeilingproductController(IVeilingproductRepository repository) =>
+        _repository = repository;
 
     //Get voor klant
     [HttpGet("Klant")]
@@ -28,42 +29,11 @@ public class VeilingproductController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
+        var result = await _repository.GetKlantAsync(q, categorieNr, page, pageSize, ct);
 
-        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            query = query.Where(vp => vp.Naam.Contains(term));
-        }
-
-        if (categorieNr is int cnr)
-            query = query.Where(vp => vp.CategorieNr == cnr);
-
-       
+        SetPaginationHeaders(result.TotalCount, result.Page, result.PageSize);
         
-        var total = await query.CountAsync(ct);
-
-        var items = await query
-            .OrderBy(vp => vp.Naam)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(v => new klantVeilingproductGet_dto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.ImagePath,
-                v.Plaats
-            ))
-            .ToListAsync(ct);
-
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-
-        return Ok(items);
+        return Ok(result.Items);
     }
     
     //Get voor kweker
@@ -78,49 +48,11 @@ public class VeilingproductController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
-        
-        
-        var query = _db.Veilingproducten.AsNoTracking().AsQueryable();
+        var result = await _repository.GetKwekerAsync(q, categorieNr, page, pageSize, ct);
 
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            query = query.Where(vp => vp.Naam.Contains(term));
-        }
+        SetPaginationHeaders(result.TotalCount, result.Page, result.PageSize);
 
-        if(Nummer != 0)
-        {
-            query = query.Where(vp => vp.Kwekernr == Nummer);
-        }
-
-        if (categorieNr is int cnr)
-            query = query.Where(vp => vp.CategorieNr == cnr);
-
-        var total = await query.CountAsync(ct);
-
-        var items = await query
-            .OrderBy(vp => vp.Naam)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(v => new kwekerVeilingproductGet_dto(
-                v.VeilingProductNr,
-                v.Naam,
-                v.GeplaatstDatum,
-                v.AantalFusten,
-                v.VoorraadBloemen,
-                v.Categorie == null ? null : v.Categorie.Naam,
-                v.ImagePath,
-                v.Plaats
-            ))
-            .ToListAsync(ct);
-
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-
-        return Ok(items);
+        return Ok(result.Items);
     }
 
     [HttpGet("veilingmeester")]
@@ -135,12 +67,15 @@ public class VeilingproductController : ControllerBase
         [FromQuery] string? title,
         CancellationToken ct = default)
     {
-        var query = BuildFilteredQuery(
-            q, categorieNr, status, minPrice, maxPrice, createdAfter, title, null);
-
-        var items = await query
-            .Select(VeilingproductDtoSelectors.VeilingmeesterList)
-            .ToListAsync(ct);
+        var items = await _repository.GetForVeilingmeesterAsync(
+            q,
+            categorieNr,
+            status,
+            minPrice,
+            maxPrice,
+            createdAfter,
+            title,
+            ct);
 
         return Ok(items);
     }
@@ -177,15 +112,10 @@ public class VeilingproductController : ControllerBase
             ImagePath       = dto.ImagePath
         };
 
-        _db.Veilingproducten.Add(entity);
-        await _db.SaveChangesAsync(ct);
+        _repository.Add(entity);
+        await _repository.SaveChangesAsync(ct);
 
-        var resultDto = await _db.Veilingproducten
-            .AsNoTracking()
-            .Where(v => v.VeilingProductNr == entity.VeilingProductNr &&
-                        v.Kwekernr == userId)
-            .Select(VeilingproductDtoSelectors.KwekerList)
-            .SingleAsync(ct);
+        var resultDto = await _repository.GetKwekerListByIdAsync(entity.VeilingProductNr, userId, ct);
 
         return Ok(resultDto);
     }
@@ -200,7 +130,7 @@ public class VeilingproductController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var entity = await _db.Veilingproducten.FindAsync(id);
+        var entity = await _repository.FindAsync(id, ct);
         if (entity == null)
             return NotFound();
             
@@ -236,13 +166,9 @@ public class VeilingproductController : ControllerBase
         entity.Minimumprijs    = dto.Minimumprijs ?? entity.Minimumprijs;
         entity.Plaats          = dto.Plaats ?? entity.Plaats;
 
-        await _db.SaveChangesAsync(ct);
+        await _repository.SaveChangesAsync(ct);
 
-        var resultDto = await _db.Veilingproducten
-            .AsNoTracking()
-            .Where(v => v.VeilingProductNr == id)
-            .Select(VeilingproductDtoSelectors.KwekerList)
-            .SingleAsync(ct);
+        var resultDto = await _repository.GetKwekerListByIdAsync(id, null, ct);
 
         return Ok(resultDto);
     }
@@ -258,67 +184,64 @@ public class VeilingproductController : ControllerBase
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        var entity = await _db.Veilingproducten.FindAsync(id);
+        var entity = await _repository.FindAsync(id, ct);
         if (entity == null)
             return NotFound();
 
-        entity.Startprijs = dto.Startprijs;
-        entity.VeilingNr  = dto.VeilingNr;
+        var now = DateTime.UtcNow.ToLocalTime();
 
-        await _db.SaveChangesAsync(ct);
-
-        var resultDto = await _db.Veilingproducten
-            .AsNoTracking()
-            .Where(v => v.VeilingProductNr == id)
-            .Select(VeilingproductDtoSelectors.VeilingmeesterList)
-            .SingleAsync(ct);
-
-        return Ok(resultDto);
-    }
-
-    private IQueryable<Veilingproduct> BuildFilteredQuery(
-        string? q,
-        int? categorieNr,
-        ModelStatus? status,
-        int? minPrice,
-        int? maxPrice,
-        DateTime? createdAfter,
-        string? title,
-        ModelStatus? forceStatus)
-    {
-        var query = _db.Veilingproducten
-            .AsNoTracking()
-            .Include(v => v.Categorie)
-            .AsQueryable();
-        
-        if (!string.IsNullOrWhiteSpace(q))
+        if (dto.VeilingNr.HasValue)
         {
-            var term = q.Trim();
-            query = query.Where(v => v.Naam.Contains(term));
+            if (!dto.Startprijs.HasValue)
+            {
+                return BadRequest(CreateProblemDetails(
+                    "Startprijs vereist",
+                    "Geef een startprijs op om een product te koppelen.",
+                    400));
+            }
+
+            var veiling = await _repository.GetVeilingAsync(dto.VeilingNr.Value, ct);
+            if (veiling is null)
+            {
+                return BadRequest(CreateProblemDetails(
+                    "Ongeldige veiling",
+                    $"Veiling met ID {dto.VeilingNr.Value} bestaat niet.",
+                    400));
+            }
+
+            var isActive = veiling.Begintijd <= now && veiling.Eindtijd > now;
+            if (isActive)
+            {
+                return BadRequest(CreateProblemDetails(
+                    "Actieve veiling",
+                    "Koppelen of ontkoppelen is niet toegestaan tijdens een actieve veiling.",
+                    400));
+            }
+        }
+        else if (entity.VeilingNr.HasValue)
+        {
+            var currentVeiling = await _repository.GetVeilingAsync(entity.VeilingNr.Value, ct);
+            if (currentVeiling is not null)
+            {
+                var isActive = currentVeiling.Begintijd <= now && currentVeiling.Eindtijd > now;
+                if (isActive)
+                {
+                    return BadRequest(CreateProblemDetails(
+                        "Actieve veiling",
+                        "Koppelen of ontkoppelen is niet toegestaan tijdens een actieve veiling.",
+                        400));
+                }
+            }
         }
 
-        if (categorieNr is int cnr)
-            query = query.Where(v => v.CategorieNr == cnr);
+        entity.Startprijs = dto.VeilingNr.HasValue ? dto.Startprijs : null;
+        entity.VeilingNr  = dto.VeilingNr;
 
-        if (status is ModelStatus st)
-            query = query.Where(v => v.Status == st);
+        await _repository.SaveChangesAsync(ct);
 
-        if (forceStatus is ModelStatus fst)
-            query = query.Where(v => v.Status == fst);
+        var resultDto = await _repository.GetVeilingmeesterListByIdAsync(id, ct);
 
-        if (minPrice is int min)
-            query = query.Where(v => (v.Startprijs ?? v.Minimumprijs) >= min);
-        
-        if (maxPrice is int max)
-            query = query.Where(v => (v.Startprijs ?? v.Minimumprijs) <= max);
-        
-        if (createdAfter is DateTime ca)
-            query = query.Where(v => v.GeplaatstDatum >= ca);
-
-        if (!string.IsNullOrWhiteSpace(title))
-            query = query.Where(v => v.Naam.Contains(title));
-
-        return query.OrderBy(v => v.Naam);
+        return Ok(resultDto);
     }
 
     private bool TryGetUserId(out int userId)
@@ -335,9 +258,17 @@ public class VeilingproductController : ControllerBase
         return false;
     }
 
+
+    private void SetPaginationHeaders(int total, int page, int pageSize)
+    {
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
+    }
+
     private async Task<ActionResult?> ValidateReferencesAsync(int categorieNr, CancellationToken ct)
     {
-        if (!await _db.Categorieen.AnyAsync(c => c.CategorieNr == categorieNr, ct))
+        if (!await _repository.CategorieExistsAsync(categorieNr, ct))
         {
             ModelState.AddModelError(
                 nameof(VeilingproductCreateDto.CategorieNr),
@@ -347,4 +278,13 @@ public class VeilingproductController : ControllerBase
         }
         return null;
     }
+
+    private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
+        new()
+        {
+            Title    = title,
+            Detail   = detail,
+            Status   = statusCode,
+            Instance = HttpContext?.Request?.Path
+        };
 }

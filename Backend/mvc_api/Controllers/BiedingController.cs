@@ -33,7 +33,7 @@ public class BiedingController : ControllerBase
         CancellationToken ct = default)
     {
         var items = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, ct);
-
+        
         return Ok(items);
     }
 

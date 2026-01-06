@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 using ApiGetFilters;
-using mvc_api.statusPrinter;
 
 namespace mvc_api.Controllers;
 
@@ -15,13 +14,19 @@ namespace mvc_api.Controllers;
 public class VeilingController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ProjectieVeilingController _projectie;
+    private readonly IVeilingControllerFilter _filter;
 
-    public VeilingController(AppDbContext db) => _db = db;
-
-    private static readonly ProjectieVeilingController _projectie = new ProjectieVeilingController();
-
-    private static readonly NormalizeStatus _statusNormalize = new NormalizeStatus();
-
+    public VeilingController(
+        AppDbContext db,
+        ProjectieVeilingController projectie,
+        IVeilingControllerFilter filter)
+    {
+        _db = db;
+        _projectie = projectie;
+        _filter = filter;
+    }
+    
     // GET: api/Veiling
     [HttpGet("anonymous")]
     [AllowAnonymous]
@@ -68,11 +73,8 @@ public class VeilingController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var filter = new VeilingControllerFilter(_db, veilingProduct, from, to, onlyActive, DateTime.Now);
-
-        // filtert de query items.
-        var query = filter.ResultaatQuery;
-
+        var query = _filter.Apply(veilingProduct, from, to, onlyActive, DateTime.Now);
+        
         // --- Count & Paging ---
         var total = await query.CountAsync(ct);
         
@@ -145,11 +147,9 @@ public class VeilingController : ControllerBase
         
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
-
-        var filter = new VeilingControllerFilter(_db, veilingProduct, from, to, onlyActive, DateTime.Now);
-
-        var query = filter.ResultaatQuery;
-
+        
+        var query = _filter.Apply(veilingProduct, from, to, onlyActive, DateTime.Now);
+        
         // --- Count & Paging ---
         var total = await query.CountAsync(ct);
         
@@ -224,10 +224,8 @@ public class VeilingController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var filter = new VeilingControllerFilter(_db, veilingProduct, from, to, onlyActive, DateTime.Now);
-
-        var query = filter.ResultaatQuery;
-
+        var query = _filter.Apply(veilingProduct, from, to, onlyActive, DateTime.Now);
+        
         // --- Count & Paging ---
         var total = await query.CountAsync(ct);
         
@@ -299,22 +297,18 @@ public class VeilingController : ControllerBase
         CancellationToken ct = default)
     {
         // Validatie van [Required] gebeurt automatisch door [ApiController]
-        var now = DateTime.UtcNow;
-
-        now = now.ToLocalTime();
+        var now = DateTime.UtcNow.ToLocalTime();
+        var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
+        if (timeValidation is not null)
+            return timeValidation;
 
         var entity = new Veiling
         {
             VeilingNaam = dto.VeilingNaam,
             Begintijd = dto.Begintijd,
             Eindtijd = dto.Eindtijd,
-            Status = _statusNormalize.StatusPrinter(dto.Status)
+            Status = VeilingStatus.Inactive
         };
-
-        if (entity.Eindtijd <= now) 
-        {
-            entity.Status = VeilingStatus.Inactive;
-        }
 
         _db.Veilingen.Add(entity);
 
@@ -350,14 +344,16 @@ public class VeilingController : ControllerBase
         [FromBody] VeilingUpdateDto dto, 
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-
-        now = now.ToLocalTime();
+        var now = DateTime.UtcNow.ToLocalTime();
 
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
+
+        var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
+        if (timeValidation is not null)
+            return timeValidation;
 
         // Update fields
         entity.VeilingNaam = dto.VeilingNaam ?? entity.VeilingNaam;
@@ -408,4 +404,34 @@ public class VeilingController : ControllerBase
         Status   = statusCode,
         Instance = HttpContext?.Request?.Path
     };
+
+    private ActionResult? ValidateVeilingTimes(DateTime begintijd, DateTime eindtijd, DateTime now)
+    {
+        if (begintijd < now)
+        {
+            return BadRequest(CreateProblemDetails(
+                "Starttijd in het verleden",
+                "De starttijd mag niet in het verleden liggen.",
+                400));
+        }
+
+        if (eindtijd.Date != begintijd.Date)
+        {
+            return BadRequest(CreateProblemDetails(
+                "Ongeldige eindtijd",
+                "De eindtijd moet op dezelfde datum vallen als de starttijd.",
+                400));
+        }
+
+        var durationMinutes = (eindtijd - begintijd).TotalMinutes;
+        if (durationMinutes != 60 && durationMinutes != 120 && durationMinutes != 180)
+        {
+            return BadRequest(CreateProblemDetails(
+                "Ongeldige eindtijd",
+                "De eindtijd moet exact 1, 2 of 3 uur na de starttijd liggen.",
+                400));
+        }
+
+        return null;
+    }
 }

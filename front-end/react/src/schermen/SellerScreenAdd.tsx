@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGet";
-import {TokenOphalen} from "./Header_footer.tsx";
 
 interface CategorieType {
     categorieNr: number;
@@ -9,7 +8,6 @@ interface CategorieType {
 }
 
 export default function SellerScreenAdd() {
-    const token = TokenOphalen.getToken();
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = "../../src/assets/pictures/productBloemen/";
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
@@ -99,6 +97,11 @@ export default function SellerScreenAdd() {
     const huidigeTijd = new Date().toISOString();
     
     const GegevensVersturen = async () => {
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+            alert("Je bent niet ingelogd.");
+            return;
+        }
         const allValid = Object.keys(errors).every(key => validateField(key, (product as never)[key]));
         if (!allValid) {
             alert("Controleer de velden in rood!");

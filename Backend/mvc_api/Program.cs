@@ -15,6 +15,10 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ApiGetFilters;
+using mvc_api.statusPrinter;
+using mvc_api.Controllers;
+
 using mvc_api.Auth.GenereerAccessTokens;
 
 /*
@@ -23,7 +27,6 @@ using mvc_api.Auth.GenereerAccessTokens;
 **************************
 */
 using mvc_api.Repo.BiedingRepo;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // ------------------------------
@@ -150,6 +153,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IGenereerAccessTokens, GenereerBearerToken>();
 builder.Services.AddScoped<IBiedingRepo, BiedingRepository>();
+builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>();
+builder.Services.AddScoped<IVeilingControllerFilter, VeilingControllerFilter>();
+builder.Services.AddTransient<ProjectieVeilingController>();
+builder.Services.AddSingleton<NormalizeStatus>();
 
 var app = builder.Build();
 

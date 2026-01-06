@@ -25,6 +25,7 @@ public class GebruikerController : ControllerBase
     {
         var query = Filter(QueryGebruikers(), null, role, status, null)
             .Where(g => g.Status != ModelStatus.Deleted)
+            .Where(g => GebruikerSoorten.Allowed.Contains(g.Soort))
             .OrderBy(g => g.GebruikerNr);
 
         var items = query
