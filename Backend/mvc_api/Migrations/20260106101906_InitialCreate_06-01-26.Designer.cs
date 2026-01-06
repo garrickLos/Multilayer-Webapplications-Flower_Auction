@@ -12,8 +12,8 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260102154101_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260106101906_InitialCreate_06-01-26")]
+    partial class InitialCreate_060126
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -388,6 +388,9 @@ namespace mvc_api.Migrations
                     b.Property<DateTime>("Eindtijd")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("GeupdateBeginTijd")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -463,9 +466,9 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal?>("Startprijs")
+                    b.Property<int?>("Startprijs")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()

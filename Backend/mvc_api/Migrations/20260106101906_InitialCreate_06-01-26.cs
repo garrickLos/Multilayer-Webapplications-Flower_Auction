@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace mvc_api.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreate_060126 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -100,6 +100,7 @@ namespace mvc_api.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     VeilingNaam = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Begintijd = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    GeupdateBeginTijd = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Eindtijd = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
@@ -224,7 +225,7 @@ namespace mvc_api.Migrations
                     GeplaatstDatum = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AantalFusten = table.Column<int>(type: "int", nullable: false),
                     VoorraadBloemen = table.Column<int>(type: "int", nullable: false),
-                    Startprijs = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    Startprijs = table.Column<int>(type: "int", precision: 18, scale: 2, nullable: true),
                     CategorieNr = table.Column<int>(type: "int", nullable: false),
                     VeilingNr = table.Column<int>(type: "int", nullable: true),
                     Plaats = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
@@ -300,11 +301,11 @@ namespace mvc_api.Migrations
 
             migrationBuilder.InsertData(
                 table: "Veiling",
-                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "Status", "VeilingNaam" },
+                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "GeupdateBeginTijd", "Status", "VeilingNaam" },
                 values: new object[,]
                 {
-                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), "active", "veiling001" },
-                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), "active", "veiling001" }
+                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), null, "active", "veiling001" },
+                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), null, "active", "veiling001" }
                 });
 
             migrationBuilder.CreateIndex(

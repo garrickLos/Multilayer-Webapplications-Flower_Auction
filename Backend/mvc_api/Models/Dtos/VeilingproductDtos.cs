@@ -65,7 +65,7 @@ public record VeilingproductUpdateDto
 public record VeilingproductVeilingmeesterUpdateDto
 {
     [Range(typeof(decimal), "0.01", "999999999")]
-    public decimal? Startprijs { get; init; }
+    public int? Startprijs { get; init; }
 
     [Range(1, int.MaxValue)]
     public int? VeilingNr { get; init; }
