@@ -284,19 +284,3 @@ function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: nu
 
     return actieveVeiling;
 }
-
-function NietGevondenSchermInfo() {
-    return (
-        <>
-            <span>
-                probeer de pagina te refreshen of opnieuw in te loggen op de website
-            </span>
-
-            < GenereerKnop
-                classNames={'Button'} 
-                bericht={'naar het inlogScherm'} 
-                to={'/inloggen'} 
-            />
-        </>
-    )
-}
