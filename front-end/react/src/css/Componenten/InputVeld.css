@@ -1,0 +1,14 @@
+.selectieVeld {
+    border-color: var(--border);
+    border-style: solid;
+    border-width: 2px;
+    border-radius: 5px;
+    
+    margin-left: 15px;
+}
+
+.selectieVeld:focus {
+    outline: 0;
+
+    border-color: var(--border-focus);
+}

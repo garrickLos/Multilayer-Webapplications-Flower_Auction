@@ -1,0 +1,47 @@
+/* hoofdcontainer vult het scherm en centreert de inhoud */
+.Error_page {  
+  min-height: 100%; 
+  height: auto;
+  
+  margin: 0;
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+}
+
+/* sectie met gecentreerde tekst */
+.Error_Section {
+  width: 100%;
+
+  border-style: solid;
+
+  gap: 0.25rem;
+
+  align-items: center;
+  
+  text-align: center;
+  
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+
+  width: 50%;
+}
+
+/* typografie */
+.Error_Section h1 {
+  margin: 0;
+  font-size: 3rem;
+  
+  line-height: 1;
+  font-weight: 750;
+}
+
+.Error_Section p {
+  margin: 0;
+  font-size: 1.125rem;
+  color: rgba(0,0,0,0.7);
+}

@@ -1,0 +1,272 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using mvc_api.Tests.Mocks;
+using Xunit;
+
+using Moq;
+using mvc_api.Repo.BiedingRepo;
+using mvc_api.Controllers;
+
+namespace mvc_api.Tests.Controllers;
+
+public class BiedingControllerTests: IStatic_Variable
+{
+
+    /* 
+    **************
+    *   getklant *
+    **************
+    */ 
+    [Fact
+        (DisplayName = "Succes: Koper haalt eigen biedingen op")]
+    public async Task GetBiedingKlant_WithValidUser_ReturnsList()
+    {
+        var mockRepo = new Mock<IBiedingRepo>();
+
+        var fakeList = new List<klantBiedingGet_dto> 
+        { 
+            new klantBiedingGet_dto(1, 10, 50, 100)
+        };
+        
+        mockRepo.Setup(repo => 
+                repo.GetKlantBiedingenAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fakeList);
+
+        var controller = new BiedingController(mockRepo.Object, null);
+
+        var result = await controller.GetKlantBiedingen(100,1);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnItems = Assert.IsType<List<klantBiedingGet_dto>>(okResult.Value);
+
+        Assert.Single(returnItems);
+    }
+
+    /* 
+    *********************
+    * getveilingMeester *
+    *********************
+    */ 
+
+    [Fact
+        (DisplayName = "GetAll: Veilingmeester ziet lijst terug")]
+    public async Task GetAll_AsVeilingMeester_ReturnsPagedList()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        
+        var controller = BiedingMockData.BuildController(nameof(GetAll_AsVeilingMeester_ReturnsPagedList), user);
+
+        // Vraag pagina 1, grootte 5
+        var response = await controller.GetVeilingMeester_Biedingen(1, null);
+
+        var okResult = Assert.IsType<OkObjectResult>(response.Result);
+        var items = Assert.IsAssignableFrom<IEnumerable<VeilingMeester_BiedingDto>>(okResult.Value);
+        
+        Assert.Equal(4, items.Count()); // We hebben 10 items, vragen er 5
+        Assert.True(controller.Response.Headers.ContainsKey("X-Total-Count"));
+    }
+
+    [Theory 
+        (DisplayName = "Get certain: Veilingmeester ziet lijst terug")]
+
+    [InlineData (1, 10, 3)]
+    [InlineData (4, 20, 0)]
+    [InlineData (4, 10, 0)]
+    [InlineData (2, 20, 0)]
+    [InlineData (2, 10, 3)]
+    public async Task GetAll_AsVeilingMeester_GetBiedingen_WithVeilingnr(int BiedingNr, int VeilingNr, int verwachteHoeveelheid)
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        
+        var controller = BiedingMockData.BuildController(nameof(GetAll_AsVeilingMeester_GetBiedingen_WithVeilingnr), user);
+
+        // Vraag pagina 1, grootte 5
+        var response = await controller.GetVeilingMeester_Biedingen(BiedingNr, VeilingNr);
+
+        var okResult = Assert.IsType<OkObjectResult>(response.Result);
+        var items = Assert.IsAssignableFrom<IEnumerable<VeilingMeester_BiedingDto>>(okResult.Value);
+        
+        Assert.Equal(verwachteHoeveelheid, items.Count());
+        Assert.True(controller.Response.Headers.ContainsKey("X-Total-Count"));
+    }
+
+    /* 
+    ***********
+    * getById *
+    ***********
+    */ 
+
+    [Theory 
+        (DisplayName ="Haalt meerdere bestaande Id's op")]
+    
+    [InlineData(10, 10)]
+    [InlineData(5, 5)]
+    [InlineData(3, 3)]
+    public async Task GetById_ExistingId_ReturnMultiple(int IngevoerdeBiedNr, int VerwachteBiedNr)
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(GetById_ExistingId_ReturnMultiple), user);
+
+        var response = await controller.GetById(IngevoerdeBiedNr); // Bieding 10 bestaat
+
+        var okResult = Assert.IsType<OkObjectResult>(response.Result);
+        var dto = Assert.IsType<VeilingMeester_BiedingDto>(okResult.Value);
+        Assert.Equal(VerwachteBiedNr, dto.BiedingNr);
+    }
+
+    /* 
+    *******************
+    * Create endpoint *
+    *******************
+    */ 
+
+    [Fact
+        (DisplayName = "Post: Geldig bod wordt opgeslagen")]
+    public async Task Create_ValidBieding_ReturnsCreated()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper)
+        }, "Mock"));
+        
+        var controller = BiedingMockData.BuildController(nameof(Create_ValidBieding_ReturnsCreated), user);
+
+        var input = new BiedingCreateDto
+        {
+            BiedingNr = 100,
+            GebruikerNr = 1,
+            VeilingproductNr = 101, 
+            BedragPerFust = 500,
+            AantalStuks = 20
+        };
+
+        var response = await controller.Create(input);
+
+        var createdResult = Assert.IsType<CreatedAtActionResult>(response.Result);
+                
+        var dto = Assert.IsType<VeilingMeester_BiedingDto>(createdResult.Value);
+
+        Assert.Equal(20, dto.AantalStuks);
+    }
+
+    [Fact
+        (DisplayName = "Post: Bieden op inactieve veiling faalt")]
+    public async Task Create_InactiveVeiling_ReturnsBadRequest()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(Create_InactiveVeiling_ReturnsBadRequest), user);
+
+        var input = new BiedingCreateDto
+        {
+            BiedingNr = 101,
+            GebruikerNr = 1,
+            VeilingproductNr = 105,
+            BedragPerFust = 500,
+            AantalStuks = 20
+        };
+
+        var response = await controller.Create(input);
+
+        Assert.IsType<BadRequestObjectResult>(response.Result);
+    }
+
+    [Theory
+        (DisplayName = "Post: Bieden op inactieve veiling Brengt error 400.")]
+    [InlineData (101, 100, 105, 500, 20)] // error 400 voor gebruiker
+    [InlineData (101, 1, 2, 500, 20)] // error 400 voor veilingproduct
+    [InlineData (101, 1, 105, 500, 20)] // error 400 voor ongeldige status
+    public async Task Create_InactiveVeiling_Returns400(int BiedingNr, int gebruikerNr, int VeilingProductNr, int BedragPerFust, int AantalStuks)
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(Create_InactiveVeiling_Returns400), user);
+
+        var input = new BiedingCreateDto
+        {
+            BiedingNr = BiedingNr,
+            GebruikerNr = gebruikerNr,
+            VeilingproductNr = VeilingProductNr,
+            BedragPerFust = BedragPerFust,
+            AantalStuks = AantalStuks
+        };
+
+        var response = await controller.Create(input);
+
+        var objectResult = Assert.IsType<BadRequestObjectResult>(response.Result);
+        Assert.Equal(400, objectResult.StatusCode);
+    }
+
+    /* 
+    *******************
+    * delete endpoint *
+    *******************
+    */ 
+
+    [Fact
+        (DisplayName = "Delete: Veilingmeester verwijdert bod")]
+    public async Task Delete_ExistingId_ReturnsNoContent()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(Delete_ExistingId_ReturnsNoContent), user);
+
+        var response = await controller.Delete(1);
+
+        Assert.IsType<NoContentResult>(response);
+        
+        var check = await controller.GetById(1);
+        Assert.IsType<NotFoundObjectResult>(check.Result);
+    }
+
+    [Theory
+        (DisplayName = "Delete: Bieding wordt verwijderd die niet bestaat")]
+
+    [InlineData (50)]
+    [InlineData (20)]
+    [InlineData (24)]
+    public async Task Delete_ExistingId_ReturnsNotFound(int BiedNr)
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(Delete_ExistingId_ReturnsNoContent), user);
+
+        var response = await controller.Delete(BiedNr);
+        
+        Assert.IsType<NotFoundObjectResult>(response);
+    }
+
+    [Fact
+        (DisplayName = "Delete_Bieding: Error 404")]
+    public async Task DeleteBieding_ExistingId_Error404()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(DeleteBieding_ExistingId_Error404), user);
+
+        var response = await controller.Delete(505);
+
+        var objectResult = Assert.IsType<NotFoundObjectResult>(response); 
+
+        Assert.Equal(404, objectResult.StatusCode);
+    }
+}

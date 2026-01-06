@@ -1,0 +1,38 @@
+.Laadscherm-main {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+
+    min-height: 100vh; 
+    height: auto; 
+}
+
+.LaadSectie {
+    height: auto;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+}
+
+.LaadSectie h1 {
+    font-size: 25px;
+}
+
+.LaadSectie .loadIcon-container {
+    min-height: 100vh; 
+    height: auto;
+    
+    display: flex;
+
+    justify-content: center;
+
+    flex-direction: column;
+}
+
+.LaadSectie .loader {
+    align-self: center;
+}

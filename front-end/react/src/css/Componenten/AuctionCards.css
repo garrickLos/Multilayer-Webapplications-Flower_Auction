@@ -1,0 +1,61 @@
+.RenderCard {
+    min-height: 50%;
+    height: auto;
+    max-height: 1fr;
+
+    width: auto;
+    max-width: 100%;
+
+    box-sizing: border-box;
+
+    background-color: var(--brand-gradient);
+    border: 1px solid var(--brand-light);
+    scroll-snap-align: start;
+    text-align: center;
+
+    padding: 20px;
+    border-radius: 5px;
+
+    display: flex;
+    flex-direction: column;
+
+    margin: 0 auto;
+}
+
+.RenderCard img {
+    width: 100%;
+    max-width: 180px;
+    height: 180px;
+
+    align-self: center;
+
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.RenderCard .ImageErrorMsg {
+    margin: 0;
+}
+
+.RenderCard h3 {
+    font-size: 17px;
+
+    margin: 5px 0 0 0;
+}
+
+.RenderCard p {
+    min-height: 0;
+    height: auto;
+    max-height: 1fr;
+
+    /* Verwijder vw om te voorkomen dat tekst groeit op grote schermen */
+    font-size: clamp(1rem, 0.5rem, 1rem);
+    
+    color: var(--ink-light);
+    text-align: center;
+    text-wrap: balance;
+    white-space: pre-line;
+    overflow-wrap: break-word;
+
+    overflow-y: auto;
+}
