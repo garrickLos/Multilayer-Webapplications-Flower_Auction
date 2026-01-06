@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using mvc_api.Data;
 
+using mvc_api.Auth.GenereerAccessTokens;
+
 namespace mvc_api.Tests.Mocks;
 
 public class AuthMocks
@@ -15,7 +17,7 @@ public class AuthMocks
     public AuthController Controller { get; set; } = null!;
     public Mock<UserManager<Gebruiker>> UserManager { get; set; } = null!;
     public Mock<SignInManager<Gebruiker>> SignInManager { get; set; } = null!;
-    public Mock<IGenereerBearerToken> TokenService { get; set; } = null!;
+    public Mock<IGenereerAccessTokens> TokenService { get; set; } = null!;
 }
 
 public static class AuthMockData
@@ -25,7 +27,7 @@ public static class AuthMockData
     {
         var userManagerMock = MockHelpers.MockUserManager<Gebruiker>();
         var signInManager = MockHelpers.MockSignInManager(userManagerMock.Object);
-        var tokenMock = new Mock<IGenereerBearerToken>();
+        var tokenMock = new Mock<IGenereerAccessTokens>();
 
         /*
             Mock voor de userManager
@@ -101,7 +103,7 @@ public static class AuthMockData
         // For controller actions that require Identity, prefer the mocks returned by Build(...)
         return new AuthController(MockHelpers.MockUserManager<Gebruiker>().Object,
                                   MockHelpers.MockSignInManager(MockHelpers.MockUserManager<Gebruiker>().Object).Object,
-                                  new Mock<IGenereerBearerToken>().Object)
+                                  new Mock<IGenereerAccessTokens>().Object)
         {
             ControllerContext = new ControllerContext
             {

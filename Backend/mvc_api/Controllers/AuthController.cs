@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using mvc_api.DTOs.Auth;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
-using mvc_api.Auth.GenereerBearerToken;
+using mvc_api.Auth.GenereerAccessTokens;
 namespace mvc_api.Controllers;
 
 [ApiController]
@@ -13,12 +13,12 @@ public sealed class AuthController : ControllerBase
 {
     private readonly UserManager<Gebruiker> _userManager;
     private readonly SignInManager<Gebruiker> _signInManager;
-    private readonly IGenereerBearerToken _tokenService;
+    private readonly IGenereerAccessTokens _tokenService;
 
     public AuthController(
         UserManager<Gebruiker> userManager,
         SignInManager<Gebruiker> signInManager,
-        IGenereerBearerToken tokenService)
+        IGenereerAccessTokens tokenService)
     {
         _userManager = userManager;
         _signInManager = signInManager;

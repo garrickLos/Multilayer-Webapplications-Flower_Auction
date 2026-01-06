@@ -6,9 +6,6 @@
 // dotnet ef migrations add InitialCreate 
 // dotnet ef database update
 
-
-
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -18,8 +15,14 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using mvc_api.Auth.GenereerBearerToken;
+using mvc_api.Auth.GenereerAccessTokens;
 
+/*
+**************************
+** Imports van de repos **
+**************************
+*/
+using mvc_api.Repo.BiedingRepo;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -145,7 +148,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 // // Nodig zodat UserManager/SignInManager goed werken
 // builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
-builder.Services.AddScoped<IGenereerBearerToken, GenereerBearerToken>();
+builder.Services.AddScoped<IGenereerAccessTokens, GenereerBearerToken>();
+builder.Services.AddScoped<IBiedingRepo, BiedingRepository>();
 
 var app = builder.Build();
 

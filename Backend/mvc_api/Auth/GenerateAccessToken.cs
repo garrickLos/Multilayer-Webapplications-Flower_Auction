@@ -8,9 +8,9 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace mvc_api.Auth.GenereerBearerToken;
+namespace mvc_api.Auth.GenereerAccessTokens;
 
-public interface IGenereerBearerToken
+public interface IGenereerAccessTokens
 {
     Task<string> GenerateJwtToken(Gebruiker gebruiker); 
 
@@ -19,7 +19,7 @@ public interface IGenereerBearerToken
     Task<RefreshToken?> GetStoredRefreshToken(string token);
 }
 
-public class GenereerBearerToken : IGenereerBearerToken
+public class GenereerBearerToken : IGenereerAccessTokens
 {
     private readonly IConfiguration _config;
     private readonly AppDbContext _dbContext;

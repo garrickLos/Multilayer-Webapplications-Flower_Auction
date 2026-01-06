@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using mvc_api.Controllers;
 using mvc_api.Data;
+using mvc_api.Repo.BiedingRepo;
 
 namespace mvc_api.Tests.Mocks;
 
@@ -23,14 +24,23 @@ public class BiedingMockData : IStatic_Variable
 {
     public static Mock CreateMock(ClaimsPrincipal user)
     {
-        // Converteer de lijst naar een IQueryable zodat we de eigenschappen kunnen kopiëren
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-                            .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
-                            .Options;
+        var mockRepo = new Mock<IBiedingRepo>();
+
+        var fakeList = new List<klantBiedingGet_dto> 
+        { 
+            new klantBiedingGet_dto(1, 10, 50, 100)
+        };
+
+        // // Converteer de lijst naar een IQueryable zodat we de eigenschappen kunnen kopiëren
+        // var options = new DbContextOptionsBuilder<AppDbContext>()
+        //                     .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
+        //                     .Options;
         
-        var mockSet = new Mock<AppDbContext>(options);
+        var mockSet = new Mock<IBiedingRepo>();
         
-        mockSet.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new DbUpdateException());
+        mockSet.Setup(repo => 
+                repo.GetKlantBiedingenAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fakeList);
 
         return mockSet;
     }
@@ -40,6 +50,7 @@ public class BiedingMockData : IStatic_Variable
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(dbName)
             .Options;
+            
         var dbContext = new AppDbContext(options);
 
         // zorgt ervoor dat die leeg begint.
@@ -88,7 +99,9 @@ public class BiedingMockData : IStatic_Variable
             dbContext.SaveChanges();
         }
 
-        return new BiedingController(dbContext)
+        var repository = new BiedingRepository(dbContext);
+
+        return new BiedingController(repository, dbContext)
         {
             ControllerContext = new ControllerContext
             {

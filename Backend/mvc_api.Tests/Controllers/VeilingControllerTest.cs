@@ -157,13 +157,4 @@ public class VeilingControllerTest
         // Scenario B 2e conditie false rest true
         Assert.Equal("active", updatedVeilingen.First(v => v.VeilingNr == 5).Status);
     }
-
-
-    [Fact]
-    public async Task VeilingPost()
-    {
-        
-    }
-
-
 }

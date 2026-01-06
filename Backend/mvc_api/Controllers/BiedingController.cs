@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
-// using mvc_api.Repo.BiedingRepo;
+using mvc_api.Repo.BiedingRepo;
+using mvc_api.statusPrinter;
 
 namespace mvc_api.Controllers;
 
@@ -14,12 +15,14 @@ namespace mvc_api.Controllers;
 [Authorize (Roles ="Koper, Bedrijf, VeilingMeester")]
 public class BiedingController : ControllerBase
 {
+    private readonly IBiedingRepo _repository;
     private readonly AppDbContext _db;
 
-    public BiedingController(AppDbContext db) => _db = db;
-
-    // afgestemd op VeilingController
-    private const string StatusActive = "active";
+    public BiedingController (IBiedingRepo repository, AppDbContext db)
+    {
+        _repository = repository;
+        _db = db;
+    }
 
     // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
     [HttpGet("Klant")]
@@ -29,30 +32,9 @@ public class BiedingController : ControllerBase
         [FromQuery] int? veilingProductNr,
         CancellationToken ct = default)
     {
-        // BiedingRepository BiedingItems = new BiedingRepository(_db, ct); 
+        var items = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, ct);
 
-        var query = _db.Biedingen.AsNoTracking().AsQueryable();
-
-        // var query2 = BiedingItems.GetBieding(gebruikerNr);
-
-        if (gebruikerNr.HasValue)
-            query = query.Where(b => b.GebruikerNr == gebruikerNr.Value);
-
-        if (veilingProductNr.HasValue)
-            query = query.Where(b => b.VeilingproductNr == veilingProductNr.Value);
-
-        var items = await query
-            .Select(b => new klantBiedingGet_dto(
-                b.VeilingproductNr,
-                b.BedragPerFust,
-                b.AantalStuks,
-                b.GebruikerNr
-            ))
-        .ToListAsync(ct);
-
-        // await query2;
-
-        return Ok(query);
+        return Ok(items);
     }
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
@@ -135,7 +117,7 @@ public class BiedingController : ControllerBase
             return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veilingproduct bestaat niet.", 400));
         
         // Alleen bieden op actieve veilingen
-        if (!string.Equals(veilingproduct.Veiling?.Status, StatusActive, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(veilingproduct.Veiling?.Status, NormalizeStatus.Active, StringComparison.OrdinalIgnoreCase))
             return BadRequest(CreateProblemDetails(
                 "Ongeldige status",
                 "Er kan alleen geboden worden op een actieve veiling.",

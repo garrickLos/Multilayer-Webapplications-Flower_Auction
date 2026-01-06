@@ -1,18 +1,17 @@
-using mvc_api.Auth.GenereerBearerToken;
+using mvc_api.Auth.GenereerAccessTokens;
 using mvc_api.Models;
 using Xunit;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Identity;
 using mvc_api.Controllers;
+using Microsoft.EntityFrameworkCore;
+using mvc_api.Data;
 
 namespace mvc_api.Tests.Services;
 
 public class GenereerBearerTokenTest
 {
-
-    readonly IGenereerBearerToken _token = new GenereerBearerToken();
 
     [Fact]
     public async Task GetJwtToken()
@@ -23,6 +22,17 @@ public class GenereerBearerTokenTest
             {"Jwt:Issuer", "TestIssuer"},
             {"Jwt:Audience", "TestAudience"}
         };
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(myTestSettings!)
+            .Build();
+
+        // 2. Arrange Database (De FIX)
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam per test
+            .Options;
+        
+        using var dbContext = new AppDbContext(options);
 
         var gebruiker = new Gebruiker{
                     Id = 1,
@@ -37,11 +47,7 @@ public class GenereerBearerTokenTest
                     Postcode = "1234AB"
                 };
         
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(myTestSettings!)
-            .Build();
-        
-        IGenereerBearerToken _token = new GenereerBearerToken(configuration);
+        IGenereerAccessTokens _token = new GenereerBearerToken(configuration, dbContext);
 
         var response = _token.GenerateJwtToken(gebruiker);
         
@@ -60,8 +66,15 @@ public class GenereerBearerTokenTest
         };
 
         var configuration = new ConfigurationBuilder()
-        .AddInMemoryCollection(myTestSettings!)
-        .Build();
+            .AddInMemoryCollection(myTestSettings!)
+            .Build();
+
+        // 2. Arrange Database (De FIX)
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam per test
+            .Options;
+        
+        using var dbContext = new AppDbContext(options);
 
         // maakt een simpele gebruiker aan
         var gebruiker = new Gebruiker{
@@ -72,7 +85,7 @@ public class GenereerBearerTokenTest
             Soort = "VeilingMeester"
         };
 
-        IGenereerBearerToken _token = new GenereerBearerToken(configuration);
+        IGenereerAccessTokens _token = new GenereerBearerToken(configuration, dbContext);
 
         // Act
         // Gebruik await om de string direct uit de Task te halen

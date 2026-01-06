@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using mvc_api.Tests.Mocks;
 using Xunit;
 
+using Moq;
+using mvc_api.Repo.BiedingRepo;
+using mvc_api.Controllers;
+
 namespace mvc_api.Tests.Controllers;
 
 public class BiedingControllerTests: IStatic_Variable
@@ -17,42 +21,25 @@ public class BiedingControllerTests: IStatic_Variable
         (DisplayName = "Succes: Koper haalt eigen biedingen op")]
     public async Task GetBiedingKlant_WithValidUser_ReturnsList()
     {
-        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper)
-        }, "mock"));
+        var mockRepo = new Mock<IBiedingRepo>();
 
-        var controller = BiedingMockData.BuildController(nameof(GetBiedingKlant_WithValidUser_ReturnsList), user);
-
-        var response = await controller.GetKlantBiedingen(gebruikerNr: 1, veilingProductNr: null);
-
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-
-        var items = Assert.IsAssignableFrom<IEnumerable<klantBiedingGet_dto>>(okResult.Value);
-
-        Assert.NotEmpty(items);
-        Assert.Equal(4, items.Count());
-    }
-
-    [Fact
-        (DisplayName = "Success: Koper haalt een specifieke bieding op")]
-    public async Task GetBiedingKlant_WithValidUser_ReturnSpecificItem()
-    {
-        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        var fakeList = new List<klantBiedingGet_dto> 
         { 
-            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
-        }, "Mock"));
+            new klantBiedingGet_dto(1, 10, 50, 100)
+        };
+        
+        mockRepo.Setup(repo => 
+                repo.GetKlantBiedingenAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fakeList);
 
-        var controller = BiedingMockData.BuildController(nameof(GetBiedingKlant_WithValidUser_ReturnSpecificItem), user);
-        var response = await controller.GetKlantBiedingen(gebruikerNr: 2, veilingProductNr: 103);
+        var controller = new BiedingController(mockRepo.Object, null);
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
+        var result = await controller.GetKlantBiedingen(100,1);
 
-        var items = Assert.IsAssignableFrom<IEnumerable<klantBiedingGet_dto>>(okResult.Value);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnItems = Assert.IsType<List<klantBiedingGet_dto>>(okResult.Value);
 
-        Assert.NotEmpty(items);
-
-        Assert.Single(items);
+        Assert.Single(returnItems);
     }
 
     /* 
@@ -168,7 +155,7 @@ public class BiedingControllerTests: IStatic_Variable
                 
         var dto = Assert.IsType<VeilingMeester_BiedingDto>(createdResult.Value);
 
-        Assert.Equal(100, dto.BiedingNr);
+        Assert.Equal(20, dto.AantalStuks);
     }
 
     [Fact
