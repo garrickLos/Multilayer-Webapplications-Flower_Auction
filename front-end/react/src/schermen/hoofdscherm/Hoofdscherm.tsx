@@ -4,23 +4,51 @@ import '../../css/HoofdSchermStyle.css';
 import '../../css/cookieStylesheet.css';
 
 import { CountPages, scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
 import { beschrijving, AuctionCard, type VeilingItem, type aanvoerderInfo } from './RenderCards.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
 import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
 
+import React, { useEffect, useState } from 'react';
+
 import '../../css/Componenten/knop.css';
 import { Laadscherm } from '../AuctionScreen/VeilingSchermComponenten/Laadscherm.tsx';
+import { ErrorScherm } from '../AuctionScreen/VeilingSchermComponenten/ErrorComponent.tsx';
 
 export default function MainScreen() {
     const RefreshTimeMS = 60000; // 6000 miliseconden zou 6 seconden moeten zijn
     const refreshTimer = ApiRefresh(RefreshTimeMS);
 
-    const { data} = GetVeilingen<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}`);
+    let sendingData = null;
+    let jwtToken = null;
+    let refreshToken = null;
 
-    const safeVeilingen = data || [];
+    const [veilingen, setVeilingen] = useState<VeilingItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
+    useEffect(() => {
+        let isMounted = true;
+        setLoading(true);
+        ApiRequest<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}&onlyActive=${true}`, "GET", sendingData, jwtToken, refreshToken)
+            .then(result => {
+                if (isMounted) {
+                    setVeilingen(result || []);
+                    setLoading(false);
+                }
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setVeilingen([]);
+                    setLoading(false);
+                }
+            });
+
+        return () => { isMounted = false; };
+
+    }, [refreshTimer]);
+
+    const actieveVeilingen = veilingen;
+
+    const laadbericht = "laden van items..."
     
     return (
         <main className='MainScreen'>
@@ -43,7 +71,7 @@ export default function MainScreen() {
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('lastChance', -1)}>&#10094;</button>
                     <div className="slider" id="lastChance">
-                        {renderSliderContent(actieveVeilingen)}
+                        {loading ? Laadscherm(laadbericht) : renderSliderContent(actieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('lastChance', 1)}>&#10095;</button>
                 </div>
@@ -70,10 +98,11 @@ function renderSliderContent(dataToRender: VeilingItem[]) {
         pages.push(alleProducten.slice(i, i + itemsPerPage));
     }
 
-    const laadbericht = "laden van items..."
-
     if (alleProducten.length === 0) {
-        return Laadscherm(laadbericht);
+        return (
+            ErrorScherm()
+        );
+
     } else {
         return (
             <>

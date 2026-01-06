@@ -40,7 +40,7 @@ public class VeilingController : ControllerBase
         DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = testNow ?? DateTime.UtcNow;
+        var now = testNow ?? DateTime.Now;
 
         var veilingenTeUpdaten = _db.Veilingen
         .Where(v => 
@@ -246,7 +246,7 @@ public class VeilingController : ControllerBase
                 .ProjectToVeiling_klantDto(query, now) // Roept de klant helper methode op zodat het de juiste gegevens laat zien
                 .ToListAsync(ct);
 
-            return Ok(items);   
+            return Ok(items);
         } else
         {
             return Unauthorized();
@@ -377,6 +377,33 @@ public class VeilingController : ControllerBase
             };
 
         return Ok(resultDto);
+    }
+
+    [HttpPut("UpdateBeginTijd/{id:int}")] 
+    [Authorize(Roles = "Koper")]
+    public async Task<ActionResult<VeilingUpdate_UpdateVeilingTijd>> Update_NieuweBeginTijd(
+        int id, 
+        [FromBody] VeilingUpdate_UpdateVeilingTijd dto, 
+        CancellationToken ct = default)
+    {
+        var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        
+        if (entity is null)
+            return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
+
+        // Update fields
+        entity.GeupdateBeginTijd = dto.GeupdateBeginTijd;
+
+        // if (!string.IsNullOrWhiteSpace(dto.Status))
+        //     entity.Status = NormalizeStatus(dto.Status);
+
+        // Business Logic check
+        if (entity.Eindtijd <= dto.GeupdateBeginTijd && entity.Status == VeilingStatus.Active)
+            entity.Status = VeilingStatus.Inactive;
+
+        await _db.SaveChangesAsync(ct);
+        
+        return Ok(dto);
     }
 
     // DELETE: api/Veiling/{id}

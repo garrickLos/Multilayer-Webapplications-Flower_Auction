@@ -124,8 +124,12 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
     const handleKlik = async () => {
 
-        if (huidigProduct != null) {
-            VeilingProductitem_Update(huidigProduct, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
+        if (huidigProduct != null && InvoerAantal > 0) {
+            try {
+                VeilingProductitem_Update(huidigProduct, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
+            } catch (error) {
+                console.log("geen item ingevuld");
+            }
         }
     };
 
@@ -191,7 +195,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                             Je koopt {InvoerAantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
                         </div>
                         
-                        <button className="koopNu" onClick={handleKlik}>Koop nu!</button>
+                        <GenereerKnop classNames={'Button koopNu'} bericht='Koop nu!' onclickAction={handleKlik}/>
                     </div>
                 </section>
 

@@ -4,9 +4,9 @@ export async function ApiRequest<T>(
     data: any | null, token: string | null, refreshToken: string | null
     ): Promise<T> {
 
-    // if (!isValidToken(token)) {
-    //     throw new Error("Geen geldig token gevonden.");
-    // }
+    if (!isValidToken(token)) {
+        throw new Error("Geen geldig token gevonden.");
+    }
 
     let response = await RequestFetch(url, method, data, token as string); 
 
@@ -63,7 +63,7 @@ async function RequestFetch(url: string, method: string, data: any, token: strin
 
 // checked of de token die gebruikt wordt ook echt goed in elkaar zit
 function isValidToken(token: string | null): boolean {
-    return !!token && token !== "null" && token !== "undefined" && token.length > 10;
+    return !sessionStorage.getItem('token') || token !== "null" && token !== "undefined";
 }
 
 async function TokenRefresh(token: string, refreshToken: string): Promise <{ token: string, refreshToken: string }> {

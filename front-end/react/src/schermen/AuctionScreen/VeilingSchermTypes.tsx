@@ -21,6 +21,7 @@ export interface VeilingLogica {
     veilingNr: number;
     status: string;
     startIso: string;
+    geupdateIso: string;
     endIso: string;
     producten: ProductLogica[];
 }
