@@ -21,6 +21,7 @@ public class VeilingproductController : ControllerBase
     [HttpGet("Klant")]
     [Authorize(Roles = "Koper")]
     public async Task<ActionResult<IEnumerable<klantVeilingproductGet_dto>>> KlantGetAll(
+        //[FromQuery] string Nummer,
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
         [FromQuery] int page = 1,
@@ -41,6 +42,8 @@ public class VeilingproductController : ControllerBase
         if (categorieNr is int cnr)
             query = query.Where(vp => vp.CategorieNr == cnr);
 
+       
+        
         var total = await query.CountAsync(ct);
 
         var items = await query

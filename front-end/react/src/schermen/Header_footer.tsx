@@ -35,7 +35,6 @@ export default function Header() {
                     sessionStorage.setItem("gebruikerNummer", nummer);
                 }
 
-                console.log("gebruiker nummer = " + sessionStorage.getItem("gebruikerNummer"));
             
                 TokenOphalen.setToken(token);
             } catch {

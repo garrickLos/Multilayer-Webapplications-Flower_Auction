@@ -32,11 +32,10 @@ public class VeilingController : ControllerBase
         [FromQuery] bool onlyActive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
+        DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
-
-        now = now.ToLocalTime();
+        var now = testNow ?? DateTime.UtcNow;
 
         var veilingenTeUpdaten = _db.Veilingen
         .Where(v => 
@@ -57,7 +56,7 @@ public class VeilingController : ControllerBase
                     // Tijd is voorbij -> Sluiten
                     v.Status = VeilingStatus.Inactive;
                 }
-                else if (now >= v.Begintijd.Date && now < v.Eindtijd.Date)
+                else if (now >= v.Begintijd && now < v.Eindtijd)
                 {
                     v.Status = VeilingStatus.Active;
                 }
@@ -105,11 +104,15 @@ public class VeilingController : ControllerBase
         [FromQuery] bool onlyActive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
+        DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        var now = testNow ?? DateTime.UtcNow;
 
-        now = now.ToLocalTime();
+        // if (testNow == null)
+        // {
+        //     now = now.ToLocalTime();
+        // }
 
         var veilingenTeUpdaten = _db.Veilingen
         .Where(v => 
