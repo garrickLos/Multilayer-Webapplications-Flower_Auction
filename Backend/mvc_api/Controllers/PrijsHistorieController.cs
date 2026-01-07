@@ -36,8 +36,7 @@ namespace mvc_api.Controllers
             return Ok(resultaat.Items);
         }
 
-        [HttpGet]
-        public IActionResult GetPrijsHistorieAlleenKweker(int CategorieNr, string bedrijfsNaam, CancellationToken ct = default)
+        [HttpGet("kweker")]        public IActionResult GetPrijsHistorieAlleenKweker(int CategorieNr, string bedrijfsNaam, CancellationToken ct = default)
         {
             var resultaat = _repository.GetPrijsHistorieAlleenKweker(CategorieNr, bedrijfsNaam, ct);
             if (HttpContext is not null)
