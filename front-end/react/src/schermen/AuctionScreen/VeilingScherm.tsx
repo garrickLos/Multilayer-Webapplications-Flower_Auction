@@ -32,7 +32,7 @@ export default function AuctionScreen() {
     const veilingItemNr = Number(veilingnr) || 0;
 
     // Data ophalen
-    const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling/klant?refresh=${refreshApi}&onlyActive=true`);
+    const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling/klant?refresh=${refreshApi}`);
     const safeData = data || [];
 
     // Data mappen en direct sorteren

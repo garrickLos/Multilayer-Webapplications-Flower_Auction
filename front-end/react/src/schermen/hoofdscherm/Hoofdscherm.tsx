@@ -27,7 +27,7 @@ export default function MainScreen() {
     useEffect(() => {
         let isMounted = true;
         setLoading(true);
-        ApiRequest<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}&onlyActive=${false}`, "GET", sendingData, jwtToken, refreshToken)
+        ApiRequest<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}&onlyActive=${true}`, "GET", sendingData, jwtToken, refreshToken)
             .then(result => {
                 if (isMounted) {
                     setVeilingen(result || []);
