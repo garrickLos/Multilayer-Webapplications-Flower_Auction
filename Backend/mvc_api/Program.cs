@@ -154,6 +154,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IGenereerAccessTokens, GenereerBearerToken>();
 builder.Services.AddScoped<IBiedingRepo, BiedingRepository>();
 builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>();
+builder.Services.AddScoped<IPrijsHistorieRepository, PrijsHistorieRepository>();
 builder.Services.AddScoped<IVeilingControllerFilter, VeilingControllerFilter>();
 builder.Services.AddTransient<ProjectieVeilingController>();
 builder.Services.AddSingleton<NormalizeStatus>();
@@ -198,4 +199,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();

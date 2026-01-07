@@ -64,9 +64,9 @@ public record VeilingproductUpdateDto
 // VEILINGMEESTER UPDATE
 public record VeilingproductVeilingmeesterUpdateDto
 {
-    [Range(typeof(decimal), "0.01", "999999999")]
+    [Range(1, 999_999_999)]
     public int? Startprijs { get; init; }
-
+    
     [Range(1, int.MaxValue)]
     public int? VeilingNr { get; init; }
 }
@@ -92,7 +92,7 @@ public record VeilingproductKwekerListDto(
     string? CategorieNaam,
     string? ImagePath,
     string? Plaats,
-    decimal? Startprijs,
+    int? Startprijs,
     int? Minimumprijs,
     int? VeilingNr
 );
@@ -109,7 +109,7 @@ public record VeilingproductVeilingmeesterListDto(
     int VoorraadBloemen,
     string Plaats,
     int Minimumprijs,
-    decimal? Startprijs,
+    int? Startprijs,
     DateTime GeplaatstDatum,
     string ImagePath,
     DateOnly? BeginDatum
@@ -139,17 +139,17 @@ public sealed record klantVeilingproductGet_dto
 );
 
 public static class VeilingproductDtoSelectors
-{
-    public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>
-        new(
-            v.VeilingProductNr,
-            v.Naam,
-            v.ImagePath,
-            v.VoorraadBloemen,
-            v.VeilingNr,
-            v.Startprijs,
-            v.Kwekernr
-        );
+    {
+        public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>
+            new(
+                v.VeilingProductNr,
+                v.Naam,
+                v.ImagePath,
+                v.VoorraadBloemen,
+                v.VeilingNr,
+                v.Startprijs,
+                v.Kwekernr
+            );
 
     public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerListDto>> KwekerList = v =>
         new(

@@ -59,7 +59,13 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 
         b.Entity<Veilingproduct>()
             .HasIndex(x => new { x.CategorieNr, x.Naam });
+        
+        b.Entity<Veilingproduct>()
+            .HasIndex(x => new { x.CategorieNr, x.BeginDatum });
 
+        b.Entity<Bieding>()
+            .HasIndex(x => x.VeilingproductNr);
+        
         b.Entity<Veilingproduct>()
             .Property(x => x.Status)
             .HasConversion<string>()

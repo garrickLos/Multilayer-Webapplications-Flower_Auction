@@ -116,9 +116,7 @@ export default function SellerScreenAdd() {
         };
 
         try {
-            console.log(AlleGegevens.GeplaatstDatum);
-            console.log(AlleGegevens);
-            console.log(token)
+            console.log(product.CategorieNr);
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json",

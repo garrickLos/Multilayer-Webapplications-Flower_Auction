@@ -75,8 +75,8 @@ public class VeilingproductControllerTests
 
         var controller = CreateController(repository.Object);
 
-        var response = await controller.KwekerGetAll(q: "Lelie", categorieNr: 3, page: 1, pageSize: 50, ct: CancellationToken.None);
-
+        var response = await controller.KwekerGetAll(Nummer: 0, q: "Lelie", categorieNr: 3, page: 1, pageSize: 50, ct: CancellationToken.None);
+        
         var ok = Assert.IsType<OkObjectResult>(response.Result);
         var list = Assert.IsAssignableFrom<IEnumerable<kwekerVeilingproductGet_dto>>(ok.Value);
         var item = Assert.Single(list);

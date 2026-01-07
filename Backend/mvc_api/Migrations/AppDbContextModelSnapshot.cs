@@ -436,6 +436,8 @@ namespace mvc_api.Migrations
 
                     b.HasIndex("VeilingNr");
 
+                    b.HasIndex("CategorieNr", "BeginDatum");
+
                     b.HasIndex("CategorieNr", "Naam");
 
                     b.ToTable("Veilingproduct");

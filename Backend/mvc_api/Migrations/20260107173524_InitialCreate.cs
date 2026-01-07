@@ -340,6 +340,11 @@ namespace mvc_api.Migrations
                 column: "VeilingproductNr");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Veilingproduct_CategorieNr_BeginDatum",
+                table: "Veilingproduct",
+                columns: new[] { "CategorieNr", "BeginDatum" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Veilingproduct_CategorieNr_Naam",
                 table: "Veilingproduct",
                 columns: new[] { "CategorieNr", "Naam" });

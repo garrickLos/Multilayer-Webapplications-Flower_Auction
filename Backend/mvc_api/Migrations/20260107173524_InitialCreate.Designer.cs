@@ -12,7 +12,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260107143040_InitialCreate")]
+    [Migration("20260107173524_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -438,6 +438,8 @@ namespace mvc_api.Migrations
                     b.HasIndex("Kwekernr");
 
                     b.HasIndex("VeilingNr");
+
+                    b.HasIndex("CategorieNr", "BeginDatum");
 
                     b.HasIndex("CategorieNr", "Naam");
 
