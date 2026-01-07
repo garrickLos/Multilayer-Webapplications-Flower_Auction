@@ -15,7 +15,9 @@
     
     /* CONTENT BEHEER */
     /* Voorkomt dat tekst onder elkaar gaat staan tijdens animatie */
-    white-space: nowrap;        
+    white-space: nowrap;      
+    
+    text-wrap: wrap;
 
     /* TRANSITIE INSTELLINGEN */
     /* We animeren width en padding tegelijk voor een soepel effect */
@@ -34,7 +36,7 @@
 .sideBarMenu.open {
     
     /* 2. Padding herstellen */
-    padding: 20px;
+    padding-left: 20px;
     
     /* 3. Rand herstellen */
     border-left: 1px solid #dee2e6;

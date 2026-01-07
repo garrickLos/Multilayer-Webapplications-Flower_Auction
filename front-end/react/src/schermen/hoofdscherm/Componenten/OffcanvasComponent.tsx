@@ -1,9 +1,21 @@
 import React from 'react';
 import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
-import './style.css';
+import '../../../css/Componenten/OffcanvasComponent.css';
+
+interface lijst {
+    Title: string,
+    tussenkop?: string,
+    bericht: string,
+
+    tussenKopclass?: string[],
+    berichtClass?: string[]
+}
 
 export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
+    const data = [1, 2];
+    const safeData = data || [];
+
     return (
         // Hier voegen we de class 'open' toe als isOpen true is
         <div className={`sideBarMenu ${isOpen ? 'open' : 'closed'}`}>
@@ -19,8 +31,7 @@ export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
                         
                 <InfoVeld Titel={'Historische prijzen van deze aanbieder (laatste 10)'} />
 
-                <InfoVeld Titel={'Aanbieder: '} Bericht={"**kweker naam hier**"}
-                    BerichtClass={'rightSideText'}/>
+                {/* {repeatClasses("HuidigeAanbieder", data)} */}
 
                 <div className='HuidigeAanbieder'>
                     <InfoVeld Titel={'Datum:'} Bericht={"Prijs:"}
@@ -52,12 +63,12 @@ export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
                 <br></br>
 
                     <InfoVeld Titel={'Historische prijzen van alle aanbieder (laatste 10)'} />
-
-                    <InfoVeld Titel={'Aanbieder: '} Bericht={"**kweker naam hier**"}
-                        BerichtClass={'rightSideText'}/>
+                
                 <div className='alleAanbieders'>
                     <InfoVeld Titel={'Aanbieder:'} tussenkop={'Datum:'} Bericht={"Prijs:"}
                         BerichtClass={'rightSideText'}/>
+
+                    {/* {repeatClasses("alleAanbieders", data)} */}
 
                     <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"1 euro"}
                         tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
@@ -79,11 +90,30 @@ export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
                         tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
                     <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"10 euro"}
                         tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
+
+                    <InfoVeld Titel={'Gemiddelde prijs alle historische order van de **insert kweker**:'} Bericht={"**insert gemiddelde**"}
+                        BerichtClass={'rightSideText'}/>
                 </div>
             </div>
         </div>
     );
 };
+
+// function repeatClasses(infoItems: lijst[]) {
+//     return (
+//         <>
+//             {infoItems.map((item, index) => (
+//                 <InfoVeld
+//                     key={`${item.parentVeiling.veilingNr}-${item.veilingProductNr}-${index}`}
+//                     /* Geef de data door via de juiste prop-namen */
+//                     Titel={""} tussenkop={''} Bericht={""}
+//                     tussenkopClass={""} BerichtClass={""}
+//                 />
+//             ))}
+//         ))
+//         </>
+//     );
+// }
 
 // export const ParentComponent = () => {
     

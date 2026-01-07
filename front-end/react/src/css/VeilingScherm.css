@@ -57,7 +57,8 @@ html, body {
 .Auction_schermAankoop_container {
     width: auto;
 
-    height: auto;
+    height: 100%;
+    max-height: 75%;
 
     display: flex;
 
@@ -67,7 +68,8 @@ html, body {
 }
 
 .Auction_Informatievelden_Container, .Auction_schermAankoop_container {
-    
+    margin: 0;
+
     outline: 1px solid var(--brand);
     outline-offset: 5px;
     

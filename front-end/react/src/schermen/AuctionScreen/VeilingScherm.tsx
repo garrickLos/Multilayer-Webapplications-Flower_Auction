@@ -136,7 +136,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
         }
     };
 
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = React.useState(true);
     
     const sideBarClick = () =>
         setIsOpen(!isOpen);
@@ -199,9 +199,9 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                             min={0} value={InvoerAantal}
                         />
 
-                        <button className="btn btn-primary" onClick={sideBarClick}>
+                        {/* <button className="btn btn-primary" onClick={sideBarClick}>
                             {isOpen ? 'Sluit Menu' : 'Open Menu in Div'}
-                        </button>
+                        </button> */}
                         
                         <div className="tekstVoorKopen">
                             Je koopt {InvoerAantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
@@ -213,10 +213,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                     <div className='SideMenuInfo'>
                         <ContainerSideMenu isOpen={isOpen} />
                     </div>
-                </section>
-
-                <section>
-                    
                 </section>
             </div>
         </main>
