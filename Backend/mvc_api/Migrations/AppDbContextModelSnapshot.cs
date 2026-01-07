@@ -460,9 +460,9 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal?>("Startprijs")
+                    b.Property<int?>("Startprijs")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()

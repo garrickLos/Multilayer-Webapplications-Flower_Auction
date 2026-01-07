@@ -186,7 +186,7 @@ public static class DataSeeder
         {
             return;
         }
-        
+
         var producten = await dbContext.Veilingproducten
             .Where(vp => vp.Naam == "Tulp Mix" || vp.Naam == "Rode Roos")
             .ToDictionaryAsync(vp => vp.Naam, vp => vp.VeilingProductNr);
@@ -226,4 +226,5 @@ public static class DataSeeder
 
         await dbContext.SaveChangesAsync();
     }
+   
 }

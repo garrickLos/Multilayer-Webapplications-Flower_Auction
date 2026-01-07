@@ -5,7 +5,7 @@
 namespace mvc_api.Migrations
 {
     /// <inheritdoc />
-    public partial class VerbeterdeVersie : Migration
+    public partial class databasegedropt : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

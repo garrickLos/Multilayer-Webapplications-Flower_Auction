@@ -12,13 +12,8 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-<<<<<<<< HEAD:Backend/mvc_api/Migrations/20251127120810_VerbeterdeVersie.Designer.cs
-    [Migration("20251127120810_VerbeterdeVersie")]
-    partial class VerbeterdeVersie
-========
-    [Migration("20260102154101_InitialCreate")]
-    partial class InitialCreate
->>>>>>>> sprint7_Bayram:Backend/mvc_api/Migrations/20260102154101_InitialCreate.Designer.cs
+    [Migration("20260107100329_databasegedropt")]
+    partial class databasegedropt
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -468,9 +463,9 @@ namespace mvc_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal?>("Startprijs")
+                    b.Property<int?>("Startprijs")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()

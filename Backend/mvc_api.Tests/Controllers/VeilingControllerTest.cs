@@ -345,8 +345,8 @@ namespace mvc_api.Tests.Controllers
             {
                 VeilingNr = 1,
                 VeilingNaam = "OudeVeiling",
-                Begintijd = now.AddHours(-2),
-                Eindtijd = now.AddMinutes(-1),
+                Begintijd = DateTime.UtcNow.AddHours(-2),
+                Eindtijd = DateTime.UtcNow.AddMinutes(-1),
                 Status = VeilingStatus.Active
             };
             context.Veilingen.Add(bestaandeVeiling);
@@ -369,12 +369,12 @@ namespace mvc_api.Tests.Controllers
             var updateDto = new VeilingUpdateDto
             {
                 VeilingNaam = "GewijzigdeVeiling",
-                Begintijd = now.AddHours(-1),
-                Eindtijd = now.AddMinutes(-1)
+                Begintijd = DateTime.UtcNow.AddHours(-1),
+                Eindtijd = DateTime.UtcNow.AddMinutes(-1)
             };
 
             //we veranderen de waardes van veilingnr 1
-            var resultaat = await controller.Update(1, updateDto, testNow: now, ct: CancellationToken.None);
+            var resultaat = await controller.Update(1, updateDto, testNow: null, ct: CancellationToken.None);
 
             var statusCheck = await context.Veilingen.FindAsync(1);
 
