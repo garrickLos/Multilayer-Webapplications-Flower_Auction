@@ -12,7 +12,7 @@ import { GetIsoTimeByZone } from "../../../typeScript/FetchDate";
 import type { VeilingproductUpdate, VeilingTijdUpdate } from "./VeilingSchermTypes/VeilingTypes";
 import type { NieuweBieding } from "./VeilingSchermTypes/BiedingTypes";
 import type { MyTokenPayload } from "./VeilingSchermTypes/TokenPayloadTypes";
-
+import type { PrijsHistorieResultaatLogica } from "../../hoofdscherm/Componenten/OffcanvasComponent";
 
 // mapt de data voor de veilingscherm
 // dit zorgt ervoor dat er altijd info staat. Indien het niet gevonden kan worden (error tijdens de get)
@@ -44,8 +44,26 @@ export function mapData(safeData: any[]): VeilingLogica[] {
     }));
 }
 
+export function mapInfoLijstData(safeData: PrijsHistorieResultaatLogica[]): PrijsHistorieResultaatLogica[] {
+    return safeData.map((item) => ({
+        // 1. Map de enkele waarde
+        averageBedrag: item.averageBedrag ?? item.averageBedrag ?? null,
+
+        // 2. Map de geneste lijst 'Items'
+        items: (item.items || item.items || []).map((subItem: any) => ({
+            bedrijfsNaam: subItem.BedrijfsNaam || subItem.bedrijfsNaam || "Onbekend bedrijf",
+            
+            // Datum wordt als string doorgegeven, fallback naar lege string of huidige datum indien nodig
+            beginDatum: subItem.BeginDatum || subItem.beginDatum || "",
+            
+            bedragPerFust: subItem.BedragPerFust || subItem.bedragPerFust || 0
+        }))
+    }));
+}
+
 export async function VeilingProductitem_Update(
-    huidigProduct: ProductLogica, 
+    huidigProduct: ProductLogica,
+    veilingNummer: number,
     InvoerAantal: number,
     HuidigePrijs: number,
     url: string, 
@@ -125,7 +143,9 @@ export async function VeilingProductitem_Update(
             ApiRequest<NieuweBieding>("/api/Bieding", "POST" , BiedingAanmaken, token, refreshToken),
             
             // Update de tijd op basis van tijdzone
-            ApiRequest('/api/Veiling/UpdateBeginTijd/201', 'PUT', UpdateBeginTijd, token, refreshToken)
+            ApiRequest(`/api/Veiling/UpdateBeginTijd/${veilingNummer}`, 'PUT', UpdateBeginTijd, token, refreshToken),
+
+            console.log(3)
         ]);
 
         console.log("Alle updates zijn succesvol verwerkt.");

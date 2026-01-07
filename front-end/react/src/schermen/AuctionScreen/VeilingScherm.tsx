@@ -32,7 +32,7 @@ export default function AuctionScreen() {
     const veilingItemNr = Number(veilingnr) || 0;
 
     // Data ophalen
-    const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling/klant?refresh=${refreshApi}`);
+    const { data } = GetVeilingen<VeilingLogica[]>(`/api/Veiling/klant?refresh=${refreshApi}&onlyActive=true`);
     const safeData = data || [];
 
     // Data mappen en direct sorteren
@@ -129,7 +129,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
         if (huidigProduct != null && InvoerAantal > 0) {
             try {
-                VeilingProductitem_Update(huidigProduct, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
+                VeilingProductitem_Update(huidigProduct, actieveVeiling.veilingNr, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
             } catch (error) {
                 console.log("geen item ingevuld");
             }
@@ -211,7 +211,9 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                     </div>
 
                     <div className='SideMenuInfo'>
-                        <ContainerSideMenu isOpen={isOpen} />
+                        <div className='SideMenuInfo'>
+                            <ContainerSideMenu isOpen={isOpen} />
+                        </div>
                     </div>
                 </section>
             </div>

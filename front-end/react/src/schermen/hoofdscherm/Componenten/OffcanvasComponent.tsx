@@ -1,20 +1,61 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
 import '../../../css/Componenten/OffcanvasComponent.css';
+import { ApiRequest } from '../../../typeScript/ApiRequest';
+import { getRefreshToken, getBearerToken as Token } from '../../../typeScript/ApiGet';
+import { mapInfoLijstData } from '../../AuctionScreen/VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
-interface lijst {
-    Title: string,
-    tussenkop?: string,
-    bericht: string,
 
-    tussenKopclass?: string[],
-    berichtClass?: string[]
+export interface PrijsHistorieItemLogica {
+    bedrijfsNaam: string;
+    beginDatum: string;
+    bedragPerFust: number;
 }
 
-export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
-    const data = [1, 2];
-    const safeData = data || [];
+// Interface voor het hoofdresultaat (komt overeen met PrijsHistorieResultaat)
+export interface PrijsHistorieResultaatLogica {
+    items: PrijsHistorieItemLogica[];
+    averageBedrag: number | null;
+}
+
+interface ContainerSideMenuProps {
+    isOpen: boolean;
+}
+
+export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
+
+    let configdData: any;
+    
+    useEffect(() => {
+        const haalDataOp = async () => {
+            const token = Token();
+            const refreshToken = getRefreshToken();
+
+            try {
+                const data = await ApiRequest<any>("/PrijsHistorie", "GET", null, token, refreshToken);
+                console.log(data);
+
+                const safeData = data ? [data] : [];
+                
+                // STAP 1: Haal de array met promises op (dit veroorzaakt de error als je het direct gebruikt)
+                const promiseArray = mapInfoLijstData(safeData);
+
+                // STAP 2: Wacht tot alle promises in de array zijn opgelost naar echte data
+                const resolvedData = await Promise.all(promiseArray);
+
+                // STAP 3: Zet de opgeloste data in de state
+                configdData(resolvedData);
+                
+            } catch (error) {
+                console.error("Fout bij ophalen data", error);
+            }
+        };
+
+        if (isOpen) {
+            haalDataOp();
+        }
+    }, [isOpen]);    
 
     return (
         // Hier voegen we de class 'open' toe als isOpen true is
@@ -31,44 +72,17 @@ export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
                         
                 <InfoVeld Titel={'Historische prijzen van deze aanbieder (laatste 10)'} />
 
-                {/* {repeatClasses("HuidigeAanbieder", data)} */}
+                {repeatClasses("HuidigeAanbieder", configdData, false)}
 
-                <div className='HuidigeAanbieder'>
-                    <InfoVeld Titel={'Datum:'} Bericht={"Prijs:"}
-                        BerichtClass={'rightSideText'}/>
-
-                    <InfoVeld Titel={'**Datum**'} Bericht={"1 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"2 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"3 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"4 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"5 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"6 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"7 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"8 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"9 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Datum**'} Bericht={"10 euro"}
-                        BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'Gemiddelde prijs alle historische order van de **insert kweker**:'} Bericht={"**insert gemiddelde**"}
-                        BerichtClass={'rightSideText'}/>
-                </div>
                 <br></br>
 
                     <InfoVeld Titel={'Historische prijzen van alle aanbieder (laatste 10)'} />
                 
-                <div className='alleAanbieders'>
+                {repeatClasses("alleAanbieders", configdData, true)}
+
+                {/* <div className='alleAanbieders'>
                     <InfoVeld Titel={'Aanbieder:'} tussenkop={'Datum:'} Bericht={"Prijs:"}
                         BerichtClass={'rightSideText'}/>
-
-                    {/* {repeatClasses("alleAanbieders", data)} */}
 
                     <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"1 euro"}
                         tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
@@ -93,27 +107,79 @@ export const ContainerSideMenu = ({ isOpen }: { isOpen: boolean }) => {
 
                     <InfoVeld Titel={'Gemiddelde prijs alle historische order van de **insert kweker**:'} Bericht={"**insert gemiddelde**"}
                         BerichtClass={'rightSideText'}/>
-                </div>
+                </div> */}
             </div>
         </div>
     );
 };
 
-// function repeatClasses(infoItems: lijst[]) {
-//     return (
-//         <>
-//             {infoItems.map((item, index) => (
-//                 <InfoVeld
-//                     key={`${item.parentVeiling.veilingNr}-${item.veilingProductNr}-${index}`}
-//                     /* Geef de data door via de juiste prop-namen */
-//                     Titel={""} tussenkop={''} Bericht={""}
-//                     tussenkopClass={""} BerichtClass={""}
-//                 />
-//             ))}
-//         ))
-//         </>
-//     );
-// }
+export function repeatClasses(
+    className: string, 
+    resultatenLijst: PrijsHistorieResultaatLogica[], 
+    toonDatumKolom: boolean = false 
+) {
+    if (!resultatenLijst) return null;
+
+    return (
+        <>
+            {resultatenLijst.map((resultaat, resultaatIndex) => {
+                
+                // Als we meerdere aanbieders tonen, is de naam in de footer algemeen. 
+                // Anders pakken we de naam van de specifieke kweker.
+                const footerNaam = toonDatumKolom 
+                    ? "alle aanbieders" 
+                    : (resultaat.items.length > 0 ? resultaat.items[0].bedrijfsNaam : "Onbekende kweker");
+
+                return (
+                    <div className={className} key={`historie-blok-${resultaatIndex}`}>
+                        
+                        {/* 1. De Header (Dynamisch) */}
+                        <InfoVeld 
+                            // Als toonAanbiederKolom true is, is de titel 'Aanbieder', anders 'Datum'
+                            Titel={toonDatumKolom ? 'Aanbieder:' : 'Datum:'}
+                            
+                            // Alleen tussenkop tonen als we in de 'alle aanbieders' modus zitten
+                            tussenkop={toonDatumKolom ? 'Datum:' : undefined}
+                            
+                            Bericht={"Prijs:"}
+                            BerichtClass={'rightSideText'}
+                        />
+
+                        {/* 2. De Items */}
+                        {resultaat.items.map((item, itemIndex) => (
+                            <InfoVeld
+                                key={`${resultaatIndex}-${itemIndex}-${item.beginDatum}`}
+                                
+                                // In 'alle aanbieders' modus is de Titel de bedrijfsnaam. Anders de datum.
+                                Titel={toonDatumKolom 
+                                    ? item.bedrijfsNaam 
+                                    : new Date(item.beginDatum).toLocaleDateString('nl-NL')
+                                }
+
+                                // De tussenkop (Datum) wordt alleen gebruikt in de 'alle aanbieders' modus
+                                tussenkop={toonDatumKolom 
+                                    ? new Date(item.beginDatum).toLocaleDateString('nl-NL') 
+                                    : undefined
+                                }
+                                tussenkopClass={toonDatumKolom ? 'tussenkop' : undefined}
+
+                                Bericht={`${item.bedragPerFust} euro`}
+                                BerichtClass={'rightSideText'}
+                            />
+                        ))}
+
+                        {/* 3. De Footer */}
+                        <InfoVeld 
+                            Titel={`Gemiddelde prijs alle historische order van ${footerNaam}:`} 
+                            Bericht={resultaat.averageBedrag !== null ? `€ ${resultaat.averageBedrag}` : "Onbekend"}
+                            BerichtClass={'rightSideText'}
+                        />
+                    </div>
+                );
+            })}
+        </>
+    );
+}
 
 // export const ParentComponent = () => {
     

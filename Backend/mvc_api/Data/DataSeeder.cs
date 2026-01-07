@@ -131,7 +131,7 @@ public static class DataSeeder
         foreach (var categorie in seedCategorie)
         {
             var bestaat = await dbContext.Categorieen.AnyAsync(
-                c => c.Naam == categorie.Naam && c.CategorieNr == categorie.CategorieNr);
+                c => c.Naam == categorie.Naam);
             
             if (!bestaat)
             {
@@ -247,8 +247,6 @@ public static class DataSeeder
             {
                 dbContext.Veilingproducten.Add(product);
             }
-
-            dbContext.Veilingproducten.Add(product);
         }
 
         await dbContext.SaveChangesAsync();
