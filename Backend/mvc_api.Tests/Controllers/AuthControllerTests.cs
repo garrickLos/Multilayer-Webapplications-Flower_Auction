@@ -17,29 +17,29 @@
 //     *************************************
 //     */ 
 //
-//     [Fact(DisplayName = "Register_GeldigeRequest_GeeftOkResultaat")]
-//     public async Task Register_GeldigeRequest_GeeftOkResultaat()
-//     {
-//         // arrange
-//         var mocks = AuthMockData.Build("AuthTestDb", null);
-//
-//         var request = new RegisterRequest
-//         {
-//             Email = "test@example.com",
-//             Password = "Password123!",
-//             Soort = "Koper",
-//             BedrijfsNaam = "TestBedrijf"
-//         };
-//
-//         // act
-//
-//         var result = await mocks.Controller.Register(request);
-//
-//         // assert
-//         var actionResult = Assert.IsType<OkObjectResult>(result.Result);
-//         var response = Assert.IsType<RegisterResponse>(actionResult.Value);
-//         Assert.True(response.Success);
-//     }
+    // [Fact(DisplayName = "Register_GeldigeRequest_GeeftOkResultaat")]
+    // public async Task Register_GeldigeRequest_GeeftOkResultaat()
+    // {
+    //     // arrange
+    //     var mocks = AuthMockData.Build("AuthTestDb", null);
+
+    //     var request = new RegisterRequest
+    //     {
+    //         Email = "test@example.com",
+    //         Password = "Password123!",
+    //         Soort = "Koper",
+    //         BedrijfsNaam = "TestBedrijf"
+    //     };
+
+    //     // act
+
+    //     var result = await mocks.Controller.Register(request);
+
+    //     // assert
+    //     var actionResult = Assert.IsType<OkObjectResult>(result.Result);
+    //     var response = Assert.IsType<RegisterResponse>(actionResult.Value);
+    //     Assert.True(response.Success);
+    // }
 //
 //     [Theory
 //         (DisplayName = "Register_NietGeldigeRequest_GeeftNietOkResultaat")]
@@ -75,42 +75,42 @@
 //     *******************************
 //     */ 
 //
-//     [Fact(DisplayName="Success: Ingelogd met correcte data")]
-//     public async Task Login_GeldigAccount_Success()
-//     {
-//         // 1. Arrange: Mocks ophalen
-//
-//         var fakeUser = new Gebruiker
-//         {
-//             Email = "flora@gmail.com",
-//             UserName = "flora@gmail.com",
-//             Status = ModelStatus.Active // Zorg dat status niet Deleted/Inactive is
-//         };
-//
-//         var mocks = AuthMockData.Build("AuthTestDb", fakeUser);
-//
-//         var request = new LoginRequest
-//         {
-//             Email = "flora@gmail.com",
-//             Password = "Password123!",
-//             RememberMe = true
-//         };
-//
-//         mocks.SignInManager.Setup(x => x.PasswordSignInAsync(It.IsAny<Gebruiker>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
-//             .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-//
-//         // Act
-//         var result = await mocks.Controller.Login(request);
-//
-//         // Assert:
-//         var actionResult = Assert.IsType<OkObjectResult>(result.Result);
-//
-//         var response = Assert.IsType<LoginResponse>(actionResult.Value);
-//
-//         // Controleer de inhoud
-//         Assert.True(response.Success);
-//         Assert.Equal("valid-test-token", response.Token);
-//     }
+    // [Fact(DisplayName="Success: Ingelogd met correcte data")]
+    // public async Task Login_GeldigAccount_Success()
+    // {
+    //     // 1. Arrange: Mocks ophalen
+
+    //     var fakeUser = new Gebruiker
+    //     {
+    //         Email = "flora@gmail.com",
+    //         UserName = "flora@gmail.com",
+    //         Status = ModelStatus.Active // Zorg dat status niet Deleted/Inactive is
+    //     };
+
+    //     var mocks = AuthMockData.Build("AuthTestDb", fakeUser);
+
+    //     var request = new LoginRequest
+    //     {
+    //         Email = "flora@gmail.com",
+    //         Password = "Password123!",
+    //         RememberMe = true
+    //     };
+
+    //     mocks.SignInManager.Setup(x => x.PasswordSignInAsync(It.IsAny<Gebruiker>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
+    //         .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+
+    //     // Act
+    //     var result = await mocks.Controller.Login(request);
+
+    //     // Assert:
+    //     var actionResult = Assert.IsType<OkObjectResult>(result.Result);
+
+    //     var response = Assert.IsType<LoginResponse>(actionResult.Value);
+
+    //     // Controleer de inhoud
+    //     Assert.True(response.Success);
+    //     Assert.Equal("valid-test-token", response.Token);
+    // }
 //
 //     [Fact(DisplayName="Failure: Ingelogd met geen gebruiker")]
 //     public async Task Login_NoUser_Failure()
