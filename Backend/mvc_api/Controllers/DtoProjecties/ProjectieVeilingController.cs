@@ -1,6 +1,5 @@
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
-using SQLitePCL;
 
 namespace mvc_api.Controllers;
 

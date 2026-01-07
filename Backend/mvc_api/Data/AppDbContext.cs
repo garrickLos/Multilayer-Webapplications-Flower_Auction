@@ -66,15 +66,8 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasMaxLength(20)
             .HasDefaultValue(ModelStatus.Active);
 
-        // Geld-precisie (Bieding/Veilingproduct via attributen, hier extra voor Minimumprijs)
-        b.Entity<Veilingproduct>()
-            .Property(v => v.Minimumprijs)
-            .HasPrecision(18, 2);
-
-        b.Entity<Veilingproduct>()
-            .Property(v => v.Startprijs)
-            .HasPrecision(18, 2);
-
+        // Geld-precisie wordt via attributen op decimal-velden geregeld.
+        
         var dag = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
 
         b.Entity<Categorie>().HasData(
