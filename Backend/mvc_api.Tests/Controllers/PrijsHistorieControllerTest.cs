@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using Moq;
 using Xunit;
 using mvc_api.Controllers;
+using mvc_api.Data;
 
 namespace mvc_api.Tests.Controllers
 {
@@ -16,20 +17,30 @@ namespace mvc_api.Tests.Controllers
             var nummer = 2;
             var naam = "Bloemenhandel De Vrolijke Roos";
 
-            // Simuleer IConfiguration
-            var configBuilder = new ConfigurationBuilder();
-            configBuilder.AddInMemoryCollection(new Dictionary<string, string>
+            var mockRepo = new Mock<IPrijsHistorieRepository>();
+            var verwachteItems = new List<PrijsHistorieItem>
             {
+                new PrijsHistorieItem
                 {
-                    //Hier hoort de connection string met de sql
+                    BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
+                    BeginDatum = new DateTime(2025, 10, 10),
+                    BedragPerFust = 21
+                },
+                new PrijsHistorieItem
+                {
+                    BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
+                    BeginDatum = new DateTime(2025, 10, 10),
+                    BedragPerFust = 10
                 }
-            });
+            };
 
-            IConfiguration config = configBuilder.Build();
-
+            mockRepo
+                .Setup(repo => repo.GetPrijsHistorieAlleenKweker(nummer, naam, default))
+                .Returns(new PrijsHistorieResultaat(verwachteItems, 15.5m));
+            
             // Maak controller aan
-            var controller = new PrijsHistorieController(config);
-
+            var controller = new PrijsHistorieController(mockRepo.Object);
+            
             // Act: Roep endpoint aan
             var result = controller.GetPrijsHistorieAlleenKweker(nummer, bedrijfsNaam: naam);
 
@@ -39,20 +50,8 @@ namespace mvc_api.Tests.Controllers
             // Assert: Data is een lijst van PrijsHistorieItem
             var data = Assert.IsAssignableFrom<List<PrijsHistorieItem>>(okResult.Value);
 
-            // Verwachte waarden per regel
-            var verwachtItem1 = new PrijsHistorieItem
-            {
-                BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
-                BeginDatum = new DateTime(2025, 10, 10),
-                BedragPerFust = 21
-            };
-
-            var verwachtItem2 = new PrijsHistorieItem
-            {
-                BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
-                BeginDatum = new DateTime(2025, 10, 10),
-                BedragPerFust = 10
-            };
+            var verwachtItem1 = verwachteItems[0];
+            var verwachtItem2 = verwachteItems[1];
 
             // Controleer elk item
             Assert.Equal(verwachtItem1.BedrijfsNaam, data[0].BedrijfsNaam);
@@ -73,21 +72,36 @@ namespace mvc_api.Tests.Controllers
             // Arrange: nummer van de categorie en bedrijfsnaam
             var nummer = 2;
 
-            // Simuleer IConfiguration
-            var configBuilder = new ConfigurationBuilder();
-            configBuilder.AddInMemoryCollection(new Dictionary<string, string>
+            var mockRepo = new Mock<IPrijsHistorieRepository>();
+            var verwachteItems = new List<PrijsHistorieItem>
             {
+                new PrijsHistorieItem
                 {
-                    //Hier hoort de connection string met de sql
-
+                    BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
+                    BeginDatum = new DateTime(2025, 10, 10),
+                    BedragPerFust = 21
+                },
+                new PrijsHistorieItem
+                {
+                    BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
+                    BeginDatum = new DateTime(2025, 10, 10),
+                    BedragPerFust = 10
+                },
+                new PrijsHistorieItem
+                {
+                    BedrijfsNaam = "Flora BV",
+                    BeginDatum = new DateTime(2025, 10, 10),
+                    BedragPerFust = 13
                 }
-            });
+            };
 
-            IConfiguration config = configBuilder.Build();
-
+            mockRepo
+                .Setup(repo => repo.GetPrijsHistorieIedereen(nummer, default))
+                .Returns(new PrijsHistorieResultaat(verwachteItems, 14.7m));
+            
             // Maak controller aan
-            var controller = new PrijsHistorieController(config);
-
+            var controller = new PrijsHistorieController(mockRepo.Object);
+            
             // Act: Roep endpoint aan
             var result = controller.GetPrijsHistorieIedereen(nummer);
 
@@ -97,27 +111,9 @@ namespace mvc_api.Tests.Controllers
             // Assert: Data is een lijst van PrijsHistorieItem
             var data = Assert.IsAssignableFrom<List<PrijsHistorieItem>>(okResult.Value);
 
-            // Verwachte waarden per regel
-            var verwachtItem1 = new PrijsHistorieItem
-            {
-                BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
-                BeginDatum = new DateTime(2025, 10, 10),
-                BedragPerFust = 21
-            };
-
-            var verwachtItem2 = new PrijsHistorieItem
-            {
-                BedrijfsNaam = "Bloemenhandel De Vrolijke Roos",
-                BeginDatum = new DateTime(2025, 10, 10),
-                BedragPerFust = 10
-            };
-
-            var verwachtItem3 = new PrijsHistorieItem
-            {
-                BedrijfsNaam = "Flora BV",
-                BeginDatum = new DateTime(2025, 10, 10),
-                BedragPerFust = 13
-            };
+            var verwachtItem1 = verwachteItems[0];
+            var verwachtItem2 = verwachteItems[1];
+            var verwachtItem3 = verwachteItems[2];
 
             // Controleer elk item
             Assert.Equal(verwachtItem1.BedrijfsNaam, data[0].BedrijfsNaam);

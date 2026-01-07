@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
+using mvc_api.Data;
 
 namespace mvc_api.Controllers
 {
@@ -19,93 +18,35 @@ namespace mvc_api.Controllers
     [Route("[controller]")]
     public class PrijsHistorieController : ControllerBase
     {
-        private readonly string _connectionString;
-
-        public PrijsHistorieController(IConfiguration configuration)
+        private readonly IPrijsHistorieRepository _repository;
+        public PrijsHistorieController(IPrijsHistorieRepository repository)
         {
-            _connectionString = configuration.GetConnectionString("Default")!;
+            _repository = repository;
         }
 
         [HttpGet]
         public IActionResult GetPrijsHistorieIedereen(int CategorieNr, CancellationToken ct = default)
         {
-            var resultaten = new List<PrijsHistorieItem>();
-
-
-            using (var connection = new SqlConnection(_connectionString))
+            var resultaat = _repository.GetPrijsHistorieIedereen(CategorieNr, ct);
+            if (HttpContext is not null)
             {
-                connection.Open();
-                var tijdelijkeQuery = @"
-                        SELECT top 10 U.BedrijfsNaam, V.BeginDatum, B.BedragPerFust
-                        FROM Veilingproduct V
-                        JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
-                        JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
-                        WHERE V.CategorieNr = @CategorieNr
-                        ORDER BY V.BeginDatum DESC";
-
-                using (var command = new SqlCommand(tijdelijkeQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@CategorieNr", CategorieNr);
-
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            resultaten.Add(new PrijsHistorieItem
-                            {
-                                BedrijfsNaam = reader.GetString(reader.GetOrdinal("BedrijfsNaam")),
-                                BeginDatum = reader.GetDateTime(reader.GetOrdinal("BeginDatum")),
-                                BedragPerFust = reader.GetInt32(reader.GetOrdinal("BedragPerFust"))
-                            });
-                        }
-                    }
-                }
+                Response.Headers["X-GemiddeldePrijs"] = (resultaat.AverageBedrag ?? 0m)
+                    .ToString(CultureInfo.InvariantCulture);
             }
-
-            return Ok(resultaten);
+            return Ok(resultaat.Items);
         }
 
         [HttpGet]
         public IActionResult GetPrijsHistorieAlleenKweker(int CategorieNr, string bedrijfsNaam, CancellationToken ct = default)
         {
-            var resultaten = new List<PrijsHistorieItem>();
-
-
-            using (var connection = new SqlConnection(_connectionString))
+            var resultaat = _repository.GetPrijsHistorieAlleenKweker(CategorieNr, bedrijfsNaam, ct);
+            if (HttpContext is not null)
             {
-                connection.Open();
-                var tijdelijkeQuery = @"
-                    SELECT top 10 U.BedrijfsNaam, V.BeginDatum, B.BedragPerFust
-                    FROM Veilingproduct V
-                    JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
-                    JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
-                    WHERE V.CategorieNr = @CategorieNr
-                    AND (@BedrijfsNaam = '' OR U.BedrijfsNaam = @BedrijfsNaam)
-                    ORDER BY V.BeginDatum DESC";
-
-                using (var command = new SqlCommand(tijdelijkeQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@CategorieNr", CategorieNr);
-                    command.Parameters.AddWithValue("@BedrijfsNaam", string.IsNullOrEmpty(bedrijfsNaam) ? "" : bedrijfsNaam);
-
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            resultaten.Add(new PrijsHistorieItem
-                            {
-                                BedrijfsNaam = reader.GetString(reader.GetOrdinal("BedrijfsNaam")),
-                                BeginDatum = reader.GetDateTime(reader.GetOrdinal("BeginDatum")),
-                                BedragPerFust = reader.GetInt32(reader.GetOrdinal("BedragPerFust"))
-                            });
-                        }
-                    }
-                }
+                Response.Headers["X-GemiddeldePrijs"] = (resultaat.AverageBedrag ?? 0m)
+                    .ToString(CultureInfo.InvariantCulture);
             }
 
-            return Ok(resultaten);
+            return Ok(resultaat.Items);
         }
     }
-    
-
 }
