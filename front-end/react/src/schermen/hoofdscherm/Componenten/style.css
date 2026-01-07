@@ -1,0 +1,63 @@
+.SidebarParent {
+    position: relative;
+    overflow: visible;
+    
+    height: 500px;
+    background-color: black;
+}
+
+.sideBarMenu {
+    /* POSITIE & BASIS */
+    top: 0;
+    left: 100%; /* Ankerpunt: het element groeit vanuit rechts */
+    height: 100%;
+    border-left: 1px solid #dee2e6;
+    
+    /* CONTENT BEHEER */
+    /* Voorkomt dat tekst onder elkaar gaat staan tijdens animatie */
+    white-space: nowrap;        
+
+    /* TRANSITIE INSTELLINGEN */
+    /* We animeren width en padding tegelijk voor een soepel effect */
+    transition: 
+        width 0.3s ease-in-out, 
+        padding 0.3s ease-in-out, 
+        visibility 0s linear 0.3s;
+
+    /* STANDAARD (GESLOTEN) STATUS */
+    width: 1fr;
+    padding: 0;
+    border-left: 0; /* Ook de rand verbergen als hij dicht is */
+}
+
+/* OPEN STATUS */
+.sideBarMenu.open {
+    
+    /* 2. Padding herstellen */
+    padding: 20px;
+    
+    /* 3. Rand herstellen */
+    border-left: 1px solid #dee2e6;
+
+    /* 4. Zichtbaar maken */
+    visibility: visible;
+
+    /* 5. Geen delay op visibility bij openen */
+    transition: 
+        width 0.3s ease-in-out, 
+        padding 0.3s ease-in-out, 
+        visibility 0s linear 0s;
+}
+
+.sideBarMenu.closed {
+    visibility: hidden;
+
+    padding: 20px;
+
+    overflow-y: scroll;
+
+    transition: 
+        width 0.3s ease-in-out, 
+        padding 0.3s ease-in-out, 
+        visibility 0s linear 0s;
+}

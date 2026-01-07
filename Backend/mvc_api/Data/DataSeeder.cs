@@ -130,7 +130,8 @@ public static class DataSeeder
 
         foreach (var categorie in seedCategorie)
         {
-            var bestaat = await dbContext.Categorieen.AnyAsync(c => c.Naam == categorie.Naam);
+            var bestaat = await dbContext.Categorieen.AnyAsync(
+                c => c.Naam == categorie.Naam && c.CategorieNr == categorie.CategorieNr);
             
             if (!bestaat)
             {

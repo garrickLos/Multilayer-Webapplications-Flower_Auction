@@ -13,7 +13,6 @@ import { useEffect, useState } from 'react';
 import '../../css/Componenten/knop.css';
 import { Laadscherm } from '../AuctionScreen/VeilingSchermComponenten/Laadscherm.tsx';
 import { ErrorScherm } from '../AuctionScreen/VeilingSchermComponenten/ErrorComponent.tsx';
-
 export default function MainScreen() {
     const RefreshTimeMS = 60000; // 6000 miliseconden zou 6 seconden moeten zijn
     const refreshTimer = ApiRefresh(RefreshTimeMS);
@@ -28,7 +27,7 @@ export default function MainScreen() {
     useEffect(() => {
         let isMounted = true;
         setLoading(true);
-        ApiRequest<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}&onlyActive=${true}`, "GET", sendingData, jwtToken, refreshToken)
+        ApiRequest<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}&onlyActive=${false}`, "GET", sendingData, jwtToken, refreshToken)
             .then(result => {
                 if (isMounted) {
                     setVeilingen(result || []);
