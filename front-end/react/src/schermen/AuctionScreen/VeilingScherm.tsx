@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, NavLink, useParams } from 'react-router-dom';
 import { Timer } from '../../Componenten/RenderTimer'; // Zorg dat imports kloppen
 import { type errorMessaging, type ProductLogica, type VeilingLogica, type VeilingschermProps } from './VeilingSchermTypes';
@@ -13,7 +13,7 @@ import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../../Compone
 import { InfoVeld } from '../../Componenten/InformatieVelden';
 import { VeilingProductitem_Update, mapData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
 import { GenereerKnop } from '../../Componenten/Knop';
-
+import { ContainerSideMenu } from '../hoofdscherm/Componenten/OffcanvasComponent';
 
 import '../../css/VeilingScherm.css';
 
@@ -36,8 +36,11 @@ export default function AuctionScreen() {
     const safeData = data || [];
 
     // Data mappen en direct sorteren
-    const veilingenLijst = mapData(safeData).sort((a, b) => a.veilingNr - b.veilingNr);
-    const actieveVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr) || null;
+    const veilingenLijst = mapData(safeData).sort((a, b) => 
+        a.veilingNr - b.veilingNr);
+    
+    const actieveVeiling = veilingenLijst.find(v => 
+        v.veilingNr === veilingItemNr) || null;
 
     let veilingIsOngeldig = false;
 
@@ -124,10 +127,19 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
     const handleKlik = async () => {
 
-        if (huidigProduct != null) {
-            VeilingProductitem_Update(huidigProduct, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
+        if (huidigProduct != null && InvoerAantal > 0) {
+            try {
+                VeilingProductitem_Update(huidigProduct, InvoerAantal, Number(totaalPrijs), url, token, token_refresh);
+            } catch (error) {
+                console.log("geen item ingevuld");
+            }
         }
     };
+
+    const [isOpen, setIsOpen] = React.useState(false);
+    
+    const sideBarClick = () =>
+        setIsOpen(!isOpen);
 
     return (
         <main className='Auction_Body'>
@@ -186,90 +198,25 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}
                             min={0} value={InvoerAantal}
                         />
+
+                        <button className="btn btn-primary" onClick={sideBarClick}>
+                            {isOpen ? 'Sluit Menu' : 'Open Menu in Div'}
+                        </button>
                         
                         <div className="tekstVoorKopen">
                             Je koopt {InvoerAantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
                         </div>
                         
-                        <button className="koopNu" onClick={handleKlik}>Koop nu!</button>
+                        <GenereerKnop classNames={'Button koopNu'} bericht='Koop nu!' onclickAction={handleKlik}/>
+                    </div>
+
+                    <div className='SideMenuInfo'>
+                        <ContainerSideMenu isOpen={isOpen} />
                     </div>
                 </section>
 
                 <section>
-                    <div className="Auction_Informatievelden_Container aanbieder_informatie">
-                        <div className="kopje">Aanbieder informatie</div>
-                        <InfoVeld Titel={'Bloemsoort:'} Bericht={huidigProduct?.naam}
-                                BerichtClass={'rightSideText'}/>
-                        
-                        <InfoVeld Titel={'Aanvoerder: '} Bericht={"**kweker naam hier**"}
-                                BerichtClass={'rightSideText'}/>
-
-                        <br></br>
-                        
-                        <InfoVeld Titel={'Historische prijzen van deze aanbieder (laatste 10)'} />
-
-                        <InfoVeld Titel={'Aanbieder: '} Bericht={"**kweker naam hier**"}
-                                BerichtClass={'rightSideText'}/>
-
-                        <div className='HuidigeAanbieder'>
-                            <InfoVeld Titel={'Datum:'} Bericht={"Prijs:"}
-                                BerichtClass={'rightSideText'}/>
-
-                            <InfoVeld Titel={'**Datum**'} Bericht={"1 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"2 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"3 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"4 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"5 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"6 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"7 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"8 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"9 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Datum**'} Bericht={"10 euro"}
-                                BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'Gemiddelde prijs alle historische order van de **insert kweker**:'} Bericht={"**insert gemiddelde**"}
-                                BerichtClass={'rightSideText'}/>
-                        </div>
-                        <br></br>
-
-                        <InfoVeld Titel={'Historische prijzen van alle aanbieder (laatste 10)'} />
-
-                        <InfoVeld Titel={'Aanbieder: '} Bericht={"**kweker naam hier**"}
-                                BerichtClass={'rightSideText'}/>
-                        <div className='alleAanbieders'>
-                            <InfoVeld Titel={'Aanbieder:'} tussenkop={'Datum:'} Bericht={"Prijs:"}
-                                BerichtClass={'rightSideText'}/>
-
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"1 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"2 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"2 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"4 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"5 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"6 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"7 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"8 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"9 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                            <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"10 euro"}
-                                tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                        </div>
-                    </div>
+                    
                 </section>
             </div>
         </main>

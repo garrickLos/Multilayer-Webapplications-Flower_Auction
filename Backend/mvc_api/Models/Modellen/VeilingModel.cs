@@ -14,6 +14,7 @@ public class Veiling
     public string VeilingNaam { get; set; } = string.Empty;
 
     public DateTime Begintijd { get; set; }
+    public DateTime? GeupdateBeginTijd { get; set; }
     public DateTime Eindtijd { get; set; }
 
     // Status: "active", "inactive", "sold"

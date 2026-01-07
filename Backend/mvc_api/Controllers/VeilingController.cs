@@ -45,9 +45,9 @@ public class VeilingController : ControllerBase
         DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = testNow ?? DateTime.UtcNow;
+        var now = testNow ?? DateTime.Now;
 
-        var veilingenTeUpdaten = _db.Veilingen
+        var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
             (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
@@ -121,7 +121,7 @@ public class VeilingController : ControllerBase
         //     now = now.ToLocalTime();
         // }
 
-        var veilingenTeUpdaten = _db.Veilingen
+        var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
             (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
@@ -198,7 +198,7 @@ public class VeilingController : ControllerBase
 
         now = now.ToLocalTime();
 
-        var veilingenTeUpdaten = _db.Veilingen
+        var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
             (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
@@ -251,7 +251,7 @@ public class VeilingController : ControllerBase
                 .ProjectToVeiling_klantDto(query, now) // Roept de klant helper methode op zodat het de juiste gegevens laat zien
                 .ToListAsync(ct);
 
-            return Ok(items);   
+            return Ok(items);
         } else
         {
             return Unauthorized();
@@ -271,7 +271,7 @@ public class VeilingController : ControllerBase
 
         now = now.ToLocalTime();
 
-        var query = _db.Veilingen.AsNoTracking()
+        var query = _db.Veiling.AsNoTracking()
             .AsQueryable();
 
         var item = await _projectie
@@ -319,7 +319,7 @@ public class VeilingController : ControllerBase
             Status = VeilingStatus.Inactive
         };
 
-        _db.Veilingen.Add(entity);
+        _db.Veiling.Add(entity);
 
         try
         {
@@ -356,7 +356,7 @@ public class VeilingController : ControllerBase
     {
         var now = testNow ?? DateTime.UtcNow;
 
-        var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
@@ -389,18 +389,45 @@ public class VeilingController : ControllerBase
         return Ok(resultDto);
     }
 
+    [HttpPut("UpdateBeginTijd/{id:int}")] 
+    [Authorize(Roles = "Koper")]
+    public async Task<ActionResult<VeilingUpdate_UpdateVeilingTijd>> Update_NieuweBeginTijd(
+        int id, 
+        [FromBody] VeilingUpdate_UpdateVeilingTijd dto, 
+        CancellationToken ct = default)
+    {
+        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
+        
+        if (entity is null)
+            return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
+
+        // Update fields
+        entity.GeupdateBeginTijd = dto.GeupdateBeginTijd;
+
+        // if (!string.IsNullOrWhiteSpace(dto.Status))
+        //     entity.Status = NormalizeStatus(dto.Status);
+
+        // Business Logic check
+        if (entity.Eindtijd <= dto.GeupdateBeginTijd && entity.Status == VeilingStatus.Active)
+            entity.Status = VeilingStatus.Inactive;
+
+        await _db.SaveChangesAsync(ct);
+        
+        return Ok(dto);
+    }
+
     // DELETE: api/Veiling/{id}
     //verwijderd ook alle producten die in de veiling zitten (mss handig om een softdelete te gebruiken)
     [HttpDelete("{id:int}")]
     [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
-        _db.Veilingen.Remove(entity);
+        _db.Veiling.Remove(entity);
         await _db.SaveChangesAsync(ct);
 
         return NoContent();

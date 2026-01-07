@@ -31,13 +31,13 @@ public record BiedingCreateDto : BaseBieding_Dto
     public int VeilingproductNr { get; set; }
 }
 
-public sealed record klantBiedingGet_dto
-(
-    int VeilingProductNr,
-    int BedragPerFust,
-    int AantalStuks,
-    int GebruikerNr
-);
+public record klantBiedingGet_dto
+{
+    public int VeilingProductNr { get; set; }
+    public int BedragPerFust { get; set; }
+    public int AantalStuks { get; set; }
+    public int GebruikerNr { get; set; }
+}
 
 public record BiedingUpdateDto : BaseBieding_Dto;
 

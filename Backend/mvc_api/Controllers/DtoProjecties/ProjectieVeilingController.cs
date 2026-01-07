@@ -51,10 +51,11 @@ public class ProjectieVeilingController
     {
         return query.Select(v => new Klant_VeilingDto
         {
-            VeilingNr = v.VeilingNr,
-            VeilingNaam = v.VeilingNaam,
-            Begintijd = v.Begintijd,
-            Eindtijd = v.Eindtijd,
+            VeilingNr           = v.VeilingNr,
+            VeilingNaam         = v.VeilingNaam,
+            Begintijd           = v.Begintijd,
+            GeupdateBeginTijd   = v.GeupdateBeginTijd == null ? null: v.GeupdateBeginTijd,
+            Eindtijd            = v.Eindtijd,
 
             Status = (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
                 ? VeilingStatus.Sold

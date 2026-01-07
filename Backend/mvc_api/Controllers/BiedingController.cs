@@ -1,9 +1,5 @@
-﻿using System.Security.Cryptography;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -21,12 +17,11 @@ public class BiedingController : ControllerBase
     private readonly IBiedingRepo _repository;
     private readonly AppDbContext _db;
 
-    public BiedingController(IBiedingRepo repository, AppDbContext db)
+    public BiedingController (IBiedingRepo repository, AppDbContext db)
     {
         _repository = repository;
         _db = db;
     }
-    
 
     // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
     [HttpGet("Klant")]
@@ -34,11 +29,18 @@ public class BiedingController : ControllerBase
     public async Task<ActionResult<IEnumerable<klantBiedingGet_dto>>> GetKlantBiedingen(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingProductNr,
+        [FromQuery] bool orderDescending = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var items = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, ct);
+        var (items, total) = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, orderDescending, page, pageSize, ct);
         
-        return Ok(items);
+        SetResponseHeader(total, page, pageSize);
+
+        return items is null
+            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404))
+            : Ok(items);
     }
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
@@ -47,54 +49,33 @@ public class BiedingController : ControllerBase
     public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetVeilingMeester_Biedingen(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingNr,
+        [FromQuery] bool orderDescending = true,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
+        var (items, total) = await _repository.GetVeilingMeesterBiedingenAsync(gebruikerNr, veilingNr, orderDescending, page, pageSize, ct);
 
-        var query = _db.Biedingen.AsNoTracking()
-            .Include(b => b.Veilingproduct)
-            .AsQueryable();
+        SetResponseHeader(total, page, pageSize);
 
-        if (gebruikerNr is int gNr)
-            query = query.Where(b => b.GebruikerNr == gNr);
-
-        if (veilingNr is int vNr)
-            query = query.Where(b => b.Veilingproduct!.VeilingNr == vNr);
-        
-        var total = await query.CountAsync(ct);
-
-        var items = await query
-            .OrderByDescending(b => b.BiedNr)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ProjectToBieding_VeilingMeester()
-            .ToListAsync(ct);
-
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-
-        return Ok(items);
+        return items is null
+            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404))
+            : Ok(items);
     }
 
     // GET: api/Bieding/1001
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "VeilingMeester")]
-    public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(int id, CancellationToken ct = default)
+    [Authorize (Roles ="VeilingMeester")]
+    public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(
+        int id, 
+        CancellationToken ct = default)
     {
-        var dto = await _db.Biedingen.AsNoTracking()
-            .Where(x => x.BiedNr == id)
-            .ProjectToBieding_VeilingMeester()
-            .FirstOrDefaultAsync(ct);
+        var items = _repository.GetById(id, ct);
 
-        return dto is null
+        return items is null
             ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
-            : Ok(dto);
+            : Ok(items);
     }
-    
 
     // POST: api/Bieding
     [HttpPost]
@@ -188,27 +169,11 @@ public class BiedingController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
-}
 
-// dit zijn de Dto projecties die worden opgehaald voor de data die nodig is. 
-// de projectToMeesterDto is voor het ophalen van meerdere gegevens voor de veilingsMeester
-public static class BiedingExtensions
-{
-    // Projectie voor Veilingmeesters
-    public static IQueryable<VeilingMeester_BiedingDto> ProjectToBieding_VeilingMeester(
-        this IQueryable<Bieding> query)
+    private void SetResponseHeader(int total, int page, int pageSize)
     {
-        return query.Select(b => new VeilingMeester_BiedingDto
-        {   // Eigen properties van VeilingMeester_BiedingDto
-            BiedingNr = b.BiedNr,
-            VeilingNr = b.Veilingproduct!.VeilingNr,
-            VeilingProductNr = b.VeilingproductNr,
-
-            // Properties geërfd van BaseBieding_Dto
-            BedragPerFust = b.BedragPerFust,
-            AantalStuks = b.AantalStuks,
-            GebruikerNr = b.GebruikerNr,
-        });
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
     }
- 
 }

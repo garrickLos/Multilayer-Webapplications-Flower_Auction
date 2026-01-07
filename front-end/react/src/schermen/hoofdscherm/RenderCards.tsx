@@ -10,8 +10,7 @@ import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
 // css
 import '../../css/Componenten/AuctionCards.css';
 
-// Interfaces (Zorg dat deze exact overeenkomen met je data)
-
+// to do: verplaatsen van types naar een specifieke folder en bestand
 interface AuctionCardProps {
     parentVeiling: VeilingItem;
     product: Producten;
@@ -23,7 +22,7 @@ export interface VeilingItem {
     eindtijd: string;
     status: string;
     minimumPrijs: number;
-    producten: Producten; // Meestal is dit een array
+    producten: Producten[]; // Meestal is dit een array
 }
 
 export interface Producten {
@@ -113,7 +112,8 @@ export function beschrijving(product: Producten, item: VeilingItem, kwekerInfo: 
 
     // de items die worden getoond als een grote tekst onder de foto
     return (
-        `lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}, aanvoerder: ${kwekerNaam}
+        `lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}, 
+        aanvoerder: ${kwekerNaam}
 
         Fusten over: ${product.aantalFusten}
         

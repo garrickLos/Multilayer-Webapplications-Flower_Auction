@@ -4,39 +4,15 @@ import { ApiRequest } from "../../../typeScript/ApiRequest";
 import { Vermenigvuldigen as naarCenten } from "../../../typeScript/RekenFuncties";
 
 import type { VeilingLogica, ProductLogica } from "../VeilingSchermTypes";
-import { GetDate } from "../../../typeScript/FetchDate";
+import { GetIsoTimeByZone } from "../../../typeScript/FetchDate";
 
-export interface VeilingproductUpdate {
-    // string | null zorgt dat je eventueel wel null mag sturen als dat ooit nodig is
-    Naam?: string | null;
-    GeplaatstDatum?: Date | null;
-    VoorraadBloemen: number;
-    AantalFusten: number;
-    CategorieNr?: number | null;
-    ImagePath?: string | null;
-    Minimumprijs?: number | null;
-    Plaats?: string | null;
-}
+/********************
+** gebruikte types **
+*********************/
+import type { VeilingproductUpdate, VeilingTijdUpdate } from "./VeilingSchermTypes/VeilingTypes";
+import type { NieuweBieding } from "./VeilingSchermTypes/BiedingTypes";
+import type { MyTokenPayload } from "./VeilingSchermTypes/TokenPayloadTypes";
 
-interface VeilingUpdate {
-    veilingNaam?: string | null,
-    beginTijd?: Date | null,
-    eindTijd?: Date | null,
-}
-
-interface NieuweBieding {
-    BedragPerFust: number,
-    AantalStuks: number,
-    GebruikerNr: string,
-    VeilingProductNr: number
-}
-
-interface MyTokenPayload {
-    GebruikerNr: string; // Of number, afhankelijk van je API
-    expiration: number; // wanneer de token verloopt
-    IssuedAt: number; // de datum dat het is vrij gegeven
-    [key: string]: any; // Voor overige onbekende velden
-}
 
 // mapt de data voor de veilingscherm
 // dit zorgt ervoor dat er altijd info staat. Indien het niet gevonden kan worden (error tijdens de get)
@@ -46,6 +22,7 @@ export function mapData(safeData: any[]): VeilingLogica[] {
         veilingNr: item.veilingNr,
         status: item.status,
         startIso: item.begintijd,
+        geupdateIso: item.geupdateBeginTijd,
         endIso: item.eindtijd,
         
         producten: (item.producten || []).map((prod: any) => ({
@@ -103,11 +80,19 @@ export async function VeilingProductitem_Update(
         nieuweVoorraad_Bloemen = Math.max(0, huidigeVoorraad_Bloemen - teVerwijderenBloemen); // haal de hoeveelheid bloemen van de voorraad af
     }
 
+    // **********************************
+    // * invullen van bloemen en fusten *
+    // **********************************
+
     // Controleer of de API alle velden vereist (inclusief degene die niet veranderen)
     const dataOmTeSturen: VeilingproductUpdate = {
         VoorraadBloemen: nieuweVoorraad_Bloemen,
         AantalFusten: nieuweVoorraad_Fusten,
     };
+
+    // ****************************
+    // * invullen van een bieding *
+    // ****************************
 
     const decoded = jwtDecode<MyTokenPayload>(token);
 
@@ -122,22 +107,28 @@ export async function VeilingProductitem_Update(
         VeilingProductNr: productId
     };
 
-    // const UpdateVeilingKlok: VeilingUpdate = {
-    //     beginTijd: GetDate("", 'nl-NL')
-    // };
+    // ********************************
+    // * invullen van een nieuwe tijd *
+    // ********************************
+
+    const UpdateBeginTijd: VeilingTijdUpdate = {
+        // maakt een nieuwe tijd aan op basis van de TijdZone waar de server in zit. (Europe/Amsterdam)
+        GeupdateBeginTijd: GetIsoTimeByZone('Europe/Amsterdam'),
+    };
 
     try {
         await Promise.all([
-            // update de voorraad
+            // update de VeilingProduct hoeveelheid op basis van wat er is ingevoerd
             ApiRequest<VeilingproductUpdate>(url, 'PUT', dataOmTeSturen, token, refreshToken),
-            //UpdateVeilingApi<VeilingproductUpdate_props>(url, dataOmTeSturen, token, refreshToken),
 
-            //nieuwe bieding aanmaken
-            ApiRequest<NieuweBieding>("/api/Bieding", "POST" , BiedingAanmaken, token, refreshToken)
-
-            // To-Do: update starttijd van veiling
+            // maakt een nieuwe bieding aan in de database
+            ApiRequest<NieuweBieding>("/api/Bieding", "POST" , BiedingAanmaken, token, refreshToken),
             
+            // Update de tijd op basis van tijdzone
+            ApiRequest('/api/Veiling/UpdateBeginTijd/201', 'PUT', UpdateBeginTijd, token, refreshToken)
         ]);
+
+        console.log("Alle updates zijn succesvol verwerkt.");
 
     } catch (error) {
         console.error("API Error details:", error);

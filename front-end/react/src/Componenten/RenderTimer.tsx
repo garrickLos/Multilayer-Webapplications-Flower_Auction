@@ -10,11 +10,13 @@ type TimerProps =  {
 
 // Hulpfunctie: Bereken de gegevens van het huidige actieve product
 export function berekenHuidigeVeilingStaat(veiling?: VeilingLogica) {
+
     if (!veiling || !veiling.producten || veiling.producten.length === 0) {
         return { prijs: 0, index: -1, isAfgelopen: true };
     }
 
-    const startTijd = veiling.startIso ? new Date(veiling.startIso).getTime() : Date.now();
+    const startTijd = veiling.geupdateIso ? new Date(veiling.geupdateIso).getTime() : new Date(veiling.startIso).getTime();
+
     const eindTijd = veiling.endIso ? new Date(veiling.endIso).getTime() : Date.now();
     const nu = Date.now();
     

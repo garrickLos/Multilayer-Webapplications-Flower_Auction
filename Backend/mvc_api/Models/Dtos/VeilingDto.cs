@@ -33,6 +33,8 @@ public record Klant_VeilingDto : BaseVeiling_Dto
     [StringLength(20)] 
     public string? Status { get; set; }
 
+    public DateTime? GeupdateBeginTijd { get; set; }
+
     public IEnumerable<VeilingproductKwekerListDto>? Producten { get; init; } = Enumerable.Empty<VeilingproductKwekerListDto>();
 }
 
@@ -43,7 +45,13 @@ public record VeilingCreateDto : BaseVeiling_Dto
     public string? Status { get; set; }
 }
 
-public record VeilingUpdateDto : BaseVeiling_Dto; 
+public record VeilingUpdateDto : BaseVeiling_Dto;
+
+public record VeilingUpdate_UpdateVeilingTijd
+{   
+    [Required]
+    public DateTime? GeupdateBeginTijd { get; set; }
+}
 
 public record VeilingMeester_VeilingDto : BaseVeiling_Dto
 {

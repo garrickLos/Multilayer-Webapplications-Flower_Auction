@@ -21,7 +21,7 @@ public class Veilingproduct
     [Range(0, int.MaxValue)]
     public int VoorraadBloemen { get; set; }
 
-    [Range(1, 999999999)]
+    [Range(0 , int.MaxValue)]
     public int? Startprijs { get; set; }
 
     [ForeignKey(nameof(Categorie))]
