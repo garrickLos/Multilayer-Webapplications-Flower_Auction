@@ -298,11 +298,15 @@ public class VeilingController : ControllerBase
     [HttpPost]
     [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingCreateDto>> Create(
-        [FromBody] VeilingCreateDto dto, 
+        [FromBody] VeilingCreateDto dto,
+        DateTime? testNow = null,
+
         CancellationToken ct = default)
     {
+
+        var now = testNow ?? DateTime.UtcNow;
+
         // Validatie van [Required] gebeurt automatisch door [ApiController]
-        var now = DateTime.UtcNow.ToLocalTime();
         var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
         if (timeValidation is not null)
             return timeValidation;
@@ -345,16 +349,17 @@ public class VeilingController : ControllerBase
     [HttpPut("{id:int}")]
     [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingUpdateDto>> Update(
-        int id, 
-        [FromBody] VeilingUpdateDto dto, 
+        int id,
+        [FromBody] VeilingUpdateDto dto,
+        DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow.ToLocalTime();
+        var now = testNow ?? DateTime.UtcNow;
 
         var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
-            return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
+            return NotFound(($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
 
         var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
         if (timeValidation is not null)

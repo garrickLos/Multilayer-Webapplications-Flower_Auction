@@ -139,7 +139,7 @@ public static class DataSeeder
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 500,
-                Startprijs       = 120,
+                Startprijs       = 12000,
                 CategorieNr      = 1,
                 VeilingNr        = 201,
                 Plaats           = "Aalsmeer",
@@ -154,7 +154,7 @@ public static class DataSeeder
                 GeplaatstDatum   = geplaatst,
                 AantalFusten     = 10,
                 VoorraadBloemen  = 300,
-                Startprijs       = 200,
+                Startprijs       = 20000,
                 CategorieNr      = 2,
                 VeilingNr        = 202,
                 Plaats           = "Eelde",
@@ -186,7 +186,7 @@ public static class DataSeeder
         {
             return;
         }
-        
+
         var producten = await dbContext.Veilingproducten
             .Where(vp => vp.Naam == "Tulp Mix" || vp.Naam == "Rode Roos")
             .ToDictionaryAsync(vp => vp.Naam, vp => vp.VeilingProductNr);
@@ -226,4 +226,5 @@ public static class DataSeeder
 
         await dbContext.SaveChangesAsync();
     }
+   
 }

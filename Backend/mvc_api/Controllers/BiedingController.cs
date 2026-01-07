@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -18,11 +21,12 @@ public class BiedingController : ControllerBase
     private readonly IBiedingRepo _repository;
     private readonly AppDbContext _db;
 
-    public BiedingController (IBiedingRepo repository, AppDbContext db)
+    public BiedingController(IBiedingRepo repository, AppDbContext db)
     {
         _repository = repository;
         _db = db;
     }
+    
 
     // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
     [HttpGet("Klant")]
@@ -78,7 +82,7 @@ public class BiedingController : ControllerBase
 
     // GET: api/Bieding/1001
     [HttpGet("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
+    [Authorize(Roles = "VeilingMeester")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(int id, CancellationToken ct = default)
     {
         var dto = await _db.Biedingen.AsNoTracking()
@@ -90,6 +94,7 @@ public class BiedingController : ControllerBase
             ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
             : Ok(dto);
     }
+    
 
     // POST: api/Bieding
     [HttpPost]
@@ -205,4 +210,5 @@ public static class BiedingExtensions
             GebruikerNr = b.GebruikerNr,
         });
     }
+ 
 }
