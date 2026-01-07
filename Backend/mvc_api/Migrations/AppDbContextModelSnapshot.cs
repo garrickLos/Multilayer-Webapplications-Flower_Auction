@@ -200,38 +200,6 @@ namespace mvc_api.Migrations
                     b.HasKey("CategorieNr");
 
                     b.ToTable("Categorie");
-
-                    b.HasData(
-                        new
-                        {
-                            CategorieNr = 1,
-                            Naam = "Tulpen"
-                        },
-                        new
-                        {
-                            CategorieNr = 2,
-                            Naam = "Rozen"
-                        },
-                        new
-                        {
-                            CategorieNr = 3,
-                            Naam = "Lelie"
-                        },
-                        new
-                        {
-                            CategorieNr = 4,
-                            Naam = "Zonnebloem"
-                        },
-                        new
-                        {
-                            CategorieNr = 5,
-                            Naam = "Chrysant"
-                        },
-                        new
-                        {
-                            CategorieNr = 6,
-                            Naam = "Pioenroos"
-                        });
                 });
 
             modelBuilder.Entity("mvc_api.Models.Gebruiker", b =>
@@ -401,24 +369,6 @@ namespace mvc_api.Migrations
                     b.HasKey("VeilingNr");
 
                     b.ToTable("Veiling");
-
-                    b.HasData(
-                        new
-                        {
-                            VeilingNr = 201,
-                            Begintijd = new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Eindtijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "active",
-                            VeilingNaam = "veiling001"
-                        },
-                        new
-                        {
-                            VeilingNr = 202,
-                            Begintijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Eindtijd = new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "active",
-                            VeilingNaam = "veiling001"
-                        });
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>

@@ -29,7 +29,7 @@ public class VeilingControllerFilter : IVeilingControllerFilter
         DateTime now)
     {
         // Start de query
-        var query = _db.Veilingen.AsNoTracking().AsQueryable();
+        var query = _db.Veiling.AsNoTracking().AsQueryable();
 
         // Filters toepassen
         if (veilingProduct.HasValue)

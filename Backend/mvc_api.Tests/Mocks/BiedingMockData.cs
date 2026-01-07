@@ -68,7 +68,7 @@ public class BiedingMockData : IStatic_Variable
 
             // genereert veilingen die gebruikt kunnen worden
             // 1 actief en 1 inactief voor het testen van beide stellingen
-            dbContext.Veilingen.AddRange(
+            dbContext.Veiling.AddRange(
                 new Veiling { VeilingNr = 10, Status = IStatic_Variable.StatusActive },
                 new Veiling { VeilingNr = 20, Status = IStatic_Variable.StatusInactive }
             );

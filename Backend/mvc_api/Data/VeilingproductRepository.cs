@@ -18,7 +18,7 @@ public class VeilingproductRepository : IVeilingproductRepository
         await _db.Veilingproducten.FindAsync(new object[] { veilingproductNr }, ct);
 
     public async Task<Veiling?> GetVeilingAsync(int veilingNr, CancellationToken ct) =>
-        await _db.Veilingen.FindAsync(new object[] { veilingNr }, ct);
+        await _db.Veiling.FindAsync(new object[] { veilingNr }, ct);
 
     public Task<bool> CategorieExistsAsync(int categorieNr, CancellationToken ct) =>
         _db.Categorieen.AnyAsync(c => c.CategorieNr == categorieNr, ct);

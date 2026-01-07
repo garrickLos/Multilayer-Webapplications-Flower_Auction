@@ -42,7 +42,7 @@ public class VeilingController : ControllerBase
     {
         var now = testNow ?? DateTime.Now;
 
-        var veilingenTeUpdaten = _db.Veilingen
+        var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
             (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
@@ -116,7 +116,7 @@ public class VeilingController : ControllerBase
         //     now = now.ToLocalTime();
         // }
 
-        var veilingenTeUpdaten = _db.Veilingen
+        var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
             (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
@@ -193,7 +193,7 @@ public class VeilingController : ControllerBase
 
         now = now.ToLocalTime();
 
-        var veilingenTeUpdaten = _db.Veilingen
+        var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
             (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
@@ -266,7 +266,7 @@ public class VeilingController : ControllerBase
 
         now = now.ToLocalTime();
 
-        var query = _db.Veilingen.AsNoTracking()
+        var query = _db.Veiling.AsNoTracking()
             .AsQueryable();
 
         var item = await _projectie
@@ -310,7 +310,7 @@ public class VeilingController : ControllerBase
             Status = VeilingStatus.Inactive
         };
 
-        _db.Veilingen.Add(entity);
+        _db.Veiling.Add(entity);
 
         try
         {
@@ -346,7 +346,7 @@ public class VeilingController : ControllerBase
     {
         var now = DateTime.UtcNow.ToLocalTime();
 
-        var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
@@ -386,7 +386,7 @@ public class VeilingController : ControllerBase
         [FromBody] VeilingUpdate_UpdateVeilingTijd dto, 
         CancellationToken ct = default)
     {
-        var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
@@ -412,12 +412,12 @@ public class VeilingController : ControllerBase
     [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var entity = await _db.Veilingen.FindAsync(new object[] { id }, ct);
+        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
-        _db.Veilingen.Remove(entity);
+        _db.Veiling.Remove(entity);
         await _db.SaveChangesAsync(ct);
 
         return NoContent();

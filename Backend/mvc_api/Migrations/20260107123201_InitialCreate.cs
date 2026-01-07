@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace mvc_api.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate_060126 : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -284,28 +282,6 @@ namespace mvc_api.Migrations
                         principalTable: "Veilingproduct",
                         principalColumn: "VeilingProductNr",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.InsertData(
-                table: "Categorie",
-                columns: new[] { "CategorieNr", "Naam" },
-                values: new object[,]
-                {
-                    { 1, "Tulpen" },
-                    { 2, "Rozen" },
-                    { 3, "Lelie" },
-                    { 4, "Zonnebloem" },
-                    { 5, "Chrysant" },
-                    { 6, "Pioenroos" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Veiling",
-                columns: new[] { "VeilingNr", "Begintijd", "Eindtijd", "GeupdateBeginTijd", "Status", "VeilingNaam" },
-                values: new object[,]
-                {
-                    { 201, new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), null, "active", "veiling001" },
-                    { 202, new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc), null, "active", "veiling001" }
                 });
 
             migrationBuilder.CreateIndex(

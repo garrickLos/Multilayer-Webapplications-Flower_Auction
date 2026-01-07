@@ -15,7 +15,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
     public DbSet<Bieding>        Biedingen        => Set<Bieding>();
     public DbSet<Veilingproduct> Veilingproducten => Set<Veilingproduct>();
     public DbSet<Categorie>      Categorieen      => Set<Categorie>();
-    public DbSet<Veiling>        Veilingen        => Set<Veiling>();
+    public DbSet<Veiling>        Veiling        => Set<Veiling>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {

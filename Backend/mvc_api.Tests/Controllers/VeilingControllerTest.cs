@@ -21,7 +21,7 @@ public class VeilingControllerTest
 
         using var context = new AppDbContext(options);
 
-        context.Veilingen.AddRange(
+        context.Veiling.AddRange(
         new Veiling
         {
             VeilingNr = 1,
@@ -79,7 +79,7 @@ public class VeilingControllerTest
         // Hardcoded tijd in UTC
         var nu = new DateTime(2026, 01, 05, 12, 0, 0, DateTimeKind.Utc);
 
-        context.Veilingen.AddRange(
+        context.Veiling.AddRange(
             // Scenario A alles true
             new Veiling
             {
@@ -139,7 +139,7 @@ public class VeilingControllerTest
         //testNow voor de forceerde tijd zo is er geen probleem met miliseconde etc
         var resultaat = await controller.GetAnonymous(null, null, null, false, testNow: nu);
 
-        var updatedVeilingen = context.Veilingen.ToList();
+        var updatedVeilingen = context.Veiling.ToList();
 
 
         // Scenario A alles true 
