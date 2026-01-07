@@ -74,35 +74,5 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
         b.Entity<Veilingproduct>()
             .Property(v => v.Startprijs)
             .HasPrecision(18, 2);
-
-        var dag = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
-
-        b.Entity<Categorie>().HasData(
-            new Categorie { CategorieNr = 1, Naam = "Tulpen" },
-            new Categorie { CategorieNr = 2, Naam = "Rozen" },
-            new Categorie { CategorieNr = 3, Naam = "Lelie" },
-            new Categorie { CategorieNr = 4, Naam = "Zonnebloem" },
-            new Categorie { CategorieNr = 5, Naam = "Chrysant" },
-            new Categorie { CategorieNr = 6, Naam = "Pioenroos" }
-        );
-
-        b.Entity<Veiling>().HasData(
-            new Veiling
-            {
-                VeilingNr   = 201,
-                VeilingNaam = "veiling001",
-                Begintijd   = dag.AddHours(9),
-                Eindtijd    = dag.AddHours(10),
-                Status      = "active"
-            },
-            new Veiling
-            {
-                VeilingNr   = 202,
-                VeilingNaam = "veiling001",
-                Begintijd   = dag.AddHours(10),
-                Eindtijd    = dag.AddHours(11),
-                Status      = "active"
-            }
-        );
     }
 }

@@ -8,6 +8,7 @@ namespace mvc_api.Data;
 
 public static class DataSeeder
 {
+
     private static readonly (Gebruiker user, string password, string role)[] _gebruikers =
     [
         (
@@ -68,8 +69,10 @@ public static class DataSeeder
         
         await EnsureRoles(roleManager);
         await EnsureUsers(userManager);
+        await EnsureVeiling(dbContext, userManager);
         await EnsureVeilingproducten(dbContext, userManager);
         await EnsureBiedingen(dbContext, userManager);
+        await EnsureCategorie(dbContext, userManager);
     }
 
     private static async Task EnsureRoles(RoleManager<IdentityRole<int>> roleManager)
@@ -112,6 +115,51 @@ public static class DataSeeder
                 await userManager.AddToRoleAsync(bestaand, role);
             }
         }
+    }
+
+    private static async Task EnsureVeiling(AppDbContext dbContext, UserManager<Gebruiker> userManager)
+    {
+        var dag = DateTime.UtcNow.AddHours(5);
+
+        var veilingen = new[]
+        {
+            new Veiling
+            {
+                VeilingNr   = 201,
+                VeilingNaam = "veiling001",
+                Begintijd   = dag.AddHours(9),
+                Eindtijd    = dag.AddHours(10),
+                Status      = "active"
+            },
+            new Veiling
+            {
+                VeilingNr   = 202,
+                VeilingNaam = "veiling001",
+                Begintijd   = dag.AddHours(10),
+                Eindtijd    = dag.AddHours(11),
+                Status      = "active"
+            }
+        };
+
+        foreach (var Veiling in veilingen)
+        {
+            if (Veiling.VeilingNr == 0)
+                continue;
+
+            var bestaat = await dbContext.Veilingen.AnyAsync(v =>
+                v.VeilingNr == Veiling.VeilingNr &&
+                v.VeilingNaam == Veiling.VeilingNaam &&
+                v.Begintijd == Veiling.Begintijd &&
+                v.Eindtijd == Veiling.Eindtijd && 
+                v.Status == Veiling.Status
+                );
+            if (!bestaat)
+            {
+                dbContext.Veilingen.Add(Veiling);
+            }
+        }
+
+        await dbContext.SaveChangesAsync();
     }
     
     private static async Task EnsureVeilingproducten(AppDbContext dbContext, UserManager<Gebruiker> userManager)
@@ -221,6 +269,35 @@ public static class DataSeeder
             if (!bestaat)
             {
                 dbContext.Biedingen.Add(bieding);
+            }
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task EnsureCategorie(AppDbContext dbContext, UserManager<Gebruiker> userManager)
+    {
+        var seedCategorie = new[]
+        {
+            new Categorie { CategorieNr = 1, Naam = "Tulpen" },
+            new Categorie { CategorieNr = 2, Naam = "Rozen" },
+            new Categorie { CategorieNr = 3, Naam = "Lelie" },
+            new Categorie { CategorieNr = 4, Naam = "Zonnebloem" },
+            new Categorie { CategorieNr = 5, Naam = "Chrysant" },
+            new Categorie { CategorieNr = 6, Naam = "Pioenroos" }
+        };
+
+        foreach (var Categorie in seedCategorie)
+        {
+            if (Categorie.CategorieNr == 0)
+                continue;
+
+            var bestaat = await dbContext.Categorieen.AnyAsync(c =>
+                c.CategorieNr == Categorie.CategorieNr &&
+                c.Naam == Categorie.Naam);
+            if (!bestaat)
+            {
+                dbContext.Categorieen.Add(Categorie);
             }
         }
 

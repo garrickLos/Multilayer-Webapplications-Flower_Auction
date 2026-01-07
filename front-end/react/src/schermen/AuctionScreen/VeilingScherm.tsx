@@ -36,8 +36,11 @@ export default function AuctionScreen() {
     const safeData = data || [];
 
     // Data mappen en direct sorteren
-    const veilingenLijst = mapData(safeData).sort((a, b) => a.veilingNr - b.veilingNr);
-    const actieveVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr) || null;
+    const veilingenLijst = mapData(safeData).sort((a, b) => 
+        a.veilingNr - b.veilingNr);
+    
+    const actieveVeiling = veilingenLijst.find(v => 
+        v.veilingNr === veilingItemNr) || null;
 
     let veilingIsOngeldig = false;
 
