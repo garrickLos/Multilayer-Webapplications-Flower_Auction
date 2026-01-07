@@ -17,6 +17,11 @@ public class VeilingController : ControllerBase
     private readonly ProjectieVeilingController _projectie;
     private readonly IVeilingControllerFilter _filter;
 
+    public VeilingController(AppDbContext db)
+        : this(db, new ProjectieVeilingController(), new VeilingControllerFilter(db))
+    {
+    }
+    
     public VeilingController(
         AppDbContext db,
         ProjectieVeilingController projectie,
