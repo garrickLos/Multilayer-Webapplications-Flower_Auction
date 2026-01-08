@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
 import '../../../css/Componenten/OffcanvasComponent.css';
@@ -25,7 +25,13 @@ interface ContainerSideMenuProps {
 
 export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
 
-    let configdData: any;
+    const [kwekerHistorie, setKwekerHistorie] = useState<PrijsHistorieResultaatLogica[]>([]);
+    const [alleHistorie, setAlleHistorie] = useState<PrijsHistorieResultaatLogica[]>([]);
+
+    const normaliseerResultaten = (data: unknown): PrijsHistorieResultaatLogica[] => {
+        const arrayData = Array.isArray(data) ? data : data ? [data] : [];
+        return mapInfoLijstData(arrayData as PrijsHistorieResultaatLogica[]);
+    };
     
     useEffect(() => {
         const haalDataOp = async () => {
@@ -33,20 +39,14 @@ export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
             const refreshToken = getRefreshToken();
 
             try {
-                const data = await ApiRequest<any>("/PrijsHistorie", "GET", null, token, refreshToken);
-                console.log(data);
+                const [alleData, kwekerData] = await Promise.all([
+                    ApiRequest<any>("/api/PrijsHistorie", "GET", null, token, refreshToken),
+                    ApiRequest<any>("/api/PrijsHistorie/kweker", "GET", null, token, refreshToken),
+                ]);
 
-                const safeData = data ? [data] : [];
-                
-                // STAP 1: Haal de array met promises op (dit veroorzaakt de error als je het direct gebruikt)
-                const promiseArray = mapInfoLijstData(safeData);
+                setAlleHistorie(normaliseerResultaten(alleData));
+                setKwekerHistorie(normaliseerResultaten(kwekerData));
 
-                // STAP 2: Wacht tot alle promises in de array zijn opgelost naar echte data
-                const resolvedData = await Promise.all(promiseArray);
-
-                // STAP 3: Zet de opgeloste data in de state
-                configdData(resolvedData);
-                
             } catch (error) {
                 console.error("Fout bij ophalen data", error);
             }
@@ -69,16 +69,16 @@ export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
                     BerichtClass={'rightSideText'}/>
 
                 <br></br>
-                        
-                <InfoVeld Titel={'Historische prijzen van deze aanbieder (laatste 10)'} />
 
-                {repeatClasses("HuidigeAanbieder", configdData, false)}
+                <InfoVeld Titel={'Historical prices of this grower (last 10)'} />
+
+                {repeatClasses("HuidigeAanbieder", kwekerHistorie, false)}
 
                 <br></br>
 
                     <InfoVeld Titel={'Historische prijzen van alle aanbieder (laatste 10)'} />
-                
-                {repeatClasses("alleAanbieders", configdData, true)}
+
+                {repeatClasses("alleAanbieders", alleHistorie, true)}
 
                 {/* <div className='alleAanbieders'>
                     <InfoVeld Titel={'Aanbieder:'} tussenkop={'Datum:'} Bericht={"Prijs:"}
