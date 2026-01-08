@@ -192,11 +192,14 @@ public class VeilingController : ControllerBase
         [FromQuery] bool onlyActive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
+        DateTime? testNow = null,
+
         CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        var now = testNow ?? DateTime.UtcNow;
 
-        now = now.ToLocalTime();
+
+        //now = now.ToLocalTime();
 
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
@@ -374,6 +377,7 @@ public class VeilingController : ControllerBase
         //     entity.Status = NormalizeStatus(dto.Status);
 
         // Business Logic check
+        //Deze check is onbereikbaar
         if (entity.Eindtijd <= now && entity.Status == VeilingStatus.Active)
             entity.Status = VeilingStatus.Inactive;
 
