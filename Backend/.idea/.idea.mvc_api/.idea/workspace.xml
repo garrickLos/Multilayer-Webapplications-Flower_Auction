@@ -6,8 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260107185814_InitialCreate.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260107185814_InitialCreate.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/PrijsHistorieController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/PrijsHistorieController.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,7 +93,7 @@
       <workItem from="1767804376274" duration="3682000" />
       <workItem from="1767808392027" duration="223000" />
       <workItem from="1767857881331" duration="187000" />
-      <workItem from="1767858096360" duration="549000" />
+      <workItem from="1767858096360" duration="2328000" />
     </task>
     <servers />
   </component>
