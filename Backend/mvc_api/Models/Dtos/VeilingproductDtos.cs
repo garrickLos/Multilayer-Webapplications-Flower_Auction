@@ -90,11 +90,13 @@ public record VeilingproductKwekerListDto(
     int? AantalFusten,
     int? VoorraadBloemen,
     string? CategorieNaam,
+    int? CategorieNr,
     string? ImagePath,
     string? Plaats,
     int? Startprijs,
     int? Minimumprijs,
-    int? VeilingNr
+    int? VeilingNr,
+    int? GebruikerNr
 );
 
 // veilingmeester lijst
@@ -159,11 +161,13 @@ public static class VeilingproductDtoSelectors
             v.AantalFusten,
             v.VoorraadBloemen,
             v.Categorie == null ? null : v.Categorie.Naam,
+            v.CategorieNr,
             v.ImagePath,
             v.Plaats,
             v.Startprijs,
             v.Minimumprijs,
-            v.VeilingNr
+            v.VeilingNr,
+            v.Kwekernr
         );
 
     public static readonly Expression<Func<Veilingproduct, VeilingproductVeilingmeesterListDto>> VeilingmeesterList = v =>

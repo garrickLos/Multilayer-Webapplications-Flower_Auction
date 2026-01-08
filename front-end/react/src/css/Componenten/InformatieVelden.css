@@ -4,8 +4,17 @@
     align-items: center;
 
     border-bottom: 1px solid lightgray;
-    margin-bottom: 8px;
-    padding-bottom: 4px;
+
+}
+
+.titel {
+    display: flex;
+
+    width: 100%;
+
+    text-align: center;
+
+    justify-self: flex-start;
 }
 
 .Prijs {
@@ -14,17 +23,22 @@
 }
 
 .tussenkop {
-    text-wrap: center;   
+    width: 100%;
+
+    text-align: center;
+
+    justify-self: center;
+
+    margin-right: 10px;
+    margin-left: 10px;
 }
 
 .rightSideText {
-    margin: 0 20px 0 0;
-}
+    width: 100%;
 
-.aanbieder_informatie {
-    min-height: 60vh;
-    height: auto;
-    max-height: 65vh;
+    margin: 0 0 0 20px;
 
-    overflow-y: auto;
+    left: 100%;
+
+    text-align: end;
 }

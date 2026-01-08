@@ -179,10 +179,10 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db       = services.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
 
     try
     {
+        db.Database.Migrate();
         await DataSeeder.Seed(app.Services);
     }
     catch (Exception ex)

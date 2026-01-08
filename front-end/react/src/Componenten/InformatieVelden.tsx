@@ -29,7 +29,7 @@ export function InfoVeld({ Titel, tussenkop, Bericht, secondClass = [], tussenko
 
     return (
         <div className={containerClasses}>
-            <span>{Titel}</span>
+            <span className='titel'>{Titel}</span>
             <span className={tussenkopClasses}>{tussenkop}</span>
             <span className={berichtClasses}>{Bericht}</span>
         </div>

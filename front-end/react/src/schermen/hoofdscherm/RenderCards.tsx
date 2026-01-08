@@ -35,7 +35,7 @@ export interface Producten {
     gebruikerNr: number;
 }
 
-interface KwekerInfo {
+export interface KwekerInfo {
     bedrijfsNaam?: string; 
 }
 

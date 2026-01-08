@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react';
 import '../../css/Componenten/knop.css';
 import { Laadscherm } from '../AuctionScreen/VeilingSchermComponenten/Laadscherm.tsx';
 import { ErrorScherm } from '../AuctionScreen/VeilingSchermComponenten/ErrorComponent.tsx';
+
+
 export default function MainScreen() {
     const RefreshTimeMS = 60000; // 6000 miliseconden zou 6 seconden moeten zijn
     const refreshTimer = ApiRefresh(RefreshTimeMS);

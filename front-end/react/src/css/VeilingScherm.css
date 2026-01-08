@@ -19,20 +19,22 @@ html, body {
 
     display: flex;
     flex-direction: column;
-    align-items: center;
 }
 
 .Auction_Container {
     gap: 30px;
     
-    min-width: 95%;
+    min-width: 50%;
     width: auto;
-    max-width: 97%;
+    max-width: 100%;
 
-    display: flex;
-    flex-direction: row;
+    display: grid;
+
+    grid-template-columns: 1fr 1fr 2fr;
     
     align-items: flex-start;
+
+    margin: 0 0 5% 2%;
 }
 
 .Auction_Container section {
@@ -56,6 +58,7 @@ html, body {
 
 .Auction_schermAankoop_container {
     width: auto;
+    max-width: 85%;
 
     height: 100%;
     max-height: 75%;
@@ -78,14 +81,19 @@ html, body {
 }
 
 .Auction_Foto {
-    width: 75%;
-    height: 75%;
+    width: auto;
+    max-width: 25vw;
+
+    height: auto;
+    max-height: 50vh;
 
     display: flex;
 
     justify-items: center;
     align-self: flex-start;
 
+    outline: 1px solid var(--brand);
+    outline-offset: 5px;
 }
 
 .Auction_veilingFoto {
@@ -94,12 +102,18 @@ html, body {
     height: 100%;
 
     border-radius: 5px;
-    object-fit: contain;    
+    object-fit: contain;
 }
 
 .Auction_klok {
-    width: 200px;
-    height: 200px;
+
+    min-width: 150px;
+    width: auto;
+    max-width: 200px;
+
+    min-height: 150px;
+    height: auto;
+    max-height: 200px;
 
     border-radius: 50%; 
     border: 5px dotted var(--brand);
@@ -118,6 +132,8 @@ html, body {
 }
 
 #Veiling_aantalkopenstuks {
+    max-width: 95%;
+
     border-color: var(--border);
     border-style: solid;
     border-width: 1px;
@@ -151,31 +167,14 @@ html, body {
     text-transform: uppercase;
 }
 
-.koopNu {
-    color: white;
-    background-color: var(--accent-light);
-    border-radius: 5px;
-    display: block;
-    margin: 15px auto 0 auto;
-    padding: 10px 30px;
-    border: none;
-    cursor: pointer;
-}
-
-.koopNu:hover {
-    color: var(--ink-light);
-    background-color: var(--accent-muted);
+.tekstVoorKopen {
+    font-size: clamp(0.8rem, 1vw, 18px); 
+    line-height: 1.5;
 }
 
 .Auction_Body > section {
     text-align: center;
     margin-bottom: 10px;
-}
-
-.MainScreen .auctionButton:hover {
-    background-color: var(--accent-muted);
-
-    color: var(--ink-light);
 }
 
 #AuctionScreen_state-container {
@@ -193,53 +192,4 @@ html, body {
     align-self: center;
 
     text-align: center;
-}
-
-#AuctionScreen_state-container .button{
-    height: 45px;
-
-    align-items: center;
-    justify-content: center;
-
-    background-color: var(--accent-light);
-    color: var(--inverse-text);
-
-    border-radius: 5px;
-
-    padding: 10px;
-}
-
-#AuctionScreen_state-container .button:hover {
-    background-color: var(--accent-muted);
-
-    color: var(--ink-light);
-}
-
-.AuctionScreen_errorInput {
-
-    display: flex;
-
-    top: 20px;
-
-    align-content: center;
-    justify-content: center;
-    text-align: center;
-
-    height: auto;
-
-    color: var(--inverse-text);
-
-    margin: 5px;
-    
-    padding-left: 20px;
-
-    background-color: var(--error);
-
-    border-radius: 5px;
-}
-
-.SideMenuInfo {
-    width: 70%;
-
-    height: 100%;
 }

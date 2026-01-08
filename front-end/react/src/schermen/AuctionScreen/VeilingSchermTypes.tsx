@@ -2,6 +2,8 @@ export interface ProductLogica {
     veilingProductNr: number;
     imagePath: string;
     naam: string;
+
+    kwekerNr?: number;
     
     categorieNaam: string; 
     categorieNr: number;

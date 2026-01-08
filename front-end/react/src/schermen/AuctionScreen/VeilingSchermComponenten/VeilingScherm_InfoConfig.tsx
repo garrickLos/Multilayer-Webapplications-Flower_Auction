@@ -12,12 +12,12 @@ import { GetIsoTimeByZone } from "../../../typeScript/FetchDate";
 import type { VeilingproductUpdate, VeilingTijdUpdate } from "./VeilingSchermTypes/VeilingTypes";
 import type { NieuweBieding } from "./VeilingSchermTypes/BiedingTypes";
 import type { MyTokenPayload } from "./VeilingSchermTypes/TokenPayloadTypes";
-import type { PrijsHistorieResultaatLogica } from "../../hoofdscherm/Componenten/OffcanvasComponent";
+import type { PrijsHistorieItemLogica } from "../../hoofdscherm/Componenten/OffcanvasComponent";
 
 // mapt de data voor de veilingscherm
 // dit zorgt ervoor dat er altijd info staat. Indien het niet gevonden kan worden (error tijdens de get)
 // geeft het een default waarde om te tonen in plaats van lege vlakken
-export function mapData(safeData: any[]): VeilingLogica[] {
+export function mapVeilingData(safeData: any[]): VeilingLogica[] {
     return safeData.map((item) => ({
         veilingNr: item.veilingNr,
         status: item.status,
@@ -28,6 +28,8 @@ export function mapData(safeData: any[]): VeilingLogica[] {
         producten: (item.producten || []).map((prod: any) => ({
             veilingProductNr: prod.veilingProductNr || prod.VeilingProductNr || "productNummer is niet gevonden",
             naam: prod.naam,
+
+            kwekerNr: prod.gebruikerNr || prod.GebruikerNr || 0,
             
             categorieNaam: prod.CategorieNaam || prod.categorieNaam || "Geen categorie gevonden", 
             categorieNr: prod.CategorieNr || prod.categorieNr || "Geen categorie gevonden",
@@ -44,15 +46,29 @@ export function mapData(safeData: any[]): VeilingLogica[] {
     }));
 }
 
-export function mapInfoLijstData(safeData: any[]): any[] {
-    // We mappen direct over de inkomende lijst met objecten
-    return safeData.map((item) => ({
-        // Haal de waardes direct van 'item' af, niet van een sub-item
-        bedrijfsNaam: item.BedrijfsNaam || item.bedrijfsNaam || "Onbekend bedrijf",
-        
-        beginDatum: item.BeginDatum || item.beginDatum || "Geen datum",
-        
-        bedragPerFust: item.BedragPerFust || item.bedragPerFust || 0
+export function mapInfoLijstData(apiResponse: any): PrijsHistorieItemLogica[] {
+    let itemsToMap: any[] = [];
+
+    // 2. Normalisatie van input
+    if (Array.isArray(apiResponse)) {
+        // Scenario A: De API geeft direct een lijst terug [ {...}, {...} ]
+        itemsToMap = apiResponse;
+    } else if (apiResponse && Array.isArray(apiResponse.items)) {
+        // Scenario B: De API geeft een wrapper object { items: [...] }
+        itemsToMap = apiResponse.items;
+    } else if (apiResponse && Array.isArray(apiResponse.value)) {
+        // Scenario C: OData wrapper { value: [...] }
+        itemsToMap = apiResponse.value;
+    } else {
+        // Scenario D: Geen lijst gevonden, return leeg.
+        return [];
+    }
+
+    // 3. Mapping
+    return itemsToMap.map((item) => ({
+        bedrijfsNaam: item.bedrijfsNaam || item.BedrijfsNaam || "Onbekend",
+        beginDatum: item.beginDatum || item.BeginDatum || new Date().toISOString(),
+        bedragPerFust: Number(item.bedragPerFust || item.BedragPerFust || item.prijs || 0)
     }));
 }
 
@@ -139,8 +155,6 @@ export async function VeilingProductitem_Update(
             
             // Update de tijd op basis van tijdzone
             ApiRequest(`/api/Veiling/UpdateBeginTijd/${veilingNummer}`, 'PUT', UpdateBeginTijd, token, refreshToken),
-
-            console.log(3)
         ]);
 
         console.log("Alle updates zijn succesvol verwerkt.");

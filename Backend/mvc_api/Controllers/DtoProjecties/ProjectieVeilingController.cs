@@ -72,11 +72,13 @@ public class ProjectieVeilingController
                 p.AantalFusten,
                 p.VoorraadBloemen,
                 p.Categorie == null ? null : p.Categorie.Naam,
+                p.CategorieNr,
                 p.ImagePath,
                 p.Plaats,
                 p.Startprijs,
                 p.Minimumprijs,
-                p.VeilingNr
+                p.VeilingNr,
+                p.Kwekernr
             ))
         });
     }

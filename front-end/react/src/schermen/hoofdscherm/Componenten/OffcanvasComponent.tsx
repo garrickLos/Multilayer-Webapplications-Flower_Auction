@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
-import '../../../css/Componenten/OffcanvasComponent.css';
 import { ApiRequest } from '../../../typeScript/ApiRequest';
 import { getRefreshToken, getBearerToken as Token } from '../../../typeScript/ApiGet';
 import { mapInfoLijstData } from '../../AuctionScreen/VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
+import '../../../css/Componenten/OffcanvasComponent.css';
 
 export interface PrijsHistorieItemLogica {
     bedrijfsNaam: string;
@@ -19,132 +19,128 @@ export interface PrijsHistorieResultaatLogica {
     averageBedrag: number | null;
 }
 
-interface ContainerSideMenuProps {
+export interface ContainerSideMenuProps {
     isOpen: boolean;
+
+    kwekerNaam?: string;
     categorieNr?: number;
+    productNaam?: string;
 }
 
-export function ContainerSideMenu({ isOpen, categorieNr}: ContainerSideMenuProps) {
+export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam }: ContainerSideMenuProps) {
 
-    const [ConfigSpeciekeData, setConfigSpecifiekeData] = useState<any[]>([]);
-    const [ConfigAllKwekerData, setConifAllKwekerData] = useState<any[]>([]);
+    const [configSpecifiekeData, setConfigSpecifiekeData] = useState<PrijsHistorieItemLogica[]>([]);
+    const [configAllKwekerData, setConfigAllKwekerData] = useState<PrijsHistorieItemLogica[]>([]);
     
     const token = Token();
     const refreshToken = getRefreshToken();
 
+    const laatstOpgehaaldeId = useRef<string>("");
+
     useEffect(() => {
+        // Validatie: Stop direct als essentiële gegevens ontbreken
+        if (!isOpen || !kwekerNaam || !categorieNr) {
+            return;
+        }
+
+        const huidigVerzoekId = `${kwekerNaam}-${categorieNr}`;
+
+        // Voorkom dubbele calls voor exact dezelfde data
+        if (laatstOpgehaaldeId.current === huidigVerzoekId) {
+            return;
+        }
+
         const fetchData = async () => {
-            if (!isOpen) return;
+            laatstOpgehaaldeId.current = huidigVerzoekId;
 
             try {
-                const SpecifiekeKwekerData = await ApiRequest<any>(`http://localhost:5105/PrijsHistorie/kweker?CategorieNr=${2}&bedrijfsNaam=${"Bloemenhandel De Vrolijke Roos"}`, "GET", null, token, refreshToken);
-                const safeDataSpecifiekeKwekerData = Array.isArray(SpecifiekeKwekerData) ? SpecifiekeKwekerData : (SpecifiekeKwekerData ? [SpecifiekeKwekerData] : []);
-                const promiseArray_specifiekeKwekerData = mapInfoLijstData(safeDataSpecifiekeKwekerData);
-
-                const AlleKwekerData = await ApiRequest<any>(`http://localhost:5105/PrijsHistorie?CategorieNr=${2}`, "GET", null, token, refreshToken);
-
-                const safeData = Array.isArray(AlleKwekerData) ? AlleKwekerData : (AlleKwekerData ? [AlleKwekerData] : []);
-                const promiseArray = mapInfoLijstData(safeData);
-
-                setConfigSpecifiekeData(promiseArray_specifiekeKwekerData);
-                setConifAllKwekerData(promiseArray);
+                // Call 1: Specifieke Kweker
+                const specifiekeKwekerRaw = await ApiRequest<any>(
+                    `/api/PrijsHistorie?CategorieNr=${categorieNr}&bedrijfsNaam=${encodeURIComponent(kwekerNaam)}`, "GET", null, token, refreshToken
+                );
                 
+                const mappedSpecifiekeData = mapInfoLijstData(specifiekeKwekerRaw);
+                setConfigSpecifiekeData(mappedSpecifiekeData);
+
+                // Call 2: Alle Kwekers
+                const alleKwekerRaw = await ApiRequest<any>(
+                    `/api/PrijsHistorie?CategorieNr=${categorieNr}`, "GET", null, token, refreshToken
+                );
+
+                const mappedAlleData = mapInfoLijstData(alleKwekerRaw);
+                setConfigAllKwekerData(mappedAlleData);
+                    
             } catch (error) {
-                console.error("Fout bij ophalen data", error);
+                console.error("Fout bij ophalen data:", error);
+                // Reset ID zodat bij een volgende poging (bv na error herstel) opnieuw geladen wordt
+                laatstOpgehaaldeId.current = "";
+                // Zet state leeg om oude data te voorkomen
+                setConfigSpecifiekeData([]);
+                setConfigAllKwekerData([]);
             }
         };
-
+        
         fetchData();
-
-    }, [isOpen]);
+    
+    }, [isOpen, kwekerNaam, categorieNr]); // Voeg dependencies toe
 
     return (
         <div className={`sideBarMenu ${isOpen ? 'open' : 'closed'}`}>
-            <div className="Auction_Informatievelden_Container aanbieder_informatie sideBarMenu">
+            <div className="Auction_Informatievelden_Container aanbieder_informatie">
                 <div className="kopje">Aanbieder informatie</div>
                 
-                <InfoVeld Titel={'Bloemsoort:'} Bericht={"huidigProduct?.naam"} BerichtClass={'rightSideText'}/>
-                <InfoVeld Titel={'Aanvoerder: '} Bericht={"**kweker naam hier**"} BerichtClass={'rightSideText'}/>
+                <InfoVeld Titel={'Bloemsoort:'} Bericht={productNaam || "Onbekend"} BerichtClass={'rightSideText'}/>
+                <InfoVeld Titel={'Aanvoerder:'} Bericht={kwekerNaam || "onbekend"} BerichtClass={'rightSideText'}/>
                 <br />
 
                 <InfoVeld Titel={'Historische prijzen van deze aanbieder'} />
-                
-                {/* Oproep 1: Huidige aanbieder (zonder footer/gemiddelde als voorbeeld, of true als je dat wel wilt) */}
-                {repeatClasses("HuidigeAanbieder", ConfigSpeciekeData)}
+                {repeatClasses("HuidigeAanbieder", configSpecifiekeData)}
 
                 <br />
 
                 <InfoVeld Titel={'Historische prijzen van alle aanbieders'} />
-
-                {/* Oproep 2: Alle aanbieders (met footer/gemiddelde) */}
-                {repeatClasses("alleAanbieders", ConfigAllKwekerData)}
-
+                {repeatClasses("alleAanbieders", configAllKwekerData)}
             </div>
         </div>
     );
 };
 
-const repeatClasses = (className: string, data: any[]) => {
-    // Veiligheidscheck: render niets als er geen data is
-    if (!data || !Array.isArray(data) || data.length === 0) return <div>Geen data beschikbaar</div>;
+const repeatClasses = (className: string, data: PrijsHistorieItemLogica[]) => {
+    if (!data || data.length === 0) {
+        return <div className="loading-state">Geen historie gevonden...</div>;
+    }
 
-    // 1. BEREKENINGEN (Voor de footer)
-    // We berekenen het totaal en gemiddelde voor de footer
     const totaalPrijs = data.reduce((som, item) => som + (Number(item.bedragPerFust) || 0), 0);
-    const gemiddelde = (totaalPrijs / data.length).toFixed(2); // 2 decimalen
+    const aantal = data.length > 0 ? data.length : 1;
+    const gemiddelde = (totaalPrijs / aantal).toFixed(2);
 
     return (
         <div className={className}>
             <InfoVeld 
                 key="header"
-                Titel={'Aanbieder:'} 
-                tussenkop={'Datum:'} 
+                Titel={'Aanbieder:'}
+                tussenkop={'Datum:'}
+                tussenkopClass={"tussenkop"}
                 Bericht={"Prijs:"}
                 BerichtClass={'rightSideText'}
             />
-
-            {/* --- BODY: De data items --- */}
             {data.map((item, index) => (
                 <InfoVeld
                     key={`${className}-${index}`}
                     Titel={item.bedrijfsNaam} 
-                    tussenkop={new Date(item.beginDatum).toLocaleDateString()} // Datum netjes formatteren
-                    Bericht={`€ ${item.bedragPerFust}`}
-                    
+                    tussenkop={new Date(item.beginDatum).toLocaleDateString()} 
+                    Bericht={`€ ${Number(item.bedragPerFust).toFixed(2)}`}
                     tussenkopClass={'tussenkop'} 
                     BerichtClass={'rightSideText'}
                 />
             ))}
-
-            {/* --- FOOTER: Gemiddelde of afsluiting --- */}
-            {(
-                <>
-                    <hr style={{ margin: "5px 0" }} />
-                    <InfoVeld 
-                        key="footer"
-                        Titel={'Gemiddelde prijs over deze periode:'} 
-                        Bericht={`€ ${gemiddelde}`}
-                        BerichtClass={'rightSideText'}
-                    />
-                </>
-            )}
+            <hr style={{ margin: "5px 0" }} />
+            <InfoVeld 
+                key="footer"
+                Titel={'Gemiddelde prijs:'} 
+                Bericht={`€ ${gemiddelde}`}
+                BerichtClass={'rightSideText'}
+            />
         </div>
     );
 };
-
-// export const ParentComponent = () => {
-    
-
-//     return (
-//         <>
-//         <div className='SidebarParent'>
-//                 <div style={{ padding: '20px' }}>
-//                     <h3>Hoofd Content</h3>
-                    
-//                 </div>
-
-//                 <ContainerSideMenu isOpen={isOpen} />
-//             </div>
-//         </>
-//     );
-// }
