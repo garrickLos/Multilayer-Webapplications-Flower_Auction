@@ -44,20 +44,15 @@ export function mapData(safeData: any[]): VeilingLogica[] {
     }));
 }
 
-export function mapInfoLijstData(safeData: PrijsHistorieResultaatLogica[]): PrijsHistorieResultaatLogica[] {
+export function mapInfoLijstData(safeData: any[]): any[] {
+    // We mappen direct over de inkomende lijst met objecten
     return safeData.map((item) => ({
-        // 1. Map de enkele waarde
-        averageBedrag: item.averageBedrag ?? item.averageBedrag ?? null,
-
-        // 2. Map de geneste lijst 'Items'
-        items: (item.items || item.items || []).map((subItem: any) => ({
-            bedrijfsNaam: subItem.BedrijfsNaam || subItem.bedrijfsNaam || "Onbekend bedrijf",
-            
-            // Datum wordt als string doorgegeven, fallback naar lege string of huidige datum indien nodig
-            beginDatum: subItem.BeginDatum || subItem.beginDatum || "",
-            
-            bedragPerFust: subItem.BedragPerFust || subItem.bedragPerFust || 0
-        }))
+        // Haal de waardes direct van 'item' af, niet van een sub-item
+        bedrijfsNaam: item.BedrijfsNaam || item.bedrijfsNaam || "Onbekend bedrijf",
+        
+        beginDatum: item.BeginDatum || item.beginDatum || "Geen datum",
+        
+        bedragPerFust: item.BedragPerFust || item.bedragPerFust || 0
     }));
 }
 
