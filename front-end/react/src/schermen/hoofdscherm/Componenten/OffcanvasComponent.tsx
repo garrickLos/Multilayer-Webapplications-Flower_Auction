@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
 import '../../../css/Componenten/OffcanvasComponent.css';
@@ -21,175 +21,126 @@ export interface PrijsHistorieResultaatLogica {
 
 interface ContainerSideMenuProps {
     isOpen: boolean;
+    categorieNr?: number;
 }
 
-export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
+export function ContainerSideMenu({ isOpen, categorieNr}: ContainerSideMenuProps) {
 
-    let configdData: any;
+    const [ConfigSpeciekeData, setConfigSpecifiekeData] = useState<any[]>([]);
+    const [ConfigAllKwekerData, setConifAllKwekerData] = useState<any[]>([]);
+    
+    const token = Token();
+    const refreshToken = getRefreshToken();
 
     useEffect(() => {
-        const haalDataOp = async () => {
-            const token = Token();
-            const refreshToken = getRefreshToken();
+        const fetchData = async () => {
+            if (!isOpen) return;
 
             try {
-                const data = await ApiRequest<any>("/PrijsHistorie", "GET", null, token, refreshToken);
-                console.log(data);
+                const SpecifiekeKwekerData = await ApiRequest<any>(`http://localhost:5105/PrijsHistorie/kweker?CategorieNr=${2}&bedrijfsNaam=${"Bloemenhandel De Vrolijke Roos"}`, "GET", null, token, refreshToken);
+                const safeDataSpecifiekeKwekerData = Array.isArray(SpecifiekeKwekerData) ? SpecifiekeKwekerData : (SpecifiekeKwekerData ? [SpecifiekeKwekerData] : []);
+                const promiseArray_specifiekeKwekerData = mapInfoLijstData(safeDataSpecifiekeKwekerData);
 
-                const safeData = data ? [data] : [];
+                const AlleKwekerData = await ApiRequest<any>(`http://localhost:5105/PrijsHistorie?CategorieNr=${2}`, "GET", null, token, refreshToken);
 
-                // STAP 1: Haal de array met promises op (dit veroorzaakt de error als je het direct gebruikt)
+                const safeData = Array.isArray(AlleKwekerData) ? AlleKwekerData : (AlleKwekerData ? [AlleKwekerData] : []);
                 const promiseArray = mapInfoLijstData(safeData);
 
-                // STAP 2: Wacht tot alle promises in de array zijn opgelost naar echte data
-                const resolvedData = await Promise.all(promiseArray);
-
-                // STAP 3: Zet de opgeloste data in de state
-                configdData(resolvedData);
-
+                setConfigSpecifiekeData(promiseArray_specifiekeKwekerData);
+                setConifAllKwekerData(promiseArray);
+                
             } catch (error) {
                 console.error("Fout bij ophalen data", error);
             }
         };
 
-        if (isOpen) {
-            haalDataOp();
-        }
+        fetchData();
+
     }, [isOpen]);
 
     return (
-        // Hier voegen we de class 'open' toe als isOpen true is
         <div className={`sideBarMenu ${isOpen ? 'open' : 'closed'}`}>
             <div className="Auction_Informatievelden_Container aanbieder_informatie sideBarMenu">
                 <div className="kopje">Aanbieder informatie</div>
-                <InfoVeld Titel={'Bloemsoort:'} Bericht={"huidigProduct?.naam"}
-                          BerichtClass={'rightSideText'}/>
+                
+                <InfoVeld Titel={'Bloemsoort:'} Bericht={"huidigProduct?.naam"} BerichtClass={'rightSideText'}/>
+                <InfoVeld Titel={'Aanvoerder: '} Bericht={"**kweker naam hier**"} BerichtClass={'rightSideText'}/>
+                <br />
 
-                <InfoVeld Titel={'Aanvoerder: '} Bericht={"**kweker naam hier**"}
-                          BerichtClass={'rightSideText'}/>
+                <InfoVeld Titel={'Historische prijzen van deze aanbieder'} />
+                
+                {/* Oproep 1: Huidige aanbieder (zonder footer/gemiddelde als voorbeeld, of true als je dat wel wilt) */}
+                {repeatClasses("HuidigeAanbieder", ConfigSpeciekeData)}
 
-                <br></br>
+                <br />
 
-                <InfoVeld Titel={'Historische prijzen van deze aanbieder (laatste 10)'} />
+                <InfoVeld Titel={'Historische prijzen van alle aanbieders'} />
 
-                {repeatClasses("HuidigeAanbieder", configdData, false)}
+                {/* Oproep 2: Alle aanbieders (met footer/gemiddelde) */}
+                {repeatClasses("alleAanbieders", ConfigAllKwekerData)}
 
-                <br></br>
-
-                <InfoVeld Titel={'Historische prijzen van alle aanbieder (laatste 10)'} />
-
-                {repeatClasses("alleAanbieders", configdData, true)}
-
-                {/* <div className='alleAanbieders'>
-                    <InfoVeld Titel={'Aanbieder:'} tussenkop={'Datum:'} Bericht={"Prijs:"}
-                        BerichtClass={'rightSideText'}/>
-
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"1 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"2 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"2 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"4 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"5 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"6 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"7 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"8 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"9 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-                    <InfoVeld Titel={'**Aanbieder**'} tussenkop={'**Datum**'} Bericht={"10 euro"}
-                        tussenkopClass={'tussenkop'} BerichtClass={'rightSideText'}/>
-
-                    <InfoVeld Titel={'Gemiddelde prijs alle historische order van de **insert kweker**:'} Bericht={"**insert gemiddelde**"}
-                        BerichtClass={'rightSideText'}/>
-                </div> */}
             </div>
         </div>
     );
 };
 
-export function repeatClasses(
-    className: string,
-    resultatenLijst: PrijsHistorieResultaatLogica[],
-    toonDatumKolom: boolean = false
-) {
-    if (!resultatenLijst) return null;
+const repeatClasses = (className: string, data: any[]) => {
+    // Veiligheidscheck: render niets als er geen data is
+    if (!data || !Array.isArray(data) || data.length === 0) return <div>Geen data beschikbaar</div>;
+
+    // 1. BEREKENINGEN (Voor de footer)
+    // We berekenen het totaal en gemiddelde voor de footer
+    const totaalPrijs = data.reduce((som, item) => som + (Number(item.bedragPerFust) || 0), 0);
+    const gemiddelde = (totaalPrijs / data.length).toFixed(2); // 2 decimalen
 
     return (
-        <>
-            {resultatenLijst.map((resultaat, resultaatIndex) => {
+        <div className={className}>
+            <InfoVeld 
+                key="header"
+                Titel={'Aanbieder:'} 
+                tussenkop={'Datum:'} 
+                Bericht={"Prijs:"}
+                BerichtClass={'rightSideText'}
+            />
 
-                // Als we meerdere aanbieders tonen, is de naam in de footer algemeen.
-                // Anders pakken we de naam van de specifieke kweker.
-                const footerNaam = toonDatumKolom
-                    ? "alle aanbieders"
-                    : (resultaat.items.length > 0 ? resultaat.items[0].bedrijfsNaam : "Onbekende kweker");
+            {/* --- BODY: De data items --- */}
+            {data.map((item, index) => (
+                <InfoVeld
+                    key={`${className}-${index}`}
+                    Titel={item.bedrijfsNaam} 
+                    tussenkop={new Date(item.beginDatum).toLocaleDateString()} // Datum netjes formatteren
+                    Bericht={`€ ${item.bedragPerFust}`}
+                    
+                    tussenkopClass={'tussenkop'} 
+                    BerichtClass={'rightSideText'}
+                />
+            ))}
 
-                return (
-                    <div className={className} key={`historie-blok-${resultaatIndex}`}>
-
-                        {/* 1. De Header (Dynamisch) */}
-                        <InfoVeld
-                            // Als toonAanbiederKolom true is, is de titel 'Aanbieder', anders 'Datum'
-                            Titel={toonDatumKolom ? 'Aanbieder:' : 'Datum:'}
-
-                            // Alleen tussenkop tonen als we in de 'alle aanbieders' modus zitten
-                            tussenkop={toonDatumKolom ? 'Datum:' : undefined}
-
-                            Bericht={"Prijs:"}
-                            BerichtClass={'rightSideText'}
-                        />
-
-                        {/* 2. De Items */}
-                        {resultaat.items.map((item, itemIndex) => (
-                            <InfoVeld
-                                key={`${resultaatIndex}-${itemIndex}-${item.beginDatum}`}
-
-                                // In 'alle aanbieders' modus is de Titel de bedrijfsnaam. Anders de datum.
-                                Titel={toonDatumKolom
-                                    ? item.bedrijfsNaam
-                                    : new Date(item.beginDatum).toLocaleDateString('nl-NL')
-                                }
-
-                                // De tussenkop (Datum) wordt alleen gebruikt in de 'alle aanbieders' modus
-                                tussenkop={toonDatumKolom
-                                    ? new Date(item.beginDatum).toLocaleDateString('nl-NL')
-                                    : undefined
-                                }
-                                tussenkopClass={toonDatumKolom ? 'tussenkop' : undefined}
-
-                                Bericht={`${item.bedragPerFust} euro`}
-                                BerichtClass={'rightSideText'}
-                            />
-                        ))}
-
-                        {/* 3. De Footer */}
-                        <InfoVeld
-                            Titel={`Gemiddelde prijs alle historische order van ${footerNaam}:`}
-                            Bericht={resultaat.averageBedrag !== null ? `€ ${resultaat.averageBedrag}` : "Onbekend"}
-                            BerichtClass={'rightSideText'}
-                        />
-                    </div>
-                );
-            })}
-        </>
+            {/* --- FOOTER: Gemiddelde of afsluiting --- */}
+            {(
+                <>
+                    <hr style={{ margin: "5px 0" }} />
+                    <InfoVeld 
+                        key="footer"
+                        Titel={'Gemiddelde prijs over deze periode:'} 
+                        Bericht={`€ ${gemiddelde}`}
+                        BerichtClass={'rightSideText'}
+                    />
+                </>
+            )}
+        </div>
     );
-}
+};
 
 // export const ParentComponent = () => {
-
+    
 
 //     return (
 //         <>
 //         <div className='SidebarParent'>
 //                 <div style={{ padding: '20px' }}>
 //                     <h3>Hoofd Content</h3>
-
+                    
 //                 </div>
 
 //                 <ContainerSideMenu isOpen={isOpen} />
