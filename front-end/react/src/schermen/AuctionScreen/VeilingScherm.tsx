@@ -36,10 +36,10 @@ export default function AuctionScreen() {
     const safeData = data || [];
 
     // Data mappen en direct sorteren
-    const veilingenLijst = mapData(safeData).sort((a, b) => 
+    const veilingenLijst = mapData(safeData).sort((a, b) =>
         a.veilingNr - b.veilingNr);
-    
-    const actieveVeiling = veilingenLijst.find(v => 
+
+    const actieveVeiling = veilingenLijst.find(v =>
         v.veilingNr === veilingItemNr) || null;
 
     let veilingIsOngeldig = false;
@@ -49,7 +49,7 @@ export default function AuctionScreen() {
 
         veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null || isAfgelopen;
     }
-    
+
     const timerInSec = 0.6 * 1000; // van miliseconden naar seconden
 
     // zodat er een timer is die afteld totdat de error scherm er is nadat een veiling is afgelopen.
@@ -68,18 +68,18 @@ export default function AuctionScreen() {
         return <GeenVeilingBezig />;
     } else if (actieveVeiling) {
         return (
-            <VeilingschermComponent 
-                actieveVeiling={actieveVeiling} 
-                veilingItemNr={veilingItemNr} 
+            <VeilingschermComponent
+                actieveVeiling={actieveVeiling}
+                veilingItemNr={veilingItemNr}
             />
         );
     } else if (sessionStorage.getItem('token') == null) {
         return (
-            <Navigate 
-                to="/404" 
-                replace 
+            <Navigate
+                to="/404"
+                replace
                 // We sturen alleen de tekst code 'sessieVerlopen'
-                state={{ foutType: 'sessieVerlopen' }} 
+                state={{ foutType: 'sessieVerlopen' }}
             />
         );
     }
@@ -121,7 +121,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
         const gecorrigeerdeWaarde = checkInputField(rauweInvoer, max);
 
         const waardeVoorState = gecorrigeerdeWaarde === "" ? 0 : gecorrigeerdeWaarde;
-        
+
         setAantal(waardeVoorState);
     };
 
@@ -137,7 +137,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     };
 
     const [isOpen, setIsOpen] = React.useState(true);
-    
+
     const sideBarClick = () =>
         setIsOpen(!isOpen);
 
@@ -164,13 +164,13 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                     <div className="Auction_Informatievelden_Container">
                         <div className="kopje">Product Details</div>
                         <InfoVeld Titel={'Product naam:'} Bericht={huidigProduct?.naam}
-                                BerichtClass={'rightSideText'}/>
-                        
+                                  BerichtClass={'rightSideText'}/>
+
                         <InfoVeld Titel={'Product categorie:'} Bericht={categorie}
-                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
-                        
+                                  secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
+
                         <InfoVeld Titel={'AantalFusten:'} Bericht={aantalFusten}
-                                secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
+                                  secondClass={'hoeveelheid'} BerichtClass={'rightSideText'}/>
                     </div>
                 </section>
 
@@ -180,43 +180,39 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                         <div className="Auction_klok">
                             {/* Hier staat de enige echte Timer die de prijs berekent */}
                             {actieveVeiling ? (
-                            <Timer 
-                                onPrijsUpdate={setHuidigePrijs}
-                                onProductWissel={setActieveProductIndex} // Hier vangen we de wissel af
-                                item={actieveVeiling}
-                            />
-                        ) : (
-                            <div>Laden...</div>
-                        )}
+                                <Timer
+                                    onPrijsUpdate={setHuidigePrijs}
+                                    onProductWissel={setActieveProductIndex} // Hier vangen we de wissel af
+                                    item={actieveVeiling}
+                                />
+                            ) : (
+                                <div>Laden...</div>
+                            )}
                         </div>
-                        
+
                         <InfoVeld Titel={'Prijs:'} Bericht={`€ ${huidigePrijs.toFixed(2)}`}
-                                BerichtClass={["rightSideText", "Prijs"]}/>
+                                  BerichtClass={["rightSideText", "Prijs"]}/>
 
                         <span className="aantalKopen">Aantal fusten:</span>
-                        
+
                         <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}
-                            min={0} value={InvoerAantal}
+                               min={0} value={InvoerAantal}
                         />
 
                         {/* <button className="btn btn-primary" onClick={sideBarClick}>
                             {isOpen ? 'Sluit Menu' : 'Open Menu in Div'}
                         </button> */}
-                        
+
                         <div className="tekstVoorKopen">
                             Je koopt {InvoerAantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
                         </div>
-                        
+
                         <GenereerKnop classNames={'Button koopNu'} bericht='Koop nu!' onclickAction={handleKlik}/>
                     </div>
 
                     <div className='SideMenuInfo'>
                         <div className='SideMenuInfo'>
-                            <ContainerSideMenu
-                                isOpen={isOpen}
-                                categorieNaam={huidigProduct?.categorieNaam}
-                                categorieNr={huidigProduct?.categorieNr}
-                            />
+                            <ContainerSideMenu isOpen={isOpen} />
                         </div>
                     </div>
                 </section>
@@ -227,8 +223,8 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
 function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: number) {
 
-    let actieveVeiling = activeVeiling && activeVeiling.producten[actieveProductIndex] 
-        ? activeVeiling.producten[actieveProductIndex] 
+    let actieveVeiling = activeVeiling && activeVeiling.producten[actieveProductIndex]
+        ? activeVeiling.producten[actieveProductIndex]
         : null;
 
     return actieveVeiling;
