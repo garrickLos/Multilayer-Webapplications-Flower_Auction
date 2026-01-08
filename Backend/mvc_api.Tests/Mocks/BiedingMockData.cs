@@ -22,28 +22,28 @@ public interface IStatic_Variable
 
 public class BiedingMockData : IStatic_Variable
 {
-    public static Mock CreateMock(ClaimsPrincipal user)
-    {
-        var mockRepo = new Mock<IBiedingRepo>();
+    // public static Mock CreateMock(ClaimsPrincipal user)
+    // {
+    //     var mockRepo = new Mock<IBiedingRepo>();
 
-        var fakeList = new List<klantBiedingGet_dto> 
-        { 
-            new klantBiedingGet_dto(1, 10, 50, 100)
-        };
+    //     var fakeList = new List<klantBiedingGet_dto> 
+    //     { 
+    //         new klantBiedingGet_dto(1, 10, 50, 100)
+    //     };
 
-        // // Converteer de lijst naar een IQueryable zodat we de eigenschappen kunnen kopiëren
-        // var options = new DbContextOptionsBuilder<AppDbContext>()
-        //                     .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
-        //                     .Options;
+    //     // // Converteer de lijst naar een IQueryable zodat we de eigenschappen kunnen kopiëren
+    //     // var options = new DbContextOptionsBuilder<AppDbContext>()
+    //     //                     .UseInMemoryDatabase(Guid.NewGuid().ToString()) // Unieke naam om conflicten te voorkomen
+    //     //                     .Options;
         
-        var mockSet = new Mock<IBiedingRepo>();
+    //     var mockSet = new Mock<IBiedingRepo>();
         
-        mockSet.Setup(repo => 
-                repo.GetKlantBiedingenAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(fakeList);
+    //     mockSet.Setup(repo => 
+    //             repo.GetKlantBiedingenAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+    //             .ReturnsAsync(fakeList);
 
-        return mockSet;
-    }
+    //     return mockSet;
+    // }
 
     public static BiedingController BuildController(string dbName, ClaimsPrincipal? user = null)
     {
