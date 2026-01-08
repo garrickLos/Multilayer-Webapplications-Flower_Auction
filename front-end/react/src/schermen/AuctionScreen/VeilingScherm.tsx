@@ -212,7 +212,11 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
                     <div className='SideMenuInfo'>
                         <div className='SideMenuInfo'>
-                            <ContainerSideMenu isOpen={isOpen} />
+                            <ContainerSideMenu
+                                isOpen={isOpen}
+                                categorieNaam={huidigProduct?.categorieNaam}
+                                categorieNr={huidigProduct?.categorieNr}
+                            />
                         </div>
                     </div>
                 </section>

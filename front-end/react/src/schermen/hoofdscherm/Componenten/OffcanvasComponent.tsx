@@ -21,9 +21,11 @@ export interface PrijsHistorieResultaatLogica {
 
 interface ContainerSideMenuProps {
     isOpen: boolean;
+    categorieNaam?: string | null;
+    categorieNr?: number | string | null;
 }
 
-export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
+export function ContainerSideMenu ( {isOpen, categorieNaam, categorieNr}: ContainerSideMenuProps ) {
 
     const [kwekerHistorie, setKwekerHistorie] = useState<PrijsHistorieResultaatLogica[]>([]);
     const [alleHistorie, setAlleHistorie] = useState<PrijsHistorieResultaatLogica[]>([]);
@@ -37,15 +39,28 @@ export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
         const haalDataOp = async () => {
             const token = Token();
             const refreshToken = getRefreshToken();
+            const gebruikerNummer = sessionStorage.getItem("gebruikerNummer");
+            const categorieNummer = Number(categorieNr);
+
+            const categorieNummerWaarde = Number.isFinite(categorieNummer)
+                ? categorieNummer
+                : await haalCategorieNummer(categorieNaam, token, refreshToken);
+
+            if (!categorieNummerWaarde) {
+                return;
+            }
+
+            const bedrijfsNaam = await haalBedrijfsNaam(gebruikerNummer, token, refreshToken);
 
             try {
                 const [alleData, kwekerData] = await Promise.all([
-                    ApiRequest<any>("/api/PrijsHistorie", "GET", null, token, refreshToken),
-                    ApiRequest<any>("/api/PrijsHistorie/kweker", "GET", null, token, refreshToken),
+                    ApiRequest<any>(`/api/PrijsHistorie?CategorieNr=${categorieNummerWaarde}`, "GET", null, token, refreshToken),
+                    ApiRequest<any>(`/api/PrijsHistorie/kweker?CategorieNr=${categorieNummerWaarde}&bedrijfsNaam=${encodeURIComponent(bedrijfsNaam)}`, "GET", null, token, refreshToken),
                 ]);
 
                 setAlleHistorie(normaliseerResultaten(alleData));
                 setKwekerHistorie(normaliseerResultaten(kwekerData));
+                console.log(alleData, kwekerData);
 
             } catch (error) {
                 console.error("Fout bij ophalen data", error);
@@ -55,7 +70,7 @@ export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
         if (isOpen) {
             haalDataOp();
         }
-    }, [isOpen]);    
+    }, [isOpen, categorieNaam, categorieNr]);
 
     return (
         // Hier voegen we de class 'open' toe als isOpen true is
@@ -112,6 +127,49 @@ export function ContainerSideMenu ( {isOpen}: ContainerSideMenuProps ) {
         </div>
     );
 };
+
+
+async function haalCategorieNummer(
+    naam: string | null | undefined,
+    token: string | null,
+    refreshToken: string | null
+) {
+    if (!naam) {
+        return null;
+    }
+
+    const categorieen = await ApiRequest<{ categorieNr: number; naam: string }[]>(
+        "/api/Categorie",
+        "GET",
+        null,
+        token,
+        refreshToken
+    );
+    const match = categorieen.find(
+        (categorie) => categorie.naam.toLowerCase() === naam.toLowerCase()
+    );
+
+    return match?.categorieNr ?? null;
+}
+
+async function haalBedrijfsNaam(
+    gebruikerNummer: string | null,
+    token: string | null,
+    refreshToken: string | null
+) {
+    if (!gebruikerNummer) {
+        return "";
+    }
+
+    const data = await ApiRequest<{ bedrijfsNaam?: string }>(
+        `/api/Gebruiker/kwekerNaam?GebruikerNr=${gebruikerNummer}`,
+        "GET",
+        null,
+        token,
+        refreshToken
+    );
+    return data?.bedrijfsNaam ?? "";
+}
 
 export function repeatClasses(
     className: string, 

@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/PrijsHistorieController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/PrijsHistorieController.cs" afterDir="false" />
-    </list>
+    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -93,7 +90,7 @@
       <workItem from="1767804376274" duration="3682000" />
       <workItem from="1767808392027" duration="223000" />
       <workItem from="1767857881331" duration="187000" />
-      <workItem from="1767858096360" duration="2328000" />
+      <workItem from="1767858096360" duration="3177000" />
     </task>
     <servers />
   </component>
