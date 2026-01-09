@@ -1,26 +1,37 @@
-using System;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using mvc_api.Models;
 
 namespace mvc_api.Data;
 
 public static class DataSeeder
 {
+    // Centrale constants
+    private const string EmailVeilingmeester = "flora@gmail.com";
+    private const string EmailKoper1         = "luigi@gmail.com";
+    private const string EmailKoper2         = "anna.koper@gmail.com";
+    private const string EmailKwekerMario    = "mario123@gmail.com";
+    private const string EmailKwekerGroen    = "groenveld@kwekerij.nl";
+
+    private const string ProductSpecifiek = "Tulp Mix";
+
     public static async Task Seed(IServiceProvider services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         using var scope = services.CreateScope();
-        var provider    = scope.ServiceProvider;
+        var provider = scope.ServiceProvider;
 
         var roleManager = provider.GetRequiredService<RoleManager<IdentityRole<int>>>();
         var userManager = provider.GetRequiredService<UserManager<Gebruiker>>();
         var dbContext   = provider.GetRequiredService<AppDbContext>();
-        
+
         await EnsureRoles(roleManager);
         await EnsureUsers(userManager);
-        await EnsureCategorie(dbContext, userManager);
-        await EnsureVeiling(dbContext, userManager);
+
+        await EnsureCategorie(dbContext);
+        await EnsureVeiling(dbContext);
+
         await EnsureVeilingproducten(dbContext, userManager);
         await EnsureBiedingen(dbContext, userManager);
     }
@@ -31,8 +42,8 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Flora BV",
-                Email          = "flora@gmail.com",
-                UserName       = "flora@gmail.com",
+                Email          = EmailVeilingmeester,
+                UserName       = EmailVeilingmeester,
                 LaatstIngelogd = new DateTime(2025, 10, 08, 12, 0, 0, DateTimeKind.Utc),
                 Soort          = "VeilingMeester",
                 Kvk            = "12345678",
@@ -46,8 +57,8 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Jan Jansen",
-                Email          = "luigi@gmail.com",
-                UserName       = "luigi@gmail.com",
+                Email          = EmailKoper1,
+                UserName       = EmailKoper1,
                 LaatstIngelogd = new DateTime(2025, 10, 07, 13, 0, 0, DateTimeKind.Utc),
                 Soort          = "Koper",
                 Kvk            = "00000000",
@@ -61,8 +72,8 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Bloemenhandel De Vrolijke Roos",
-                Email          = "mario123@gmail.com",
-                UserName       = "mario123@gmail.com",
+                Email          = EmailKwekerMario,
+                UserName       = EmailKwekerMario,
                 LaatstIngelogd = new DateTime(2025, 10, 06, 10, 0, 0, DateTimeKind.Utc),
                 Soort          = "Bedrijf",
                 Kvk            = "87654321",
@@ -76,8 +87,8 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Kwekerij Groenveld",
-                Email          = "groenveld@kwekerij.nl",
-                UserName       = "groenveld@kwekerij.nl",
+                Email          = EmailKwekerGroen,
+                UserName       = EmailKwekerGroen,
                 LaatstIngelogd = new DateTime(2025, 10, 05, 9, 30, 0, DateTimeKind.Utc),
                 Soort          = "Bedrijf",
                 Kvk            = "11223344",
@@ -91,8 +102,8 @@ public static class DataSeeder
             new Gebruiker
             {
                 BedrijfsNaam   = "Anna de Koper",
-                Email          = "anna.koper@gmail.com",
-                UserName       = "anna.koper@gmail.com",
+                Email          = EmailKoper2,
+                UserName       = EmailKoper2,
                 LaatstIngelogd = new DateTime(2025, 10, 04, 8, 15, 0, DateTimeKind.Utc),
                 Soort          = "Koper",
                 Kvk            = "00000000",
@@ -107,11 +118,16 @@ public static class DataSeeder
     private static async Task EnsureRoles(RoleManager<IdentityRole<int>> roleManager)
     {
         string[] rollen = { "VeilingMeester", "Koper", "Bedrijf" };
+
         foreach (var rolNaam in rollen)
         {
             if (!await roleManager.RoleExistsAsync(rolNaam))
             {
-                await roleManager.CreateAsync(new IdentityRole<int> { Name = rolNaam });
+                var result = await roleManager.CreateAsync(new IdentityRole<int> { Name = rolNaam });
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException($"Kon rol '{rolNaam}' niet aanmaken: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
             }
         }
     }
@@ -127,7 +143,8 @@ public static class DataSeeder
                 var createResult = await userManager.CreateAsync(gebruiker, password);
                 if (!createResult.Succeeded)
                 {
-                    continue;
+                    throw new InvalidOperationException(
+                        $"Kon user '{gebruiker.Email}' niet aanmaken: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                 }
 
                 bestaand = gebruiker;
@@ -136,17 +153,27 @@ public static class DataSeeder
             if (bestaand.GebruikerNr != bestaand.Id)
             {
                 bestaand.GebruikerNr = bestaand.Id;
-                await userManager.UpdateAsync(bestaand);
+                var update = await userManager.UpdateAsync(bestaand);
+                if (!update.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Kon user '{bestaand.Email}' niet updaten: {string.Join(", ", update.Errors.Select(e => e.Description))}");
+                }
             }
 
             if (!await userManager.IsInRoleAsync(bestaand, role))
             {
-                await userManager.AddToRoleAsync(bestaand, role);
+                var addRole = await userManager.AddToRoleAsync(bestaand, role);
+                if (!addRole.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Kon rol '{role}' niet toekennen aan '{bestaand.Email}': {string.Join(", ", addRole.Errors.Select(e => e.Description))}");
+                }
             }
         }
     }
 
-    private static async Task EnsureCategorie(AppDbContext dbContext, UserManager<Gebruiker> userManager)
+    private static async Task EnsureCategorie(AppDbContext dbContext)
     {
         var seedCategorie = new[]
         {
@@ -160,9 +187,7 @@ public static class DataSeeder
 
         foreach (var categorie in seedCategorie)
         {
-            var bestaat = await dbContext.Categorieen.AnyAsync(
-                c => c.Naam == categorie.Naam);
-            
+            var bestaat = await dbContext.Categorieen.AnyAsync(c => c.Naam == categorie.Naam);
             if (!bestaat)
             {
                 dbContext.Categorieen.Add(categorie);
@@ -172,55 +197,30 @@ public static class DataSeeder
         await dbContext.SaveChangesAsync();
     }
 
-    private static readonly DateTime _vasteVeilingDatum = new DateTime(2026, 1, 8, 0, 0, 0, DateTimeKind.Utc);
-    private static async Task EnsureVeiling(AppDbContext dbContext, UserManager<Gebruiker> userManager)
+    private static readonly DateTime _vasteVeilingDatum = new(2026, 1, 8, 0, 0, 0, DateTimeKind.Utc);
+
+    private static async Task EnsureVeiling(AppDbContext dbContext)
     {
         if (!await dbContext.Veiling.AnyAsync())
         {
-            // forceert de database om te beginnen met een specifiek getal voor de veiling
+            // Forceer start-id (SQL Server specifiek)
             await dbContext.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('Veiling', RESEED, 200)");
         }
 
         var veilingen = new[]
         {
-            new Veiling
-            {
-                VeilingNaam = "veiling001",
-                Begintijd   = _vasteVeilingDatum.AddHours(9),
-                Eindtijd    = _vasteVeilingDatum.AddHours(10),
-                Status      = "active"
-            },
-            new Veiling
-            {
-                VeilingNaam = "veiling001",
-                Begintijd   = _vasteVeilingDatum.AddHours(10),
-                Eindtijd    = _vasteVeilingDatum.AddHours(11),
-                Status      = "active"
-            },
-            new Veiling
-            {
-                VeilingNaam = "veiling002",
-                Begintijd   = _vasteVeilingDatum.AddHours(12),
-                Eindtijd    = _vasteVeilingDatum.AddHours(13),
-                Status      = "active"
-            },
-            new Veiling
-            {
-                VeilingNaam = "veiling003",
-                Begintijd   = _vasteVeilingDatum.AddHours(14),
-                Eindtijd    = _vasteVeilingDatum.AddHours(15),
-                Status      = "active"
-            }
+            new Veiling { VeilingNaam = "veiling001", Begintijd = _vasteVeilingDatum.AddHours(9),  Eindtijd = _vasteVeilingDatum.AddHours(10), Status = "active" },
+            new Veiling { VeilingNaam = "veiling001", Begintijd = _vasteVeilingDatum.AddHours(10), Eindtijd = _vasteVeilingDatum.AddHours(11), Status = "active" },
+            new Veiling { VeilingNaam = "veiling002", Begintijd = _vasteVeilingDatum.AddHours(12), Eindtijd = _vasteVeilingDatum.AddHours(13), Status = "active" },
+            new Veiling { VeilingNaam = "veiling003", Begintijd = _vasteVeilingDatum.AddHours(14), Eindtijd = _vasteVeilingDatum.AddHours(15), Status = "active" }
         };
 
         foreach (var veiling in veilingen)
         {
-            // Check of de veiling al bestaat op basis van unieke kenmerken.
             var bestaat = await dbContext.Veiling.AnyAsync(v =>
                 v.VeilingNaam == veiling.VeilingNaam &&
                 v.Begintijd == veiling.Begintijd &&
-                v.Eindtijd == veiling.Eindtijd
-            );
+                v.Eindtijd == veiling.Eindtijd);
 
             if (!bestaat)
             {
@@ -230,23 +230,24 @@ public static class DataSeeder
 
         await dbContext.SaveChangesAsync();
     }
-    
+
     private static async Task EnsureVeilingproducten(AppDbContext dbContext, UserManager<Gebruiker> userManager)
     {
-        var kweker = await userManager.FindByEmailAsync("mario123@gmail.com");
-        var kwekerGroenveld = await userManager.FindByEmailAsync("groenveld@kwekerij.nl");
-        if (kweker == null) return;
+        var kwekerMario = await userManager.FindByEmailAsync(EmailKwekerMario);
+        var kwekerGroen = await userManager.FindByEmailAsync(EmailKwekerGroen);
 
-        if (kweker.GebruikerNr != kweker.Id)
+        if (kwekerMario == null) return;
+
+        if (kwekerMario.GebruikerNr != kwekerMario.Id)
         {
-            kweker.GebruikerNr = kweker.Id;
-            await userManager.UpdateAsync(kweker);
+            kwekerMario.GebruikerNr = kwekerMario.Id;
+            await userManager.UpdateAsync(kwekerMario);
         }
-        
-        if (kwekerGroenveld != null && kwekerGroenveld.GebruikerNr != kwekerGroenveld.Id)
+
+        if (kwekerGroen != null && kwekerGroen.GebruikerNr != kwekerGroen.Id)
         {
-            kwekerGroenveld.GebruikerNr = kwekerGroenveld.Id;
-            await userManager.UpdateAsync(kwekerGroenveld);
+            kwekerGroen.GebruikerNr = kwekerGroen.Id;
+            await userManager.UpdateAsync(kwekerGroen);
         }
 
         var categories = await dbContext.Categorieen
@@ -259,78 +260,78 @@ public static class DataSeeder
         {
             new Veilingproduct
             {
-                Naam             = "Tulp Mix",
-                GeplaatstDatum   = geplaatst,
-                AantalFusten     = 10,
-                VoorraadBloemen  = 500,
-                Startprijs       = 1200000,
-                CategorieNr      = categories.GetValueOrDefault("Tulpen"),
-                VeilingNr        = 200, 
-                Plaats           = "Aalsmeer",
-                Minimumprijs     = 10,
-                Kwekernr         = kweker.Id,
-                BeginDatum       = startdag,
-                ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+                Naam            = "Tulp Mix",
+                GeplaatstDatum  = geplaatst,
+                AantalFusten    = 10,
+                VoorraadBloemen = 500,
+                Startprijs      = 1200000,
+                CategorieNr     = categories.GetValueOrDefault("Tulpen"),
+                VeilingNr       = 200,
+                Plaats          = "Aalsmeer",
+                Minimumprijs    = 10,
+                Kwekernr        = kwekerMario.Id,
+                BeginDatum      = startdag,
+                ImagePath       = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
             },
             new Veilingproduct
             {
-                Naam             = "Rode Roos",
-                GeplaatstDatum   = geplaatst,
-                AantalFusten     = 10,
-                VoorraadBloemen  = 300,
-                Startprijs       = 2000000,
-                CategorieNr      = categories.GetValueOrDefault("Rozen"),
-                VeilingNr        = 201,
-                Plaats           = "Eelde",
-                Minimumprijs     = 15,
-                Kwekernr         = kweker.Id,
-                BeginDatum       = startdag,
-                ImagePath        = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
+                Naam            = "Rode Roos",
+                GeplaatstDatum  = geplaatst,
+                AantalFusten    = 10,
+                VoorraadBloemen = 300,
+                Startprijs      = 2000000,
+                CategorieNr     = categories.GetValueOrDefault("Rozen"),
+                VeilingNr       = 201,
+                Plaats          = "Eelde",
+                Minimumprijs    = 15,
+                Kwekernr        = kwekerMario.Id,
+                BeginDatum      = startdag,
+                ImagePath       = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
             },
             new Veilingproduct
             {
-                Naam             = "Zonnebloem Gold",
-                GeplaatstDatum   = geplaatst.AddHours(1),
-                AantalFusten     = 8,
-                VoorraadBloemen  = 400,
-                Startprijs       = 950000,
-                CategorieNr      = categories.GetValueOrDefault("Zonnebloem"),
-                VeilingNr        = 202,
-                Plaats           = "Aalsmeer",
-                Minimumprijs     = 12,
-                Kwekernr         = kweker.Id,
-                BeginDatum       = startdag,
-                ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+                Naam            = "Zonnebloem Gold",
+                GeplaatstDatum  = geplaatst.AddHours(1),
+                AantalFusten    = 8,
+                VoorraadBloemen = 400,
+                Startprijs      = 950000,
+                CategorieNr     = categories.GetValueOrDefault("Zonnebloem"),
+                VeilingNr       = 202,
+                Plaats          = "Aalsmeer",
+                Minimumprijs    = 12,
+                Kwekernr        = kwekerMario.Id,
+                BeginDatum      = startdag,
+                ImagePath       = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
             },
             new Veilingproduct
             {
-                Naam             = "Witte Lelie",
-                GeplaatstDatum   = geplaatst.AddHours(2),
-                AantalFusten     = 6,
-                VoorraadBloemen  = 240,
-                Startprijs       = 1750000,
-                CategorieNr      = categories.GetValueOrDefault("Lelie"),
-                VeilingNr        = 202,
-                Plaats           = "Naaldwijk",
-                Minimumprijs     = 18,
-                Kwekernr         = kwekerGroenveld?.Id ?? kweker.Id,
-                BeginDatum       = startdag,
-                ImagePath        = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
+                Naam            = "Witte Lelie",
+                GeplaatstDatum  = geplaatst.AddHours(2),
+                AantalFusten    = 6,
+                VoorraadBloemen = 240,
+                Startprijs      = 1750000,
+                CategorieNr     = categories.GetValueOrDefault("Lelie"),
+                VeilingNr       = 202,
+                Plaats          = "Naaldwijk",
+                Minimumprijs    = 18,
+                Kwekernr        = kwekerGroen?.Id ?? kwekerMario.Id,
+                BeginDatum      = startdag,
+                ImagePath       = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
             },
             new Veilingproduct
             {
-                Naam             = "Pioenroos Pastel",
-                GeplaatstDatum   = geplaatst.AddHours(3),
-                AantalFusten     = 5,
-                VoorraadBloemen  = 180,
-                Startprijs       = 2200000,
-                CategorieNr      = categories.GetValueOrDefault("Pioenroos"),
-                VeilingNr        = 203,
-                Plaats           = "Eelde",
-                Minimumprijs     = 20,
-                Kwekernr         = kwekerGroenveld?.Id ?? kweker.Id,
-                BeginDatum       = startdag,
-                ImagePath        = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+                Naam            = "Pioenroos Pastel",
+                GeplaatstDatum  = geplaatst.AddHours(3),
+                AantalFusten    = 5,
+                VoorraadBloemen = 180,
+                Startprijs      = 2200000,
+                CategorieNr     = categories.GetValueOrDefault("Pioenroos"),
+                VeilingNr       = 203,
+                Plaats          = "Eelde",
+                Minimumprijs    = 20,
+                Kwekernr        = kwekerGroen?.Id ?? kwekerMario.Id,
+                BeginDatum      = startdag,
+                ImagePath       = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
             }
         };
 
@@ -350,76 +351,95 @@ public static class DataSeeder
 
     private static async Task EnsureBiedingen(AppDbContext dbContext, UserManager<Gebruiker> userManager)
     {
-        var koper = await userManager.FindByEmailAsync("luigi@gmail.com");
-        var koperAnna = await userManager.FindByEmailAsync("anna.koper@gmail.com");
-        if (koper == null) return;
+        var koper1 = await userManager.FindByEmailAsync(EmailKoper1);
+        var koper2 = await userManager.FindByEmailAsync(EmailKoper2);
 
-        var producten = await dbContext.Veilingproducten
-            .Where(vp => vp.Naam == "Tulp Mix" || vp.Naam == "Rode Roos" || vp.Naam == "Zonnebloem Gold" || vp.Naam == "Witte Lelie" || vp.Naam == "Pioenroos Pastel")
-            .ToDictionaryAsync(vp => vp.Naam, vp => vp.VeilingProductNr);
+        if (koper1 == null) return;
 
-        var seedBiedingen = new[]
+        // 1) 10 biedingen alleen op 1 specifiek product (Tulp Mix)
+        var product = await dbContext.Veilingproducten
+            .AsNoTracking()
+            .FirstOrDefaultAsync(vp => vp.Naam == ProductSpecifiek);
+
+        if (product != null)
         {
-            new Bieding
+            var productBiedingen = new[]
             {
-                BedragPerFust    = 13,
-                AantalStuks      = 5,
-                GebruikerNr      = koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Tulp Mix")
-            },
-            new Bieding
+                new Bieding { BedragPerFust = 11, AantalStuks = 2, GebruikerNr = koper1.Id,             VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 12, AantalStuks = 3, GebruikerNr = (koper2?.Id ?? koper1.Id), VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 13, AantalStuks = 1, GebruikerNr = koper1.Id,             VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 14, AantalStuks = 4, GebruikerNr = (koper2?.Id ?? koper1.Id), VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 15, AantalStuks = 2, GebruikerNr = koper1.Id,             VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 16, AantalStuks = 5, GebruikerNr = (koper2?.Id ?? koper1.Id), VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 17, AantalStuks = 3, GebruikerNr = koper1.Id,             VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 18, AantalStuks = 2, GebruikerNr = (koper2?.Id ?? koper1.Id), VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 19, AantalStuks = 6, GebruikerNr = koper1.Id,             VeilingproductNr = product.VeilingProductNr },
+                new Bieding { BedragPerFust = 20, AantalStuks = 1, GebruikerNr = (koper2?.Id ?? koper1.Id), VeilingproductNr = product.VeilingProductNr },
+            };
+
+            await AddBidsIfMissing(dbContext, productBiedingen);
+        }
+
+        // 2) 10 biedingen alleen op producten van 1 specifieke kweker (Mario)
+        var kwekerMario = await userManager.FindByEmailAsync(EmailKwekerMario);
+        if (kwekerMario != null)
+        {
+            var marioProducten = await dbContext.Veilingproducten
+                .AsNoTracking()
+                .Where(vp => vp.Kwekernr == kwekerMario.Id)
+                .OrderBy(vp => vp.VeilingProductNr)
+                .ToListAsync();
+
+            if (marioProducten.Count > 0)
             {
-                BedragPerFust    = 15,
-                AantalStuks      = 4,
-                GebruikerNr      = koperAnna?.Id ?? koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Tulp Mix")
-            },
-            new Bieding
-            {
-                BedragPerFust    = 21,
-                AantalStuks      = 3,
-                GebruikerNr      = koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Rode Roos")
-            },
-            new Bieding
-            {
-                BedragPerFust    = 23,
-                AantalStuks      = 2,
-                GebruikerNr      = koperAnna?.Id ?? koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Rode Roos")
-            },
-            new Bieding
-            {
-                BedragPerFust    = 14,
-                AantalStuks      = 6,
-                GebruikerNr      = koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Zonnebloem Gold")
-            },
-            new Bieding
-            {
-                BedragPerFust    = 19,
-                AantalStuks      = 3,
-                GebruikerNr      = koperAnna?.Id ?? koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Witte Lelie")
-            },
-            new Bieding
-            {
-                BedragPerFust    = 24,
-                AantalStuks      = 2,
-                GebruikerNr      = koper.Id,
-                VeilingproductNr = producten.GetValueOrDefault("Pioenroos Pastel")
+                // We verdelen 10 biedingen over Mario z'n producten (maar nog steeds 1 kweker)
+                // Gebruik hogere bedragen zodat het niet botst met de "Tulp Mix"-set.
+                Bieding MakeBid(int index, int bedrag, int aantal, int gebruikerId)
+                {
+                    var gekozenProduct = marioProducten[index % marioProducten.Count];
+                    return new Bieding
+                    {
+                        BedragPerFust    = bedrag,
+                        AantalStuks      = aantal,
+                        GebruikerNr      = gebruikerId,
+                        VeilingproductNr = gekozenProduct.VeilingProductNr
+                    };
+                }
+
+                var koper2Id = koper2?.Id ?? koper1.Id;
+
+                var kwekerBiedingen = new[]
+                {
+                    MakeBid(0, 31, 2, koper1.Id),
+                    MakeBid(1, 32, 3, koper2Id),
+                    MakeBid(2, 33, 1, koper1.Id),
+                    MakeBid(3, 34, 4, koper2Id),
+                    MakeBid(4, 35, 2, koper1.Id),
+                    MakeBid(5, 36, 5, koper2Id),
+                    MakeBid(6, 37, 3, koper1.Id),
+                    MakeBid(7, 38, 2, koper2Id),
+                    MakeBid(8, 39, 6, koper1.Id),
+                    MakeBid(9, 40, 1, koper2Id),
+                };
+
+                await AddBidsIfMissing(dbContext, kwekerBiedingen);
             }
-        };
+        }
+    }
 
-        foreach (var bieding in seedBiedingen)
+    // Voegt biedingen toe als ze nog niet bestaan.
+    // Bestaat-check: VeilingproductNr + GebruikerNr + BedragPerFust.
+    private static async Task AddBidsIfMissing(AppDbContext dbContext, Bieding[] biedingen)
+    {
+        foreach (var bieding in biedingen)
         {
-            if (bieding.VeilingproductNr == 0)
-                continue;
+            if (bieding.VeilingproductNr <= 0) continue;
 
             var bestaat = await dbContext.Biedingen.AnyAsync(b =>
                 b.VeilingproductNr == bieding.VeilingproductNr &&
-                b.GebruikerNr == bieding.GebruikerNr &&
-                b.BedragPerFust == bieding.BedragPerFust);
+                b.GebruikerNr      == bieding.GebruikerNr &&
+                b.BedragPerFust    == bieding.BedragPerFust);
+
             if (!bestaat)
             {
                 dbContext.Biedingen.Add(bieding);
@@ -428,5 +448,4 @@ public static class DataSeeder
 
         await dbContext.SaveChangesAsync();
     }
-   
 }
