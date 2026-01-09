@@ -7,14 +7,14 @@ import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 import { ApiRequest } from '../../typeScript/ApiRequest';
 
 //types import van index
-import type { VeilingLogica, VeilingschermProps } from '../AuctionScreen/VeilingSchermComponenten/index';
+import type { VeilingLogica, VeilingschermProps } from './VeilingSchermComponenten/index';
 import type { KwekerInfo } from '../hoofdscherm/Componenten/index';
 
 // index componenten imports
 import { InfoVeld, GenereerKnop, InputField, checkInputField } from '../../Componenten/index';
 import { ContainerSideMenu, Timer, 
     berekenHuidigeVeilingStaat as huidigeVeilingStaat, 
-    VeilingProductitem_Update, mapVeilingData } from '../AuctionScreen/VeilingSchermComponenten/index';
+    VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/index';
 
 import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
 

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import type { TimerProps, VeilingLogica } from '../../AuctionScreen/VeilingSchermComponenten/index';
+import type { TimerProps, VeilingLogica } from '../../Veilingscherm/VeilingSchermComponenten/index';
 
 import { DelenDoor as convertToEuro } from "../../../typeScript/RekenFuncties";
 

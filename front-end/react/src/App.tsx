@@ -10,7 +10,7 @@ import Registration from './registratie_login/Registration.tsx'
 import Login from './registratie_login/Login.tsx'
 import SellerScreenAdd from './schermen/SellerScreenAdd.tsx';
 import ErrorPage from './schermen/404Scherm/404.tsx';
-import AuctionScreen from './schermen/AuctionScreen/VeilingScherm.tsx';
+import AuctionScreen from './schermen/Veilingscherm/VeilingScherm.tsx';
 
 // import { UpdateApi } from './typeScript/ApiPut.tsx'
 import { useAutorefresh } from './typeScript/ApiRefresh.tsx'

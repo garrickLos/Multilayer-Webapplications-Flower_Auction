@@ -5,12 +5,14 @@ import { ApiRequest } from '../../../typeScript/ApiRequest';
 import { getRefreshToken, getBearerToken as Token } from '../../../typeScript/ApiGet';
 
 //import component index
-import { mapInfoLijstData } from '../../AuctionScreen/VeilingSchermComponenten/index'; 
+import { mapInfoLijstData } from '../../Veilingscherm/VeilingSchermComponenten/index'; 
 
 // import index type
-import type { PrijsHistorieItemLogica, ContainerSideMenuProps } from '../../AuctionScreen/VeilingSchermComponenten/index';
+import type { PrijsHistorieItemLogica, ContainerSideMenuProps } from '../../Veilingscherm/VeilingSchermComponenten/index';
 
 import '../../../css/Componenten/OffcanvasComponent.css';
+
+
 
 export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam }: ContainerSideMenuProps) {
 
@@ -79,18 +81,18 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
                 <br />
 
                 <InfoVeld Titel={'Historische prijzen van deze aanbieder'} />
-                {repeatClasses("HuidigeAanbieder", configSpecifiekeData)}
+                {repeatClasses("HuidigeAanbieder", configSpecifiekeData, false)}
 
                 <br />
 
                 <InfoVeld Titel={'Historische prijzen van alle aanbieders'} />
-                {repeatClasses("alleAanbieders", configAllKwekerData)}
+                {repeatClasses("alleAanbieders", configAllKwekerData, true)}
             </div>
         </div>
     );
 };
 
-const repeatClasses = (className: string, data: PrijsHistorieItemLogica[]) => {
+const repeatClasses = (className: string, data: PrijsHistorieItemLogica[], renderDate: boolean) => {
     if (!data || data.length === 0) {
         return <div className="loading-state">Geen historie gevonden...</div>;
     }
@@ -105,19 +107,20 @@ const repeatClasses = (className: string, data: PrijsHistorieItemLogica[]) => {
             <InfoVeld 
                 key="header"
                 Titel={'Aanbieder:'}
-                tussenkop={'Datum:'}
-                tussenkopClass={"tussenkop"}
+                tussenkop={renderDate ? 'Datum:' : ""}
+                tussenkopClass={ renderDate ? "tussenkop" : ""}
                 Bericht={"Prijs:"}
                 BerichtClass={'rightSideText'}
             />
+
             {/* Om de specifieke items te tonen op het scherm */}
             {data.map((item, index) => (
                 <InfoVeld
                     key={`${className}-${index}`}
                     Titel={item.bedrijfsNaam} 
-                    tussenkop={new Date(item.beginDatum).toLocaleDateString()} 
+                    tussenkop={renderDate ? new Date(item.beginDatum).toLocaleDateString() : ""} 
                     Bericht={`€ ${Number(item.bedragPerFust).toFixed(2)}`}
-                    tussenkopClass={'tussenkop'} 
+                    tussenkopClass={renderDate ? 'tussenkop' : "" } 
                     BerichtClass={'rightSideText'}
                 />
             ))}

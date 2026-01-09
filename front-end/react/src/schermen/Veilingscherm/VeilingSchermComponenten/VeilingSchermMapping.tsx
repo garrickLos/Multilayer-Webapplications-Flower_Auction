@@ -1,4 +1,4 @@
-import type { VeilingLogica, PrijsHistorieItemLogica } from "../../AuctionScreen/VeilingSchermComponenten/index";
+import type { VeilingLogica, PrijsHistorieItemLogica } from "../../Veilingscherm/VeilingSchermComponenten/index";
 
 // mapt de data voor de veilingscherm
 // dit zorgt ervoor dat er altijd info staat. Indien het niet gevonden kan worden (error tijdens de get)

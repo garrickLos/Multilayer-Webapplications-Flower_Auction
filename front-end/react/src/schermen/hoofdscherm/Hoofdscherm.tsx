@@ -9,7 +9,7 @@ import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
 
 // import components
 import { AuctionCard } from '../hoofdscherm/Componenten/index.tsx';
-import { ErrorScherm, Laadscherm } from '../AuctionScreen/VeilingSchermComponenten/index.tsx';
+import { ErrorScherm, Laadscherm } from '../Veilingscherm/VeilingSchermComponenten/index.tsx';
 
 // import index types
 import type {VeilingItem} from '../hoofdscherm/Componenten/index.tsx';

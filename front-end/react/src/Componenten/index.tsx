@@ -10,8 +10,6 @@ export { GenereerKnop } from './Knop';
 
 export { laadIcon } from './Laadicon';
 
-export { berekenHuidigeVeilingStaat, Timer } from '../schermen/AuctionScreen/VeilingSchermComponenten/RenderTimer';
-
 // types:
 
 export type { InputFieldProps } from './ComponentTypes/InputFieldTypes';
