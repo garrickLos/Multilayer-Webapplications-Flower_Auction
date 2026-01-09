@@ -4,7 +4,7 @@ const API_BASE_URL = "/api";
 const DEFAULT_PAGE_SIZE = 200;
 
 export type ApiError = { status?: number; message: string };
-export type UiStatus = "active" | "inactive" | "sold" | "deleted";
+export type UiStatus = "active" | "inactive" | "sold" | "deleted" | "finished";
 export type UserRole = "Koper" | "Bedrijf" | "Veilingmeester" | "Admin" | "Onbekend";
 export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd" | string;
 export type ProductStatus = "Active" | "Inactive" | "Deleted" | "Archived";
@@ -46,6 +46,7 @@ export type Product = {
     readonly location?: string;
     readonly active?: boolean;
     readonly bids?: readonly BidSummary[];
+    readonly placedDate?: string;
 };
 export type BidSummary = { id: number; amount: number; quantity: number; userId: number };
 export type Auction = {
@@ -73,8 +74,9 @@ const jsonHeaders = { Accept: "application/json", "Content-Type": "application/j
 function toUiStatus(value?: AuctionStatus | string | null): UiStatus {
     const normalised = typeof value === "string" ? value.toLowerCase() : "";
     if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "archived") return "sold";
-    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
+    if (normalised === "verkocht" || normalised === "uitverkocht" || normalised === "sold" || normalised === "archived") return "sold";
+    if (normalised === "afgesloten" || normalised === "closed" || normalised === "finished") return "finished";
+    if (normalised === "geannuleerd" || normalised === "cancelled" || normalised === "deleted") return "deleted";
     return "inactive";
 }
 
@@ -169,6 +171,7 @@ type ProductDto = {
     verkoperNaam?: string;
     imagePath?: string;
     beginDatum?: string | null;
+    geplaatstDatum?: string | null;
 };
 
 const mapProduct = (dto: ProductDto): Product => {
@@ -179,7 +182,7 @@ const mapProduct = (dto: ProductDto): Product => {
     return {
         id: dto.veilingProductNr,
         name: dto.naam ?? "Onbekend product",
-        status: dto.status ?? "Inactive",
+        status: dto.status ?? "Active",
         category: dto.categorieNaam ?? null,
         startPrice: parsedStart,
         minimumPrice: parsedMinimum,
@@ -191,7 +194,8 @@ const mapProduct = (dto: ProductDto): Product => {
         sellerName: dto.verkoperNaam,
         imagePath: dto.imagePath,
         location: dto.plaats,
-        active: (dto.status ?? "Inactive") === "Active",
+        active: (dto.status ?? "Active") === "Active",
+        placedDate: dto.geplaatstDatum ?? undefined,
     };
 };
 
@@ -202,7 +206,7 @@ const mapUser = (dto: { gebruikerNr: number; bedrijfsNaam?: string; email: strin
     name: dto.bedrijfsNaam || dto.email,
     email: dto.email,
     role: toRole(dto.soort),
-    status: toUiStatus(dto.status),
+    status: toUiStatus(dto.status ?? "active"),
     kvk: dto.kvk ?? undefined,
 });
 

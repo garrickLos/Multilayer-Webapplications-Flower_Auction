@@ -206,11 +206,11 @@ export function useVeilingmeesterData() {
     };
 }
 
-export type AuctionFilters = { onlyActive: boolean; from: string; to: string; veilingProduct: string };
+export type AuctionFilters = { onlyActive: boolean; from: string; to: string; status: UiStatus | "all" };
 
 export function useAuctionsPage(auctions: readonly Auction[]) {
     const [search, setSearch] = useState("");
-    const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", veilingProduct: "" });
+    const [filters, setFilters] = useState<AuctionFilters>({ onlyActive: false, from: "", to: "", status: "all" });
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState<number>(TABLE_PAGE_SIZES[0]);
     const now = useTicker(CLOCK_TICK_MS);
@@ -219,7 +219,8 @@ export function useAuctionsPage(auctions: readonly Auction[]) {
         () =>
             filterRows(auctions, search, filters, (row, term, currentFilters) => {
                 const computedStatus = deriveAuctionUiStatus(row, now);
-                const matchesStatus = !currentFilters.onlyActive || computedStatus === "active";
+                const matchesOnlyActive = !currentFilters.onlyActive || computedStatus === "active";
+                const matchesStatus = currentFilters.status === "all" || computedStatus === currentFilters.status;
                 const start = Date.parse(row.startDate);
                 const from = currentFilters.from ? Date.parse(currentFilters.from) : Number.NEGATIVE_INFINITY;
                 const to = currentFilters.to ? Date.parse(currentFilters.to) : Number.POSITIVE_INFINITY;
@@ -247,9 +248,7 @@ export function useAuctionsPage(auctions: readonly Auction[]) {
                     .join(" ")
                     .toLowerCase();
                 const matchesSearch = !term || searchValues.includes(term);
-                const matchesVeilingProduct =
-                    !currentFilters.veilingProduct || !!row.linkedProductIds?.includes(Number(currentFilters.veilingProduct));
-                return matchesSearch && matchesStatus && matchesFrom && matchesTo && matchesVeilingProduct;
+                return matchesSearch && matchesOnlyActive && matchesStatus && matchesFrom && matchesTo;
             }),
         [auctions, filters, now, search],
     );

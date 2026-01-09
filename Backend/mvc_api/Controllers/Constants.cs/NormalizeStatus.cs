@@ -5,8 +5,8 @@ public class NormalizeStatus
 
     public const string Active = "active";
     public const string Inactive = "inactive";
-    public const string Sold = "sold"; 
-
+    public const string SoldOut = "uitverkocht";
+    
     public string StatusPrinter(string? status)
     {
         if (string.IsNullOrWhiteSpace(status))
@@ -17,7 +17,8 @@ public class NormalizeStatus
         return status.Trim().ToLowerInvariant() switch
         {
             Active => Active,
-            Sold => Sold,
+            "sold" => SoldOut,
+            SoldOut => SoldOut,
             _ => Inactive
         };
     }

@@ -2,7 +2,7 @@ import { useMemo, type JSX } from "react";
 import type { Auction } from "../api";
 import { TABLE_PAGE_SIZES, useAuctionsPage } from "../hooks";
 import { calculateClockPrice, deriveAuctionUiStatus } from "../rules";
-import { formatCurrency, formatDateTime, paginate } from "../helpers";
+import { formatCurrency, formatDateTime, formatTimeInput, paginate } from "../helpers";
 import { Table, type TableColumn } from "./Table";
 import { EmptyState, StatusBadge } from "./ui";
 import { VeilingFilters } from "./VeilingFilters.tsx";
@@ -85,18 +85,15 @@ export function VeilingenOverzicht({
 
         {
             key: "startDate",
-            header: "Start",
+            header: "Tijd",
             sortable: true,
-            render: (auction) => formatDateTime(auction.startDate),
+            render: (auction) => {
+                const startLabel = formatDateTime(auction.startDate);
+                const end = new Date(auction.endDate);
+                const endTime = Number.isNaN(end.getTime()) ? "—" : formatTimeInput(end);
+                return `${startLabel} - ${endTime}`;
+            },
             getValue: (auction) => auction.startDate,
-        },
-
-        {
-            key: "endDate",
-            header: "Einde",
-            sortable: true,
-            render: (auction) => formatDateTime(auction.endDate),
-            getValue: (auction) => auction.endDate,
         },
 
         {
