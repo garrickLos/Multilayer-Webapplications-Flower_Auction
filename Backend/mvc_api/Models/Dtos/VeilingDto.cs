@@ -45,7 +45,11 @@ public record VeilingCreateDto : BaseVeiling_Dto
     public string? Status { get; set; }
 }
 
-public record VeilingUpdateDto : BaseVeiling_Dto;
+public record VeilingUpdateDto : BaseVeiling_Dto
+{
+    [StringLength(20)] 
+    public string? Status { get; set; }
+}
 
 public record VeilingUpdate_UpdateVeilingTijd
 {   

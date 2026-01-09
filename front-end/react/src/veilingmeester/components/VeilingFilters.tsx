@@ -2,7 +2,7 @@
 
 import type { JSX } from "react";
 import type { AuctionFilters } from "../hooks";
-import { Field } from "./ui";
+import { Field, Select } from "./ui";
 
 type AuctionsFiltersProps = {
     readonly search: string;
@@ -94,16 +94,19 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
                 </div>
 
                 <div className="col-12 col-md-6 col-lg-3">
-                    <Field label="Product" htmlFor="veilingProduct">
-                        <input
-                            id="veilingProduct"
-                            type="number"
-                            className="form-control"
-                            value={filters.veilingProduct}
-                            onChange={(e) => updateFilters({ veilingProduct: e.target.value })}
-                            inputMode="numeric"
-                            min={0}
-                        />
+                    <Field label="Status" htmlFor="auctionStatus">
+                        <Select
+                            id="auctionStatus"
+                            value={filters.status}
+                            onChange={(event) => updateFilters({ status: event.target.value as AuctionFilters["status"] })}
+                        >
+                            <option value="all">Alle statussen</option>
+                            <option value="active">Actief</option>
+                            <option value="inactive">Inactief</option>
+                            <option value="finished">Afgesloten</option>
+                            <option value="sold">Uitverkocht</option>
+                            <option value="deleted">Geannuleerd</option>
+                        </Select>
                     </Field>
                 </div>
             </div>

@@ -163,7 +163,10 @@ public class VeilingproductController : ControllerBase
             entity.ImagePath       = dto.ImagePath;      
         }
 
-        entity.Minimumprijs    = dto.Minimumprijs ?? entity.Minimumprijs;
+        if (dto.Minimumprijs.HasValue && User.IsInRole("Bedrijf"))
+        {
+            entity.Minimumprijs = dto.Minimumprijs.Value;
+        }
         entity.Plaats          = dto.Plaats ?? entity.Plaats;
 
         await _repository.SaveChangesAsync(ct);

@@ -192,13 +192,15 @@ export function StatusBadge({ status }: { readonly status: UiStatus }): JSX.Elem
         inactive: "bg-secondary-subtle text-secondary-emphasis",
         sold: "bg-warning-subtle text-warning-emphasis",
         deleted: "bg-danger-subtle text-danger-emphasis",
+        finished: "bg-info-subtle text-info-emphasis",
     };
 
     const labels: Record<UiStatus, string> = {
         active: "Actief",
         inactive: "Inactief",
-        sold: "Verkocht",
+        sold: "Uitverkocht",
         deleted: "Geannuleerd",
+        finished: "Afgesloten",
     };
 
     return <span className={cx("badge rounded-pill", variants[status])}>{labels[status]}</span>;

@@ -1,10 +1,9 @@
 import { useMemo, type JSX } from "react";
 import type { Auction, Product } from "../api";
 import { TABLE_PAGE_SIZES, useProductsPage } from "../hooks";
-import { mapProductStatusToUiStatus } from "../rules";
-import { formatCurrency, paginate } from "../helpers";
+import { formatCurrency, formatDateTime, paginate } from "../helpers";
 import { Table, type TableColumn } from "./Table";
-import { EmptyState, StatusBadge } from "./ui";
+import { EmptyState } from "./ui";
 import { ProductFilters } from "./ProductFilters.tsx";
 import { ProductThumbnail } from "./ProductKaart.tsx";
 
@@ -18,6 +17,7 @@ type ProductsTabProps = {
 
 export function ProductenOverzicht({ auctions, products, loading, error, onRefresh }: ProductsTabProps): JSX.Element {
     const { filtered, filters, page, pageSize, setFilters, setPage, setPageSize } = useProductsPage(products);
+    const auctionNameById = useMemo(() => new Map(auctions.map((auction) => [auction.id, auction.title])), [auctions]);
 
     const columns: TableColumn<Product>[] = [
         {
@@ -40,16 +40,19 @@ export function ProductenOverzicht({ auctions, products, loading, error, onRefre
             getValue: (row) => row.minimumPrice,
         },
         {
-            key: "status",
-            header: "Status",
+            key: "placedDate",
+            header: "Datum",
             sortable: true,
-            render: (row) => <StatusBadge status={mapProductStatusToUiStatus(row.status)} />,
-            getValue: (row) => mapProductStatusToUiStatus(row.status),
+            render: (row) => formatDateTime(row.placedDate ?? null),
+            getValue: (row) => row.placedDate ?? "",
         },
         {
             key: "auction",
             header: "Veiling",
-            render: (row) => (row.linkedAuctionId ? `#${row.linkedAuctionId}` : "—"),
+            render: (row) => {
+                if (!row.linkedAuctionId) return "—";
+                return auctionNameById.get(row.linkedAuctionId) ?? `#${row.linkedAuctionId}`;
+            },
             getValue: (row) => row.linkedAuctionId ?? 0,
         },
     ];

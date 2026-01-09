@@ -52,7 +52,7 @@ export function GebruikersFilters({
                         <option value="all">Alle</option>
                         <option value="active">Actief</option>
                         <option value="inactive">Inactief</option>
-                        <option value="sold">Verkocht</option>
+                        <option value="sold">Uitverkocht</option>
                         <option value="deleted">Geannuleerd</option>
                     </Select>
                 </Field>

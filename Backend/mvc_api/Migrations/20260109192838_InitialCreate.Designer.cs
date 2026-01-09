@@ -12,7 +12,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260108115148_InitialCreate")]
+    [Migration("20260109192838_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

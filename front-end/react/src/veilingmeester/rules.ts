@@ -36,22 +36,25 @@ const aggregateProductStock = (products?: readonly { stock?: number }[]): number
 export const mapAuctionStatusToBadge = (status: string | UiStatus): UiStatus => {
     const normalised = typeof status === "string" ? status.toLowerCase() : "";
     if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "sold" || normalised === "archived")
+    if (normalised === "verkocht" || normalised === "uitverkocht" || normalised === "sold" || normalised === "archived")
         return "sold";
-    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
-    return "inactive";
+    if (normalised === "afgesloten" || normalised === "closed" || normalised === "finished") return "finished";
+    if (normalised === "geannuleerd" || normalised === "cancelled" || normalised === "deleted") return "deleted";
+        return "inactive";
 };
 
 export const uiStatusToAuctionStatus = (status: UiStatus): string => {
     if (status === "active") return "active";
     if (status === "sold") return "sold";
     if (status === "deleted") return "deleted";
+    if (status === "finished") return "afgesloten";
     return "inactive";
 };
 
 export const deriveAuctionUiStatus = (auction: Auction, now: Date = new Date()): UiStatus => {
     const mappedStatus = auction.rawStatus ? mapAuctionStatusToBadge(auction.rawStatus) : auction.status;
     if (mappedStatus === "deleted") return "deleted";
+    if (mappedStatus === "finished") return "finished";
 
     const start = new Date(auction.startDate);
     const end = new Date(auction.endDate);
@@ -61,7 +64,7 @@ export const deriveAuctionUiStatus = (auction: Auction, now: Date = new Date()):
     if (now < start) return "inactive";
     if (totalStock === 0 || mappedStatus === "sold") return "sold";
     if (now >= start && now <= end) return "active";
-    return mappedStatus;
+    return "finished";
 };
 
 // Change auction clock pricing rules here.
