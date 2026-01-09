@@ -1,9 +1,4 @@
-import type { errorMessaging } from "../VeilingSchermTypes"
-
-interface feedbackError {
-    isCorrect: boolean
-    err: errorMessaging
-}
+import type { feedbackError } from '../Componenten/index';
 
 export function FeedbackError ({isCorrect, err}: feedbackError) {
     if (!isCorrect) {

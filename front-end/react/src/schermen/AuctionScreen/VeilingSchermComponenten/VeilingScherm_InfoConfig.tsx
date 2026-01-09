@@ -8,7 +8,7 @@ import { GetIsoTimeByZone } from "../../../typeScript/FetchDate";
 /********************
 ** gebruikte types **
 *********************/
-import type { VeilingLogica, ProductLogica } from "../VeilingSchermTypes";
+import type { VeilingLogica, ProductLogica } from "./VeilingSchermTypes/VeilingSchermTypes";
 import type { VeilingproductUpdate, VeilingTijdUpdate } from "./VeilingSchermTypes/VeilingTypes";
 import type { NieuweBieding } from "./VeilingSchermTypes/BiedingTypes";
 import type { MyTokenPayload } from "./VeilingSchermTypes/TokenPayloadTypes";

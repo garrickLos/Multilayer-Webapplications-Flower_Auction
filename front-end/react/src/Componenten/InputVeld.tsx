@@ -1,17 +1,8 @@
-import { type ChangeEvent } from 'react';
-import type { ProductLogica, errorMessaging } from '../schermen/AuctionScreen/VeilingSchermTypes';
+import type { InputFieldProps} from '../Componenten/index';
 
 import '../css/Componenten/InputVeld.css';
 
-interface InputFieldProps {
-    type: string;
-    id: string;
-    name: string;
-    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-    value?: number | string;
-}
-
-export function InputField({type ,id, name, onChange }: InputFieldProps) {
+export function InputField({type ,id, name, onChange, value }: InputFieldProps) {
     return (
         <input 
             type={type} 
@@ -20,6 +11,7 @@ export function InputField({type ,id, name, onChange }: InputFieldProps) {
             className="selectieVeld"
             onChange={onChange}
             min={0} 
+            value={value}
         />
     );
 }

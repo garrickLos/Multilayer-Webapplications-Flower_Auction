@@ -1,14 +1,6 @@
+import type { InfoVeldProps } from '../Componenten/index';
+
 import '../css/Componenten/InformatieVelden.css';
-
-interface InfoVeldProps {
-    Titel: string;
-    tussenkop?: string;
-    Bericht?: any;
-
-    secondClass?: string | string[]; 
-    tussenkopClass?: string | string[];
-    BerichtClass?: string | string[];
-}
 
 export function InfoVeld({ Titel, tussenkop, Bericht, secondClass = [], tussenkopClass = [], BerichtClass = [] }: InfoVeldProps) {
 

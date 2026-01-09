@@ -1,45 +1,10 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
-export interface VeilingItem {
-    veilingNr: number
-    begintijd: string
-    eindtijd: string
-    status: string
-    minimumPrijs: number
-    producten: Producten[]
-}
-
-export interface Producten {
-    veilingProductNr: number
-    naam: string
-    startprijs: number
-    voorraad: number
-    imagePath?: string
-    beschrijving?: string
-}
-
-interface CardItems {
-    imagePath?: string;
-    headerText?: string;
-    paragraafText?: string;
-    veilingnr?: number;
-}
+// import type index
+import type { CardItems, VeilingItem, Producten } from '../../hoofdscherm/Componenten/index';
 
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
-
-export const renderCards = (items: VeilingItem[]) =>
-    items.flatMap((item: VeilingItem, veilingIndex: number) =>
-        item.producten.map((product: Producten, index: number) => (
-            <AuctionCard
-                key={`${veilingIndex}-${index}`}
-                imagePath={product.imagePath}
-                headerText={product.naam || 'Geen Titel'}
-                paragraafText={beschrijving(product, item)}
-                veilingnr={item.veilingNr} 
-            />
-        ))
-); 
 
 export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }: CardItems) {
   const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);
@@ -58,9 +23,11 @@ export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }:
         <h3>{headerText}</h3>
         <p className='Description'>{paragraafText}</p>
       </div>
+
       <NavLink to={`/auction/${veilingnr}`} state={{veilingnr: veilingnr}} 
               type="button" className='auctionButton' 
               aria-label={`Ga naar de veiling van: ${headerText}`}>naar de veiling</NavLink>
+    
     </div>
   );
 }
@@ -82,7 +49,7 @@ export function beschrijving(product: Producten, item: VeilingItem) {
         ` 
             lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}
 
-            Hoeveelheid bloemen: ${product.voorraad}
+            Hoeveelheid bloemen: ${product.aantalFusten}
             prijs begint op: ${product.startprijs} euro
 
             veiling startijd: 

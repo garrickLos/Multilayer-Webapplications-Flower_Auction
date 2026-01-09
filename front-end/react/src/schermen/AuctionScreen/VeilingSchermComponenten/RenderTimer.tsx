@@ -1,12 +1,8 @@
 import { useEffect } from "react";
-import type { VeilingLogica } from "../schermen/AuctionScreen/VeilingSchermTypes";
-import { DelenDoor as convertToEuro } from "../typeScript/RekenFuncties";
 
-type TimerProps =  {
-    onPrijsUpdate: (prijs: number) => void;
-    onProductWissel: (productIndex: number) => void; // Nieuwe prop
-    item: VeilingLogica;
-}
+import type { TimerProps, VeilingLogica } from '../../AuctionScreen/VeilingSchermComponenten/index';
+
+import { DelenDoor as convertToEuro } from "../../../typeScript/RekenFuncties";
 
 // Hulpfunctie: Bereken de gegevens van het huidige actieve product
 export function berekenHuidigeVeilingStaat(veiling?: VeilingLogica) {

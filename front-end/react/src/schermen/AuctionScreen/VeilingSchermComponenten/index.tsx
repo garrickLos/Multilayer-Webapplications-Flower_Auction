@@ -8,6 +8,8 @@ export { mapVeilingData, mapInfoLijstData, VeilingProductitem_Update } from './V
 
 export { ContainerSideMenu } from './OffcanvasComponent';
 
+export { Timer, berekenHuidigeVeilingStaat } from '../VeilingSchermComponenten/RenderTimer';
+
 
 // voor de types van de veilingScherm
 
@@ -18,3 +20,7 @@ export type { VeilingproductUpdate, VeilingTijdUpdate } from './VeilingSchermTyp
 export type { MyTokenPayload } from './VeilingSchermTypes/TokenPayloadTypes';
 
 export type { PrijsHistorieItemLogica, PrijsHistorieResultaatLogica, ContainerSideMenuProps } from './VeilingSchermTypes/PrijsHistoryTypes';
+
+export type { ProductLogica, VeilingLogica, categorie, VeilingschermProps, errorMessaging } from './VeilingSchermTypes/VeilingSchermTypes';
+
+export type { TimerProps } from './VeilingSchermTypes/TimerType';

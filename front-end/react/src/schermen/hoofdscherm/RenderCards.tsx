@@ -4,40 +4,14 @@ import { GenereerKnop } from "../../Componenten/Knop";
 import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
 import { GetDate } from "../../typeScript/FetchDate";
 
+// type index import
+import type {VeilingItem, Producten, AuctionCardProps, KwekerInfo } from '../hoofdscherm/Componenten/index.tsx';
+
 // api import
 import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
 
 // css
 import '../../css/Componenten/AuctionCards.css';
-
-// to do: verplaatsen van types naar een specifieke folder en bestand
-interface AuctionCardProps {
-    parentVeiling: VeilingItem;
-    product: Producten;
-}
-
-export interface VeilingItem {
-    veilingNr: number;
-    begintijd: string;
-    eindtijd: string;
-    status: string;
-    minimumPrijs: number;
-    producten: Producten[]; // Meestal is dit een array
-}
-
-export interface Producten {
-    veilingProductNr: number;
-    naam: string;
-    startprijs: number;
-    aantalFusten: number;
-    imagePath?: string;
-    beschrijving?: string;
-    gebruikerNr: number;
-}
-
-export interface KwekerInfo {
-    bedrijfsNaam?: string; 
-}
 
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 

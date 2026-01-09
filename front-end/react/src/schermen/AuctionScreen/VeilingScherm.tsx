@@ -1,10 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigate, NavLink, useParams } from 'react-router-dom';
-import { Timer } from '../../Componenten/RenderTimer'; // Zorg dat imports kloppen
-
-//types
-import type { VeilingLogica, VeilingschermProps } from './VeilingSchermTypes';
-import { type KwekerInfo, getKwekerInfo } from '../hoofdscherm/RenderCards';
+import { Navigate, useParams } from 'react-router-dom';
 
 //api calls
 import { getRefreshToken as refreshToken, getBearerToken as Token } from '../../typeScript/ApiGet';
@@ -12,12 +7,16 @@ import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 import { ApiRequest } from '../../typeScript/ApiRequest';
 
 //componenten
-import { checkInputField } from '../../Componenten/InputVeld';
-import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../../Componenten/RenderTimer';
-import { InfoVeld } from '../../Componenten/InformatieVelden';
 import { VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
-import { GenereerKnop } from '../../Componenten/Knop';
-import { ContainerSideMenu } from './VeilingSchermComponenten/OffcanvasComponent';
+
+//types
+import type { VeilingLogica, VeilingschermProps } from '../AuctionScreen/VeilingSchermComponenten/index';
+import { type KwekerInfo, getKwekerInfo } from '../hoofdscherm/RenderCards';
+
+// index componenten imports
+import { InfoVeld, GenereerKnop, InputField, checkInputField } from '../../Componenten/index';
+import { ContainerSideMenu, Timer, 
+    berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../AuctionScreen/VeilingSchermComponenten/index';
 
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
@@ -170,7 +169,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
         }
     };
 
-    const [isOpen, setIsOpen] = React.useState(true);
+    const [isOpen] = React.useState(true);
 
     const dataIsOpgehaald = useRef(false);
 
@@ -195,9 +194,6 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
     // Deze effect runt opnieuw als het product (en dus de kweker) verandert
     }, [huidigProduct?.kwekerNr]);
-    
-    const sideBarClick = () =>
-        setIsOpen(!isOpen);
 
     return (
         <main className='Auction_Body'>
@@ -253,9 +249,8 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
                         <span className="aantalKopen">Aantal fusten:</span>
                         
-                        <input type="number" id="Veiling_aantalkopenstuks" name="aantalkopenstuks selectieVeld" onChange={verwerkVerandering}
-                            min={0} value={InvoerAantal}
-                        />
+                        <InputField type={'number'} id={'Veiling_aantalkopenstuks'} name={'aantalkopenstuks selectieVeld'} 
+                            onChange={verwerkVerandering} value={InvoerAantal} />
                         
                         <div className="tekstVoorKopen">
                             Je koopt {InvoerAantal} voor € {huidigePrijs.toFixed(2)} per stuk, in totaal € {totaalPrijs}.
