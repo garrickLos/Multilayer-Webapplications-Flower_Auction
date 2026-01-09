@@ -1,7 +1,3 @@
-html, body{
-    margin: 0;
-}
-
 body{
 
   font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -121,5 +117,7 @@ body{
 }
 
 .gegevens.closed .item-header {
+    max-height: 0;
+
     border-radius: var(--border-radius);
 }

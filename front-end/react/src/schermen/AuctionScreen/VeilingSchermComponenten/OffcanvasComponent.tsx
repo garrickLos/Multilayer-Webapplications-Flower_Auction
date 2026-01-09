@@ -5,27 +5,9 @@ import { ApiRequest } from '../../../typeScript/ApiRequest';
 import { getRefreshToken, getBearerToken as Token } from '../../../typeScript/ApiGet';
 import { mapInfoLijstData } from '../../AuctionScreen/VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
+import type { PrijsHistorieItemLogica, ContainerSideMenuProps } from '../../AuctionScreen/VeilingSchermComponenten/index';
+
 import '../../../css/Componenten/OffcanvasComponent.css';
-
-export interface PrijsHistorieItemLogica {
-    bedrijfsNaam: string;
-    beginDatum: string;
-    bedragPerFust: number;
-}
-
-// Interface voor het hoofdresultaat (komt overeen met PrijsHistorieResultaat)
-export interface PrijsHistorieResultaatLogica {
-    items: PrijsHistorieItemLogica[];
-    averageBedrag: number | null;
-}
-
-export interface ContainerSideMenuProps {
-    isOpen: boolean;
-
-    kwekerNaam?: string;
-    categorieNr?: number;
-    productNaam?: string;
-}
 
 export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam }: ContainerSideMenuProps) {
 
@@ -54,7 +36,7 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
             laatstOpgehaaldeId.current = huidigVerzoekId;
 
             try {
-                // Call 1: Specifieke Kweker
+                // roept de Specifieke Kweker gegevens op
                 const specifiekeKwekerRaw = await ApiRequest<any>(
                     `/api/PrijsHistorie?CategorieNr=${categorieNr}&bedrijfsNaam=${encodeURIComponent(kwekerNaam)}`, "GET", null, token, refreshToken
                 );
@@ -62,7 +44,7 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
                 const mappedSpecifiekeData = mapInfoLijstData(specifiekeKwekerRaw);
                 setConfigSpecifiekeData(mappedSpecifiekeData);
 
-                // Call 2: Alle Kwekers
+                // roept de algemene kweker gegevens op
                 const alleKwekerRaw = await ApiRequest<any>(
                     `/api/PrijsHistorie?CategorieNr=${categorieNr}`, "GET", null, token, refreshToken
                 );
@@ -72,9 +54,9 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
                     
             } catch (error) {
                 console.error("Fout bij ophalen data:", error);
-                // Reset ID zodat bij een volgende poging (bv na error herstel) opnieuw geladen wordt
+                // reset het als het fout gaat zodat de gegevens opnieuw worden geladen bij volgende poging
                 laatstOpgehaaldeId.current = "";
-                // Zet state leeg om oude data te voorkomen
+                // zet lege state toe om oude data te voorkomen
                 setConfigSpecifiekeData([]);
                 setConfigAllKwekerData([]);
             }
@@ -116,6 +98,7 @@ const repeatClasses = (className: string, data: PrijsHistorieItemLogica[]) => {
 
     return (
         <div className={className}>
+            {/* Laat de titels zien die nodig zijn voor de informatie */}
             <InfoVeld 
                 key="header"
                 Titel={'Aanbieder:'}
@@ -124,6 +107,7 @@ const repeatClasses = (className: string, data: PrijsHistorieItemLogica[]) => {
                 Bericht={"Prijs:"}
                 BerichtClass={'rightSideText'}
             />
+            {/* Om de specifieke items te tonen op het scherm */}
             {data.map((item, index) => (
                 <InfoVeld
                     key={`${className}-${index}`}
@@ -135,6 +119,7 @@ const repeatClasses = (className: string, data: PrijsHistorieItemLogica[]) => {
                 />
             ))}
             <hr style={{ margin: "5px 0" }} />
+            {/* laat het gemiddelde zien van de prijzen die zijn opgehaald */}
             <InfoVeld 
                 key="footer"
                 Titel={'Gemiddelde prijs:'} 

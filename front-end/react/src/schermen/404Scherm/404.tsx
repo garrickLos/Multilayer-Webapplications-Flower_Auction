@@ -1,21 +1,17 @@
 import { useLocation } from 'react-router-dom';
-import { GenereerKnop } from '../../Componenten/Knop';
+
+import { GeenVeilingBezig, sessieVerlopenError } from './404Settings';
 
 import '../../css/404Stylesheet.css';
 
-export default function ErrorPage({ AanvullendeInfo }: any) {
+export default function ErrorPage() {
   const location = useLocation();
   
-  // 1. Lees het label uit
+  // Leest het label uit
   const foutType = location.state?.foutType;
 
-  // 2. Maak een variabele voor de content
-  let teTonenInfo = AanvullendeInfo;
-
-  // 3. Als het label 'sessieVerlopen' is, maak dan hier de HTML aan
-  if (foutType === 'sessieVerlopen') {
-      teTonenInfo = sessieVerlopenError();
-  }
+  // variable om info te tonen bij de 404 pagina
+  let teTonenInfo = GetExtraInfo(foutType);
 
   return (
     <main className="Error_page" role="main" aria-labelledby="error-title">
@@ -30,26 +26,13 @@ export default function ErrorPage({ AanvullendeInfo }: any) {
   )
 }
 
-function sessieVerlopenError() {
-  return (
-    <>
-    <br></br>
-      <span>
-        Probeer de pagina te refreshen of opnieuw in te loggen
-      </span>
-      <br></br>
+function GetExtraInfo(foutType: any){
+  switch(foutType){
 
-      <GenereerKnop
-        classNames={['Button', 'VerlopenSessie']} 
-        bericht={'Terug'} 
-        to={`/home`} 
-      />
-
-      <GenereerKnop
-        classNames={['Button', 'VerlopenSessie']} 
-        bericht={'inloggen'} 
-        to={`/inloggen`} 
-      />
-    </>
-  );
+    case 'sessieVerlopen':
+      return sessieVerlopenError();
+    
+    case 'GeenVeilingBezig':
+      return GeenVeilingBezig();
+  }
 }

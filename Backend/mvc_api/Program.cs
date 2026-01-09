@@ -183,7 +183,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         db.Database.Migrate();
-        await DataSeeder.Seed(app.Services);
+        await DataSeeder.Seed(services);
     }
     catch (Exception ex)
     {

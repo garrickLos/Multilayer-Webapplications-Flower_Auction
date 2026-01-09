@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Navigate, NavLink, useParams } from 'react-router-dom';
 import { Timer } from '../../Componenten/RenderTimer'; // Zorg dat imports kloppen
+
+//types
 import type { VeilingLogica, VeilingschermProps } from './VeilingSchermTypes';
+import { type KwekerInfo, getKwekerInfo } from '../hoofdscherm/RenderCards';
 
 //api calls
 import { getRefreshToken as refreshToken, getBearerToken as Token } from '../../typeScript/ApiGet';
@@ -14,10 +17,10 @@ import { berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../../Compone
 import { InfoVeld } from '../../Componenten/InformatieVelden';
 import { VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
 import { GenereerKnop } from '../../Componenten/Knop';
-import { ContainerSideMenu } from '../hoofdscherm/Componenten/OffcanvasComponent';
+import { ContainerSideMenu } from './VeilingSchermComponenten/OffcanvasComponent';
 
+// Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
-import { type KwekerInfo, getKwekerInfo } from '../hoofdscherm/RenderCards';
 
 const token = Token() || "";
 const token_refresh = refreshToken() || "";
@@ -70,7 +73,7 @@ export default function AuctionScreen() {
         veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null || isAfgelopen;
     }
     
-    const timerInSec = 0.6 * 1000; // van miliseconden naar seconden
+    const timerInSec = 1 * 1000; // van miliseconden naar seconden
 
     // zodat er een timer is die afteld totdat de error scherm er is nadat een veiling is afgelopen.
     // is er niet opeens een snelle verwijzing naar de homescherm nadat de veiling is afgelopen
@@ -85,7 +88,12 @@ export default function AuctionScreen() {
     }, [veilingIsOngeldig]);
 
     if (veilingIsOngeldig && toonEindScherm) {
-        return <GeenVeilingBezig />;
+        return <Navigate 
+                to="/404" 
+                replace 
+                // We sturen alleen de tekst code 'GeenVeilingBezig' om een specifieke reactie te hebben
+                state={{ foutType: 'GeenVeilingBezig' }} 
+            />;
     } else if (actieveVeiling) {
         return (
             <VeilingschermComponent 
@@ -93,29 +101,17 @@ export default function AuctionScreen() {
                 veilingItemNr={veilingItemNr} 
             />
         );
+    // als er geen token is gevonden dan gaat het naar de 404 pagina
     } else if (sessionStorage.getItem('token') == null) {
         return (
             <Navigate 
                 to="/404" 
                 replace 
-                // We sturen alleen de tekst code 'sessieVerlopen'
+                // We sturen alleen de tekst code 'sessieVerlopen' om een specifieke reactie te hebben
                 state={{ foutType: 'sessieVerlopen' }} 
             />
         );
     }
-}
-
-// voor wanneer de veiling niet gevonden kan worden of als de gebruiker niet is ingelogd.
-function GeenVeilingBezig() {
-    return (
-        <main className='Auction_Body'>
-            <div id='AuctionScreen_state-container'>
-                <h1>Geen veiling gevonden.</h1>
-                <p>Het is mogelijk dat de veiling is afgelopen, niet meer bestaat of dat u niet bent ingelogd.</p>
-                <NavLink to={"/home"} className={"button"}>terug naar hoofdscherm</NavLink>
-            </div>
-        </main>
-    )
 }
 
 //voor de veilingscherm zelf, wanneer de gebruiker naar een veiling wilt gaan.

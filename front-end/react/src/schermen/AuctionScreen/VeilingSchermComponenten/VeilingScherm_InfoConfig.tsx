@@ -3,16 +3,16 @@ import { ApiRequest } from "../../../typeScript/ApiRequest";
 
 import { Vermenigvuldigen as naarCenten } from "../../../typeScript/RekenFuncties";
 
-import type { VeilingLogica, ProductLogica } from "../VeilingSchermTypes";
 import { GetIsoTimeByZone } from "../../../typeScript/FetchDate";
 
 /********************
 ** gebruikte types **
 *********************/
+import type { VeilingLogica, ProductLogica } from "../VeilingSchermTypes";
 import type { VeilingproductUpdate, VeilingTijdUpdate } from "./VeilingSchermTypes/VeilingTypes";
 import type { NieuweBieding } from "./VeilingSchermTypes/BiedingTypes";
 import type { MyTokenPayload } from "./VeilingSchermTypes/TokenPayloadTypes";
-import type { PrijsHistorieItemLogica } from "../../hoofdscherm/Componenten/OffcanvasComponent";
+import type { PrijsHistorieItemLogica } from '../../AuctionScreen/VeilingSchermComponenten/index';
 
 // mapt de data voor de veilingscherm
 // dit zorgt ervoor dat er altijd info staat. Indien het niet gevonden kan worden (error tijdens de get)
