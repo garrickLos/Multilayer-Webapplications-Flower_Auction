@@ -9,7 +9,7 @@ namespace mvc_api.Controllers
     // Model voor één regel van de prijshistorie
     public class PrijsHistorieItem
     {
-        public string BedrijfsNaam { get; set; } = "";
+        public string? BedrijfsNaam { get; set; }
         public DateTime BeginDatum { get; set; }
         public int BedragPerFust { get; set; }
     }

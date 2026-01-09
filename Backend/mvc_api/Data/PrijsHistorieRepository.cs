@@ -44,7 +44,6 @@ public class PrijsHistorieRepository : IPrijsHistorieRepository
             command.CommandText = @"
                 -- 10 unieke dagen (BeginDatum) voor 1 specifieke kweker + categorie
                 SELECT TOP (10)
-                    U.BedrijfsNaam AS BedrijfsNaam,
                     CAST(V.BeginDatum AS date) AS BeginDatum,
                     CAST(ROUND(AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))), 0) AS INT) AS BedragPerFust
                 FROM Veilingproduct V
@@ -90,12 +89,23 @@ public class PrijsHistorieRepository : IPrijsHistorieRepository
 
         while (reader.Read())
         {
-            items.Add(new PrijsHistorieItem
+            if (isKwekerFilter)
             {
-                BedrijfsNaam   = reader.GetString(reader.GetOrdinal("BedrijfsNaam")),
-                BeginDatum     = reader.GetDateTime(reader.GetOrdinal("BeginDatum")),
-                BedragPerFust  = reader.GetInt32(reader.GetOrdinal("BedragPerFust"))
-            });
+                items.Add(new PrijsHistorieItem
+                {
+                    BeginDatum     = reader.GetDateTime(reader.GetOrdinal("BeginDatum")),
+                    BedragPerFust  = reader.GetInt32(reader.GetOrdinal("BedragPerFust"))
+                });
+            }
+            else
+            {
+                items.Add(new PrijsHistorieItem
+                {
+                    BedrijfsNaam   = reader.GetString(reader.GetOrdinal("BedrijfsNaam")),
+                    BeginDatum     = reader.GetDateTime(reader.GetOrdinal("BeginDatum")),
+                    BedragPerFust  = reader.GetInt32(reader.GetOrdinal("BedragPerFust"))
+                });
+            }
         }
 
         if (reader.NextResult() && reader.Read() && !reader.IsDBNull(0))
