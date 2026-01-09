@@ -4,7 +4,9 @@ export { ErrorScherm } from './ErrorComponent';
 
 export { Laadscherm } from './Laadscherm';
 
-export { mapVeilingData, mapInfoLijstData, VeilingProductitem_Update } from './VeilingScherm_InfoConfig';
+export { mapVeilingData, mapInfoLijstData } from './VeilingSchermMapping';
+
+export { VeilingProductitem_Update } from './VeilingScherm_InfoConfig';
 
 export { ContainerSideMenu } from './OffcanvasComponent';
 

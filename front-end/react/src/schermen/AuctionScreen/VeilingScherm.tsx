@@ -6,17 +6,17 @@ import { getRefreshToken as refreshToken, getBearerToken as Token } from '../../
 import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
 import { ApiRequest } from '../../typeScript/ApiRequest';
 
-//componenten
-import { VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/VeilingScherm_InfoConfig';
-
-//types
+//types import van index
 import type { VeilingLogica, VeilingschermProps } from '../AuctionScreen/VeilingSchermComponenten/index';
-import { type KwekerInfo, getKwekerInfo } from '../hoofdscherm/RenderCards';
+import type { KwekerInfo } from '../hoofdscherm/Componenten/index';
 
 // index componenten imports
 import { InfoVeld, GenereerKnop, InputField, checkInputField } from '../../Componenten/index';
 import { ContainerSideMenu, Timer, 
-    berekenHuidigeVeilingStaat as huidigeVeilingStaat } from '../AuctionScreen/VeilingSchermComponenten/index';
+    berekenHuidigeVeilingStaat as huidigeVeilingStaat, 
+    VeilingProductitem_Update, mapVeilingData } from '../AuctionScreen/VeilingSchermComponenten/index';
+
+import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
 
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
@@ -43,16 +43,16 @@ export default function AuctionScreen() {
                     `/api/Veiling/klant?refresh=${refreshApi}`, "GET", null, token, token_refresh
                 );
                 
-                // 2. Veilig maken van data
+                // Veilig maken van data
                 const safeData = Array.isArray(response) ? response : (response ? [response] : []);
 
-                // 3. Mappen en sorteren
+                // Mappen en sorteren
                 const veilingenLijst = mapVeilingData(safeData).sort((a, b) => a.veilingNr - b.veilingNr);
 
-                // 4. Specifieke veiling zoeken
+                // Specifieke veiling zoeken
                 const gevondenVeiling = veilingenLijst.find(v => v.veilingNr === veilingItemNr);
 
-                // 5. State updaten (Alleen als er iets gevonden is, of zet null)
+                // State updaten (Alleen als er iets gevonden is, of zet null)
                 setActieveVeiling(gevondenVeiling || null);
 
             } catch (error) {
@@ -130,21 +130,20 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
     const [kweker, setKweker] = useState<KwekerInfo | null > (null);
 
-    const url = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
+    const getVeilingProductUrl = `/api/VeilingProduct/${huidigProduct?.veilingProductNr}`;
 
     // Event handlers
     const verwerkVerandering = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rauweInvoer = e.target.value;
         const max = huidigProduct?.aantalFusten || 0;
 
-        // A: Als de invoer leeg is, update de state naar "" en stop.
-        // Hierdoor verdwijnt de "0" uit het scherm.
+        // Als de invoer leeg is, update de state naar "" en stop.
         if (rauweInvoer === "") {
             setAantal("");
             return;
         }
 
-        // B: Valideren (ik ga ervan uit dat checkInputField een getal of string teruggeeft)
+        // Valideren (ik ga ervan uit dat checkInputField een getal of string teruggeeft)
         const gecorrigeerdeWaarde = checkInputField(rauweInvoer, max);
         
         // Zet het resultaat in de state
@@ -152,14 +151,13 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     };
 
     const handleKlik = async () => {
-        // 3. Validatie bij versturen: Gebruik 'rekenAantal' of check op > 0
-        // Omdat InvoerAantal een string kan zijn, is (InvoerAantal > 0) riskant in TypeScript.
+        // Validatie bij versturen: Gebruik 'rekenAantal' of check op > 0
         const definitiefAantal = Number(InvoerAantal);
 
         if (huidigProduct != null && definitiefAantal > 0) {
             try {
                 await VeilingProductitem_Update(huidigProduct, actieveVeiling.veilingNr, definitiefAantal, // Stuur het nummer, niet de string
-                    Number(totaalPrijs), url, token, token_refresh
+                    Number(totaalPrijs), getVeilingProductUrl, token, token_refresh
                 );
             } catch (error) {
                 console.log("Fout bij updaten", error);

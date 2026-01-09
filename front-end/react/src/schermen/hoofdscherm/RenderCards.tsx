@@ -4,11 +4,11 @@ import { GenereerKnop } from "../../Componenten/Knop";
 import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
 import { GetDate } from "../../typeScript/FetchDate";
 
+// component index import
+import { getKwekerInfo } from '../hoofdscherm/Componenten/index.tsx';
+
 // type index import
 import type {VeilingItem, Producten, AuctionCardProps, KwekerInfo } from '../hoofdscherm/Componenten/index.tsx';
-
-// api import
-import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
 
 // css
 import '../../css/Componenten/AuctionCards.css';
@@ -94,18 +94,4 @@ export function beschrijving(product: Producten, item: VeilingItem, kwekerInfo: 
         prijs begint op: ${SetEuro(product.startprijs, 100).toFixed(2)} euro
         veiling starttijd: ${GetDate(item.begintijd, 'nl-NL')}`
     );
-}
-
-export async function getKwekerInfo(gebruikerNr: number) {
-    const aanvoerderUrl: string = `/api/Gebruiker/kwekerNaam?GebruikerNr=${gebruikerNr}`;
-
-    try {
-        // haalt de kwekerInfo op (anonymous) om de naam op te halen.
-        const data = await ApiRequest<KwekerInfo>(aanvoerderUrl, "GET", null, null, null);
-
-        return data;
-    } catch (error: any) {
-        // error handling
-        console.error(error.message);
-    }
 }

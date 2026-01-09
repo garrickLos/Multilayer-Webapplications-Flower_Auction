@@ -3,8 +3,11 @@ import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
 import { ApiRequest } from '../../../typeScript/ApiRequest';
 import { getRefreshToken, getBearerToken as Token } from '../../../typeScript/ApiGet';
-import { mapInfoLijstData } from '../../AuctionScreen/VeilingSchermComponenten/VeilingScherm_InfoConfig';
 
+//import component index
+import { mapInfoLijstData } from '../../AuctionScreen/VeilingSchermComponenten/index'; 
+
+// import index type
 import type { PrijsHistorieItemLogica, ContainerSideMenuProps } from '../../AuctionScreen/VeilingSchermComponenten/index';
 
 import '../../../css/Componenten/OffcanvasComponent.css';
