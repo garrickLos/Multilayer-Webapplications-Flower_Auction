@@ -131,17 +131,6 @@ html, body {
     background-color: unset;
 }
 
-.veiling-klok p {
-    min-width: 100%;
-    width: auto;
-
-    height: auto;
-    max-height: 100%;
-
-    font-size: clamp(1.4rem, 1vw, 18px); 
-    line-height: 1.5;
-}
-
 #Veiling_aantalkopenstuks {
     max-width: 95%;
 
