@@ -5,8 +5,10 @@ import { NavLink } from 'react-router-dom';
 
 export default function SellerScreenInfo() {
     const nummer = sessionStorage.getItem("gebruikerNummer");
-    const { data: ProductData } = GetProduct('/api/Veilingproduct/kweker?Nummer=${nummer}');
+    console.log("gebruikernummer: " + nummer);
+    const { data: ProductData } = GetProduct(`/api/Veilingproduct/kweker?Nummer=${nummer}`);
     const productLijst = (ProductData as ProductType[]) || [];
+    console.log(productLijst);
 
     interface ProductType {
         veilingProductNr: number;

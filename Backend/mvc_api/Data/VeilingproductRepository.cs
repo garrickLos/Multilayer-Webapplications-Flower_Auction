@@ -28,6 +28,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
     public async Task<PagedResult<klantVeilingproductGet_dto>> GetKlantAsync(
+        //int? vpNummer,
         string? q,
         int? categorieNr,
         int page,
@@ -36,7 +37,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), q, categorieNr).OrderBy(vp => vp.Naam);
+        var query = ApplySearchFilters(QueryWithCategorie(), null, q, categorieNr).OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -53,6 +54,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     }
 
     public async Task<PagedResult<kwekerVeilingproductGet_dto>> GetKwekerAsync(
+        int Nummer,
         string? q,
         int? categorieNr,
         int page,
@@ -61,7 +63,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), q, categorieNr).OrderBy(vp => vp.Naam);
+        var query = ApplySearchFilters(QueryWithCategorie(), Nummer,  q, categorieNr).OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -79,6 +81,7 @@ public class VeilingproductRepository : IVeilingproductRepository
 
         return new PagedResult<kwekerVeilingproductGet_dto>(items, total, page, pageSize);
     }
+
 
     public async Task<IReadOnlyList<VeilingproductVeilingmeesterListDto>> GetForVeilingmeesterAsync(
         string? q,
@@ -129,12 +132,24 @@ public class VeilingproductRepository : IVeilingproductRepository
 
     private IQueryable<Veilingproduct> QueryWithCategorie() =>
         _db.Veilingproducten;
-    
+
     private static IQueryable<Veilingproduct> ApplySearchFilters(
         IQueryable<Veilingproduct> query,
+        int? Nummer,
+        //int? vpNummer,
         string? q,
         int? categorieNr)
     {
+        if (Nummer.HasValue)
+        {
+            query = query.Where(vp => vp.Kwekernr == Nummer);
+        }
+
+        // if (vpNummer.HasValue)
+        // {
+        //     query = query.Where(vp => vp.VeilingProductNr == vpNummer);
+        // }
+        
         if (!string.IsNullOrWhiteSpace(q))
         {
             var term = q.Trim();
@@ -146,6 +161,8 @@ public class VeilingproductRepository : IVeilingproductRepository
 
         return query;
     }
+    
+
 
     private IQueryable<Veilingproduct> BuildFilteredQuery(
         string? q,
