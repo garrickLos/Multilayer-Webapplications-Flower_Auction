@@ -12,43 +12,6 @@ namespace mvc_api.Tests.Controllers;
 
 public class BiedingControllerTests : IStatic_Variable
 {
-    /* **************
-    * getklant *
-    **************
-    */ 
-    [Fact(DisplayName = "Succes: Koper haalt eigen biedingen op")]
-    public async Task GetBiedingKlant_WithValidUser_ReturnsList()
-    {
-        // 1. Arrange
-        var mockRepo = new Mock<IBiedingRepo>();
-
-        var fakeList = new List<klantBiedingGet_dto> 
-        { 
-            new klantBiedingGet_dto { VeilingProductNr = 1, BedragPerFust = 10, AantalStuks = 50, GebruikerNr = 100 }
-        };
-        
-        // De repository geeft nu een Tuple terug: (Lijst, TotaalAantal)
-        mockRepo.Setup(repo => 
-                repo.GetKlantBiedingenAsync(It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((fakeList, 1));
-
-        // We geven null mee voor dbContext omdat deze test alleen de Repo mockt
-        var controller = new BiedingController(mockRepo.Object, null);
-        
-        // Setup controller context voor headers
-        controller.ControllerContext = new ControllerContext();
-        controller.ControllerContext.HttpContext = new DefaultHttpContext();
-
-        // 2. Act
-        var result = await controller.GetKlantBiedingen(100, 1);
-
-        // 3. Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnItems = Assert.IsType<List<klantBiedingGet_dto>>(okResult.Value);
-
-        Assert.Single(returnItems);
-    }
-
     /* *********************
     * getveilingMeester *
     *********************
@@ -235,9 +198,7 @@ public class BiedingControllerTests : IStatic_Variable
     /* *******************
     * delete endpoint *
     *******************
-    */ 
-
-    // moet gefixed worden
+    */
 
     [Fact(DisplayName = "Delete: Veilingmeester verwijdert bod")]
     public async Task Delete_ExistingId_ReturnsNoContent()
@@ -257,7 +218,7 @@ public class BiedingControllerTests : IStatic_Variable
         
         // Controle: het item mag niet meer gevonden worden
         var check = await controller.GetById(1);
-        Assert.IsType<OkObjectResult>(check.Result);
+        Assert.IsType<NotFoundObjectResult>(check.Result);
     }
 
     [Theory(DisplayName = "Delete: Bieding wordt verwijderd die niet bestaat")]

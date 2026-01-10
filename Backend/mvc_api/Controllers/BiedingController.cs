@@ -6,6 +6,7 @@ using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Repo.Interfaces;
 using mvc_api.statusPrinter;
+using SQLitePCL;
 
 namespace mvc_api.Controllers;
 
@@ -16,12 +17,10 @@ namespace mvc_api.Controllers;
 public class BiedingController : ControllerBase
 {
     private readonly IBiedingRepo _repository;
-    private readonly AppDbContext _db;
 
-    public BiedingController (IBiedingRepo repository, AppDbContext db)
+    public BiedingController (IBiedingRepo repository)
     {
         _repository = repository;
-        _db = db;
     }
 
     // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
@@ -35,13 +34,22 @@ public class BiedingController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var (items, total) = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, orderDescending, page, pageSize, ct);
+        try
+        {
+            var (items, total) = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, orderDescending, page, pageSize, ct);
         
-        SetResponseHeader(total, page, pageSize);
+            SetResponseHeader(total, page, pageSize);
 
-        return items is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404))
-            : Ok(items);
+            return items is null
+                ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404))
+                : Ok(items);   
+        } catch (KeyNotFoundException ex)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", ex.Message, 404));
+        } catch (Exception)
+        {
+            return StatusCode(500, CreateProblemDetails("Server Fout", "Er is een onverwachte fout opgetreden.", 500));
+        }
     }
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
@@ -55,13 +63,26 @@ public class BiedingController : ControllerBase
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var (items, total) = await _repository.GetVeilingMeesterBiedingenAsync(gebruikerNr, veilingNr, orderDescending, page, pageSize, ct);
 
-        SetResponseHeader(total, page, pageSize);
+        try {
+            var (items, total) = await _repository.GetVeilingMeesterBiedingenAsync(gebruikerNr, veilingNr, orderDescending, page, pageSize, ct);
 
-        return items is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404))
-            : Ok(items);
+            SetResponseHeader(total, page, pageSize);
+
+            if (items is null)
+            {
+                return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404));
+            }
+
+            return Ok(items);
+
+        } catch (KeyNotFoundException ex)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", ex.Message, 404));
+        } catch (Exception ex)
+        {
+            return StatusCode(500, CreateProblemDetails("Server Fout", "Er is een onverwachte fout opgetreden." + " Error: " + ex.Message, 500));
+        }
     }
 
     // GET: api/Bieding/1001
@@ -71,11 +92,14 @@ public class BiedingController : ControllerBase
         int id, 
         CancellationToken ct = default)
     {
-        var items = _repository.GetById(id, ct);
+        var items = await _repository.GetById(id, ct);
 
-        return items is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
-            : Ok(items);
+        if (items is null)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
+        }
+
+        return Ok(items);
     }
 
     // POST: api/Bieding
@@ -103,9 +127,9 @@ public class BiedingController : ControllerBase
         } catch (DbUpdateException ex)
         {
             return StatusCode(500, CreateProblemDetails("Database fout", ex.Message, 500));
-        } catch (Exception)
+        } catch (Exception ex)
         {
-            return StatusCode(500, CreateProblemDetails("ServerFout", "Er is een onverwachte fout opgetreden.", 500));
+            return StatusCode(500, CreateProblemDetails("ServerFout", "Er is een onverwachte fout opgetreden." + " Error: " + ex.Message, 500));
         }
     }
 
@@ -122,10 +146,10 @@ public class BiedingController : ControllerBase
 
         } catch (KeyNotFoundException ex)
         {
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}", 404));
-        } catch (Exception)
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}" + " errorMessage: " + ex.Message, 404));
+        } catch (Exception ex)
         {
-            return StatusCode(500, CreateProblemDetails("Verwijderfout", "Er is een fout opgetreden bij het verwijderen.", 500));
+            return StatusCode(500, CreateProblemDetails("Verwijderfout", "Er is een fout opgetreden bij het verwijderen." + " ErrorMessage: " + ex.Message, 500));
         }
     }
 

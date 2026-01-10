@@ -13,8 +13,6 @@ namespace mvc_api.Repo;
 // Implementeer de interface die we eerder ontworpen hebben
 public class BiedingRepository :  IBiedingRepo
 {
-    private readonly VeilingControllerFilter _controllerFilter;
-
     private readonly AppDbContext _db;
 
     public BiedingRepository(AppDbContext db)
