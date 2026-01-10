@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
-using mvc_api.Repo.BiedingRepo;
+using mvc_api.Repo.Interfaces;
 using mvc_api.statusPrinter;
 
 namespace mvc_api.Controllers;
@@ -84,67 +85,28 @@ public class BiedingController : ControllerBase
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
     {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
+        if (!ModelState.IsValid) {
+            return BadRequest(ModelState);
+        }
 
-        // Gebruiker moet bestaan
-        var gebruikerBestaat = await _db.Gebruikers
-            .AsNoTracking()
-            .AnyAsync(g => g.GebruikerNr == dto.GebruikerNr, ct);
-
-        if (!gebruikerBestaat)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
-
-        var veilingproduct = await _db.Veilingproducten
-            .Include(vp => vp.Veiling)
-            .FirstOrDefaultAsync(vp => vp.VeilingProductNr == dto.VeilingproductNr, ct);
-        
-        if (veilingproduct is null)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veilingproduct bestaat niet.", 400));
-        
-        // Alleen bieden op actieve veilingen
-        if (!string.Equals(veilingproduct.Veiling?.Status, NormalizeStatus.Active, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(CreateProblemDetails(
-                "Ongeldige status",
-                "Er kan alleen geboden worden op een actieve veiling.",
-                400));
-
-        var entity = new Bieding
-        {
-            BedragPerFust    = dto.BedragPerFust,
-            AantalStuks      = dto.AantalStuks,
-            GebruikerNr      = dto.GebruikerNr,
-            VeilingproductNr = dto.VeilingproductNr
-        };
-
-        _db.Biedingen.Add(entity);
-
-        // EF wrapt SaveChanges zelf in een transaction
         try
         {
-            // eventueel: veiling.Status = StatusSold; als je bij een eerste bod meteen 'sold' wilt
-            await _db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException)
+            var itemResult = await _repository.CreateAsync(dto, ct);
+            return CreatedAtAction("GetById", new { id = itemResult.BiedingNr }, itemResult);
+
+        } catch (KeyNotFoundException ex)
         {
-            return StatusCode(500, CreateProblemDetails(
-                "Opslagfout",
-                "Er is een fout opgetreden bij het opslaan van de bieding.",
-                500));
+            return BadRequest(CreateProblemDetails("Ongeldige referentie", ex.Message, 400));
+        } catch (InvalidOperationException ex)
+        {    
+            return BadRequest(CreateProblemDetails("Ongeldige status", ex.Message, 400));
+        } catch (DbUpdateException ex)
+        {
+            return StatusCode(500, CreateProblemDetails("Database fout", ex.Message, 500));
+        } catch (Exception)
+        {
+            return StatusCode(500, CreateProblemDetails("ServerFout", "Er is een onverwachte fout opgetreden.", 500));
         }
-
-        // wat je uiteindelijk in swagger wilt zien dat terugkomt in het beeld van wat er veranderd is en de nieuwe waardes
-        var result = new VeilingMeester_BiedingDto        
-        { 
-            BiedingNr        = entity.BiedNr,
-            BedragPerFust    = entity.BedragPerFust,
-            AantalStuks      = entity.AantalStuks,
-            GebruikerNr      = entity.GebruikerNr,
-            VeilingNr        = veilingproduct.Veiling?.VeilingNr,
-            VeilingProductNr = entity.VeilingproductNr,
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.BiedNr }, result);
     }
 
     // DELETE: api/Bieding/1001
@@ -152,13 +114,19 @@ public class BiedingController : ControllerBase
     [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
+        try
+        {
+            await _repository.DeleteAsync(id, ct);
 
-        _db.Biedingen.Remove(entity);
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
+            return NoContent();
+
+        } catch (KeyNotFoundException ex)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}", 404));
+        } catch (Exception)
+        {
+            return StatusCode(500, CreateProblemDetails("Verwijderfout", "Er is een fout opgetreden bij het verwijderen.", 500));
+        }
     }
 
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>

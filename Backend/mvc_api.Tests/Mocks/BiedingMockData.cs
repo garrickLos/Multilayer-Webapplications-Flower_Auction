@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using mvc_api.Controllers;
 using mvc_api.Data;
-using mvc_api.Repo.BiedingRepo;
+using mvc_api.Repo;
 
 namespace mvc_api.Tests.Mocks;
 

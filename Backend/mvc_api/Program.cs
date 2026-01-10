@@ -21,12 +21,9 @@ using mvc_api.Controllers;
 
 using mvc_api.Auth.GenereerAccessTokens;
 
-/*
-**************************
-** Imports van de repos **
-**************************
-*/
-using mvc_api.Repo.BiedingRepo;
+using mvc_api.Repo.Interfaces;
+using mvc_api.Repo;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ------------------------------

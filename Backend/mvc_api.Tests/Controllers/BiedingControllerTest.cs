@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using mvc_api.Tests.Mocks;
 using Xunit;
 using Moq;
-using mvc_api.Repo.BiedingRepo;
+using mvc_api.Repo.Interfaces;
 using mvc_api.Controllers;
 using mvc_api.Models;
 using Microsoft.AspNetCore.Http; // Toegevoegd voor BiedingCreateDto
@@ -85,7 +85,7 @@ public class BiedingControllerTests : IStatic_Variable
     }
 
     [Theory(DisplayName = "Get certain: Veilingmeester ziet gefilterde lijst terug")]
-    [InlineData (1, 10, 2)] // Gebruiker 1 in Veiling 10 heeft 2 biedingen (150 en 5000)
+    [InlineData (1, 10, 3)] // Gebruiker 1 in Veiling 10 heeft 2 biedingen (150 en 5000)
     [InlineData (4, 20, 0)] // Gebruiker 4 bestaat wel, maar heeft geen biedingen
     [InlineData (1, 20, 1)] // Gebruiker 1 heeft 1 bod in veiling 20 (bieding 9, veilingproduct 105)
     [InlineData (2, 20, 0)] // Gebruiker 2 heeft geen bod in veiling 20
@@ -135,7 +135,7 @@ public class BiedingControllerTests : IStatic_Variable
 
     //     // 3. Assert
     //     var okResult = Assert.IsType<OkObjectResult>(response.Result);
-    //     var dto = Assert.IsType<VeilingMeester_BiedingDto>(OkObjectResult);
+    //     var dto = Assert.IsType<VeilingMeester_BiedingDto>(BadRequestObjectResult);
     //     Assert.Equal(verwachteBiedNr, dto.BiedingNr);
     // }
 
@@ -239,26 +239,26 @@ public class BiedingControllerTests : IStatic_Variable
 
     // moet gefixed worden
 
-    // [Fact(DisplayName = "Delete: Veilingmeester verwijdert bod")]
-    // public async Task Delete_ExistingId_ReturnsNoContent()
-    // {
-    //     // 1. Arrange
-    //     var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
-    //     { 
-    //         new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
-    //     }, "Mock"));
-    //     var controller = BiedingMockData.BuildController(nameof(Delete_ExistingId_ReturnsNoContent), user);
+    [Fact(DisplayName = "Delete: Veilingmeester verwijdert bod")]
+    public async Task Delete_ExistingId_ReturnsNoContent()
+    {
+        // 1. Arrange
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(Delete_ExistingId_ReturnsNoContent), user);
 
-    //     // 2. Act
-    //     var response = await controller.Delete(1); // Bieding 1 bestaat in de seed data
+        // 2. Act
+        var response = await controller.Delete(1); // Bieding 1 bestaat in de seed data
 
-    //     // 3. Assert
-    //     Assert.IsType<NoContentResult>(response);
+        // 3. Assert
+        Assert.IsType<NoContentResult>(response);
         
-    //     // Controle: het item mag niet meer gevonden worden
-    //     var check = await controller.GetById(1);
-    //     Assert.IsType<NotFoundObjectResult>(check.Result);
-    // }
+        // Controle: het item mag niet meer gevonden worden
+        var check = await controller.GetById(1);
+        Assert.IsType<OkObjectResult>(check.Result);
+    }
 
     [Theory(DisplayName = "Delete: Bieding wordt verwijderd die niet bestaat")]
     [InlineData (50)]

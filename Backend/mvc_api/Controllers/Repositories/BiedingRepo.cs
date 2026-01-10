@@ -1,23 +1,20 @@
+using ApiGetFilters;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
+using mvc_api.Data.Filters;
 using mvc_api.Models;
 
-namespace mvc_api.Repo.BiedingRepo;
+// interface import
+using mvc_api.Repo.Interfaces;
 
-public interface IBiedingRepo
-{
-    Task<(List<klantBiedingGet_dto> Items, int Total)> GetKlantBiedingenAsync(int? gebruikerNr, int? veilingProductNr, bool orderDescending, int page, int pageSize, CancellationToken ct);
-    Task<(List<VeilingMeester_BiedingDto> Items, int Total)> GetVeilingMeesterBiedingenAsync(int? gebruikerNr, int? veilingNr, bool orderDescending, int page, int pageSize , CancellationToken ct);
-    Task<ActionResult<VeilingMeester_BiedingDto>> GetById(int id, CancellationToken ct = default);
-    //Task<Bieding?> CreateAsync(BiedingCreateDto dto, CancellationToken ct);
-    // Task<bool> DeleteAsync(int id, CancellationToken ct);
-}
+namespace mvc_api.Repo;
 
 // Implementeer de interface die we eerder ontworpen hebben
 public class BiedingRepository :  IBiedingRepo
 {
+    private readonly VeilingControllerFilter _controllerFilter;
+
     private readonly AppDbContext _db;
 
     public BiedingRepository(AppDbContext db)
@@ -37,17 +34,11 @@ public class BiedingRepository :  IBiedingRepo
         var query = _db.Biedingen.AsNoTracking().AsQueryable();
 
         // checked of er specifiek gekeken wordt naar een gebruiker
-        if (gebruikerNr.HasValue)
-            query = query.Where(b => b.GebruikerNr == gebruikerNr.Value);
+        query = query.FilterItemNr(gebruikerNr, b => b.GebruikerNr == gebruikerNr);
+        
+        query = query.FilterItemNr(veilingProductNr, b => b.VeilingproductNr == veilingProductNr);            
 
-        // kijkt of er een specifiek veilingProductnr nodig is
-        if (veilingProductNr.HasValue)
-            query = query.Where(b => b.VeilingproductNr == veilingProductNr.Value);
-
-        if (orderDescending)
-        {
-            query = query.OrderByDescending(b => b.BiedNr);
-        }
+        query = query.FilterOrderDescending(orderDescending, b=> b.BiedNr);
 
         // haalt de totale aantal op van items dat is gevonden
         var total = await query.CountAsync(ct);
@@ -76,16 +67,14 @@ public class BiedingRepository :  IBiedingRepo
             .Include(b => b.Veilingproduct)
             .AsQueryable();
 
-        if (gebruikerNr is int gNr)
-            query = query.Where(b => b.GebruikerNr == gNr);
+        // checked of de gebruikerNr wordt gebruikt en filtert erop
+        query = query.FilterItemNr(gebruikerNr, b => b.GebruikerNr == gebruikerNr);
 
-        if (veilingNr is int vNr)
-            query = query.Where(b => b.Veilingproduct!.VeilingNr == vNr);
+        // checked of de veilingNr wordt gebruikt en filtert erop
+        query = query.FilterItemNr(veilingNr, b => b.Veilingproduct!.VeilingNr == veilingNr);
 
-        if (orderDescending)
-        {
-            query = query.OrderByDescending(b => b.BiedNr);
-        }
+        // filtert op ascending of descending order gebaseerd op de boolean die is meegenomen
+        query = query.FilterOrderDescending(orderDescending, b => b.BiedNr);
         
         var total = await query.CountAsync(ct);
 
@@ -98,10 +87,10 @@ public class BiedingRepository :  IBiedingRepo
         return (items, total);
     }
 
-    public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(
+    public async Task<VeilingMeester_BiedingDto> GetById(
         int id, 
         CancellationToken ct = default)
-    {
+    {        
         var items = await _db.Biedingen.AsNoTracking()
             .Where(x => x.BiedNr == id)
             .ProjectToBieding_VeilingMeester()
@@ -110,33 +99,25 @@ public class BiedingRepository :  IBiedingRepo
         return items;
     }
 
-/*
-    public async Task<Bieding?> CreateAsync(BiedingCreateDto dto, CancellationToken ct)
+    public async Task<VeilingMeester_BiedingDto> CreateAsync(BiedingCreateDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
-
         // Gebruiker moet bestaan
         var gebruikerBestaat = await _db.Gebruikers
             .AsNoTracking()
             .AnyAsync(g => g.GebruikerNr == dto.GebruikerNr, ct);
 
         if (!gebruikerBestaat)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
+            throw new KeyNotFoundException("Gebruiker bestaat niet.");
 
         var veilingproduct = await _db.Veilingproducten
             .Include(vp => vp.Veiling)
             .FirstOrDefaultAsync(vp => vp.VeilingProductNr == dto.VeilingproductNr, ct);
         
         if (veilingproduct is null)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veilingproduct bestaat niet.", 400));
+            throw new KeyNotFoundException("Veilingproduct bestaat niet.");
         
-        // Alleen bieden op actieve veilingen
-        if (!string.Equals(veilingproduct.Veiling?.Status, NormalizeStatus.Active, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(CreateProblemDetails(
-                "Ongeldige status",
-                "Er kan alleen geboden worden op een actieve veiling.",
-                400));
+        if (!string.Equals(veilingproduct.Veiling?.Status, "Active", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Er kan alleen geboden worden op een actieve veiling.");
 
         var entity = new Bieding
         {
@@ -147,23 +128,9 @@ public class BiedingRepository :  IBiedingRepo
         };
 
         _db.Biedingen.Add(entity);
+        await _db.SaveChangesAsync(ct);
 
-        // EF wrapt SaveChanges zelf in een transaction
-        try
-        {
-            // eventueel: veiling.Status = StatusSold; als je bij een eerste bod meteen 'sold' wilt
-            await _db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException)
-        {
-            return StatusCode(500, CreateProblemDetails(
-                "Opslagfout",
-                "Er is een fout opgetreden bij het opslaan van de bieding.",
-                500));
-        }
-
-        // wat je uiteindelijk in swagger wilt zien dat terugkomt in het beeld van wat er veranderd is en de nieuwe waardes
-        var result = new VeilingMeester_BiedingDto        
+        return new VeilingMeester_BiedingDto        
         { 
             BiedingNr        = entity.BiedNr,
             BedragPerFust    = entity.BedragPerFust,
@@ -173,5 +140,21 @@ public class BiedingRepository :  IBiedingRepo
             VeilingProductNr = entity.VeilingproductNr,
         };
     }
-*/
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    {
+        var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
+
+        // gooit een notFound exception als de entity er niet is
+        if (entity is null)
+        {
+            throw new KeyNotFoundException($"Bieding met ID {id} is niet gevonden.");
+        }
+
+        // Verwijder de entiteit
+        _db.Biedingen.Remove(entity);
+        await _db.SaveChangesAsync(ct);
+
+        return true;
+    }
 }
