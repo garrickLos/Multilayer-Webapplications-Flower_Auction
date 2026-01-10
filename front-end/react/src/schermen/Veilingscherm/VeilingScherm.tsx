@@ -21,8 +21,9 @@ import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
 
-const token = Token() || "";
-const token_refresh = refreshToken() || "";
+let token = Token() || "";
+let token_refresh = "";
+
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
 export default function AuctionScreen() {
@@ -34,10 +35,14 @@ export default function AuctionScreen() {
 
     const { veilingnr } = useParams();
     const veilingItemNr = Number(veilingnr) || 0;
+
+    token = Token() || "";
+    token_refresh = refreshToken() || "";
     
     useEffect(() => {
         const ophalenData = async () => {
             try {
+
                 // 1. Data ophalen (Wacht op de Promise met await)
                 const response = await ApiRequest<VeilingLogica>(
                     `/api/Veiling/klant?refresh=${refreshApi}`, "GET", null, token, token_refresh
@@ -69,7 +74,7 @@ export default function AuctionScreen() {
     if (actieveVeiling != null) {
         let isAfgelopen = huidigeVeilingStaat(actieveVeiling).isAfgelopen;
 
-        veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null || isAfgelopen;
+        veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null;
     }
     
     const timerInSec = 1 * 1000; // van miliseconden naar seconden
@@ -151,6 +156,10 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     };
 
     const handleKlik = async () => {
+        
+        token = Token() || "";
+        token_refresh = refreshToken() || "";
+
         // Validatie bij versturen: Gebruik 'rekenAantal' of check op > 0
         const definitiefAantal = Number(InvoerAantal);
 
@@ -238,7 +247,8 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
                                 item={actieveVeiling}
                             />
                         ) : (
-                            <div>Laden...</div>
+                            <div>
+                                Laden...</div>
                         )}
                         </div>
                         

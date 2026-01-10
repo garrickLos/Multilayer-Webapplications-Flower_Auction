@@ -80,19 +80,19 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
                 <InfoVeld Titel={'Aanvoerder:'} Bericht={kwekerNaam || "onbekend"} BerichtClass={'rightSideText'}/>
                 <br />
 
-                <InfoVeld Titel={'Historische prijzen van deze aanbieder'} />
-                {repeatClasses("HuidigeAanbieder", configSpecifiekeData, false)}
+                <InfoVeld Titel={'Historische prijzen van deze aanvoerder:'} />
+                {repeatClasses("HuidigeAanbieder", configSpecifiekeData, true , false)}
 
                 <br />
 
-                <InfoVeld Titel={'Historische prijzen van alle aanbieders'} />
-                {repeatClasses("alleAanbieders", configAllKwekerData, true)}
+                <InfoVeld Titel={'Historische prijzen van alle aanvoerders:'} />
+                {repeatClasses("alleAanbieders", configAllKwekerData, true , true)}
             </div>
         </div>
     );
 };
 
-const repeatClasses = (className: string, data: PrijsHistorieItemLogica[], renderDate: boolean) => {
+const repeatClasses = (className: string, data: PrijsHistorieItemLogica[], renderAanbieder: boolean, renderDate: boolean) => {
     if (!data || data.length === 0) {
         return <div className="loading-state">Geen historie gevonden...</div>;
     }
@@ -106,9 +106,9 @@ const repeatClasses = (className: string, data: PrijsHistorieItemLogica[], rende
             {/* Laat de titels zien die nodig zijn voor de informatie */}
             <InfoVeld 
                 key="header"
-                Titel={'Aanbieder:'}
-                tussenkop={renderDate ? 'Datum:' : ""}
-                tussenkopClass={ renderDate ? "tussenkop" : ""}
+                Titel={renderAanbieder && renderDate ? 'Aanvoerder:' : "Datum:"}
+                tussenkop={renderAanbieder && renderDate ? 'Datum:' : ""}
+                tussenkopClass={ renderAanbieder && renderDate ? "tussenkop" : ""}
                 Bericht={"Prijs:"}
                 BerichtClass={'rightSideText'}
             />
@@ -117,8 +117,8 @@ const repeatClasses = (className: string, data: PrijsHistorieItemLogica[], rende
             {data.map((item, index) => (
                 <InfoVeld
                     key={`${className}-${index}`}
-                    Titel={item.bedrijfsNaam} 
-                    tussenkop={renderDate ? new Date(item.beginDatum).toLocaleDateString() : ""} 
+                    Titel={renderAanbieder && renderDate ? item.bedrijfsNaam : new Date(item.beginDatum).toLocaleDateString()} 
+                    tussenkop={renderAanbieder && renderDate ? new Date(item.beginDatum).toLocaleDateString() : ""} 
                     Bericht={`€ ${Number(item.bedragPerFust).toFixed(2)}`}
                     tussenkopClass={renderDate ? 'tussenkop' : "" } 
                     BerichtClass={'rightSideText'}
