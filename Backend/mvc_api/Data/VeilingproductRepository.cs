@@ -28,7 +28,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
     public async Task<PagedResult<klantVeilingproductGet_dto>> GetKlantAsync(
-        //int? vpNummer,
+        int? vpNummer,
         string? q,
         int? categorieNr,
         int page,
@@ -37,7 +37,8 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), null, q, categorieNr).OrderBy(vp => vp.Naam);
+        var query = ApplySearchFilters(QueryWithCategorie(), null, vpNummer, q, categorieNr)
+            .OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -63,7 +64,8 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), Nummer,  q, categorieNr).OrderBy(vp => vp.Naam);
+        var query = ApplySearchFilters(QueryWithCategorie(), Nummer, null, q, categorieNr)
+            .OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -136,19 +138,19 @@ public class VeilingproductRepository : IVeilingproductRepository
     private static IQueryable<Veilingproduct> ApplySearchFilters(
         IQueryable<Veilingproduct> query,
         int? Nummer,
-        //int? vpNummer,
+        int? vpNummer,
         string? q,
         int? categorieNr)
     {
-        if (Nummer.HasValue)
+        if (Nummer.HasValue && Nummer.Value > 0)
         {
             query = query.Where(vp => vp.Kwekernr == Nummer);
         }
 
-        // if (vpNummer.HasValue)
-        // {
-        //     query = query.Where(vp => vp.VeilingProductNr == vpNummer);
-        // }
+        if (vpNummer.HasValue && vpNummer.Value > 0)
+        {
+            query = query.Where(vp => vp.VeilingProductNr == vpNummer);
+        }
         
         if (!string.IsNullOrWhiteSpace(q))
         {

@@ -38,6 +38,7 @@ public class GebruikerControllerTests
     }
 
     [Fact(DisplayName = "Succes: geautoriseerde gebruiker haalt eigen details op")]
+    // Tests that GetSelf returns the active user's details to ensure self lookup works.
     public void GetSelf_WithValidUser_ReturnsOwnDetails()
     {
         // arrange
@@ -58,6 +59,7 @@ public class GebruikerControllerTests
     }
 
     [Fact(DisplayName = "Fout: onbekende identiteit leidt tot Unauthorized")]
+    // Tests that GetSelf returns Unauthorized for unknown users to avoid leaking data.
     public void GetSelf_WithUnknownUser_ReturnsUnauthorized()
     {
         // arrange
@@ -75,6 +77,7 @@ public class GebruikerControllerTests
     }
 
     [Fact(DisplayName = "Beslissingsdekking: filters op rol en status worden gecombineerd")]
+    // Tests that role and status filters combine to ensure user listings can be narrowed.
     public void GetForAuctionTeam_AppliesRoleAndStatusFilters()
     {
         // arrange: veilingmeester
@@ -96,6 +99,7 @@ public class GebruikerControllerTests
     }
 
     [Fact(DisplayName = "Fout: gedeactiveerde gebruiker kan zichzelf niet ophalen")]
+    // Tests that inactive users cannot retrieve their profile for authorization safety.
     public void GetSelf_WithInactiveUser_ReturnsUnauthorized()
     {
         // arrange: inactive gebruiker
@@ -114,6 +118,7 @@ public class GebruikerControllerTests
     }
 
     [Fact(DisplayName = "Beslissingsdekking: verwijderde gebruikers worden uitgesloten in teamlijst")]
+    // Tests that deleted users are excluded to keep auction lists valid.
     public void GetForAuctionTeam_ExcludesDeletedUsers()
     {
         // arrange
@@ -131,5 +136,32 @@ public class GebruikerControllerTests
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
         var dtos = Assert.IsAssignableFrom<IEnumerable<GebruikerSummaryDto>>(okResult.Value);
         Assert.DoesNotContain(dtos, d => d.Status == ModelStatus.Deleted);
+    }
+    
+    [Fact(DisplayName = "Succes: anonieme lookup van kwekernaam levert een DTO")]
+    // Tests that GetgebruikerNaam returns the expected DTO for existing users.
+    public void GetgebruikerNaam_WithKnownUser_ReturnsDto()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity());
+        var controller = BuildController(nameof(GetgebruikerNaam_WithKnownUser_ReturnsDto), user);
+
+        var response = controller.GetgebruikerNaam(GebruikerNr: 1);
+
+        var okResult = Assert.IsType<OkObjectResult>(response.Result);
+        var dto = Assert.IsType<GebruikerAnonymousDto>(okResult.Value);
+        Assert.Equal(1, dto.GebruikerNr);
+        Assert.Equal("Bloem BV", dto.BedrijfsNaam);
+    }
+
+    [Fact(DisplayName = "Fout: anonieme lookup voor onbekende gebruiker is NotFound")]
+    // Tests that GetgebruikerNaam returns NotFound when the user does not exist.
+    public void GetgebruikerNaam_WithUnknownUser_ReturnsNotFound()
+    {
+        var user = new ClaimsPrincipal(new ClaimsIdentity());
+        var controller = BuildController(nameof(GetgebruikerNaam_WithUnknownUser_ReturnsNotFound), user);
+
+        var response = controller.GetgebruikerNaam(GebruikerNr: 999);
+
+        Assert.IsType<NotFoundResult>(response.Result);
     }
 }

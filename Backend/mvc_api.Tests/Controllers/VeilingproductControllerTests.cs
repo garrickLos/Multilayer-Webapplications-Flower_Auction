@@ -29,6 +29,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that KlantGetAll returns filtered items with pagination headers for clients.
     public async Task KlantGetAll_WithFilters_ReturnsPagedResults()
     {
         var dtoItems = new List<klantVeilingproductGet_dto>
@@ -38,13 +39,12 @@ public class VeilingproductControllerTests
 
         var repository = new Mock<IVeilingproductRepository>();
         repository
-            .Setup(r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetKlantAsync(0, "Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<klantVeilingproductGet_dto>(dtoItems, 1, 1, 50));
 
         var controller = CreateController(repository.Object);
 
-        var response = await controller.KlantGetAll(q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
-
+        var response = await controller.KlantGetAll(vpNummer: 0, q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
         var ok = Assert.IsType<OkObjectResult>(response.Result);
         var list = Assert.IsAssignableFrom<IEnumerable<klantVeilingproductGet_dto>>(ok.Value);
         var item = Assert.Single(list);
@@ -56,11 +56,12 @@ public class VeilingproductControllerTests
         Assert.Equal("1", controller.Response.Headers["X-Page"]);
         Assert.Equal("50", controller.Response.Headers["X-Page-Size"]);
         repository.Verify(
-            r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
+            r => r.GetKlantAsync(0, "Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
+    // Tests that KwekerGetAll returns filtered items for a kweker with pagination headers.
     public async Task KwekerGetAll_WithFilters_ReturnsPagedResults()
     {
         var dtoItems = new List<kwekerVeilingproductGet_dto>
@@ -70,7 +71,7 @@ public class VeilingproductControllerTests
 
         var repository = new Mock<IVeilingproductRepository>();
         repository
-            .Setup(r => r.GetKwekerAsync("Lelie", 3, 1, 50, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetKwekerAsync(0, "Lelie", 3, 1, 50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<kwekerVeilingproductGet_dto>(dtoItems, 1, 1, 50));
 
         var controller = CreateController(repository.Object);
@@ -87,11 +88,12 @@ public class VeilingproductControllerTests
         Assert.Equal("Naaldwijk", item.Plaats);
         Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
         repository.Verify(
-            r => r.GetKwekerAsync("Lelie", 3, 1, 50, It.IsAny<CancellationToken>()),
+            r => r.GetKwekerAsync(0, "Lelie", 3, 1, 50, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
+    // Tests that veilingmeester filters are passed through and returned as expected.
     public async Task GetForVeilingmeester_WithFilters_ReturnsExpectedResult()
     {
         var expectedDtos = new List<VeilingproductVeilingmeesterListDto>
@@ -155,6 +157,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Create returns a validation problem when model state is invalid.
     public async Task Create_InvalidModel_ReturnsValidationProblem()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -168,6 +171,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Create rejects an unknown category to prevent invalid references.
     public async Task Create_UnknownCategory_ReturnsValidationProblem()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -201,6 +205,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Create forbids when no authenticated user id is available.
     public async Task Create_NoUser_ReturnsForbid()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -227,6 +232,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Create persists and returns a kweker DTO for valid input.
     public async Task Create_Valid_ReturnsOkWithDto()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -283,6 +289,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Update returns validation problem for invalid model state.
     public async Task Update_InvalidModel_ReturnsValidationProblem()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -296,6 +303,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Update returns NotFound for unknown product ids.
     public async Task Update_WithUnknownProduct_ReturnsNotFound()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -315,6 +323,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Update returns BadRequest when user id is missing from claims.
     public async Task Update_NoUser_ReturnsBadRequest()
     {
         var entity = new Veilingproduct { VeilingProductNr = 7, Naam = "Product" };
@@ -330,6 +339,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Update rejects invalid category updates.
     public async Task Update_InvalidCategory_ReturnsValidationProblem()
     {
         var entity = new Veilingproduct { VeilingProductNr = 7, Naam = "Product", CategorieNr = 1 };
@@ -352,6 +362,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that Update returns the updated DTO for valid kweker updates.
     public async Task Update_Valid_ReturnsOkWithUpdatedDto()
     {
         var entity = new Veilingproduct
@@ -416,6 +427,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that UpdatePlanning returns validation problem for invalid model state.
     public async Task UpdatePlanning_InvalidModel_ReturnsValidationProblem()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -429,6 +441,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that UpdatePlanning returns NotFound for missing veilingproduct.
     public async Task UpdatePlanning_NotFound_ReturnsNotFound()
     {
         var repository = new Mock<IVeilingproductRepository>();
@@ -448,6 +461,7 @@ public class VeilingproductControllerTests
     }
 
     [Fact]
+    // Tests that UpdatePlanning updates planning fields and returns the veilingmeester DTO.
     public async Task UpdatePlanning_Valid_ReturnsOkWithUpdatedDto()
     {
         var entity = new Veilingproduct

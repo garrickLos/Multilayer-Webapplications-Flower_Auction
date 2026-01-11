@@ -104,8 +104,8 @@ public class VeilingproductRepositoryTests
         var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
         var repository = new VeilingproductRepository(context.Object);
 
-        var result = await repository.GetKlantAsync("Tulp", 2, 1, 50, CancellationToken.None);
-
+        var result = await repository.GetKlantAsync(0, "Tulp", 2, 1, 50, CancellationToken.None);
+        
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(1, result.Items.Count);
         Assert.Equal(2, result.Items[0].VeilingProductNr);
@@ -127,15 +127,16 @@ public class VeilingproductRepositoryTests
                 AantalFusten = 2,
                 VoorraadBloemen = 100,
                 ImagePath = "lelie.png",
-                Plaats = "Naaldwijk"
+                Plaats = "Naaldwijk",
+                Kwekernr = 42
             }
         };
         var productSet = CreateMockDbSet(products);
         var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
         var repository = new VeilingproductRepository(context.Object);
 
-        var result = await repository.GetKwekerAsync("Lelie", 3, 1, 50, CancellationToken.None);
-
+        var result = await repository.GetKwekerAsync(42, "Lelie", 3, 1, 50, CancellationToken.None);
+        
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(1, result.Items.Count);
         Assert.Equal(3, result.Items[0].VeilingProductNr);
@@ -262,6 +263,42 @@ public class VeilingproductRepositoryTests
         Assert.Equal(10, result.VeilingProductNr);
         Assert.Equal("Tulpen", result.CategorieNaam);
         Assert.Equal(ModelStatus.Active, result.Status);
+    }
+    
+    [Fact]
+    // Tests that GetKlantAsync can filter by exact veilingproduct number.
+    public async Task GetKlantAsync_WithVeilingproductNr_ReturnsSingleMatch()
+    {
+        var products = new List<Veilingproduct>
+        {
+            new()
+            {
+                VeilingProductNr = 11,
+                Naam = "Specifiek",
+                CategorieNr = 1,
+                Categorie = new Categorie { Naam = "Rozen" },
+                ImagePath = "spec.png",
+                Plaats = "Aalsmeer"
+            },
+            new()
+            {
+                VeilingProductNr = 12,
+                Naam = "Ander",
+                CategorieNr = 1,
+                Categorie = new Categorie { Naam = "Rozen" },
+                ImagePath = "and.png",
+                Plaats = "Lisse"
+            }
+        };
+        var productSet = CreateMockDbSet(products);
+        var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
+        var repository = new VeilingproductRepository(context.Object);
+
+        var result = await repository.GetKlantAsync(11, null, 1, 1, 50, CancellationToken.None);
+
+        Assert.Equal(1, result.TotalCount);
+        Assert.Single(result.Items);
+        Assert.Equal(11, result.Items[0].VeilingProductNr);
     }
 
     private static Mock<AppDbContext> CreateContext(DbSet<Veilingproduct> productSet, DbSet<Categorie> categorieSet)

@@ -64,15 +64,17 @@ public class PrijsHistorieRepository : IPrijsHistorieRepository
         }
         else
         {
-            // Laat "iedereen" zoals je het had (zonder group by).
-            // (Als je dit óók uniek per datum wil, kan dat natuurlijk ook.)
             command.CommandText = @"
-                SELECT TOP 10 U.BedrijfsNaam, V.BeginDatum, B.BedragPerFust
-                FROM Veilingproduct V
+          SELECT TOP (10)
+                    U.BedrijfsNaam,
+                    CAST(V.BeginDatum AS date) AS BeginDatum,
+                    CAST(ROUND(AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))), 0) AS INT) AS BedragPerFust
+          FROM Veilingproduct V
                 JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
                 JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
                 WHERE V.CategorieNr = @CategorieNr
-                ORDER BY V.BeginDatum DESC;
+                GROUP BY U.BedrijfsNaam, CAST(V.BeginDatum AS date)
+                ORDER BY CAST(V.BeginDatum AS date) DESC, U.BedrijfsNaam ASC;
 
                 SELECT AVG(CAST(B.BedragPerFust AS DECIMAL(18,2)))
                 FROM Veilingproduct V
