@@ -67,14 +67,15 @@ public class PrijsHistorieRepository : IPrijsHistorieRepository
             command.CommandText = @"
           SELECT TOP (10)
                     U.BedrijfsNaam,
-                    CAST(V.BeginDatum AS date) AS BeginDatum,
+                    D.BeginDatum,
                     CAST(ROUND(AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))), 0) AS INT) AS BedragPerFust
           FROM Veilingproduct V
                 JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
                 JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
+                    CROSS APPLY (SELECT CAST(V.BeginDatum AS date) AS BeginDatum) D
                 WHERE V.CategorieNr = @CategorieNr
-                GROUP BY U.BedrijfsNaam, CAST(V.BeginDatum AS date)
-                ORDER BY CAST(V.BeginDatum AS date) DESC, U.BedrijfsNaam ASC;
+                GROUP BY U.BedrijfsNaam, D.BeginDatum
+                ORDER BY D.BeginDatum DESC, U.BedrijfsNaam ASC;
 
                 SELECT AVG(CAST(B.BedragPerFust AS DECIMAL(18,2)))
                 FROM Veilingproduct V
