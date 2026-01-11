@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading;
+﻿using System.Data;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using mvc_api.Controllers;
 
 namespace mvc_api.Data
 {
@@ -11,40 +8,44 @@ namespace mvc_api.Data
     {
         private readonly string _connectionString;
 
-        private const string ItemsQueryForKweker = @"SELECT TOP (10)
-    CAST(V.BeginDatum AS date) AS BeginDatum,
-    AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))) AS GemiddeldePerFust
-FROM Veilingproduct V
-    INNER JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
-    INNER JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
-WHERE V.CategorieNr = @CategorieNr
-  AND U.BedrijfsNaam = @BedrijfsNaam
-GROUP BY CAST(V.BeginDatum AS date)
-ORDER BY CAST(V.BeginDatum AS date) DESC;";
+        private const string ItemsQueryKweker = @"
+            SELECT TOP (10)
+                CAST(V.BeginDatum AS date) AS BeginDatum,
+                AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))) AS GemiddeldePerFust
+            FROM Veilingproduct V
+            JOIN AspNetUsers U ON U.GebruikerNr = V.Kwekernr
+            JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
+            WHERE V.CategorieNr = @CategorieNr
+              AND (@BedrijfsNaam IS NULL OR U.BedrijfsNaam = @BedrijfsNaam)
+            GROUP BY CAST(V.BeginDatum AS date)
+            ORDER BY CAST(V.BeginDatum AS date) DESC;";
 
-        private const string ItemsQueryForIedereen = @"SELECT TOP (10)
-    U.BedrijfsNaam,
-    CAST(V.BeginDatum AS date) AS BeginDatum,
-    AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))) AS GemiddeldePerFust
-FROM Veilingproduct V
-    INNER JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
-    INNER JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
-WHERE V.CategorieNr = @CategorieNr
-GROUP BY U.BedrijfsNaam, CAST(V.BeginDatum AS date)
-ORDER BY CAST(V.BeginDatum AS date) DESC, U.BedrijfsNaam ASC;";
+        private const string ItemsQueryIedereen = @"
+            SELECT
+                U.BedrijfsNaam,
+                CAST(V.BeginDatum AS date) AS BeginDatum,
+                AVG(CAST(B.BedragPerFust AS DECIMAL(18,2))) AS GemiddeldePerFust
+            FROM Veilingproduct V
+            JOIN AspNetUsers U ON U.GebruikerNr = V.Kwekernr
+            JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
+            WHERE V.CategorieNr = @CategorieNr
+              AND CAST(V.BeginDatum AS date) IN (
+                    SELECT TOP 10 CAST(BeginDatum AS date)
+                    FROM Veilingproduct
+                    WHERE CategorieNr = @CategorieNr
+                    GROUP BY CAST(BeginDatum AS date)
+                    ORDER BY CAST(BeginDatum AS date) DESC
+                )
+            GROUP BY U.BedrijfsNaam, CAST(V.BeginDatum AS date)
+            ORDER BY BeginDatum DESC, U.BedrijfsNaam;";
 
-        private const string AverageQueryForKweker = @"SELECT AVG(CAST(B.BedragPerFust AS DECIMAL(18,2)))
-FROM Veilingproduct V
-    INNER JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
-    INNER JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
-WHERE V.CategorieNr = @CategorieNr
-  AND U.BedrijfsNaam = @BedrijfsNaam;";
-
-        private const string AverageQueryForIedereen = @"SELECT AVG(CAST(B.BedragPerFust AS DECIMAL(18,2)))
-FROM Veilingproduct V
-    INNER JOIN AspNetUsers U ON V.Kwekernr = U.GebruikerNr
-    INNER JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
-WHERE V.CategorieNr = @CategorieNr;";
+        private const string AverageQuery = @"
+            SELECT AVG(CAST(B.BedragPerFust AS DECIMAL(18,2)))
+            FROM Veilingproduct V
+            JOIN AspNetUsers U ON U.GebruikerNr = V.Kwekernr
+            JOIN Bieding B ON B.VeilingproductNr = V.VeilingProductNr
+            WHERE V.CategorieNr = @CategorieNr
+              AND (@BedrijfsNaam IS NULL OR U.BedrijfsNaam = @BedrijfsNaam);";
 
         public PrijsHistorieRepository(IConfiguration configuration)
         {
@@ -63,48 +64,48 @@ WHERE V.CategorieNr = @CategorieNr;";
             ct.ThrowIfCancellationRequested();
 
             var items = new List<PrijsHistorieItem>();
-            decimal? average = null;
             var isKwekerFilter = !string.IsNullOrWhiteSpace(bedrijfsNaam);
 
             using var connection = new SqlConnection(_connectionString);
             connection.Open();
 
-            string itemsQuery = isKwekerFilter ? ItemsQueryForKweker : ItemsQueryForIedereen;
-            using (var command = connection.CreateCommand())
+            using (var cmd = connection.CreateCommand())
             {
-                command.CommandText = itemsQuery;
-                command.Parameters.Add("@CategorieNr", SqlDbType.Int).Value = categorieNr;
-                command.Parameters.Add("@BedrijfsNaam", SqlDbType.NVarChar, 256).Value = (object?)bedrijfsNaam ?? DBNull.Value;
+                cmd.CommandText = isKwekerFilter ? ItemsQueryKweker : ItemsQueryIedereen;
+                cmd.Parameters.Add("@CategorieNr", SqlDbType.Int).Value = categorieNr;
+                if (isKwekerFilter)
+                    cmd.Parameters.Add("@BedrijfsNaam", SqlDbType.NVarChar, 256).Value = bedrijfsNaam!;
 
-                using var reader = command.ExecuteReader();
+                using var reader = cmd.ExecuteReader();
+                var ordBegin = reader.GetOrdinal("BeginDatum");
+                var ordAvg = reader.GetOrdinal("GemiddeldePerFust");
+                var ordBedrijf = !isKwekerFilter ? reader.GetOrdinal("BedrijfsNaam") : -1;
+
                 while (reader.Read())
                 {
                     var item = new PrijsHistorieItem
                     {
-                        BeginDatum = reader.GetDateTime(reader.GetOrdinal("BeginDatum")),
-                        BedragPerFust = Convert.ToInt32(Math.Round(reader.GetDecimal(reader.GetOrdinal("GemiddeldePerFust"))))
+                        BeginDatum = reader.GetDateTime(ordBegin),
+                        BedragPerFust = Convert.ToInt32(Math.Round(reader.GetDecimal(ordAvg)))
                     };
 
                     if (!isKwekerFilter)
-                    {
-                        item.BedrijfsNaam = reader.GetString(reader.GetOrdinal("BedrijfsNaam"));
-                    }
+                        item.BedrijfsNaam = reader.GetString(ordBedrijf);
+
                     items.Add(item);
                 }
             }
 
-            string avgQuery = isKwekerFilter ? AverageQueryForKweker : AverageQueryForIedereen;
-            using (var avgCommand = connection.CreateCommand())
+            decimal? average;
+            using (var cmd = connection.CreateCommand())
             {
-                avgCommand.CommandText = avgQuery;
-                avgCommand.Parameters.Add("@CategorieNr", SqlDbType.Int).Value = categorieNr;
-                avgCommand.Parameters.Add("@BedrijfsNaam", SqlDbType.NVarChar, 256).Value = (object?)bedrijfsNaam ?? DBNull.Value;
+                cmd.CommandText = AverageQuery;
+                cmd.Parameters.Add("@CategorieNr", SqlDbType.Int).Value = categorieNr;
+                cmd.Parameters.Add("@BedrijfsNaam", SqlDbType.NVarChar, 256).Value =
+                    isKwekerFilter ? bedrijfsNaam! : DBNull.Value;
 
-                object? avgResult = avgCommand.ExecuteScalar();
-                if (avgResult != null && avgResult != DBNull.Value)
-                {
-                    average = Convert.ToDecimal(avgResult);
-                }
+                var result = cmd.ExecuteScalar();
+                average = result is null or DBNull ? null : Convert.ToDecimal(result);
             }
 
             return new PrijsHistorieResultaat(items, average);
