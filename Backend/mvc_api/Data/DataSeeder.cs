@@ -196,11 +196,10 @@ public static class DataSeeder
 
         await dbContext.SaveChangesAsync();
     }
-
-    private static readonly DateTime _vasteVeilingDatum = new(2026, 1, 8, 0, 0, 0, DateTimeKind.Utc);
-
+    
     private static async Task EnsureVeiling(AppDbContext dbContext)
     {
+        var veilingBasis = DateTime.UtcNow.AddDays(-10);
         if (!await dbContext.Veiling.AnyAsync())
         {
             // Forceer start-id (SQL Server specifiek)
@@ -209,10 +208,10 @@ public static class DataSeeder
 
         var veilingen = new[]
         {
-            new Veiling { VeilingNaam = "veiling001", Begintijd = _vasteVeilingDatum.AddHours(9),  Eindtijd = _vasteVeilingDatum.AddHours(10), Status = "active" },
-            new Veiling { VeilingNaam = "veiling001", Begintijd = _vasteVeilingDatum.AddHours(10), Eindtijd = _vasteVeilingDatum.AddHours(11), Status = "active" },
-            new Veiling { VeilingNaam = "veiling002", Begintijd = _vasteVeilingDatum.AddHours(12), Eindtijd = _vasteVeilingDatum.AddHours(13), Status = "active" },
-            new Veiling { VeilingNaam = "veiling003", Begintijd = _vasteVeilingDatum.AddHours(14), Eindtijd = _vasteVeilingDatum.AddHours(15), Status = "active" }
+            new Veiling { VeilingNaam = "veiling001", Begintijd = veilingBasis.AddDays(1).AddHours(9),  Eindtijd = veilingBasis.AddDays(1).AddHours(10), Status = "active" },
+            new Veiling { VeilingNaam = "veiling001", Begintijd = veilingBasis.AddDays(2).AddHours(10), Eindtijd = veilingBasis.AddDays(2).AddHours(11), Status = "active" },
+            new Veiling { VeilingNaam = "veiling002", Begintijd = veilingBasis.AddDays(3).AddHours(12), Eindtijd = veilingBasis.AddDays(3).AddHours(13), Status = "active" },
+            new Veiling { VeilingNaam = "veiling003", Begintijd = veilingBasis.AddDays(4).AddHours(14), Eindtijd = veilingBasis.AddDays(4).AddHours(15), Status = "active" }
         };
 
         foreach (var veiling in veilingen)
@@ -253,7 +252,7 @@ public static class DataSeeder
         var categories = await dbContext.Categorieen
             .ToDictionaryAsync(c => c.Naam, c => c.CategorieNr);
 
-        var geplaatst = new DateTime(2025, 10, 09, 14, 0, 0, DateTimeKind.Utc);
+        var geplaatst = DateTime.UtcNow.AddDays(-6).AddHours(14);
         var startdag  = DateOnly.FromDateTime(geplaatst.Date.AddDays(1));
 
         var seedProducten = new[]
