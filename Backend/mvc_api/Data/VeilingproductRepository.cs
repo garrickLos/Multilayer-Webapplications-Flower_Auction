@@ -28,7 +28,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
     public async Task<PagedResult<klantVeilingproductGet_dto>> GetKlantAsync(
-        int? vpNummer,
+        int vpNummer,
         string? q,
         int? categorieNr,
         int page,

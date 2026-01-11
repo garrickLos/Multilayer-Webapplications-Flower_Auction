@@ -250,11 +250,13 @@ public class VeilingproductControllerTests
                 2,
                 50,
                 "Rozen",
+                1,
                 "image.png",
                 "Aalsmeer",
                 null,
                 10,
-                null));
+                null,
+                42));
 
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
@@ -389,12 +391,14 @@ public class VeilingproductControllerTests
                 3,
                 30,
                 "Rozen",
+                1,
                 "new.png",
                 "Lisse",
                 null,
                 20,
-                null));
-
+                null,
+                42));
+        
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "42"),
