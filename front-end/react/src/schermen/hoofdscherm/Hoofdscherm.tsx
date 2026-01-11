@@ -46,6 +46,8 @@ export default function MainScreen() {
 
     }, [refreshTimer]);
 
+    console.log(veilingen);
+
     const actieveVeilingen = veilingen;
 
     const laadbericht = "laden van items..."

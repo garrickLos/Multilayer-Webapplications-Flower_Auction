@@ -14,17 +14,20 @@ public interface IVeilingproductRepository
     void Add(Veilingproduct entity);
     Task SaveChangesAsync(CancellationToken ct);
     Task<PagedResult<klantVeilingproductGet_dto>> GetKlantAsync(
+        int Nummer,
         string? q,
         int? categorieNr,
         int page,
         int pageSize,
         CancellationToken ct);
     Task<PagedResult<kwekerVeilingproductGet_dto>> GetKwekerAsync(
+        int Nummer,
         string? q,
         int? categorieNr,
         int page,
         int pageSize,
         CancellationToken ct);
+        
     Task<IReadOnlyList<VeilingproductVeilingmeesterListDto>> GetForVeilingmeesterAsync(
         string? q,
         int? categorieNr,

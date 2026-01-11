@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
-import { UseDataApi as GetCategorie } from "../typeScript/ApiGet";
+import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
+import type { CategorieListDto } from "../api/dtos";
 
 interface CategorieType {
     categorieNr: number;
@@ -39,7 +40,6 @@ export default function SellerScreenAdd() {
         BeginDatum: "",
         Minimumprijs: ""
     });
-    console.log(categorieLijst);
 
     const [imagePath, setImagePath] = useState(Data.ImagePath);
 
