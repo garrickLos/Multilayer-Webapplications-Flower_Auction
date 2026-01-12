@@ -36,7 +36,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), null, vpNummer, q, categorieNr)
+        var query = ApplySearchFilters(QueryWithCategorie(), null, q, categorieNr)
             .OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query
@@ -63,7 +63,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), Nummer, null, q, categorieNr)
+        var query = ApplySearchFilters(QueryWithCategorie(), null, q, categorieNr)
             .OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query
