@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-import '../css/Componenten/knop.css'
+import '../css/Componenten/Knop.css'
 
 interface knopItems {
     classNames: string[] | string;
