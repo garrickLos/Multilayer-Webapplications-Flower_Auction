@@ -10,6 +10,8 @@ export { GenereerKnop } from './Knop';
 
 export { laadIcon } from './Laadicon';
 
+export { getBearerToken, getRefreshToken } from './TokensGet';
+
 // types:
 
 export type { InputFieldProps } from './ComponentTypes/InputFieldTypes';
