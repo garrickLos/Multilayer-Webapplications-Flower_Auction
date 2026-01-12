@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../css/CustomerScreenInfo.css";
-import {ApiRequest} from "../typeScript/ApiRequest";
+import { ApiRequest } from "../typeScript/ApiRequest";
+import { resolveImageUrl } from "../config/api";
 
 
 
@@ -83,7 +84,7 @@ export default function CustomerScreenInfo() {
                     return (
                         <div key={bieding.gebruikerNr} className="rij">
                             <div className="kolomLinks">
-                                { <img src={product.imagePath} alt={product.naam} className="fotoProduct" /> }
+                                { <img src={resolveImageUrl(product.imagePath)} alt={product.naam} className="fotoProduct" /> }
                             </div>
                             <div className="kolomRechts">
                                 <div className="linkerHelft">

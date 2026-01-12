@@ -71,3 +71,10 @@ export default defineConfig([
   },
 ])
 ```
+
+## Render deployment notes
+
+- Set these environment variables in Render:
+  - `VITE_API_URL` (Azure API base URL)
+  - `VITE_IMAGE_URL` (Azure image base URL)
+- SPA routing is configured via `public/_redirects`, which is copied into `dist/` on build to rewrite all paths to `index.html`.
