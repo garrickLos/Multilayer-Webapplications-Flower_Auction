@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { resolveApiUrl } from '../config/api';
 import './css/Registration.css';
 
 interface LoginRequest {
@@ -99,7 +100,7 @@ export default function Login() {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('/auth/login', {
+            const response = await fetch(resolveApiUrl('/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payloadToSend)

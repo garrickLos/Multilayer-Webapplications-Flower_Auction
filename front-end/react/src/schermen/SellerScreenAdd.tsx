@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
+import { resolveApiUrl } from "../config/api";
 
 interface CategorieType {
     categorieNr: number;
@@ -116,7 +117,7 @@ export default function SellerScreenAdd() {
 
         try {
             console.log(product.CategorieNr);
-            const response = await fetch("/api/Veilingproduct", {
+            const response = await fetch(resolveApiUrl("/api/Veilingproduct"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
                 "Authorization": "Bearer " + token},
