@@ -1,6 +1,5 @@
 import { getBearerToken } from "../Componenten/index";
-
-const API_BASE_URL = "/api";
+import { API_BASE_URL, resolveApiUrl } from "../config/api";
 const DEFAULT_PAGE_SIZE = 200;
 
 export type ApiError = { status?: number; message: string };
@@ -90,7 +89,7 @@ function toRole(value?: string | null): UserRole {
 }
 
 async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    const url = resolveApiUrl(path);
     const token = getBearerToken();
     const response = await fetch(url, {
         ...init,
@@ -245,7 +244,7 @@ type AuctionDto = Parameters<typeof mapAuction>[0];
 
 export async function fetchUsers(params: { role?: string; status?: string; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<User>> {
     const query = buildQuery({ role: params.role, status: params.status, pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE });
-    const data = await fetchJson<readonly ReturnType<typeof mapUser>[]>(`/Gebruiker/veilingmeester${query}`, { signal });
+    const data = await fetchJson<readonly ReturnType<typeof mapUser>[]>(`/api/Gebruiker/veilingmeester${query}`, { signal });
     const items = (Array.isArray(data) ? data : []).map(mapUser);
     const pageSize = params.pageSize ?? (items.length || DEFAULT_PAGE_SIZE);
     return { items, page: 1, pageSize, hasNext: false, totalResults: items.length };
@@ -255,14 +254,14 @@ export async function fetchBids(
     params: { gebruikerNr?: number | string; veilingNr?: number | string; page?: number; pageSize?: number } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Bid>> {
-    return fetchList("/Bieding", params, mapBid, signal);
+    return fetchList("/api/Bieding", params, mapBid, signal);
 }
 
 export async function fetchAuctions(
     params: { veilingProduct?: number | string; from?: string; to?: string; onlyActive?: boolean; page?: number; pageSize?: number } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Auction>> {
-    return fetchList("/Veiling/VeilingMeester", params, mapAuction, signal);
+    return fetchList("/api/Veiling/VeilingMeester", params, mapAuction, signal);
 }
 
 export async function fetchProducts(
@@ -279,11 +278,11 @@ export async function fetchProducts(
     } = {},
     signal?: AbortSignal,
 ): Promise<PaginatedList<Product>> {
-    return fetchList("/Veilingproduct/veilingmeester", params, mapProduct, signal);
+    return fetchList("/api/Veilingproduct/veilingmeester", params, mapProduct, signal);
 }
 
 export async function fetchCategories(params: { q?: string; page?: number; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<Category>> {
-    return fetchList("/Categorie", params, (dto: { categorieNr: number; naam?: string }) => ({ id: dto.categorieNr, name: dto.naam ?? "" }), signal);
+    return fetchList("/api/Categorie", params, (dto: { categorieNr: number; naam?: string }) => ({ id: dto.categorieNr, name: dto.naam ?? "" }), signal);
 }
 
 export async function updateProductPlanning(
@@ -291,7 +290,7 @@ export async function updateProductPlanning(
     payload: { startprijs?: number | null; veilingNr?: number | null },
     signal?: AbortSignal,
 ): Promise<Product> {
-    const data = await fetchJson<ProductDto>(`/Veilingproduct/veilingmeester/${id}`, {
+    const data = await fetchJson<ProductDto>(`/api/Veilingproduct/veilingmeester/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
         signal,
@@ -300,17 +299,17 @@ export async function updateProductPlanning(
 }
 
 export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
-    const data = await fetchJson<AuctionDto>("/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
+    const data = await fetchJson<AuctionDto>("/api/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
     return mapAuction(data);
 }
 
 export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    const data = await fetchJson<AuctionDto>(`/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    const data = await fetchJson<AuctionDto>(`/api/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
     return mapAuction(data);
 }
 
 export async function deleteAuction(id: number, signal?: AbortSignal): Promise<void> {
-    await fetchJson(`/Veiling/${id}`, { method: "DELETE", signal });
+    await fetchJson(`/api/Veiling/${id}`, { method: "DELETE", signal });
 }
 
 export const apiConfig = { baseUrl: API_BASE_URL, defaultPageSize: DEFAULT_PAGE_SIZE } as const;

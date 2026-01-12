@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { resolveApiUrl } from '../config/api';
 
 export function UseDataApi<T>(url: string) {
     const [data, setData] = useState<T | null>(null);
@@ -17,7 +18,7 @@ export function UseDataApi<T>(url: string) {
             
             try {
                 const token = sessionStorage.getItem("token");
-                const response = await fetch(url, {
+                const response = await fetch(resolveApiUrl(url), {
                     signal,
                     headers: token ? { Authorization: `Bearer ${token}` } : undefined // <- header toevoegen
                 });

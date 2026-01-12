@@ -1,3 +1,5 @@
+import { resolveApiUrl } from "../config/api";
+
 export async function UpdateApi<T>(
     url: string, 
     changedData: T, 
@@ -11,7 +13,7 @@ export async function UpdateApi<T>(
 
     // Interne functie om de request uit te voeren met een specifieke token
     const makeRequest = async (authToken: string) => {
-        return await fetch(url, {
+        return await fetch(resolveApiUrl(url), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -25,7 +27,7 @@ export async function UpdateApi<T>(
 
     // Als de token verlopen is (401), probeer te refreshen
     if (response.status === 401 && refreshToken) {
-        const refreshUrl = url; // Pas aan naar jouw API URL
+        const refreshUrl = resolveApiUrl(url); // Pas aan naar jouw API URL
 
         const refreshResponse = await fetch(refreshUrl, {
             method: 'POST',

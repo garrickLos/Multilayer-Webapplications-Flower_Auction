@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { resolveApiUrl } from '../config/api';
 import './css/Registration.css';
 
 interface RegisterRequest {
@@ -127,7 +128,7 @@ export default function Registration() {
 
         setIsSubmitting(true);
         try {
-            const response = await fetch('/auth/register', {
+            const response = await fetch(resolveApiUrl('/auth/register'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payloadToSend)
