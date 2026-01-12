@@ -13,7 +13,6 @@ import type { KwekerInfo } from '../hoofdscherm/Componenten/index';
 import { InfoVeld, GenereerKnop, InputField, checkInputField, 
     getBearerToken as Token, getRefreshToken as refreshToken } from '../../Componenten/index';
 import { ContainerSideMenu, Timer, 
-    berekenHuidigeVeilingStaat as huidigeVeilingStaat, 
     VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/index';
 
 import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
