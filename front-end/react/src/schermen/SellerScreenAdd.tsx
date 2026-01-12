@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
 import { resolveApiUrl } from "../config/api";
+import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
 
 interface CategorieType {
     categorieNr: number;
@@ -10,8 +11,8 @@ interface CategorieType {
 
 export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
-    const bestandsPad = "../../src/assets/pictures/productBloemen/";
-    const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+    const bestandsPad = `${import.meta.env.BASE_URL}productBloemen/`;
+    const Default_ImagePlaceholder = MissingPicture;
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
 

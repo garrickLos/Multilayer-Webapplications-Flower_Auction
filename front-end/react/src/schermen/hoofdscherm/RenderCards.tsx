@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { GenereerKnop } from "../../Componenten/Knop";
 import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
 import { GetDate } from "../../typeScript/FetchDate";
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
 
 // component index import
 import { getKwekerInfo } from '../hoofdscherm/Componenten/index.tsx';
@@ -13,7 +14,7 @@ import type {VeilingItem, Producten, AuctionCardProps, KwekerInfo } from '../hoo
 // css
 import '../../css/Componenten/AuctionCards.css';
 
-const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+const Default_ImagePlaceholder = MissingPicture;
 
 export function AuctionCard({ product, parentVeiling }: AuctionCardProps) {
 

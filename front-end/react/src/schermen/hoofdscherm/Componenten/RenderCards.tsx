@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import MissingPicture from "../../../assets/pictures/webp/MissingPicture.webp";
 
 // import type index
 import type { CardItems, VeilingItem, Producten } from '../../hoofdscherm/Componenten/index';
 
-const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+const Default_ImagePlaceholder = MissingPicture;
 
 export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }: CardItems) {
   const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);

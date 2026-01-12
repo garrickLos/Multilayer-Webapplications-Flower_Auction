@@ -3,9 +3,10 @@ import type { Product } from "../api";
 import { formatCurrency } from "../helpers";
 import { mapProductStatusToUiStatus } from "../rules";
 import { StatusBadge } from "./ui";
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
 
 // Fallback-afbeelding bij ontbrekende productfoto
-const fallbackImage = "/src/assets/pictures/webp/MissingPicture.webp";
+const fallbackImage = MissingPicture;
 
 type ProductCardProps = {
     readonly product: Product;
