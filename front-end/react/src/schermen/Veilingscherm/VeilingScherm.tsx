@@ -17,6 +17,7 @@ import { ContainerSideMenu, Timer,
 
 import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
 import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
+import { resolveImageUrl } from "../../config/api";
 
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
@@ -214,7 +215,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
             <div className="Auction_Container">
                 <section className="Auction_Foto">
                     <div className="Auction_fotoContainer">
-                        <img src={huidigProduct?.imagePath == undefined ? Default_ImagePlaceholder : huidigProduct?.imagePath} alt="Foto van een bloem" className="Auction_veilingFoto"></img>
+                        <img src={resolveImageUrl(huidigProduct?.imagePath) || Default_ImagePlaceholder} alt="Foto van een bloem" className="Auction_veilingFoto"></img>
                     </div>
                 </section>
 
