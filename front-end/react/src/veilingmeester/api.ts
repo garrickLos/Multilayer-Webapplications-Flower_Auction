@@ -1,4 +1,4 @@
-import { getBearerToken } from "../typeScript/ApiGet";
+import { getBearerToken } from "../Componenten/index";
 
 const API_BASE_URL = "/api";
 const DEFAULT_PAGE_SIZE = 200;

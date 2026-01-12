@@ -2,9 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { InfoVeld } from '../../../Componenten/InformatieVelden';
 
 import { ApiRequest } from '../../../typeScript/ApiRequest';
-import { getRefreshToken, getBearerToken as Token } from '../../../typeScript/ApiGet';
 
 //import component index
+import { getRefreshToken, getBearerToken as Token} from '../../../Componenten/index';
 import { mapInfoLijstData } from '../../Veilingscherm/VeilingSchermComponenten/index'; 
 
 // import index type
