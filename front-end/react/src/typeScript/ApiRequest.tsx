@@ -1,3 +1,5 @@
+import { resolveApiUrl } from "../config/api";
+
 export async function ApiRequest<T>(
     url: string, 
     method: 'GET' | 'POST' | 'PUT' | 'DELETE', 
@@ -40,6 +42,7 @@ export async function ApiRequest<T>(
 }
 
 async function RequestFetch(url: string, method: string, data: any, token: string): Promise <Response> {
+    const resolvedUrl = resolveApiUrl(url);
     const headers: HeadersInit = {
         'Content-type': 'application/json',
     }
@@ -58,7 +61,7 @@ async function RequestFetch(url: string, method: string, data: any, token: strin
         config.body = JSON.stringify(data);
     }
 
-    return await fetch(url, config);
+    return await fetch(resolvedUrl, config);
 }
 
 // checked of de token die gebruikt wordt ook echt goed in elkaar zit
@@ -68,7 +71,7 @@ function isValidToken(token: string | null): boolean {
 
 async function TokenRefresh(token: string, refreshToken: string): Promise <{ token: string, refreshToken: string }> {
     // url voor de refreshToken api
-    const refreshUrl = "/api/Auth/refresh";
+    const refreshUrl = resolveApiUrl("/api/Auth/refresh");
     
     // is vaak een post om te refreshToken te pakken
     const response = await fetch(refreshUrl, {
