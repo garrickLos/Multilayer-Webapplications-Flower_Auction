@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Data/PrijsHistorieRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Data/PrijsHistorieRepository.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,7 +94,8 @@
       <workItem from="1767857881331" duration="187000" />
       <workItem from="1767858096360" duration="7727000" />
       <workItem from="1768145253387" duration="5334000" />
-      <workItem from="1768152321406" duration="3337000" />
+      <workItem from="1768152321406" duration="3609000" />
+      <workItem from="1768210186342" duration="2863000" />
     </task>
     <servers />
   </component>
