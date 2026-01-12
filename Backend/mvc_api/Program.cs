@@ -64,6 +64,7 @@ builder.Services.AddSwaggerGen(c =>
 // ORM / DbContext
 var connectionString = builder.Configuration.GetConnectionString("Default");
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+var allowCredentials = builder.Configuration.GetValue<bool>("Cors:AllowCredentials");
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
@@ -115,6 +116,11 @@ builder.Services.AddCors(options =>
             policy.WithOrigins(corsOrigins)
                 .AllowAnyHeader()
                 .AllowAnyMethod();
+
+            if (allowCredentials)
+            {
+                policy.AllowCredentials();
+            }
         }
     });
 });
