@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
-import { resolveApiUrl } from "../config/api";
+import { resolveApiUrl, resolveImageUrl } from "../config/api";
 import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
 
 interface CategorieType {
@@ -43,6 +43,10 @@ export default function SellerScreenAdd() {
     });
 
     const [imagePath, setImagePath] = useState(Data.ImagePath);
+    const resolvedImagePath =
+        imagePath === Default_ImagePlaceholder
+            ? Default_ImagePlaceholder
+            : resolveImageUrl(imagePath);
 
     const validateField = (id: string, value: string | number) => {
         let error = "";
@@ -145,7 +149,7 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src={imagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
+                                <img src={resolvedImagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
                             </div>
                             <div className="ordenen-bestand">
                                 <label htmlFor="BestandPad" className="bestand"></label>
