@@ -14,7 +14,6 @@ public interface IVeilingproductRepository
     void Add(Veilingproduct entity);
     Task SaveChangesAsync(CancellationToken ct);
     Task<PagedResult<klantVeilingproductGet_dto>> GetKlantAsync(
-        int Nummer,
         string? q,
         int? categorieNr,
         int page,

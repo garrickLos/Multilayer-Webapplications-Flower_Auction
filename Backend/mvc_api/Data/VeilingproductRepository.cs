@@ -28,7 +28,6 @@ public class VeilingproductRepository : IVeilingproductRepository
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 
     public async Task<PagedResult<klantVeilingproductGet_dto>> GetKlantAsync(
-        //int? vpNummer,
         string? q,
         int? categorieNr,
         int page,
@@ -136,7 +135,6 @@ public class VeilingproductRepository : IVeilingproductRepository
     private static IQueryable<Veilingproduct> ApplySearchFilters(
         IQueryable<Veilingproduct> query,
         int? Nummer,
-        //int? vpNummer,
         string? q,
         int? categorieNr)
     {
@@ -144,11 +142,6 @@ public class VeilingproductRepository : IVeilingproductRepository
         {
             query = query.Where(vp => vp.Kwekernr == Nummer);
         }
-
-        // if (vpNummer.HasValue)
-        // {
-        //     query = query.Where(vp => vp.VeilingProductNr == vpNummer);
-        // }
         
         if (!string.IsNullOrWhiteSpace(q))
         {

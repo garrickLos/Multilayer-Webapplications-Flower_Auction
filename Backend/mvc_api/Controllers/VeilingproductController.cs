@@ -22,14 +22,13 @@ public class VeilingproductController : ControllerBase
     [HttpGet("Klant")]
     [Authorize(Roles = "Koper")]
     public async Task<ActionResult<IEnumerable<klantVeilingproductGet_dto>>> KlantGetAll(
-        [FromQuery] int vpNummer,
         [FromQuery] string? q,
         [FromQuery] int? categorieNr,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var result = await _repository.GetKlantAsync(vpNummer, q, categorieNr, page, pageSize, ct);
+        var result = await _repository.GetKlantAsync(q, categorieNr, page, pageSize, ct);
 
         SetPaginationHeaders(result.TotalCount, result.Page, result.PageSize);
 
