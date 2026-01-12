@@ -11,14 +11,12 @@ export default function Header() {
 }
 
     const [role, setRole] = useState<string | null>(null);
-    const [gebruikerNummer, setGebruikerNummer] = useState<string | null>(null);
     
     useEffect(() => {
         const updateRoleFromToken = () => {
             const token = sessionStorage.getItem("token");
             if (!token) {
                 setRole(null);
-                setGebruikerNummer(null);
                 return;
             }
 
@@ -29,7 +27,6 @@ export default function Header() {
                 setRole(decoded[RolClaim] || null);
                 
                 const nummer = decoded[gebruikerClaim] || null;
-                setGebruikerNummer(nummer);
 
                 if(nummer != null){
                     sessionStorage.setItem("gebruikerNummer", nummer);
@@ -39,7 +36,6 @@ export default function Header() {
                 TokenOphalen.setToken(token);
             } catch {
                 setRole(null);
-                setGebruikerNummer(null);
             }
         };
         updateRoleFromToken();

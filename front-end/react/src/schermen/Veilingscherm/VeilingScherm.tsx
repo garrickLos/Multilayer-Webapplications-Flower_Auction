@@ -72,8 +72,6 @@ export default function AuctionScreen() {
     let veilingIsOngeldig = false;
 
     if (actieveVeiling != null) {
-        let isAfgelopen = huidigeVeilingStaat(actieveVeiling).isAfgelopen;
-
         veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null;
     }
     
