@@ -3,9 +3,10 @@ import type { Auction, Bid, Product } from "../api";
 import { formatCurrency, formatDateTime } from "../helpers";
 import { mapProductStatusToUiStatus } from "../rules";
 import { StatusBadge } from "./ui";
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
 
 // Fallback-afbeelding bij ontbrekende productfoto
-const fallbackImage = "/src/assets/pictures/webp/MissingPicture.webp";
+const fallbackImage = MissingPicture;
 
 // Gedeelde card-styling
 const cardClass = "d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4";
