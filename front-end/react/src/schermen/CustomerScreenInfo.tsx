@@ -1,14 +1,60 @@
+import { useEffect, useState } from "react";
 import "../css/CustomerScreenInfo.css";
 import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
-import { UseDataApi as GetBieding } from "../typeScript/ApiGet";
+import {ApiRequest} from "../typeScript/ApiRequest";
+import { reference } from "@popperjs/core";
+
 
 
 export default function CustomerScreenInfo() {
-    const { data: ProductData } = GetProduct('/api/Veilingproduct/klant');
-    const productLijst = (ProductData as ProductType[]) || [];
+    const [biedingLijst, setBiedingLijst] = useState<BiedingType[]>([]);
+    const [productLijst, setProductLijst] = useState<ProductType[]>([]);
 
-    const { data: BiedingData } = GetBieding('/api/Bieding/klant?gebruikerNr=2');
-    const biedingLijst = (BiedingData as BiedingType[]) || [];
+    const refreshtoken = sessionStorage.getItem("refreshToken");
+    const token = sessionStorage.getItem("token");
+
+    const nummer = sessionStorage.getItem("gebruikerNummer")
+    if(!nummer)
+    {
+        return null;
+    }
+
+    //biedingen op halen gebaseerd op gebruikerNr
+    useEffect(() => {
+    const dataOphalen = async () => {
+    const response = await ApiRequest<BiedingType[]>(
+      `/api/Bieding/klant?gebruikerNr=${nummer}`,
+      "GET",
+      null,
+      token,
+      refreshtoken
+    );
+
+    const biedingLijst = response as BiedingType[];
+    setBiedingLijst(biedingLijst);
+    };
+
+    dataOphalen();
+    }, [refreshtoken]);
+
+    //productinformatie ophalen gebaseerd op veilingproductNr
+    useEffect(() => {
+    const dataOphalen = async () => {
+    const response = await ApiRequest<ProductType[]>(
+      '/api/Veilingproduct/klant',
+      "GET",
+      null,
+      token,
+      refreshtoken
+    );
+
+    const productLijst = response as ProductType[];
+    setProductLijst(productLijst);
+    };
+
+    dataOphalen();
+    }, [refreshtoken]);
+
 
     interface BiedingType {
         aantalStuks: number;
@@ -23,17 +69,9 @@ export default function CustomerScreenInfo() {
         imagePath: string; 
         plaats: string; 
     }
-    console.log(biedingLijst);
-    console.log("product info" + productLijst);
-
-    const nummer = sessionStorage.getItem("gebruikerNummer")
-    if(!nummer)
-    {
-        return null;
-    }
 
     const nieuweNummer = Number.parseInt(nummer, 10);
-    const mijnBiedingen = biedingLijst.filter(b => b.gebruikerNr === nieuweNummer);
+    const mijnBiedingen = biedingLijst.filter(v => v.gebruikerNr === nieuweNummer);
 
     
     return (
