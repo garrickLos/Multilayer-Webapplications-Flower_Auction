@@ -4,7 +4,7 @@ to do:
     - Geen items gevonden, Niet ingelogd, etc..
 */
 
-export function ErrorScherm (LaadTekst?: string){
+export function ErrorScherm (){
     return (
         <main className="Laadscherm-main">
             <section className="LaadSectie">

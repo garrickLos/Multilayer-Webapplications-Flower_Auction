@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
-import type { CategorieListDto } from "../api/dtos";
 
 interface CategorieType {
     categorieNr: number;
