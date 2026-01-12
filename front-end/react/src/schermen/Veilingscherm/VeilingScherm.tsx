@@ -16,6 +16,7 @@ import { ContainerSideMenu, Timer,
     VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/index';
 
 import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
 
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
@@ -23,7 +24,7 @@ import '../../css/VeilingScherm.css';
 let token = Token() || "";
 let token_refresh = "";
 
-const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+const Default_ImagePlaceholder = MissingPicture;
 
 export default function AuctionScreen() {
     const [toonEindScherm, setToonEindScherm] = useState(false);
