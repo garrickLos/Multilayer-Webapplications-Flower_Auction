@@ -104,8 +104,7 @@ public class VeilingproductRepositoryTests
         var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
         var repository = new VeilingproductRepository(context.Object);
 
-        var result = await repository.GetKlantAsync(0, "Tulp", 2, 1, 50, CancellationToken.None);
-        
+        var result = await repository.GetKlantAsync("Tulp", 2, 1, 50, CancellationToken.None);        
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(1, result.Items.Count);
         Assert.Equal(2, result.Items[0].VeilingProductNr);
@@ -266,8 +265,8 @@ public class VeilingproductRepositoryTests
     }
     
     [Fact]
-    // Tests that GetKlantAsync can filter by exact veilingproduct number.
-    public async Task GetKlantAsync_WithVeilingproductNr_ReturnsSingleMatch()
+    // Tests that GetKlantAsync can filter by name search.
+    public async Task GetKlantAsync_WithNameFilter_ReturnsSingleMatch()
     {
         var products = new List<Veilingproduct>
         {
@@ -294,8 +293,7 @@ public class VeilingproductRepositoryTests
         var context = CreateContext(productSet.Object, new Mock<DbSet<Categorie>>().Object);
         var repository = new VeilingproductRepository(context.Object);
 
-        var result = await repository.GetKlantAsync(11, null, 1, 1, 50, CancellationToken.None);
-
+        var result = await repository.GetKlantAsync("Specifiek", 1, 1, 50, CancellationToken.None);
         Assert.Equal(1, result.TotalCount);
         Assert.Single(result.Items);
         Assert.Equal(11, result.Items[0].VeilingProductNr);

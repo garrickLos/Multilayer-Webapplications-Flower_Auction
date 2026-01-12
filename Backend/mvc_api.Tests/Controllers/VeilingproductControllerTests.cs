@@ -39,12 +39,12 @@ public class VeilingproductControllerTests
 
         var repository = new Mock<IVeilingproductRepository>();
         repository
-            .Setup(r => r.GetKlantAsync(0, "Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<klantVeilingproductGet_dto>(dtoItems, 1, 1, 50));
 
         var controller = CreateController(repository.Object);
 
-        var response = await controller.KlantGetAll(vpNummer: 0, q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
+        var response = await controller.KlantGetAll(q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
         var ok = Assert.IsType<OkObjectResult>(response.Result);
         var list = Assert.IsAssignableFrom<IEnumerable<klantVeilingproductGet_dto>>(ok.Value);
         var item = Assert.Single(list);
@@ -56,7 +56,7 @@ public class VeilingproductControllerTests
         Assert.Equal("1", controller.Response.Headers["X-Page"]);
         Assert.Equal("50", controller.Response.Headers["X-Page-Size"]);
         repository.Verify(
-            r => r.GetKlantAsync(0, "Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
+            r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
