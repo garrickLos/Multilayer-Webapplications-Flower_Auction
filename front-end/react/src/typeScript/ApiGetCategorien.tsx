@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 export function UseDataApi<T>(url: string) {
     const [data, setData] = useState<T | null>(null);

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import "../css/CustomerScreenInfo.css";
-import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
 import {ApiRequest} from "../typeScript/ApiRequest";
-import { reference } from "@popperjs/core";
 
 
 
