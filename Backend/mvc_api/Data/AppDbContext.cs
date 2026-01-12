@@ -9,12 +9,13 @@ namespace mvc_api.Data;
 public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<RefreshToken>  RefreshTokens { get; set; }
 
     public DbSet<Gebruiker>      Gebruikers       => Set<Gebruiker>();
     public DbSet<Bieding>        Biedingen        => Set<Bieding>();
     public DbSet<Veilingproduct> Veilingproducten => Set<Veilingproduct>();
     public DbSet<Categorie>      Categorieen      => Set<Categorie>();
-    public DbSet<Veiling>        Veilingen        => Set<Veiling>();
+    public DbSet<Veiling>        Veiling        => Set<Veiling>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -43,7 +44,7 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .HasMany(v => v.Veilingproducten)
             .WithOne(p => p.Veiling)
             .HasForeignKey(p => p.VeilingNr)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Indexen en status-mapping
         b.Entity<Gebruiker>()
@@ -58,7 +59,13 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 
         b.Entity<Veilingproduct>()
             .HasIndex(x => new { x.CategorieNr, x.Naam });
+        
+        b.Entity<Veilingproduct>()
+            .HasIndex(x => new { x.CategorieNr, x.BeginDatum });
 
+        b.Entity<Bieding>()
+            .HasIndex(x => x.VeilingproductNr);
+        
         b.Entity<Veilingproduct>()
             .Property(x => x.Status)
             .HasConversion<string>()
@@ -70,34 +77,8 @@ public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
             .Property(v => v.Minimumprijs)
             .HasPrecision(18, 2);
 
-        var dag = new DateTime(2025, 10, 10, 15, 0, 0, DateTimeKind.Utc);
-
-        b.Entity<Categorie>().HasData(
-            new Categorie { CategorieNr = 1, Naam = "Tulpen" },
-            new Categorie { CategorieNr = 2, Naam = "Rozen" },
-            new Categorie { CategorieNr = 3, Naam = "Lelie" },
-            new Categorie { CategorieNr = 4, Naam = "Zonnebloem" },
-            new Categorie { CategorieNr = 5, Naam = "Chrysant" },
-            new Categorie { CategorieNr = 6, Naam = "Pioenroos" }
-        );
-
-        b.Entity<Veiling>().HasData(
-            new Veiling
-            {
-                VeilingNr   = 201,
-                VeilingNaam = "veiling001",
-                Begintijd   = dag.AddHours(9),
-                Eindtijd    = dag.AddHours(10),
-                Status      = "active"
-            },
-            new Veiling
-            {
-                VeilingNr   = 202,
-                VeilingNaam = "veiling001",
-                Begintijd   = dag.AddHours(10),
-                Eindtijd    = dag.AddHours(11),
-                Status      = "active"
-            }
-        );
+        b.Entity<Veilingproduct>()
+            .Property(v => v.Startprijs)
+            .HasPrecision(18, 2);
     }
 }

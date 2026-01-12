@@ -1,3 +1,4 @@
+using System;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
 
@@ -7,7 +8,9 @@ public static class VeilingStatus
 {
     public const string Active = "active";
     public const string Inactive = "inactive";
-    public const string Sold = "sold";
+    public const string SoldOut = "uitverkocht";
+    public const string Closed = "afgesloten";
+    public const string Cancelled = "geannuleerd";
 }
 
 // dit zijn de Dto projecties die worden opgehaald voor de data die nodig is. 
@@ -25,21 +28,24 @@ public class ProjectieVeilingController
             Begintijd = v.Begintijd,
             Eindtijd = v.Eindtijd,
 
-            Status = (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
-                ? VeilingStatus.Sold
-                : (v.Eindtijd <= now 
-                    ? VeilingStatus.Inactive 
-                    : (v.Begintijd <= now 
-                        ? VeilingStatus.Active
-                        : VeilingStatus.Inactive)),
+            Status = string.Equals(v.Status, VeilingStatus.Cancelled, StringComparison.OrdinalIgnoreCase)
+                ? VeilingStatus.Cancelled
+                : (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
+                    ? VeilingStatus.SoldOut
+                    : (v.Eindtijd <= now 
+                        ? VeilingStatus.Closed 
+                        : (v.Begintijd <= now 
+                            ? VeilingStatus.Active
+                            : VeilingStatus.Inactive)),
             
             Producten = v.Veilingproducten.Select(p => new VeilingproductPublicListDto(
                 p.VeilingProductNr,
                 p.Naam,
                 p.ImagePath,
-                p.VoorraadBloemen,
+                p.AantalFusten,
                 p.VeilingNr,
-                p.Startprijs
+                p.Startprijs,
+                p.Kwekernr
             ))
         });
     }
@@ -50,18 +56,21 @@ public class ProjectieVeilingController
     {
         return query.Select(v => new Klant_VeilingDto
         {
-            VeilingNr = v.VeilingNr,
-            VeilingNaam = v.VeilingNaam,
-            Begintijd = v.Begintijd,
-            Eindtijd = v.Eindtijd,
+            VeilingNr           = v.VeilingNr,
+            VeilingNaam         = v.VeilingNaam,
+            Begintijd           = v.Begintijd,
+            GeupdateBeginTijd   = v.GeupdateBeginTijd == null ? null: v.GeupdateBeginTijd,
+            Eindtijd            = v.Eindtijd,
 
-            Status = (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
-                ? VeilingStatus.Sold
-                : (v.Eindtijd <= now 
-                    ? VeilingStatus.Inactive 
-                    : (v.Begintijd <= now 
-                        ? VeilingStatus.Active
-                        : VeilingStatus.Inactive)),
+            Status = string.Equals(v.Status, VeilingStatus.Cancelled, StringComparison.OrdinalIgnoreCase)
+                ? VeilingStatus.Cancelled
+                : (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
+                    ? VeilingStatus.SoldOut
+                    : (v.Eindtijd <= now 
+                        ? VeilingStatus.Closed 
+                        : (v.Begintijd <= now 
+                            ? VeilingStatus.Active
+                            : VeilingStatus.Inactive)),
             
             Producten = v.Veilingproducten.Select(p => new VeilingproductKwekerListDto(
                 p.VeilingProductNr,
@@ -70,11 +79,13 @@ public class ProjectieVeilingController
                 p.AantalFusten,
                 p.VoorraadBloemen,
                 p.Categorie == null ? null : p.Categorie.Naam,
+                p.CategorieNr,
                 p.ImagePath,
                 p.Plaats,
                 p.Startprijs,
                 p.Minimumprijs,
-                p.VeilingNr
+                p.VeilingNr,
+                p.Kwekernr
             ))
         });
     }
@@ -90,13 +101,15 @@ public class ProjectieVeilingController
             Begintijd       = v.Begintijd,
             Eindtijd        = v.Eindtijd,
 
-            Status = (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
-                ? VeilingStatus.Sold
-                : (v.Eindtijd <= now 
-                    ? VeilingStatus.Inactive
-                    : (v.Begintijd <= now 
-                        ? VeilingStatus.Active
-                        : VeilingStatus.Inactive)),
+            Status = string.Equals(v.Status, VeilingStatus.Cancelled, StringComparison.OrdinalIgnoreCase)
+                ? VeilingStatus.Cancelled
+                : (v.Veilingproducten.Any() && v.Veilingproducten.All(p => p.VoorraadBloemen <= 0))
+                    ? VeilingStatus.SoldOut
+                    : (v.Eindtijd <= now 
+                        ? VeilingStatus.Closed
+                        : (v.Begintijd <= now 
+                            ? VeilingStatus.Active
+                            : VeilingStatus.Inactive)),
 
             Producten = v.Veilingproducten.Select(p => new VeilingproductVeilingmeesterListDto(
                 p.VeilingProductNr,

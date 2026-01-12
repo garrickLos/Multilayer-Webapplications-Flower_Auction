@@ -6,9 +6,6 @@
 // dotnet ef migrations add InitialCreate 
 // dotnet ef database update
 
-
-
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -18,7 +15,14 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ApiGetFilters;
+using mvc_api.statusPrinter;
+using mvc_api.Controllers;
 
+using mvc_api.Auth.GenereerAccessTokens;
+
+using mvc_api.Repo.Interfaces;
+using mvc_api.Repo;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,22 +63,13 @@ builder.Services.AddSwaggerGen(c =>
 
 // ORM / DbContext
 var connectionString = builder.Configuration.GetConnectionString("Default");
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
-if (builder.Environment.IsDevelopment())
-{
-    // Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("SQL_SERVER-CONNECTIONSTRING")));
-}
-
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 // Identity configuratie (alleen registratie, verdere auth volgt later)
 builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
@@ -113,11 +108,14 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost5174", policy =>
+    options.AddPolicy("ConfiguredCors", policy =>
     {
-        policy.WithOrigins("http://localhost:5174")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        if (corsOrigins is { Length: > 0 })
+        {
+            policy.WithOrigins(corsOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
     });
 });
 
@@ -145,7 +143,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 // // Nodig zodat UserManager/SignInManager goed werken
 // builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
-builder.Services.AddScoped<mvc_api.Auth.GenereerBearerToken.GenereerBearerToken>();
+builder.Services.AddScoped<IGenereerAccessTokens, GenereerBearerToken>();
+builder.Services.AddScoped<IBiedingRepo, BiedingRepository>();
+builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>();
+builder.Services.AddScoped<IPrijsHistorieRepository, PrijsHistorieRepository>();
+builder.Services.AddScoped<IVeilingControllerFilter, VeilingControllerFilter>();
+builder.Services.AddTransient<ProjectieVeilingController>();
+builder.Services.AddSingleton<NormalizeStatus>();
 
 var app = builder.Build();
 
@@ -167,11 +171,11 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db       = services.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
 
     try
     {
-        await DataSeeder.Seed(app.Services);
+        db.Database.Migrate();
+        await DataSeeder.Seed(services);
     }
     catch (Exception ex)
     {
@@ -182,22 +186,14 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowLocalhost5174");
+if (corsOrigins is { Length: > 0 })
+{
+    app.UseCors("ConfiguredCors");
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.Run();
 
-/*
-{
-  "email": "whater@gmail.com",
-  "password": "abcTest123!@#",
-  "confirmPassword": "abcTest123!@#",
-  "bedrijfsNaam": "naam",
-  "soort": "VeilingMeester",
-  "kvk": "12345678",
-  "straatAdres": "malie 3",
-  "postcode": "1232GT"
-}
-*/
+
+app.Run();

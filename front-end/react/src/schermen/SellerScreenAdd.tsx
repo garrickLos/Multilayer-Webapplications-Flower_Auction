@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
-import { UseDataApi as GetCategorie } from "../typeScript/ApiGet";
-import {TokenOphalen} from "./Header_footer.tsx";
+import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
+import type { CategorieListDto } from "../api/dtos";
 
 interface CategorieType {
     categorieNr: number;
@@ -9,7 +9,6 @@ interface CategorieType {
 }
 
 export default function SellerScreenAdd() {
-    const token = TokenOphalen.getToken();
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = "../../src/assets/pictures/productBloemen/";
     const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
@@ -18,28 +17,27 @@ export default function SellerScreenAdd() {
 
     const Data = {
         status: true,
-        Kwekernr: 4,
-        ImagePath: ""
+        Kwekernr: sessionStorage.getItem("gebruikerNummer"),
+        ImagePath: Default_ImagePlaceholder,
+        VoorraadBloemen: 10
     };
 
     const [product, setProduct] = useState({
         Naam: "",
         AantalFusten: "",
-        VoorraadBloemen: "",
         CategorieNr: "",
         Plaats: "",
         Minimumprijs: "",
-        beginDatum: "",
+        BeginDatum: "",
         GeplaatstDatum: ""
     });
 
     const [errors, setErrors] = useState({
         Naam: "",
         AantalFusten: "",
-        VoorraadBloemen: "",
         CategorieNr: "",
         Plaats: "",
-        beginDatum: "",
+        BeginDatum: "",
         Minimumprijs: ""
     });
 
@@ -50,11 +48,10 @@ export default function SellerScreenAdd() {
 
         switch(id) {
             case "Naam":
-                if (!value || (value as string).trim() === "") error = "Productnaam mag niet leeg zijn";
+                if (!value || (value as string).trim() === "") error = "Naam mag niet leeg zijn";
                 break;
             case "AantalFusten":
-            case "VoorraadBloemen":
-                if (!value || Number(value) < 1) error = "Getal moet groter dan 0 zijn";
+                if (!value || Number(value) < 1) error = "Aantal fusten moeten groter dan 0 zijn";
                 break;
             case "CategorieNr":
                 if (!value || Number(value) < 1) error = "Selecteer een categorie";
@@ -62,11 +59,11 @@ export default function SellerScreenAdd() {
             case "Plaats":
                 if (!value) error = "Selecteer een plaats";
                 break;
-            case "beginDatum":
+            case "BeginDatum":
                 if (!value) error = "Datum mag niet leeg zijn";
                 break;
                 case "Minimumprijs":
-                    if(!value || Number(value) < 0.01) error = "Getal moet minimaal 0,01 zijn";
+                    if(!value || Number(value) < 0.01) error = "Minimumprijs moet minimaal 0,01 zijn";
         }
 
         setErrors(prev => ({ ...prev, [id]: error }));
@@ -100,7 +97,12 @@ export default function SellerScreenAdd() {
     const huidigeTijd = new Date().toISOString();
     
     const GegevensVersturen = async () => {
-        const allValid = Object.keys(errors).every(key => validateField(key, (product as any)[key]));
+        const token = sessionStorage.getItem("token");
+        if (!token) {
+            alert("Je bent niet ingelogd.");
+            return;
+        }
+        const allValid = Object.keys(errors).every(key => validateField(key, (product as never)[key]));
         if (!allValid) {
             alert("Controleer de velden in rood!");
             return;
@@ -114,9 +116,7 @@ export default function SellerScreenAdd() {
         };
 
         try {
-            console.log(AlleGegevens.GeplaatstDatum);
-            console.log(AlleGegevens);
-            console.log(token)
+            console.log(product.CategorieNr);
             const response = await fetch("/api/Veilingproduct", {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
@@ -146,7 +146,7 @@ export default function SellerScreenAdd() {
                             <div className="fotoContainer">
                                 <img src={imagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
                             </div>
-                            <div className="ordenen">
+                            <div className="ordenen-bestand">
                                 <label htmlFor="BestandPad" className="bestand"></label>
                                 <input type="file" id="BestandPad" accept=".webp" onChange={handleFileChange} />
                             </div>
@@ -174,12 +174,6 @@ export default function SellerScreenAdd() {
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="VoorraadBloemen" className="amount">Voorraad:</label>
-                                    <input type="number" id="VoorraadBloemen" value={product.VoorraadBloemen} onChange={verwerkInput} min={1} placeholder="1-10000" />
-                                    {errors.VoorraadBloemen && <span className="error">{errors.VoorraadBloemen}</span>}
-                                </div>
-
-                                <div className="ordenen">
                                     <label htmlFor="AantalFusten" className="fusten">Aantal fusten:</label>
                                     <input type="number" id="AantalFusten" min="1" value={product.AantalFusten} onChange={verwerkInput} placeholder="1-10000" />
                                     {errors.AantalFusten && <span className="error">{errors.AantalFusten}</span>}
@@ -197,23 +191,20 @@ export default function SellerScreenAdd() {
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs:</label>
+                                    <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs in centen:</label>
                                     <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={verwerkInput} placeholder="0,01-10000" min={0.01} />
                                     {errors.Minimumprijs && <span className="error">{errors.Minimumprijs}</span>}
                                 </div>
-                            </div>
-                        </section>
 
-                        <section className="schermDeel3">
-                            <div className="scherm3Container">
                                 <div className="ordenen">
-                                    <label htmlFor="beginDatum" className="sDate">Datum:</label>
-                                    <input type="date" id="beginDatum" value={product.beginDatum} onChange={verwerkInput} />
-                                    {errors.beginDatum && <span className="error">{errors.beginDatum}</span>}
+                                    <label htmlFor="BeginDatum" className="sDate">Datum voor veiling:</label>
+                                    <input type="date" id="BeginDatum" value={product.BeginDatum} onChange={verwerkInput} />
+                                    {errors.BeginDatum && <span className="error">{errors.BeginDatum}</span>}
                                 </div>
                                 <button className="placeProduct" onClick={GegevensVersturen}>
                                     Product Plaatsen
                                 </button>
+
                             </div>
                         </section>
                     </div>

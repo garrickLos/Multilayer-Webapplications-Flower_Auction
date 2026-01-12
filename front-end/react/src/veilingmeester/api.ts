@@ -1,9 +1,11 @@
+import { getBearerToken } from "../Componenten/index";
+
 const API_BASE_URL = "/api";
 const DEFAULT_PAGE_SIZE = 200;
 
 export type ApiError = { status?: number; message: string };
-export type UiStatus = "active" | "inactive" | "sold" | "deleted";
-export type UserRole = "Koper" | "Kweker" | "Veilingmeester" | "Admin" | "Onbekend";
+export type UiStatus = "active" | "inactive" | "sold" | "deleted" | "finished";
+export type UserRole = "Koper" | "Bedrijf" | "Veilingmeester" | "Admin" | "Onbekend";
 export type AuctionStatus = "NogNietGestart" | "Actief" | "Afgesloten" | "Verkocht" | "Geannuleerd" | string;
 export type ProductStatus = "Active" | "Inactive" | "Deleted" | "Archived";
 
@@ -44,6 +46,7 @@ export type Product = {
     readonly location?: string;
     readonly active?: boolean;
     readonly bids?: readonly BidSummary[];
+    readonly placedDate?: string;
 };
 export type BidSummary = { id: number; amount: number; quantity: number; userId: number };
 export type Auction = {
@@ -61,7 +64,7 @@ export type Auction = {
 };
 
 export type VeilingCreateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
-export type VeilingUpdateDto = { veilingNaam: string; begintijd: string; eindtijd: string };
+export type VeilingUpdateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
 export type BiedingBaseAmountDto = { bedragPerFust: number; aantalStuks: number; gebruikerNr: number };
 export type BiedingCreateDto = BiedingBaseAmountDto & { biedingNr?: number; veilingNr?: number; veilingproductNr?: number };
 export type BiedingUpdateDto = BiedingBaseAmountDto;
@@ -69,33 +72,40 @@ export type BiedingUpdateDto = BiedingBaseAmountDto;
 const jsonHeaders = { Accept: "application/json", "Content-Type": "application/json" };
 
 function toUiStatus(value?: AuctionStatus | string | null): UiStatus {
-    const normalised = (value ?? "").toLowerCase();
+    const normalised = typeof value === "string" ? value.toLowerCase() : "";
     if (normalised === "actief" || normalised === "active") return "active";
-    if (normalised === "verkocht" || normalised === "afgesloten" || normalised === "archived") return "sold";
-    if (normalised === "geannuleerd" || normalised === "deleted") return "deleted";
+    if (normalised === "verkocht" || normalised === "uitverkocht" || normalised === "sold" || normalised === "archived") return "sold";
+    if (normalised === "afgesloten" || normalised === "closed" || normalised === "finished") return "finished";
+    if (normalised === "geannuleerd" || normalised === "cancelled" || normalised === "deleted") return "deleted";
     return "inactive";
 }
 
 function toRole(value?: string | null): UserRole {
-    const normalised = (value ?? "").toLowerCase();
+    const normalised = typeof value === "string" ? value.toLowerCase() : "";
     if (normalised === "admin") return "Admin";
     if (normalised === "veilingmeester") return "Veilingmeester";
-    if (normalised === "kweker" || normalised === "grower") return "Kweker";
+    if (normalised === "bedrijf" || normalised === "kweker" || normalised === "grower") return "Bedrijf";
     if (normalised === "koper" || normalised === "buyer") return "Koper";
     return "Onbekend";
 }
 
 async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
     const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    const token = getBearerToken();
     const response = await fetch(url, {
         ...init,
         credentials: "omit",
-        headers: { ...jsonHeaders, ...(init.headers ?? {}) },
+        headers: {
+            ...jsonHeaders,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(init.headers ?? {}),
+        },
     });
 
     if (!response.ok) {
         const text = (await response.text()).trim();
-        throw { status: response.status, message: text || response.statusText } satisfies ApiError;
+        const defaultMessage = response.status === 401 || response.status === 403 ? "Geen toegang" : response.statusText;
+        throw { status: response.status, message: text || defaultMessage } satisfies ApiError;
     }
 
     if (response.status === 204) return undefined as T;
@@ -146,47 +156,57 @@ const mapBid = (dto: { biedingNr: number; veilingNr: number; veilingProductNr: n
     status: "active",
 });
 
-const mapProduct = (
-    dto: {
-        veilingProductNr: number;
-        naam?: string;
-        status?: ProductStatus;
-        veilingNr?: number | null;
-        kwekernr?: number;
-        aantalFusten?: number;
-        voorraadBloemen?: number;
-        plaats?: string;
-        minimumprijs?: number;
-        startprijs?: number | null;
-        categorieNaam?: string | null;
-        verkoperNaam?: string;
-        imagePath?: string;
-        beginDatum?: string | null;
-    },
-): Product => ({
-    id: dto.veilingProductNr,
-    name: dto.naam ?? "Onbekend product",
-    status: dto.status ?? "Inactive",
-    category: dto.categorieNaam ?? null,
-    startPrice: dto.startprijs ?? undefined,
-    minimumPrice: dto.minimumprijs ?? 0,
-    stock: dto.voorraadBloemen,
-    fust: dto.aantalFusten,
-    veilingNr: dto.veilingNr ?? undefined,
-    linkedAuctionId: dto.veilingNr ?? undefined,
-    growerId: dto.kwekernr,
-    sellerName: dto.verkoperNaam,
-    imagePath: dto.imagePath,
-    location: dto.plaats,
-    active: (dto.status ?? "Inactive") === "Active",
-});
+type ProductDto = {
+    veilingProductNr: number;
+    naam?: string;
+    status?: ProductStatus;
+    veilingNr?: number | null;
+    kwekernr?: number;
+    aantalFusten?: number;
+    voorraadBloemen?: number;
+    plaats?: string;
+    minimumprijs?: number | string;
+    startprijs?: number | string | null;
+    categorieNaam?: string | null;
+    verkoperNaam?: string;
+    imagePath?: string;
+    beginDatum?: string | null;
+    geplaatstDatum?: string | null;
+};
+
+const mapProduct = (dto: ProductDto): Product => {
+    const parsedStart =
+        dto.startprijs === null || dto.startprijs === undefined ? undefined : Number.isFinite(Number(dto.startprijs)) ? Number(dto.startprijs) : undefined;
+    const parsedMinimum = Number.isFinite(Number(dto.minimumprijs)) ? Number(dto.minimumprijs) : 0;
+
+    return {
+        id: dto.veilingProductNr,
+        name: dto.naam ?? "Onbekend product",
+        status: dto.status ?? "Active",
+        category: dto.categorieNaam ?? null,
+        startPrice: parsedStart,
+        minimumPrice: parsedMinimum,
+        stock: dto.voorraadBloemen,
+        fust: dto.aantalFusten,
+        veilingNr: dto.veilingNr ?? undefined,
+        linkedAuctionId: dto.veilingNr ?? undefined,
+        growerId: dto.kwekernr,
+        sellerName: dto.verkoperNaam,
+        imagePath: dto.imagePath,
+        location: dto.plaats,
+        active: (dto.status ?? "Active") === "Active",
+        placedDate: dto.geplaatstDatum ?? undefined,
+    };
+};
+
+type BidDto = Parameters<typeof mapBid>[0];
 
 const mapUser = (dto: { gebruikerNr: number; bedrijfsNaam?: string; email: string; soort?: string; kvk?: string | null; status?: string | null }): User => ({
     id: dto.gebruikerNr,
     name: dto.bedrijfsNaam || dto.email,
     email: dto.email,
     role: toRole(dto.soort),
-    status: toUiStatus(dto.status),
+    status: toUiStatus(dto.status ?? "active"),
     kvk: dto.kvk ?? undefined,
 });
 
@@ -196,8 +216,8 @@ const mapAuction = (dto: {
     status?: string | null;
     begintijd: string;
     eindtijd: string;
-    producten?: readonly ReturnType<typeof mapProduct>[] | null;
-    biedingen?: readonly ReturnType<typeof mapBid>[] | null;
+    producten?: readonly ProductDto[] | null;
+    biedingen?: readonly BidDto[] | null;
 }): Auction => {
     const products = dto.producten?.map(mapProduct);
     const bids = dto.biedingen?.map(mapBid);
@@ -220,6 +240,8 @@ const mapAuction = (dto: {
         bids,
     } satisfies Auction;
 };
+
+type AuctionDto = Parameters<typeof mapAuction>[0];
 
 export async function fetchUsers(params: { role?: string; status?: string; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<User>> {
     const query = buildQuery({ role: params.role, status: params.status, pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE });
@@ -264,13 +286,26 @@ export async function fetchCategories(params: { q?: string; page?: number; pageS
     return fetchList("/Categorie", params, (dto: { categorieNr: number; naam?: string }) => ({ id: dto.categorieNr, name: dto.naam ?? "" }), signal);
 }
 
+export async function updateProductPlanning(
+    id: number,
+    payload: { startprijs?: number | null; veilingNr?: number | null },
+    signal?: AbortSignal,
+): Promise<Product> {
+    const data = await fetchJson<ProductDto>(`/Veilingproduct/veilingmeester/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        signal,
+    });
+    return mapProduct(data);
+}
+
 export async function createAuction(payload: VeilingCreateDto, signal?: AbortSignal): Promise<Auction> {
-    const data = await fetchJson<ReturnType<typeof mapAuction>>("/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
+    const data = await fetchJson<AuctionDto>("/Veiling", { method: "POST", body: JSON.stringify(payload), signal });
     return mapAuction(data);
 }
 
 export async function updateAuction(id: number, payload: VeilingUpdateDto, signal?: AbortSignal): Promise<Auction> {
-    const data = await fetchJson<ReturnType<typeof mapAuction>>(`/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
+    const data = await fetchJson<AuctionDto>(`/Veiling/${id}`, { method: "PUT", body: JSON.stringify(payload), signal });
     return mapAuction(data);
 }
 

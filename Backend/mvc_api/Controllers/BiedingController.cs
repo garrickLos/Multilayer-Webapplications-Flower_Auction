@@ -1,22 +1,27 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
+using mvc_api.Repo.Interfaces;
+using mvc_api.statusPrinter;
+using SQLitePCL;
 
 namespace mvc_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize (Roles ="Koper, Bedrijf, VeilingMeester")]
 public class BiedingController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IBiedingRepo _repository;
 
-    public BiedingController(AppDbContext db) => _db = db;
-
-    // afgestemd op VeilingController
-    private const string StatusActive = "active";
+    public BiedingController (IBiedingRepo repository)
+    {
+        _repository = repository;
+    }
 
     // GET: api/Bieding/Klant?gebruikerNr=&veilingProductNr=
     [HttpGet("Klant")]
@@ -24,178 +29,108 @@ public class BiedingController : ControllerBase
     public async Task<ActionResult<IEnumerable<klantBiedingGet_dto>>> GetKlantBiedingen(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingProductNr,
+        [FromQuery] bool orderDescending = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        var query = _db.Biedingen.AsNoTracking().AsQueryable();
+        try
+        {
+            var (items, total) = await _repository.GetKlantBiedingenAsync(gebruikerNr, veilingProductNr, orderDescending, page, pageSize, ct);
+        
+            SetResponseHeader(total, page, pageSize);
 
-        if (gebruikerNr.HasValue)
-            query = query.Where(b => b.GebruikerNr == gebruikerNr.Value);
-
-        if (veilingProductNr.HasValue)
-            query = query.Where(b => b.VeilingproductNr == veilingProductNr.Value);
-
-        var items = await query
-            .Select(b => new klantBiedingGet_dto(
-                b.VeilingproductNr,
-                b.BedragPerFust,
-                b.AantalStuks,
-                b.GebruikerNr
-            ))
-            .ToListAsync(ct);
-
-        return Ok(items);
+            return items is null
+                ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404))
+                : Ok(items);   
+        } catch (KeyNotFoundException ex)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", ex.Message, 404));
+        } catch (Exception)
+        {
+            return StatusCode(500, CreateProblemDetails("Server Fout", "Er is een onverwachte fout opgetreden.", 500));
+        }
     }
 
     // GET: api/Bieding?gebruikerNr=&veilingNr=&page=&pageSize=
     [HttpGet]
     [Authorize (Roles ="VeilingMeester")]
-    public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetAll(
+    public async Task<ActionResult<IEnumerable<VeilingMeester_BiedingDto>>> GetVeilingMeester_Biedingen(
         [FromQuery] int? gebruikerNr,
         [FromQuery] int? veilingNr,
+        [FromQuery] bool orderDescending = true,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
 
-        var query = _db.Biedingen.AsNoTracking()
-            .Include(b => b.Veilingproduct)
-            .AsQueryable();
+        try {
+            var (items, total) = await _repository.GetVeilingMeesterBiedingenAsync(gebruikerNr, veilingNr, orderDescending, page, pageSize, ct);
 
-        if (gebruikerNr is int gNr)
-            query = query.Where(b => b.GebruikerNr == gNr);
+            SetResponseHeader(total, page, pageSize);
 
-        if (veilingNr is int vNr)
-            query = query.Where(b => b.Veilingproduct!.VeilingNr == vNr);
-        
-        var total = await query.CountAsync(ct);
+            if (items is null)
+            {
+                return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding gevonden.", 404));
+            }
 
-        var items = await query
-            .OrderByDescending(b => b.BiedNr)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ProjectToBieding_VeilingMeester()
-            .ToListAsync(ct);
+            return Ok(items);
 
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-
-        return Ok(items);
+        } catch (KeyNotFoundException ex)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", ex.Message, 404));
+        } catch (Exception ex)
+        {
+            return StatusCode(500, CreateProblemDetails("Server Fout", "Er is een onverwachte fout opgetreden." + " Error: " + ex.Message, 500));
+        }
     }
 
     // GET: api/Bieding/1001
     [HttpGet("{id:int}")]
     [Authorize (Roles ="VeilingMeester")]
-    public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(int id, CancellationToken ct = default)
+    public async Task<ActionResult<VeilingMeester_BiedingDto>> GetById(
+        int id, 
+        CancellationToken ct = default)
     {
-        var dto = await _db.Biedingen.AsNoTracking()
-            .Where(x => x.BiedNr == id)
-            .ProjectToBieding_VeilingMeester()
-            .FirstOrDefaultAsync(ct);
+        var items = await _repository.GetById(id, ct);
 
-        return dto is null
-            ? NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404))
-            : Ok(dto);
+        if (items is null)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
+        }
+
+        return Ok(items);
     }
 
     // POST: api/Bieding
     [HttpPost]
-    [Authorize (Roles ="VeilingMeester")]
+    [Authorize (Roles ="Koper")]
     public async Task<ActionResult<VeilingMeester_BiedingDto>> Create(
         [FromBody] BiedingCreateDto dto,
         CancellationToken ct = default)
     {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
+        if (!ModelState.IsValid) {
+            return BadRequest(ModelState);
+        }
 
-        // Gebruiker moet bestaan
-        var gebruikerBestaat = await _db.Gebruikers
-            .AsNoTracking()
-            .AnyAsync(g => g.GebruikerNr == dto.GebruikerNr, ct);
-
-        if (!gebruikerBestaat)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Gebruiker bestaat niet.", 400));
-
-        var veilingproduct = await _db.Veilingproducten
-            .Include(vp => vp.Veiling)
-            .FirstOrDefaultAsync(vp => vp.VeilingProductNr == dto.VeilingproductNr, ct);
-        
-        if (veilingproduct is null)
-            return BadRequest(CreateProblemDetails("Ongeldige referentie", "Veilingproduct bestaat niet.", 400));
-        
-        // Alleen bieden op actieve veilingen
-        if (!string.Equals(veilingproduct.Veiling?.Status, StatusActive, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(CreateProblemDetails(
-                "Ongeldige status",
-                "Er kan alleen geboden worden op een actieve veiling.",
-                400));
-
-        var entity = new Bieding
-        {
-            BiedNr           = dto.BiedingNr,
-            BedragPerFust    = dto.BedragPerFust,
-            AantalStuks      = dto.AantalStuks,
-            GebruikerNr      = dto.GebruikerNr,
-            VeilingproductNr = dto.VeilingproductNr
-        };
-
-        _db.Biedingen.Add(entity);
-
-        // EF wrapt SaveChanges zelf in een transaction
         try
         {
-            // eventueel: veiling.Status = StatusSold; als je bij een eerste bod meteen 'sold' wilt
-            await _db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException)
+            var itemResult = await _repository.CreateAsync(dto, ct);
+            return CreatedAtAction("GetById", new { id = itemResult.BiedingNr }, itemResult);
+
+        } catch (KeyNotFoundException ex)
         {
-            return StatusCode(500, CreateProblemDetails(
-                "Opslagfout",
-                "Er is een fout opgetreden bij het opslaan van de bieding.",
-                500));
-        }
-
-        // wat je uiteindelijk in swagger wilt zien dat terugkomt in het beeld van wat er veranderd is en de nieuwe waardes
-        var result = new VeilingMeester_BiedingDto        
-        { 
-            BiedingNr        = entity.BiedNr,
-            BedragPerFust    = entity.BedragPerFust,
-            AantalStuks      = entity.AantalStuks,
-            GebruikerNr      = entity.GebruikerNr,
-            VeilingNr        = veilingproduct.Veiling?.VeilingNr,
-            VeilingProductNr = entity.VeilingproductNr,
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.BiedNr }, result);
-    }
-
-    // PUT: api/Bieding/1001
-    [HttpPut("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
-    public async Task<ActionResult<VeilingMeester_BiedingDto>> Update(
-        int id,
-        [FromBody] BiedingUpdateDto dto,
-        CancellationToken ct = default)
-    {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
-
-        var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
-
-        entity.BedragPerFust = dto.BedragPerFust;
-        entity.AantalStuks   = dto.AantalStuks;
-
-        await _db.SaveChangesAsync(ct);
-
-        return Ok(new BiedingUpdateDto
+            return BadRequest(CreateProblemDetails("Ongeldige referentie", ex.Message, 400));
+        } catch (InvalidOperationException ex)
+        {    
+            return BadRequest(CreateProblemDetails("Ongeldige status", ex.Message, 400));
+        } catch (DbUpdateException ex)
         {
-            BedragPerFust = entity.BedragPerFust,
-            AantalStuks = entity.AantalStuks,
-        });
+            return StatusCode(500, CreateProblemDetails("Database fout", ex.Message, 500));
+        } catch (Exception ex)
+        {
+            return StatusCode(500, CreateProblemDetails("ServerFout", "Er is een onverwachte fout opgetreden." + " Error: " + ex.Message, 500));
+        }
     }
 
     // DELETE: api/Bieding/1001
@@ -203,13 +138,19 @@ public class BiedingController : ControllerBase
     [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        var entity = await _db.Biedingen.FindAsync(new object[] { id }, ct);
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}.", 404));
+        try
+        {
+            await _repository.DeleteAsync(id, ct);
 
-        _db.Biedingen.Remove(entity);
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
+            return NoContent();
+
+        } catch (KeyNotFoundException ex)
+        {
+            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}" + " errorMessage: " + ex.Message, 404));
+        } catch (Exception ex)
+        {
+            return StatusCode(500, CreateProblemDetails("Verwijderfout", "Er is een fout opgetreden bij het verwijderen." + " ErrorMessage: " + ex.Message, 500));
+        }
     }
 
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
@@ -220,25 +161,11 @@ public class BiedingController : ControllerBase
             Status   = statusCode,
             Instance = HttpContext?.Request?.Path
         };
-}
 
-// dit zijn de Dto projecties die worden opgehaald voor de data die nodig is. 
-// de projectToMeesterDto is voor het ophalen van meerdere gegevens voor de veilingsMeester
-public static class BiedingExtensions
-{
-    // Projectie voor Veilingmeesters
-    public static IQueryable<VeilingMeester_BiedingDto> ProjectToBieding_VeilingMeester(
-        this IQueryable<Bieding> query)
+    private void SetResponseHeader(int total, int page, int pageSize)
     {
-        return query.Select(b => new VeilingMeester_BiedingDto
-        {   // Eigen properties van VeilingMeester_BiedingDto
-            BiedingNr = b.BiedNr,
-            VeilingNr = b.Veilingproduct!.VeilingNr,
-            VeilingProductNr = b.VeilingproductNr,
-
-            // Properties geërfd van BaseBieding_Dto
-            AantalStuks = b.AantalStuks,
-            GebruikerNr = b.GebruikerNr,
-        });
+        Response.Headers["X-Total-Count"] = total.ToString();
+        Response.Headers["X-Page"]        = page.ToString();
+        Response.Headers["X-Page-Size"]   = pageSize.ToString();
     }
 }

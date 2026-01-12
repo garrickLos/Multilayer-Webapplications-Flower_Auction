@@ -1,9 +1,14 @@
 import "../css/SellerScreenInfo.css";
 import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
+import { NavLink } from 'react-router-dom';
+
 
 export default function SellerScreenInfo() {
-    const { data: ProductData } = GetProduct('/api/Veilingproduct/kweker');
+    const nummer = sessionStorage.getItem("gebruikerNummer");
+    console.log("gebruikernummer: " + nummer);
+    const { data: ProductData } = GetProduct(`/api/Veilingproduct/kweker?Nummer=${nummer}`);
     const productLijst = (ProductData as ProductType[]) || [];
+    console.log(productLijst);
 
     interface ProductType {
         veilingProductNr: number;
@@ -11,13 +16,16 @@ export default function SellerScreenInfo() {
         geplaatstDatum: string;
         fust: number;
         voorraad: number | string;
-        categorie: string | null;
+        categorie: string;
         imagePath: string;
         plaats: string;
-    }
-    console.log(productLijst.map(c=>c.plaats));
+    } 
     return (
         <main className="SellerScreenInfo">
+            <div className="productToevoegenKnop_container">    
+                <NavLink to='/veilingPlaatsen'
+                className="productToevoegenKnop">Product toevoegen</NavLink>
+            </div>
             <section className="productScroller">
                 {productLijst.map((product) => (
                     <div key={product.veilingProductNr} className="rij">
@@ -29,16 +37,12 @@ export default function SellerScreenInfo() {
                             />
                         </div>
                         <div className="kolomRechts">
-                            <div className="linkerHelft">
                                 <div className="productNaam">Product naam: {product.naam}</div>
                                 <div className="productCategorie">Product categorie: {product.categorie}</div>
                                 <div className="datum">Geplaatst op: {product.geplaatstDatum.replace("T", " om ")} uur</div>
-                            </div>
-                            <div className="rechterHelft">
                                 <div className="hoeveelheid">Hoeveelheid bloemen: {product.voorraad}</div>
                                 <div className="aantalFusten">Aantal fusten: {product.fust}</div>
                                 <div className="plaats">Plaats: {product.plaats}</div>
-                            </div>
                         </div>
                     </div>
                 ))}

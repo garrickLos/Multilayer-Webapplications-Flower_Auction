@@ -43,7 +43,7 @@ public record VeilingproductUpdateDto
     public DateTime? GeplaatstDatum { get; init; }
 
     // Int is nu nullable (int?). Range werkt nog steeds als er wel een getal wordt ingevuld.
-    [Range(1, int.MaxValue)]
+    [Range(0, int.MaxValue)]
     public int? AantalFusten { get; init; }
 
     [Range(0, int.MaxValue)]
@@ -66,7 +66,7 @@ public record VeilingproductVeilingmeesterUpdateDto
 {
     [Range(1, 999_999_999)]
     public int? Startprijs { get; init; }
-
+    
     [Range(1, int.MaxValue)]
     public int? VeilingNr { get; init; }
 }
@@ -76,9 +76,10 @@ public record VeilingproductPublicListDto(
     int VeilingProductNr,
     string Naam,
     string ImagePath,
-    int VoorraadBloemen,
+    int AantalFusten,
     int? VeilingNr,
-    int? Startprijs
+    int? Startprijs,
+    int? GebruikerNr
 );
 
 // kweker lijst
@@ -89,11 +90,13 @@ public record VeilingproductKwekerListDto(
     int? AantalFusten,
     int? VoorraadBloemen,
     string? CategorieNaam,
+    int? CategorieNr,
     string? ImagePath,
     string? Plaats,
     int? Startprijs,
     int? Minimumprijs,
-    int? VeilingNr
+    int? VeilingNr,
+    int? GebruikerNr
 );
 
 // veilingmeester lijst
@@ -138,16 +141,17 @@ public sealed record klantVeilingproductGet_dto
 );
 
 public static class VeilingproductDtoSelectors
-{
-    public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>
-        new(
-            v.VeilingProductNr,
-            v.Naam,
-            v.ImagePath,
-            v.VoorraadBloemen,
-            v.VeilingNr,
-            v.Startprijs
-        );
+    {
+        public static readonly Expression<Func<Veilingproduct, VeilingproductPublicListDto>> PublicList = v =>
+            new(
+                v.VeilingProductNr,
+                v.Naam,
+                v.ImagePath,
+                v.VoorraadBloemen,
+                v.VeilingNr,
+                v.Startprijs,
+                v.Kwekernr
+            );
 
     public static readonly Expression<Func<Veilingproduct, VeilingproductKwekerListDto>> KwekerList = v =>
         new(
@@ -157,11 +161,13 @@ public static class VeilingproductDtoSelectors
             v.AantalFusten,
             v.VoorraadBloemen,
             v.Categorie == null ? null : v.Categorie.Naam,
+            v.CategorieNr,
             v.ImagePath,
             v.Plaats,
             v.Startprijs,
             v.Minimumprijs,
-            v.VeilingNr
+            v.VeilingNr,
+            v.Kwekernr
         );
 
     public static readonly Expression<Func<Veilingproduct, VeilingproductVeilingmeesterListDto>> VeilingmeesterList = v =>

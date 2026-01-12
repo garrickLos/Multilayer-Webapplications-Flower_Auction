@@ -25,7 +25,7 @@ export function useConditionalTimeout(condition: boolean,delayMs: number, action
     useEffect(() => {
         // Controleer of de conditie waar is voor het herladen
         if (condition) {
-            // 2. Start de timer
+            // Start de timer
             const timerId = setTimeout(() => {
                 savedAction.current();
             }, delayMs);

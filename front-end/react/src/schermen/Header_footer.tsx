@@ -5,41 +5,54 @@ import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 
 export default function Header() {
+    interface JwtClaims {
+    "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"?: string;
+}
 
     const [role, setRole] = useState<string | null>(null);
+    const [gebruikerNummer, setGebruikerNummer] = useState<string | null>(null);
     
     useEffect(() => {
         const updateRoleFromToken = () => {
             const token = sessionStorage.getItem("token");
             if (!token) {
                 setRole(null);
+                setGebruikerNummer(null);
                 return;
             }
 
             try {
-                const decoded: any = jwtDecode(token);
+                const decoded = jwtDecode<JwtClaims>(token);
                 const RolClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-
+                const gebruikerClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
                 setRole(decoded[RolClaim] || null);
-                console.log("token: " + decoded[RolClaim]);
+                
+                const nummer = decoded[gebruikerClaim] || null;
+                setGebruikerNummer(nummer);
 
+                if(nummer != null){
+                    sessionStorage.setItem("gebruikerNummer", nummer);
+                }
+
+            
                 TokenOphalen.setToken(token);
             } catch {
                 setRole(null);
+                setGebruikerNummer(null);
             }
         };
         updateRoleFromToken();
 
-        // Eventlistener die krijgt een seintje na het inloggen dat er is ingelogd en kijkt dan opnieuw welke rol actief is
         const handleLogin = () => updateRoleFromToken();
         window.addEventListener('login', handleLogin);
 
-        // Maakt hem weer leeg voor de volgende inlog
         return () => {
             window.removeEventListener('login', handleLogin);
         };
     }, []);
 
+    const isLoggedIn = !!role;
 
     return (
         <header>
@@ -60,7 +73,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
                                      alt="houten hamer"
                                      className="veilingPlaatsenLogo" />
-                                <NavLink to='/veilingPlaatsen'>Veiling plaatsen</NavLink>
+                                <NavLink to='/productPlaatsen'>Product plaatsen</NavLink>
                             </div>
                         )}
 
@@ -69,7 +82,7 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/mijnVeilingenBekijken.webp"
                                      alt="foto van een blad"
                                      className="mijnVeilingenBekijkenLogo" />
-                                <NavLink to='/veilingBekijken'>Mijn veilingen bekijken</NavLink>
+                                <NavLink to='/productBekijken'>Mijn producten bekijken</NavLink>
                             </div>
                         )}
 
@@ -78,20 +91,48 @@ export default function Header() {
                                 <img src="/src/assets/pictures/webp/klantGegevens.webp"
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
-                                <NavLink to='/klantGegevens'>Klantgegevens</NavLink>
+                                <NavLink to='/klantGegevens'>Mijn biedingen</NavLink>
                             </div>
                         )}
-                        <div className="uitloggen">
-                            <img src="/src/assets/pictures/webp/klantGegevens.webp"
-                                 alt="foto van een persoon"
-                                 className="klantGegevensLogo" />
-                            <NavLink to="/home" onClick={() => {
-                                sessionStorage.removeItem("token");
-                                setRole(null); // direct UI bijwerken
-                            }}>
-                                Uitloggen
-                            </NavLink>
-                        </div>
+
+                        {role === "VeilingMeester" && (
+                            <div className="veilingPLaatsen">
+                                <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
+                                     alt="houten hamer"
+                                     className="veilingPlaatsenLogo" />
+                                <NavLink to='/veilingmeester'>Veilingmeester</NavLink>
+                            </div>
+                        )}
+
+                        {!isLoggedIn && (
+                            <div className="uitloggen">
+                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                     alt="foto van een persoon"
+                                     className="klantGegevensLogo" />
+                                <NavLink to="/inloggen">Inloggen</NavLink>
+                            </div>
+                        )}
+                        {!isLoggedIn && (
+                            <div className="uitloggen">
+                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                     alt="foto van een persoon"
+                                     className="klantGegevensLogo" />
+                                <NavLink to="/registreren">Registreren</NavLink>
+                            </div>
+                        )}
+
+                        {isLoggedIn && (
+                            <div className="uitloggen">
+                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                     alt="foto van een persoon"
+                                     className="klantGegevensLogo" />
+                                <NavLink to="/home" onClick={() => {
+                                    sessionStorage.removeItem("token");
+                                    setRole(null);
+                                }}>
+                                    Uitloggen
+                                </NavLink>                            </div>
+                        )}
                     </ul>
                 </nav>
             </div>

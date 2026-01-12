@@ -1,47 +1,57 @@
 import { NavLink } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import '../../css/HoofdSchermStyle.css';
-import '../../css/cookieStylesheet.css';
-import '../../css/loadIcon.css';
 
-import { scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { UseDataApi as GetVeilingen } from '../../typeScript/ApiGet.tsx';
-import { renderCards, type VeilingItem } from './RenderCards.tsx';
+import { CountPages, scrollSlider } from '../../typeScript/sliderCommand.tsx';
 import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
+import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
+
+// import components
+import { AuctionCard } from '../hoofdscherm/Componenten/index.tsx';
+import { ErrorScherm, Laadscherm } from '../Veilingscherm/VeilingSchermComponenten/index.tsx';
+
+// import index types
+import type {VeilingItem} from '../hoofdscherm/Componenten/index.tsx';
 
 export default function MainScreen() {
-    const RefreshTimeMS = 60000;
+    const RefreshTimeMS = 60000; // 6000 miliseconden zou 6 seconden moeten zijn
     const refreshTimer = ApiRefresh(RefreshTimeMS);
 
-    const { data, loading, error } = GetVeilingen<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}`);
+    let sendingData = null;
+    let jwtToken = null;
+    let refreshToken = null;
 
-    const safeVeilingen = data || [];
+    const [veilingen, setVeilingen] = useState<VeilingItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const actieveVeilingen = safeVeilingen.filter(v => v.status == 'active');
-    const inactieveVeilingen = safeVeilingen.filter(v => v.status == 'inactive');
-    const allDeals = safeVeilingen;
+    useEffect(() => {
+        let isMounted = true;
+        setLoading(true);
+        ApiRequest<VeilingItem[]>(`/api/Veiling/anonymous?refresh=${refreshTimer}&onlyActive=${true}`, "GET", sendingData, jwtToken, refreshToken)
+            .then(result => {
+                if (isMounted) {
+                    setVeilingen(result || []);
+                    setLoading(false);
+                }
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setVeilingen([]);
+                    setLoading(false);
+                }
+            });
 
-    const renderSliderContent = (data: any[]) => {
-        if (loading) {
-            return (
-                <div className="Hoofdscherm_state-container">
-                    <span className='loader'></span>
-                    <br></br>
-                    <p>Loading data</p>
-                </div>
-            );
-        }
-        if (error) {
-            return (
-                <div className="Hoofdscherm_state-container">
-                    <p className='mainScreen_errorCode'>Error:  kon gegevens niet vinden of database connectie bestaat niet<br></br>{String(error)}</p>
-                </div>
-            );
-        }
-        return renderCards(data);
-    };
+        return () => { isMounted = false; };
 
+    }, [refreshTimer]);
+
+    console.log(veilingen);
+
+    const actieveVeilingen = veilingen;
+
+    const laadbericht = "laden van items..."
+    
     return (
         <main className='MainScreen'>
 
@@ -55,39 +65,62 @@ export default function MainScreen() {
                     </div>
                 </div>
             </div>
+            
+            <section ref={(node) => { if (node) {CountPages("grid-container", 'AmountOfPages');}}}>
 
-            <section>
-                <h2>Actieve veilingen</h2>
+                <h2>Flora veilingen</h2>
+                <div className="AmountOfPages"></div>
                 <div className="slider-container">
                     <button className="arrow" onClick={() => scrollSlider('lastChance', -1)}>&#10094;</button>
                     <div className="slider" id="lastChance">
-                        {renderSliderContent(actieveVeilingen)}
+                        {loading ? Laadscherm(laadbericht) : renderSliderContent(actieveVeilingen)}
                     </div>
                     <button className="arrow" onClick={() => scrollSlider('lastChance', 1)}>&#10095;</button>
                 </div>
             </section>
-
-            <section>
-                <h2>Inactieve veilingen</h2>
-                <div className="slider-container">
-                    <button className="arrow" onClick={() => scrollSlider('upcoming', -1)}>&#10094;</button>
-                    <div className="slider" id="upcoming">
-                        {renderSliderContent(inactieveVeilingen)}
-                    </div>
-                    <button className="arrow" onClick={() => scrollSlider('upcoming', 1)}>&#10095;</button>
-                </div>
-            </section>
-
-            <section>
-                <h2>All deals</h2>
-                <div className="slider-container alle_deals ">
-                    <button className="arrow" onClick={() => scrollSlider('alleDeals', -1)}>&#10094;</button>
-                    <div className="slider" id="alleDeals">
-                        {renderSliderContent(allDeals)}
-                    </div>
-                    <button className="arrow" onClick={() => scrollSlider('alleDeals', 1)}>&#10095;</button>
-                </div>
-            </section>
         </main>
     )
+}
+
+function renderSliderContent(dataToRender: VeilingItem[]) {
+    // Maak een platte lijst van alle producten van alle veilingen
+    // We voegen de veilinginformatie toe aan elk product-object
+    const alleProducten = dataToRender.flatMap(veiling => 
+        veiling.producten.map(product => ({
+            ...product,
+            parentVeiling: veiling // Bewaar de referentie naar de veiling voor de beschrijving
+        }))
+    );
+
+    const itemsPerPage = 10;
+    const pages = [];
+        
+    // 2. Verdeel de platte lijst met PRODUCTEN in groepen van 10
+    for (let i = 0; i < alleProducten.length; i += itemsPerPage) {
+        pages.push(alleProducten.slice(i, i + itemsPerPage));
+    }
+
+    if (alleProducten.length === 0) {
+        return (
+            ErrorScherm()
+        );
+
+    } else {
+        return (
+            <>
+                {pages.map((pageItems, pageIndex) => (
+                    <div key={`page-${pageIndex}`} className="grid-container">
+                        {pageItems.map((item, index) => (
+                            <AuctionCard
+                                key={`${item.parentVeiling.veilingNr}-${item.veilingProductNr}-${index}`}
+                                /* Geef de data door via de juiste prop-namen */
+                                product={item} 
+                                parentVeiling={item.parentVeiling}
+                            />
+                        ))}
+                    </div>
+                ))}
+            </>
+        );
+    }
 }

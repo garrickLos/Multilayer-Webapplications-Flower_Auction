@@ -200,38 +200,6 @@ namespace mvc_api.Migrations
                     b.HasKey("CategorieNr");
 
                     b.ToTable("Categorie");
-
-                    b.HasData(
-                        new
-                        {
-                            CategorieNr = 1,
-                            Naam = "Tulpen"
-                        },
-                        new
-                        {
-                            CategorieNr = 2,
-                            Naam = "Rozen"
-                        },
-                        new
-                        {
-                            CategorieNr = 3,
-                            Naam = "Lelie"
-                        },
-                        new
-                        {
-                            CategorieNr = 4,
-                            Naam = "Zonnebloem"
-                        },
-                        new
-                        {
-                            CategorieNr = 5,
-                            Naam = "Chrysant"
-                        },
-                        new
-                        {
-                            CategorieNr = 6,
-                            Naam = "Pioenroos"
-                        });
                 });
 
             modelBuilder.Entity("mvc_api.Models.Gebruiker", b =>
@@ -341,6 +309,36 @@ namespace mvc_api.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("mvc_api.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("User_Id")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("mvc_api.Models.Veiling", b =>
                 {
                     b.Property<int>("VeilingNr")
@@ -353,6 +351,9 @@ namespace mvc_api.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("Eindtijd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("GeupdateBeginTijd")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
@@ -368,24 +369,6 @@ namespace mvc_api.Migrations
                     b.HasKey("VeilingNr");
 
                     b.ToTable("Veiling");
-
-                    b.HasData(
-                        new
-                        {
-                            VeilingNr = 201,
-                            Begintijd = new DateTime(2025, 10, 11, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Eindtijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "active",
-                            VeilingNaam = "veiling001"
-                        },
-                        new
-                        {
-                            VeilingNr = 202,
-                            Begintijd = new DateTime(2025, 10, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Eindtijd = new DateTime(2025, 10, 11, 2, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "active",
-                            VeilingNaam = "veiling001"
-                        });
                 });
 
             modelBuilder.Entity("mvc_api.Models.Veilingproduct", b =>
@@ -431,6 +414,7 @@ namespace mvc_api.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<int?>("Startprijs")
+                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -451,6 +435,8 @@ namespace mvc_api.Migrations
                     b.HasIndex("Kwekernr");
 
                     b.HasIndex("VeilingNr");
+
+                    b.HasIndex("CategorieNr", "BeginDatum");
 
                     b.HasIndex("CategorieNr", "Naam");
 
@@ -544,7 +530,7 @@ namespace mvc_api.Migrations
                     b.HasOne("mvc_api.Models.Veiling", "Veiling")
                         .WithMany("Veilingproducten")
                         .HasForeignKey("VeilingNr")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Categorie");
 

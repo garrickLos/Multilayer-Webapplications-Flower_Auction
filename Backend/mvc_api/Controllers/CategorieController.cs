@@ -9,7 +9,7 @@ namespace mvc_api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize (Roles ="VeilingMeester, Bedrijf")]
+[Authorize (Roles ="VeilingMeester, Bedrijf, Koper")]
 public class CategorieController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -17,41 +17,21 @@ public class CategorieController : ControllerBase
     
     // GET: api/Categorie?q=roos&page=1&pageSize=50
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<CList>>> GetAll(
-        [FromQuery] string? q,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50,
         CancellationToken ct = default)
     {
-        page     = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 200);
-
         var query = _db.Categorieen.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            query = query.Where(c => c.Naam.Contains(term));
-        }
-
-        var total = await query.CountAsync(ct);
-
         var items = await query
             .OrderBy(c => c.Naam)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .Select(c => new CList(c.CategorieNr, c.Naam))
             .ToListAsync(ct);
-
-        Response.Headers["X-Total-Count"] = total.ToString();
-        Response.Headers["X-Page"]        = page.ToString();
-        Response.Headers["X-Page-Size"]   = pageSize.ToString();
-
         return Ok(items);
     }
 
     // GET: api/Categorie/123
     [HttpGet("{id:int}")]
+    [Authorize]
     public async Task<ActionResult<CDetail>> GetById(int id, CancellationToken ct = default)
     {
         var dto = await _db.Categorieen.AsNoTracking()
@@ -66,12 +46,16 @@ public class CategorieController : ControllerBase
 
     // POST: api/Categorie
     [HttpPost]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<CDetail>> Create(
         [FromBody] CategorieCreateDto dto,
         CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
+            return ValidationProblem(new ValidationProblemDetails
+            {
+                Detail = "Je hebt een lege of te lange categorie toegevoegd."
+            });
 
         var e = new Categorie { Naam = dto.Naam.Trim() };
 
@@ -84,6 +68,7 @@ public class CategorieController : ControllerBase
 
     // PUT: api/Categorie/123
     [HttpPut("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<CDetail>> Update(
         int id,
         [FromBody] CategorieUpdateDto dto,
@@ -104,6 +89,7 @@ public class CategorieController : ControllerBase
 
     // DELETE: api/Categorie/123
     [HttpDelete("{id:int}")]
+    [Authorize (Roles ="VeilingMeester")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
         var e = await _db.Categorieen.FindAsync(new object[] { id }, ct);

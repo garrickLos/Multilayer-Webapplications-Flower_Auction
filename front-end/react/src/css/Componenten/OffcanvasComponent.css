@@ -1,0 +1,58 @@
+.sideBarMenu {
+    right: 0;
+    top: 0;
+
+    min-width: 23vw;
+    width: auto;
+
+    height: auto;
+    max-height: 75vh;
+
+    outline: 1px solid var(--brand);
+    outline-offset: 5px;
+
+    margin-top: 0;
+    margin-left: 7%;
+    
+    /* Typografie behouden */
+    font-size: clamp(0.5rem, 1vw, 18px); 
+    line-height: 1.5;
+    
+    /* Tekst afhandeling */
+    white-space: normal;
+
+    /* Transities */
+    transition: 
+        width 0.3s ease-in-out, 
+        padding 0.3s ease-in-out,
+        opacity 0.2s ease-in-out; /* Opacity iets sneller voor netter effect */
+    
+    /* Verberg alles wat buiten de box valt tijdens animatie */
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+/* OPEN STATUS */
+.sideBarMenu.open {    
+    opacity: 1;
+    visibility: visible;
+}
+
+/* DICHT STATUS */
+.sideBarMenu.closed {
+    width: 0;
+    padding: 0;
+    
+    opacity: 0;
+    visibility: hidden;
+    border: none;
+}
+
+.aanbieder_informatie {
+    /* Gebruik flexibele hoogte ipv harde viewport heights indien mogelijk */
+    min-height: 0; 
+    height: auto;
+    max-height: 100%; /* Past zich aan aan de sidebar container */
+    
+    overflow-y: auto; 
+}

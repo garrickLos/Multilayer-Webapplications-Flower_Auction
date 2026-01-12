@@ -1,7 +1,10 @@
+using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Moq;
 using mvc_api.Controllers;
 using mvc_api.Data;
 using mvc_api.Models;
@@ -12,97 +15,175 @@ namespace mvc_api.Tests.Controllers;
 
 public class VeilingproductControllerTests
 {
-    private static AppDbContext CreateContext(string dbName)
+    private static VeilingproductController CreateController(
+        IVeilingproductRepository repository,
+        ClaimsPrincipal? user = null)
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: dbName)
-            .Options;
-
-        var context = new AppDbContext(options);
-        return context;
-    }
-
-    private static VeilingproductController CreateController(AppDbContext context, ClaimsPrincipal? user = null)
-    {
-        var controller = new VeilingproductController(context)
+        return new VeilingproductController(repository)
         {
             ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = user ?? new ClaimsPrincipal() }
             }
         };
-        return controller;
     }
 
-    [Fact(DisplayName = "Succes: veilingmeester ziet gefilterde lijst op q/status/min/max/titel")]
-    public async Task GetForVeilingmeester_ComposesAllFilters()
+    [Fact]
+    // Tests that KlantGetAll returns filtered items with pagination headers for clients.
+    public async Task KlantGetAll_WithFilters_ReturnsPagedResults()
     {
-        var context = CreateContext(nameof(GetForVeilingmeester_ComposesAllFilters));
-        context.Categorieen.AddRange(
-            new Categorie { CategorieNr = 1, Naam = "Tulpen" },
-            new Categorie { CategorieNr = 2, Naam = "Rozen" }
-        );
-        context.Veilingproducten.AddRange(
-            new Veilingproduct
-            {
-                VeilingProductNr = 1,
-                Naam = "Rode Roos Feest",
-                CategorieNr = 2,
-                Status = ModelStatus.Active,
-                Startprijs = 30,
-                Minimumprijs = 30,
-                GeplaatstDatum = new DateTime(2025, 1, 1)
-            },
-            new Veilingproduct
-            {
-                VeilingProductNr = 2,
-                Naam = "Gele Tulp Voorjaars",
-                CategorieNr = 1,
-                Status = ModelStatus.Inactive,
-                Startprijs = 50,
-                Minimumprijs = 50,
-                GeplaatstDatum = new DateTime(2025, 2, 1)
-            },
-            new Veilingproduct
-            {
-                VeilingProductNr = 3,
-                Naam = "Gele Tulp Deluxe Voorjaars",
-                CategorieNr = 1,
-                Status = ModelStatus.Active,
-                Startprijs = 75,
-                Minimumprijs = 75,
-                GeplaatstDatum = new DateTime(2025, 3, 1)
-            }
-        );
-        await context.SaveChangesAsync();
+        var dtoItems = new List<klantVeilingproductGet_dto>
+        {
+            new(2, "Gele Tulp", "Tulpen", "tulp.png", "Lisse")
+        };
 
-        var controller = CreateController(context);
+        var repository = new Mock<IVeilingproductRepository>();
+        repository
+            .Setup(r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<klantVeilingproductGet_dto>(dtoItems, 1, 1, 50));
+
+        var controller = CreateController(repository.Object);
+
+        var response = await controller.KlantGetAll(q: "Tulp", categorieNr: 2, page: 1, pageSize: 50, ct: CancellationToken.None);
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var list = Assert.IsAssignableFrom<IEnumerable<klantVeilingproductGet_dto>>(ok.Value);
+        var item = Assert.Single(list);
+        Assert.Equal(2, item.VeilingProductNr);
+        Assert.Equal("Tulpen", item.Categorie);
+        Assert.Equal("tulp.png", item.ImagePath);
+        Assert.Equal("Lisse", item.Plaats);
+        Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
+        Assert.Equal("1", controller.Response.Headers["X-Page"]);
+        Assert.Equal("50", controller.Response.Headers["X-Page-Size"]);
+        repository.Verify(
+            r => r.GetKlantAsync("Tulp", 2, 1, 50, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    // Tests that KwekerGetAll returns filtered items for a kweker with pagination headers.
+    public async Task KwekerGetAll_WithFilters_ReturnsPagedResults()
+    {
+        var dtoItems = new List<kwekerVeilingproductGet_dto>
+        {
+            new(3, "Witte Lelie", new DateTime(2025, 2, 1), 2, 100, "Lelies", "lelie.png", "Naaldwijk")
+        };
+
+        var repository = new Mock<IVeilingproductRepository>();
+        repository
+            .Setup(r => r.GetKwekerAsync(0, "Lelie", 3, 1, 50, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<kwekerVeilingproductGet_dto>(dtoItems, 1, 1, 50));
+
+        var controller = CreateController(repository.Object);
+
+        var response = await controller.KwekerGetAll(Nummer: 0, q: "Lelie", categorieNr: 3, page: 1, pageSize: 50, ct: CancellationToken.None);
+        
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var list = Assert.IsAssignableFrom<IEnumerable<kwekerVeilingproductGet_dto>>(ok.Value);
+        var item = Assert.Single(list);
+        Assert.Equal(3, item.VeilingProductNr);
+        Assert.Equal("Witte Lelie", item.Naam);
+        Assert.Equal("Lelies", item.Categorie);
+        Assert.Equal("lelie.png", item.ImagePath);
+        Assert.Equal("Naaldwijk", item.Plaats);
+        Assert.Equal("1", controller.Response.Headers["X-Total-Count"]);
+        repository.Verify(
+            r => r.GetKwekerAsync(0, "Lelie", 3, 1, 50, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    // Tests that veilingmeester filters are passed through and returned as expected.
+    public async Task GetForVeilingmeester_WithFilters_ReturnsExpectedResult()
+    {
+        var expectedDtos = new List<VeilingproductVeilingmeesterListDto>
+        {
+            new(
+                4,
+                "Rode Roos Deluxe",
+                "Rozen",
+                ModelStatus.Active,
+                null,
+                7,
+                2,
+                60,
+                "Aalsmeer",
+                40,
+                45,
+                new DateTime(2025, 3, 1),
+                "roos.png",
+                new DateOnly(2025, 3, 1))
+        };
+
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.GetForVeilingmeesterAsync(
+                "Roos",
+                1,
+                ModelStatus.Active,
+                40,
+                60,
+                new DateTime(2025, 2, 1),
+                "Deluxe",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDtos);
+
+        var controller = CreateController(repository.Object);
 
         var response = await controller.GetForVeilingmeester(
-            q: "Tulp",
+            q: "Roos",
             categorieNr: 1,
             status: ModelStatus.Active,
-            minPrice: 60,
-            maxPrice: 100,
+            minPrice: 40,
+            maxPrice: 60,
             createdAfter: new DateTime(2025, 2, 1),
-            title: "Voorjaars");
+            title: "Deluxe",
+            ct: CancellationToken.None);
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        var dtos = Assert.IsAssignableFrom<IEnumerable<VeilingproductVeilingmeesterListDto>>(okResult.Value);
-        var single = Assert.Single(dtos);
-        Assert.Equal(3, single.VeilingProductNr);
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var list = Assert.IsAssignableFrom<IEnumerable<VeilingproductVeilingmeesterListDto>>(ok.Value);
+        var item = Assert.Single(list);
+        Assert.Equal(4, item.VeilingProductNr);
+        Assert.Equal("Rozen", item.CategorieNaam);
+        repository.Verify(r => r.GetForVeilingmeesterAsync(
+                "Roos",
+                1,
+                ModelStatus.Active,
+                40,
+                60,
+                new DateTime(2025, 2, 1),
+                "Deluxe",
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
-    [Fact(DisplayName = "Fout: onbekende categorie resulteert in validatiefout bij aanmaak")]
+    [Fact]
+    // Tests that Create returns a validation problem when model state is invalid.
+    public async Task Create_InvalidModel_ReturnsValidationProblem()
+    {
+        var repository = new Mock<IVeilingproductRepository>();
+        var controller = CreateController(repository.Object);
+        controller.ModelState.AddModelError("Naam", "Required");
+
+        var response = await controller.Create(new VeilingproductCreateDto());
+
+        Assert.IsType<ObjectResult>(response.Result);
+        repository.Verify(r => r.Add(It.IsAny<Veilingproduct>()), Times.Never);
+    }
+
+    [Fact]
+    // Tests that Create rejects an unknown category to prevent invalid references.
     public async Task Create_UnknownCategory_ReturnsValidationProblem()
     {
-        var context = CreateContext(nameof(Create_UnknownCategory_ReturnsValidationProblem));
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.CategorieExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "42"),
             new Claim(ClaimTypes.Role, "Bedrijf")
         }, "mock"));
-        var controller = CreateController(context, user);
+
+        var controller = CreateController(repository.Object, user);
 
         var dto = new VeilingproductCreateDto
         {
@@ -120,16 +201,17 @@ public class VeilingproductControllerTests
 
         Assert.IsType<ObjectResult>(response.Result);
         Assert.True(controller.ModelState.ContainsKey(nameof(VeilingproductCreateDto.CategorieNr)));
+        repository.Verify(r => r.Add(It.IsAny<Veilingproduct>()), Times.Never);
     }
 
-    [Fact(DisplayName = "Fout: ontbrekende gebruiker resulteert in Forbid bij aanmaak")]
-    public async Task Create_WithoutUser_ReturnsForbid()
+    [Fact]
+    // Tests that Create forbids when no authenticated user id is available.
+    public async Task Create_NoUser_ReturnsForbid()
     {
-        var context = CreateContext(nameof(Create_WithoutUser_ReturnsForbid));
-        context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
-        await context.SaveChangesAsync();
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.CategorieExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var controller = CreateController(context, user: new ClaimsPrincipal());
+        var controller = CreateController(repository.Object, new ClaimsPrincipal());
 
         var dto = new VeilingproductCreateDto
         {
@@ -146,77 +228,302 @@ public class VeilingproductControllerTests
         var response = await controller.Create(dto);
 
         Assert.IsType<ForbidResult>(response.Result);
+        repository.Verify(r => r.Add(It.IsAny<Veilingproduct>()), Times.Never);
     }
 
-    [Fact(DisplayName = "Autorisatie: bedrijf kan product van ander niet aanpassen")]
-    public async Task Update_WhenUserIsNotOwner_ReturnsForbid()
+    [Fact]
+    // Tests that Create persists and returns a kweker DTO for valid input.
+    public async Task Create_Valid_ReturnsOkWithDto()
     {
-        var context = CreateContext(nameof(Update_WhenUserIsNotOwner_ReturnsForbid));
-        context.Categorieen.Add(new Categorie { CategorieNr = 1, Naam = "Tulpen" });
-        context.Veilingproducten.Add(new Veilingproduct
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.CategorieExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repository.Setup(r => r.Add(It.IsAny<Veilingproduct>())).Callback<Veilingproduct>(entity =>
         {
-            VeilingProductNr = 7,
-            Naam = "Andermans Tulp",
-            GeplaatstDatum = DateTime.UtcNow,
-            AantalFusten = 3,
-            VoorraadBloemen = 30,
-            CategorieNr = 1,
-            Plaats = "Aalsmeer",
-            Minimumprijs = 5,
-            ImagePath = "pad",
-            Kwekernr = 777
+            entity.VeilingProductNr = 123;
         });
-        await context.SaveChangesAsync();
+        repository.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repository.Setup(r => r.GetKwekerListByIdAsync(123, 42, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VeilingproductKwekerListDto(
+                123,
+                "Nieuwe Roos",
+                null,
+                2,
+                50,
+                "Rozen",
+                1,
+                "image.png",
+                "Aalsmeer",
+                null,
+                10,
+                null,
+                42));
 
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "42"),
             new Claim(ClaimTypes.Role, "Bedrijf")
         }, "mock"));
-        var controller = CreateController(context, user);
 
-        var dto = new VeilingproductUpdateDto
+        var controller = CreateController(repository.Object, user);
+
+        var dto = new VeilingproductCreateDto
         {
-            Naam = "Nieuwe Naam",
-            GeplaatstDatum = DateTime.UtcNow,
-            AantalFusten = 1,
-            VoorraadBloemen = 10,
+            Naam = "Nieuwe Roos",
+            AantalFusten = 2,
+            VoorraadBloemen = 50,
             CategorieNr = 1,
-            ImagePath = "image.png",
-            Minimumprijs = 1,
-            Plaats = "Aalsmeer"
+            Plaats = "Aalsmeer",
+            Minimumprijs = 10,
+            BeginDatum = new DateOnly(2025, 1, 1),
+            ImagePath = "image.png"
         };
 
-        var response = await controller.Update(7, dto);
+        var response = await controller.Create(dto);
 
-        Assert.IsType<ForbidResult>(response.Result);
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var result = Assert.IsType<VeilingproductKwekerListDto>(ok.Value);
+        Assert.Equal(123, result.VeilingProductNr);
+        Assert.Equal("Nieuwe Roos", result.Naam);
+        Assert.Equal(2, result.AantalFusten);
+        Assert.Equal(50, result.VoorraadBloemen);
+        repository.Verify(r => r.Add(It.IsAny<Veilingproduct>()), Times.Once);
+        repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact(DisplayName = "Fout: bijwerken van ontbrekend product geeft NotFound")]
+    [Fact]
+    // Tests that Update returns validation problem for invalid model state.
+    public async Task Update_InvalidModel_ReturnsValidationProblem()
+    {
+        var repository = new Mock<IVeilingproductRepository>();
+        var controller = CreateController(repository.Object);
+        controller.ModelState.AddModelError("Naam", "Required");
+
+        var response = await controller.Update(1, new VeilingproductUpdateDto());
+
+        Assert.IsType<ObjectResult>(response.Result);
+        repository.Verify(r => r.FindAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    // Tests that Update returns NotFound for unknown product ids.
     public async Task Update_WithUnknownProduct_ReturnsNotFound()
     {
-        var context = CreateContext(nameof(Update_WithUnknownProduct_ReturnsNotFound));
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.FindAsync(404, It.IsAny<CancellationToken>())).ReturnsAsync((Veilingproduct?)null);
+
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, "7"),
             new Claim(ClaimTypes.Role, "Bedrijf")
         }, "mock"));
-        var controller = CreateController(context, user);
 
-        var dto = new VeilingproductUpdateDto
-        {
-            Naam = "Bestaat Niet",
-            GeplaatstDatum = DateTime.UtcNow,
-            AantalFusten = 1,
-            VoorraadBloemen = 10,
-            CategorieNr = 1,
-            ImagePath = "image.png",
-            Minimumprijs = 1,
-            Plaats = "Aalsmeer"
-        };
+        var controller = CreateController(repository.Object, user);
 
-        var response = await controller.Update(404, dto);
+        var response = await controller.Update(404, new VeilingproductUpdateDto());
 
         Assert.IsType<NotFoundResult>(response.Result);
     }
+
+    [Fact]
+    // Tests that Update returns BadRequest when user id is missing from claims.
+    public async Task Update_NoUser_ReturnsBadRequest()
+    {
+        var entity = new Veilingproduct { VeilingProductNr = 7, Naam = "Product" };
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.FindAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
+
+        var controller = CreateController(repository.Object, new ClaimsPrincipal());
+
+        var response = await controller.Update(7, new VeilingproductUpdateDto { Naam = "Nieuw" });
+
+        Assert.IsType<BadRequestObjectResult>(response.Result);
+        repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    // Tests that Update rejects invalid category updates.
+    public async Task Update_InvalidCategory_ReturnsValidationProblem()
+    {
+        var entity = new Veilingproduct { VeilingProductNr = 7, Naam = "Product", CategorieNr = 1 };
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.FindAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
+        repository.Setup(r => r.CategorieExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "42"),
+            new Claim(ClaimTypes.Role, "Bedrijf")
+        }, "mock"));
+
+        var controller = CreateController(repository.Object, user);
+
+        var response = await controller.Update(7, new VeilingproductUpdateDto { CategorieNr = 99 });
+
+        Assert.IsType<ObjectResult>(response.Result);
+        Assert.True(controller.ModelState.ContainsKey(nameof(VeilingproductCreateDto.CategorieNr)));
+    }
+
+    [Fact]
+    // Tests that Update returns the updated DTO for valid kweker updates.
+    public async Task Update_Valid_ReturnsOkWithUpdatedDto()
+    {
+        var entity = new Veilingproduct
+        {
+            VeilingProductNr = 7,
+            Naam = "Oude Naam",
+            CategorieNr = 1,
+            AantalFusten = 1,
+            VoorraadBloemen = 10,
+            Minimumprijs = 5,
+            Plaats = "Aalsmeer",
+            ImagePath = "old.png"
+        };
+
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.FindAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
+        repository.Setup(r => r.CategorieExistsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repository.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repository.Setup(r => r.GetKwekerListByIdAsync(7, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VeilingproductKwekerListDto(
+                7,
+                "Nieuwe Naam",
+                null,
+                3,
+                30,
+                "Rozen",
+                1,
+                "new.png",
+                "Lisse",
+                null,
+                20,
+                null,
+                42));
+        
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "42"),
+            new Claim(ClaimTypes.Role, "Bedrijf")
+        }, "mock"));
+
+        var controller = CreateController(repository.Object, user);
+
+        var dto = new VeilingproductUpdateDto
+        {
+            Naam = "Nieuwe Naam",
+            AantalFusten = 3,
+            VoorraadBloemen = 30,
+            CategorieNr = 1,
+            Minimumprijs = 20,
+            Plaats = "Lisse",
+            ImagePath = "new.png"
+        };
+
+        var response = await controller.Update(7, dto);
+
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var result = Assert.IsType<VeilingproductKwekerListDto>(ok.Value);
+        Assert.Equal("Nieuwe Naam", result.Naam);
+        Assert.Equal(3, result.AantalFusten);
+        Assert.Equal(30, result.VoorraadBloemen);
+        Assert.Equal("Lisse", result.Plaats);
+        Assert.Equal("new.png", result.ImagePath);
+        repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    // Tests that UpdatePlanning returns validation problem for invalid model state.
+    public async Task UpdatePlanning_InvalidModel_ReturnsValidationProblem()
+    {
+        var repository = new Mock<IVeilingproductRepository>();
+        var controller = CreateController(repository.Object);
+        controller.ModelState.AddModelError("Startprijs", "Required");
+
+        var response = await controller.UpdatePlanning(1, new VeilingproductVeilingmeesterUpdateDto());
+
+        Assert.IsType<ObjectResult>(response.Result);
+        repository.Verify(r => r.FindAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    // Tests that UpdatePlanning returns NotFound for missing veilingproduct.
+    public async Task UpdatePlanning_NotFound_ReturnsNotFound()
+    {
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.FindAsync(9, It.IsAny<CancellationToken>())).ReturnsAsync((Veilingproduct?)null);
+
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "1"),
+            new Claim(ClaimTypes.Role, "VeilingMeester")
+        }, "mock"));
+
+        var controller = CreateController(repository.Object, user);
+
+        var response = await controller.UpdatePlanning(9, new VeilingproductVeilingmeesterUpdateDto());
+
+        Assert.IsType<NotFoundResult>(response.Result);
+    }
+
+    [Fact]
+    // Tests that UpdatePlanning updates planning fields and returns the veilingmeester DTO.
+    public async Task UpdatePlanning_Valid_ReturnsOkWithUpdatedDto()
+    {
+        var entity = new Veilingproduct
+        {
+            VeilingProductNr = 10,
+            Naam = "Planning",
+            CategorieNr = 1,
+            Categorie = new Categorie { Naam = "Tulpen" },
+            Status = ModelStatus.Active,
+            Minimumprijs = 30,
+            GeplaatstDatum = DateTime.UtcNow,
+            Kwekernr = 5,
+            AantalFusten = 2,
+            VoorraadBloemen = 40,
+            Plaats = "Aalsmeer",
+            ImagePath = "img.png",
+            BeginDatum = new DateOnly(2025, 1, 1)
+        };
+
+        var repository = new Mock<IVeilingproductRepository>();
+        repository.Setup(r => r.FindAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
+        repository.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repository.Setup(r => r.GetVeilingmeesterListByIdAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VeilingproductVeilingmeesterListDto(
+                10,
+                "Planning",
+                "Tulpen",
+                ModelStatus.Active,
+                3,
+                5,
+                2,
+                40,
+                "Aalsmeer",
+                30,
+                55,
+                entity.GeplaatstDatum,
+                "img.png",
+                new DateOnly(2025, 1, 1)));
+
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "1"),
+            new Claim(ClaimTypes.Role, "VeilingMeester")
+        }, "mock"));
+
+        var controller = CreateController(repository.Object, user);
+
+        var response = await controller.UpdatePlanning(10, new VeilingproductVeilingmeesterUpdateDto
+        {
+            Startprijs = 55,
+            VeilingNr = 3
+        });
+
+        var ok = Assert.IsType<OkObjectResult>(response.Result);
+        var result = Assert.IsType<VeilingproductVeilingmeesterListDto>(ok.Value);
+        Assert.Equal(55, result.Startprijs);
+        Assert.Equal(3, result.VeilingNr);
+        repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
 }

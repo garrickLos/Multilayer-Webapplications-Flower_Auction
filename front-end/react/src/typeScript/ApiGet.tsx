@@ -55,7 +55,3 @@ export function UseDataApi<T>(url: string) {
     // 4. De refresh functie teruggeven zodat je component hem kan gebruiken
     return { data, loading, error, refresh };
 }
-
-export function getBearerToken() {
-    return sessionStorage.getItem("token");
-}

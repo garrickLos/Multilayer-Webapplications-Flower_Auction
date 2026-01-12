@@ -1,92 +1,97 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+'use client';
+import { useState, useEffect } from "react";
+import { GenereerKnop } from "../../Componenten/Knop";
+import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
+import { GetDate } from "../../typeScript/FetchDate";
 
-export interface VeilingItem {
-    veilingNr: number
-    begintijd: string
-    eindtijd: string
-    status: string
-    minimumPrijs: number
-    producten: Producten[]
-}
+// component index import
+import { getKwekerInfo } from '../hoofdscherm/Componenten/index.tsx';
 
-export interface Producten {
-    veilingProductNr: number
-    naam: string
-    startprijs: number
-    voorraad: number
-    imagePath?: string
-    beschrijving?: string
-}
+// type index import
+import type {VeilingItem, Producten, AuctionCardProps, KwekerInfo } from '../hoofdscherm/Componenten/index.tsx';
 
-interface CardItems {
-    imagePath?: string;
-    headerText?: string;
-    paragraafText?: string;
-    veilingnr?: number;
-}
+// css
+import '../../css/Componenten/AuctionCards.css';
 
 const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
 
-export const renderCards = (items: VeilingItem[]) =>
-    items.flatMap((item: VeilingItem, veilingIndex: number) =>
-        item.producten.map((product: Producten, index: number) => (
-            <AuctionCard
-                key={`${veilingIndex}-${index}`}
-                imagePath={product.imagePath}
-                headerText={product.naam || 'Geen Titel'}
-                paragraafText={beschrijving(product, item)}
-                veilingnr={item.veilingNr} 
+export function AuctionCard({ product, parentVeiling }: AuctionCardProps) {
+
+    // Stopt de item als de product of veliing niet gevonden kan worden en vult de kaart met een laadscherm
+    if (!product || !parentVeiling) {
+        return <div className="RenderCard">Item laden...</div>;
+    }
+
+    // States pas initialiseren NA de guard clause
+    const [currentSrc, setCurrentSrc] = useState(product.imagePath || Default_ImagePlaceholder);
+    const [hasError, setHasError] = useState(false);
+    const [kweker, setKweker] = useState<KwekerInfo | null > (null);
+
+    const handleError = () => {
+        setCurrentSrc(Default_ImagePlaceholder);
+        setHasError(true);
+    };
+
+    useEffect(() => {
+        async function fetchKweker() {
+            if (!product.gebruikerNr) return;
+
+            try {
+                const data = await getKwekerInfo(product.gebruikerNr);
+                if (data != null){
+                    setKweker(data);
+                }
+
+            } catch (err) {
+                console.error("Fout bij ophalen kweker:", err);
+            }
+        }
+        fetchKweker();
+
+    }, [product.gebruikerNr]);
+
+    return (
+        <div className='RenderCard grid-item'>
+            <img 
+                src={currentSrc} 
+                alt={`De foto laat zien: ${product.naam}`} 
+                onError={handleError} 
             />
-        ))
-); 
+            
+            <div className='RenderCard_text-container'>
+                {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
+                
+                <h3>{product.naam || 'Geen Titel'}</h3>
+                
+                <p className='Description'>
+                    {kweker 
+                        ? beschrijving(product, parentVeiling, kweker) 
+                        : "Laden van kweker informatie..."}
+                </p>
+            </div>
 
-export function AuctionCard({ imagePath, headerText, paragraafText, veilingnr }: CardItems) {
-  const [currentSrc, setCurrentSrc] = useState(imagePath || Default_ImagePlaceholder);
-  const [hasError, setHasError] = useState(false);
-
-  const handleError = () => {
-    setCurrentSrc(Default_ImagePlaceholder);
-    setHasError(true);
-  };
-
-  return (
-    <div className='card'>
-      <img src={currentSrc} alt={`De foto laat zien: ${headerText}`} onError={handleError} />
-      <div className='text-container'>
-        {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
-        <h3>{headerText}</h3>
-        <p className='Description'>{paragraafText}</p>
-      </div>
-      <NavLink to={`/auction/${veilingnr}`} state={{veilingnr: veilingnr}} 
-              type="button" className='auctionButton' 
-              aria-label={`Ga naar de veiling van: ${headerText}`}>naar de veiling</NavLink>
-    </div>
-  );
+            <GenereerKnop 
+                classNames={'Button'} 
+                bericht={'naar de veiling'} 
+                to={`/auction/${parentVeiling.veilingNr}`} 
+            />
+        </div>
+    );
 }
 
+// creert een beschrijving die gebruikt wordt in de rendercard zelf
+export function beschrijving(product: Producten, item: VeilingItem, kwekerInfo: KwekerInfo) {   
+    // Gebruik kwekerNaam of naam afhankelijk van je API response
+    const kwekerNaam = kwekerInfo.bedrijfsNaam || "Onbekende aanvoerder";
 
-const datumOpties: Intl.DateTimeFormatOptions = {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-};
-
-export function beschrijving(product: Producten, item: VeilingItem) {    
+    // de items die worden getoond als een grote tekst onder de foto
     return (
-        ` 
-            lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}
+        `lot nr: ${item.veilingNr}, product nr: ${product.veilingProductNr}, 
+        aanvoerder: ${kwekerNaam}
 
-            Hoeveelheid bloemen: ${product.voorraad}
-            prijs begint op: ${product.startprijs} euro
-
-            veiling startijd: 
-            ${new Date(item.begintijd).toLocaleString('nl-NL', datumOpties)}
-        `
+        Fusten over: ${product.aantalFusten}
+        
+        prijs begint op: ${SetEuro(product.startprijs, 100).toFixed(2)} euro
+        veiling starttijd: ${GetDate(item.begintijd, 'nl-NL')}`
     );
 }
