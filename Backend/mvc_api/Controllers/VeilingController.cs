@@ -21,6 +21,8 @@ public class VeilingController : ControllerBase
     //     : this(db, new ProjectieVeilingController(), new VeilingControllerFilter(db))
     // {
     // }
+
+    private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
     
     public VeilingController(
         AppDbContext db,
@@ -44,8 +46,8 @@ public class VeilingController : ControllerBase
         [FromQuery] int pageSize = 50,
         DateTime? testNow = null,
         CancellationToken ct = default)
-    {
-        var now = testNow ?? DateTime.Now;
+    {   
+        var now = testNow ?? _myDate.LocalTime;
 
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
@@ -114,7 +116,7 @@ public class VeilingController : ControllerBase
         DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = testNow ?? DateTime.UtcNow;
+        var now = testNow ?? _myDate.LocalTime;
 
         // if (testNow == null)
         // {
@@ -196,10 +198,7 @@ public class VeilingController : ControllerBase
 
         CancellationToken ct = default)
     {
-        var now = testNow ?? DateTime.UtcNow;
-
-
-        //now = now.ToLocalTime();
+        var now = testNow ?? _myDate.LocalTime;
 
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
@@ -258,8 +257,7 @@ public class VeilingController : ControllerBase
         } else
         {
             return Unauthorized();
-        }
-        
+        }   
     }
 
     // GET: api/Veiling/{id}
@@ -270,9 +268,7 @@ public class VeilingController : ControllerBase
         CancellationToken ct = default)
     {
 
-        var now = DateTime.UtcNow;
-
-        now = now.ToLocalTime();
+        var now = _myDate.LocalTime;
 
         var query = _db.Veiling.AsNoTracking()
             .AsQueryable();
@@ -307,7 +303,7 @@ public class VeilingController : ControllerBase
         CancellationToken ct = default)
     {
 
-        var now = testNow ?? DateTime.UtcNow;
+        var now = testNow ?? _myDate.LocalTime;
 
         // Validatie van [Required] gebeurt automatisch door [ApiController]
         var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
@@ -357,7 +353,7 @@ public class VeilingController : ControllerBase
         DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = testNow ?? DateTime.UtcNow;
+        var now = testNow ?? _myDate.LocalTime;
 
         var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
@@ -408,12 +404,16 @@ public class VeilingController : ControllerBase
         
         if (entity is null)
             return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
+        
+        if (dto.GeupdateBeginTijd.HasValue)
+        {
+            var updatedTimeConverted = new DateTimeWithZone(dto.GeupdateBeginTijd.Value, TijdZoneConfig.Amsterdam);
 
-        // Update fields
-        entity.GeupdateBeginTijd = dto.GeupdateBeginTijd;
+            var nieuweTijd = updatedTimeConverted.LocalTime;
 
-        // if (!string.IsNullOrWhiteSpace(dto.Status))
-        //     entity.Status = NormalizeStatus(dto.Status);
+            // Update fields
+            entity.GeupdateBeginTijd = nieuweTijd;
+        }
 
         // Business Logic check
         if (entity.Eindtijd <= dto.GeupdateBeginTijd && entity.Status == VeilingStatus.Active)

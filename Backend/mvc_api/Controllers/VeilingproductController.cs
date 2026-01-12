@@ -18,6 +18,8 @@ public class VeilingproductController : ControllerBase
     public VeilingproductController(IVeilingproductRepository repository) =>
         _repository = repository;
 
+    private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
+
     //Get voor klant
     [HttpGet("Klant")]
     [Authorize(Roles = "Koper")]
@@ -191,7 +193,7 @@ public class VeilingproductController : ControllerBase
         if (entity == null)
             return NotFound();
 
-        var now = DateTime.UtcNow.ToLocalTime();
+        var now = _myDate.LocalTime;
 
         if (dto.VeilingNr.HasValue)
         {
