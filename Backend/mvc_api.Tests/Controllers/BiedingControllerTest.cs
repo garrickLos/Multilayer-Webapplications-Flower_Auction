@@ -12,6 +12,41 @@ namespace mvc_api.Tests.Controllers;
 
 public class BiedingControllerTests : IStatic_Variable
 {
+    /* ******************
+    * getKlantBiedingen *
+    *********************
+    */ 
+
+    [Fact(DisplayName = "GetKlantBiedingen: Haalt biedingen op voor specifieke klant")]
+    public async Task GetAll_asKlant_ReturnsPagedList()
+    {
+        // Arrange
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_Koper)
+        }, "Mock"));
+
+        var controller = BiedingMockData.BuildController(nameof(GetAll_asKlant_ReturnsPagedList), user);
+
+        // Act
+        // We vragen nu specifiek de biedingen van Gebruiker 1 op
+        var response = await controller.GetKlantBiedingen(
+            gebruikerNr: 1, 
+            veilingProductNr: null,
+            orderDescending: false,
+            page: 1,
+            pageSize: 50
+        );
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(response.Result); // Let op: response.Result, niet response.Value direct bij ActionResult<T>
+        var items = Assert.IsAssignableFrom<IEnumerable<klantBiedingGet_dto>>(okResult.Value);
+        
+        // In de MockData heeft GebruikerNr 1 precies 4 biedingen (BiedNr 1, 2, 5, 9)
+        Assert.Equal(4, items.Count()); 
+        Assert.True(controller.Response.Headers.ContainsKey("X-Total-Count"));
+    }
+
     /* *********************
     * getveilingMeester *
     *********************
@@ -80,27 +115,27 @@ public class BiedingControllerTests : IStatic_Variable
 
     // moet gefixed worden
 
-    // [Theory(DisplayName ="Haalt meerdere bestaande Id's op")]
-    // [InlineData(10, 10)]
-    // [InlineData(5, 5)]
-    // [InlineData(3, 3)]
-    // public async Task GetById_ExistingId_ReturnMultiple(int ingevoerdeBiedNr, int verwachteBiedNr)
-    // {
-    //     // 1. Arrange
-    //     var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
-    //     { 
-    //         new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
-    //     }, "Mock"));
-    //     var controller = BiedingMockData.BuildController(nameof(GetById_ExistingId_ReturnMultiple) + ingevoerdeBiedNr, user);
+    [Theory(DisplayName ="Haalt meerdere bestaande Id's op")]
+    [InlineData(10, 10)]
+    [InlineData(5, 5)]
+    [InlineData(3, 3)]
+    public async Task GetById_ExistingId_ReturnMultiple(int ingevoerdeBiedNr, int verwachteBiedNr)
+    {
+        // 1. Arrange
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[] 
+        { 
+            new Claim(ClaimTypes.Role, IStatic_Variable.rol_VeilingMeester) 
+        }, "Mock"));
+        var controller = BiedingMockData.BuildController(nameof(GetById_ExistingId_ReturnMultiple) + ingevoerdeBiedNr, user);
 
-    //     // 2. Act
-    //     var response = await controller.GetById(ingevoerdeBiedNr);
+        // 2. Act
+        var response = await controller.GetById(ingevoerdeBiedNr);
 
-    //     // 3. Assert
-    //     var okResult = Assert.IsType<OkObjectResult>(response.Result);
-    //     var dto = Assert.IsType<VeilingMeester_BiedingDto>(BadRequestObjectResult);
-    //     Assert.Equal(verwachteBiedNr, dto.BiedingNr);
-    // }
+        // 3. Assert
+        var okResult = Assert.IsType<OkObjectResult>(response.Result);
+        var dto = Assert.IsType<VeilingMeester_BiedingDto>(okResult.Value);
+        Assert.Equal(verwachteBiedNr, dto.BiedingNr);
+    }
 
     /* *******************
     * Create endpoint *

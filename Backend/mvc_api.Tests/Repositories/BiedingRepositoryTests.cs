@@ -5,6 +5,7 @@ using mvc_api.Controllers;
 using Moq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 
 namespace mvc_api.Tests.Repositories;
 
@@ -97,17 +98,21 @@ public class BiedingRepositoryTests
     ******************************
     */ 
 
-    [Fact(DisplayName = "Error VeilingMeester bieding GET: Controller geeft 500 bij Repository Exception")]
-    public async Task GetVeilingMeester_biedingen_OnException_Returns500()
+    [Theory(DisplayName = "Error VeilingMeester bieding GET: Controller Repository Exception")]
+    [InlineData(typeof(KeyNotFoundException), 404)]
+    [InlineData(typeof(Exception), 500)]
+    public async Task GetVeilingMeester_biedingen_OnException_Returnsexception(Type exceptionType, int errorNumber)
     {
         // Arrange: Gebruik Moq om de repository te simuleren
         var mockRepo = new Mock<IBiedingRepo>();
+
+        var exceptionInstance = (Exception)Activator.CreateInstance(exceptionType, "Bieding niet toegestaan");
         
         // Forceer een crash
         mockRepo.Setup(repo => repo.GetVeilingMeesterBiedingenAsync(
             It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(), 
             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new System.Exception("Niet gevonden"));
+            .ThrowsAsync(exceptionInstance);
 
         var controller = new BiedingController(mockRepo.Object);
 
@@ -115,8 +120,8 @@ public class BiedingRepositoryTests
         var result = await controller.GetVeilingMeester_Biedingen(1, null);
 
         // Assert
-        var objectResult = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(500, objectResult.StatusCode);
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result.Result);
+        Assert.Equal(errorNumber, objectResult.StatusCode);
     }
 
     [Fact(DisplayName = "Error VeilingMeester bieding GET: Controller geeft 404 bij Repository Exception")]
@@ -129,14 +134,20 @@ public class BiedingRepositoryTests
         mockRepo.Setup(repo => repo.GetVeilingMeesterBiedingenAsync(
             It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool>(), 
             It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new KeyNotFoundException("Niet gevonden"));
+            .ReturnsAsync((null, 0)); 
 
         var controller = new BiedingController(mockRepo.Object);
 
-        // Act
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+
+        // 2. Act
         var result = await controller.GetVeilingMeester_Biedingen(1, null);
 
-        // Assert
+        // 3. Assert
+        // NotFoundObjectResult is specifieker dan ObjectResult
         var objectResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         Assert.Equal(404, objectResult.StatusCode);
     }
@@ -180,20 +191,32 @@ public class BiedingRepositoryTests
     *****************
     */
 
-    [Fact(DisplayName = "Error 400 ongeldige status: Koper krijgt error bij het aanmaken van een bieding")]
-    public async Task Create_ErrorCreateBieding_400()
+    [Theory(DisplayName = "Error: Koper krijgt error bij het aanmaken van een bieding")]
+    [InlineData(typeof(KeyNotFoundException), 400)]
+    [InlineData(typeof(InvalidOperationException), 400)]
+    [InlineData(typeof(DbUpdateException), 500)] 
+    [InlineData(typeof(Exception), 500)]
+    public async Task Create_ErrorCreateBieding_CheckStatus_Exception(Type exceptionType, int errorNumber)
     {
+        // Arrange
         var mockRepo = new Mock<IBiedingRepo>();
 
+        var exceptionInstance = (Exception)Activator.CreateInstance(exceptionType, "Bieding niet toegestaan");
+
         mockRepo.Setup(repo => repo.CreateAsync(
-        It.IsAny<CancellationToken>()))
-        .ThrowsAsync(new InvalidOperationException("Bieding niet toegestaan")); 
+            It.IsAny<BiedingCreateDto>(),
+            It.IsAny<CancellationToken>()))
+            .ThrowsAsync(exceptionInstance);
 
         var controller = new BiedingController(mockRepo.Object);
 
+        // Act
         var result = await controller.Create(new BiedingCreateDto(), CancellationToken.None);
 
-        var objectResult = Assert.IsType<BadRequest>(result.Result);
-        Assert.Equal(400, objectResult.StatusCode);
+        // Assert
+        // We controleren of het resultaat een vorm is van ObjectResult (basisklasse voor 400 en 500 responses met body)
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result.Result);
+        
+        Assert.Equal(errorNumber, objectResult.StatusCode);
     }
 }
