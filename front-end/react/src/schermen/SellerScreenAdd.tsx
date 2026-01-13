@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
-import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
+import { UseDataApi as GetCategorie } from "../Componenten/ApiGetCategorien";
 import { resolveApiUrl, resolveImageUrl } from "../config/api";
 import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
 
