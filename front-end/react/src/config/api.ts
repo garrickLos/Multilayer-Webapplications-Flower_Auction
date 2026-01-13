@@ -1,4 +1,12 @@
-const normalizeBaseUrl = (value?: string) => (value ? value.replace(/\/+$/, "") : "");
+const normalizeBaseUrl = (value?: string) => {
+    if (!value) return "";
+    const trimmed = value.replace(/\/+$/, "");
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (/^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(trimmed)) {
+        return `http://${trimmed}`;
+    }
+    return `https://${trimmed}`;
+};
 
 const envBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
 const envImageBaseUrl = normalizeBaseUrl(import.meta.env.VITE_IMAGE_URL);
