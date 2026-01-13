@@ -20,7 +20,7 @@ export default function SellerScreenAdd() {
         status: true,
         Kwekernr: sessionStorage.getItem("gebruikerNummer"),
         ImagePath: Default_ImagePlaceholder,
-        VoorraadBloemen: 10
+        VoorraadBloemen: 1000
     };
 
     const [product, setProduct] = useState({

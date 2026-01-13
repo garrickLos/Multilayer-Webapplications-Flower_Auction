@@ -2,7 +2,7 @@
 //     
 // dotnet ef database drop --force
 // dotnet ef migrations remove
-//
+
 // dotnet ef migrations add InitialCreate 
 // dotnet ef database update
 
@@ -21,9 +21,13 @@ using mvc_api.Controllers;
 
 using mvc_api.Auth.GenereerAccessTokens;
 
-using mvc_api.Repo.Interfaces;
+/*
+**************************
+** Imports van de repos **
+**************************
+*/
 using mvc_api.Repo;
-
+using mvc_api.Repo.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 // ------------------------------
@@ -34,7 +38,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
-    
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Voer in: Bearer {token}",
@@ -60,6 +64,19 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+// // Blob Storage
+// builder.Services.AddSingleton(_ =>
+//     new Azure.Storage.Blobs.BlobServiceClient(
+//         builder.Configuration.GetConnectionString("AzureBlobStorage")
+//     )
+// );
+
+// builder.Services.AddScoped<IImageStorageService, AzureBlobImageStorageService>();
+
+// Repositories
+builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>();
+
 
 // ORM / DbContext
 var connectionString = builder.Configuration.GetConnectionString("Default");
@@ -177,11 +194,11 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db       = services.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 
     try
     {
-        db.Database.Migrate();
-        await DataSeeder.Seed(services);
+        await DataSeeder.Seed(app.Services);
     }
     catch (Exception ex)
     {

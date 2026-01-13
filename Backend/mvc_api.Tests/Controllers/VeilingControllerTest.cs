@@ -14,42 +14,41 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 using ApiGetFilters;
 using System.Security.Claims;
+using Microsoft.VisualBasic;
 
 namespace mvc_api.Tests.Controllers
 {
     public class VeilingControllerTest
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDbGetAnonymous")
-            .Options;
+        private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
+        
 
-        using var context = new AppDbContext(options);
-
-        context.Veiling.AddRange(
-        new Veiling
+        
+        [Fact]
+        public async Task GetAnonymous()
         {
+            var now = _myDate.LocalTime;
             var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("TestDbGetAnonymous");
-            var context = controller.HttpContext != null ? null : controller.HttpContext; // alleen om context type te hebben
             var db = (DbContext)controller.GetType()
                         .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                         .GetValue(controller);
 
-            // Voeg testdata toe
+            //bestaande veilingen
             db.Set<Veiling>().AddRange(
                 new Veiling
                 {
                     VeilingNr = 1,
                     VeilingNaam = "Rozenveiling",
-                    Begintijd = DateTime.UtcNow.AddHours(-1),
-                    Eindtijd = DateTime.UtcNow.AddHours(2),
+                    Begintijd = now.AddHours(-1),
+                    Eindtijd = now.AddHours(2),
                     Status = VeilingStatus.Active
                 },
                 new Veiling
                 {
                     VeilingNr = 2,
                     VeilingNaam = "Tulpenveiling",
-                    Begintijd = DateTime.UtcNow.AddHours(-2),
-                    Eindtijd = DateTime.UtcNow.AddHours(-1),
+                    Begintijd = now.AddHours(-2),
+                    Eindtijd = now.AddHours(-1),
                     Status = VeilingStatus.Inactive
                 }
             );
@@ -71,25 +70,26 @@ namespace mvc_api.Tests.Controllers
             Assert.Equal("active", items[1].Status);
             Assert.Equal(2, items[0].VeilingNr);
             Assert.Equal("Tulpenveiling", items[0].VeilingNaam);
-            Assert.Equal("inactive", items[0].Status);
+            Assert.Equal("afgesloten", items[0].Status);
         }
 
         [Fact]
         public async Task GetAnonymous_verschillendeScenarios()
         {
+            var now = _myDate.LocalTime;
+
             var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("TestDbGetAnonymous_scenarios");
             var db = (DbContext)controller.GetType()
                         .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                         .GetValue(controller);
 
-            var nu = new DateTime(2026, 01, 05, 12, 0, 0, DateTimeKind.Utc);
 
             db.Set<Veiling>().AddRange(
-                new Veiling { VeilingNr = 1, VeilingNaam = "scenarioA_True", Begintijd = nu.AddHours(-1), Eindtijd = nu.AddHours(2), Status = VeilingStatus.Inactive },
-                new Veiling { VeilingNr = 2, VeilingNaam = "scenarioB_True", Begintijd = nu.AddHours(-2), Eindtijd = nu.AddHours(-1), Status = VeilingStatus.Active },
-                new Veiling { VeilingNr = 3, VeilingNaam = "scenarioA_conditie2False", Begintijd = nu.AddHours(1), Eindtijd = nu.AddHours(3), Status = VeilingStatus.Inactive },
-                new Veiling { VeilingNr = 4, VeilingNaam = "scenarioA_conditie3False", Begintijd = nu.AddHours(-1), Eindtijd = nu.AddHours(-1), Status = VeilingStatus.Inactive },
-                new Veiling { VeilingNr = 5, VeilingNaam = "scenarioB_conditie2False", Begintijd = nu.AddHours(-1), Eindtijd = nu.AddHours(1), Status = VeilingStatus.Active }
+                new Veiling { VeilingNr = 1, VeilingNaam = "scenarioA_True", Begintijd = now.AddHours(-1), Eindtijd = now.AddHours(2), Status = VeilingStatus.Inactive },
+                new Veiling { VeilingNr = 2, VeilingNaam = "scenarioB_True", Begintijd = now.AddHours(-2), Eindtijd = now.AddHours(-1), Status = VeilingStatus.Active },
+                new Veiling { VeilingNr = 3, VeilingNaam = "scenarioA_conditie2False", Begintijd = now.AddHours(1), Eindtijd = now.AddHours(3), Status = VeilingStatus.Inactive },
+                new Veiling { VeilingNr = 4, VeilingNaam = "scenarioA_conditie3False", Begintijd = now.AddHours(-1), Eindtijd = now.AddHours(-1), Status = VeilingStatus.Inactive },
+                new Veiling { VeilingNr = 5, VeilingNaam = "scenarioB_conditie2False", Begintijd = now.AddHours(-1), Eindtijd = now.AddHours(1), Status = VeilingStatus.Active }
             );
             await db.SaveChangesAsync();
 
@@ -98,7 +98,7 @@ namespace mvc_api.Tests.Controllers
                 HttpContext = new DefaultHttpContext()
             };
 
-            var resultaat = await controller.GetAnonymous(null, null, null, false, testNow: nu);
+            var resultaat = await controller.GetAnonymous(null, null, null, false);
 
             var updatedVeilingen = db.Set<Veiling>().ToList();
 
@@ -112,6 +112,8 @@ namespace mvc_api.Tests.Controllers
         [Fact]
         public async Task VeilingtoevoegenTest()
         {
+            var now = _myDate.LocalTime;
+
             var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("TestVeilingToevoegen");
 
             controller.ControllerContext = new ControllerContext
@@ -119,9 +121,136 @@ namespace mvc_api.Tests.Controllers
                 HttpContext = new DefaultHttpContext()
             };
 
-        context.Veiling.AddRange(
-            // Scenario A alles true
-            new Veiling
+
+            var veiling = new VeilingCreateDto
+            {
+                VeilingNaam = "TestToevoegen",
+                Begintijd = now.AddHours(1),
+                Eindtijd = now.AddHours(2)
+            };
+
+            var resultaat = await controller.Create(veiling, CancellationToken.None);
+
+            var ok = Assert.IsType<CreatedAtActionResult>(resultaat.Result);
+            var items = Assert.IsType<Klant_VeilingDto>(ok.Value);
+
+            Assert.Equal("TestToevoegen", items.VeilingNaam);
+            Assert.Equal(veiling.Begintijd, items.Begintijd);
+            Assert.Equal(veiling.Eindtijd, items.Eindtijd);
+            Assert.Equal("inactive", items.Status);
+        }
+
+        [Fact]
+        public async Task VeilingtoevoegenValidatieTests1()
+        {
+            var now = _myDate.LocalTime;
+
+            var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("VeilingtoevoegenValidatieTest1");
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+
+            var veiling =
+            new VeilingCreateDto
+            {
+                VeilingNaam = "TestToevoegen",
+                Begintijd = now.AddHours(-2),
+                Eindtijd = now.AddHours(2)
+            };
+
+            var resultaat = await controller.Create(veiling, CancellationToken.None);
+
+            //Begintijd in het verleden
+            var BadRequest = Assert.IsType<BadRequestObjectResult>(resultaat.Result);
+            var details = Assert.IsType<Microsoft.AspNetCore.Mvc.ProblemDetails>(BadRequest.Value);
+
+            Assert.Equal("Starttijd in het verleden", details.Title);
+            Assert.Equal("De starttijd mag niet in het verleden liggen.", details.Detail);
+            Assert.Equal(400, details.Status);
+
+        }
+        [Fact]
+        public async Task VeilingtoevoegenValidatieTests2()
+        {
+            var now = _myDate.LocalTime;
+
+            var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("VeilingtoevoegenValidatieTest2");
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+
+            var veiling =
+            new VeilingCreateDto
+            {
+                VeilingNaam = "TestToevoegen",
+                Begintijd = now.AddMinutes(3),
+                Eindtijd = now.AddDays(2)
+            };
+
+            var resultaat = await controller.Create(veiling, CancellationToken.None);
+
+            //Datum niet hetzelfde
+            var BadRequest = Assert.IsType<BadRequestObjectResult>(resultaat.Result);
+            var details = Assert.IsType<Microsoft.AspNetCore.Mvc.ProblemDetails>(BadRequest.Value);
+
+            Assert.Equal("Ongeldige eindtijd", details.Title);
+            Assert.Equal("De eindtijd moet op dezelfde datum vallen als de starttijd.", details.Detail);
+            Assert.Equal(400, details.Status);
+
+        }
+
+        [Fact]
+        public async Task VeilingtoevoegenValidatieTests3()
+        {
+            var now = _myDate.LocalTime;
+
+            var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("VeilingtoevoegenValidatieTest2");
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+
+            var veiling =
+            new VeilingCreateDto
+            {
+                VeilingNaam = "TestToevoegen",
+                Begintijd = now.AddMinutes(45),
+                Eindtijd = now.AddMinutes(102)
+            };
+
+            var resultaat = await controller.Create(veiling, CancellationToken.None);
+
+            //eindtijd moet exact 60, 120 of 180 uur na starttijd liggen
+            var BadRequest = Assert.IsType<BadRequestObjectResult>(resultaat.Result);
+            var details = Assert.IsType<Microsoft.AspNetCore.Mvc.ProblemDetails>(BadRequest.Value);
+
+            Assert.Equal("Ongeldige eindtijd", details.Title);
+            Assert.Equal("De eindtijd moet exact 1, 2 of 3 uur na de starttijd liggen.", details.Detail);
+            Assert.Equal(400, details.Status);
+
+        }
+
+        [Fact]
+        public async Task VeilingUpdate_BasisTest()
+        {
+            var now = _myDate.LocalTime;
+
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDbUpdateVeiling")
+                .Options;
+
+            using var context = new AppDbContext(options);
+
+            // Bestaande veiling 
+            var bestaandeVeiling = new Veiling
             {
                 VeilingNr = 1,
                 VeilingNaam = "OudeVeiling",
@@ -129,7 +258,7 @@ namespace mvc_api.Tests.Controllers
                 Eindtijd = now.AddDays(1),
                 Status = VeilingStatus.Inactive
             };
-            context.Veilingen.Add(bestaandeVeiling);
+            context.Veiling.Add(bestaandeVeiling);
             context.SaveChanges();
 
             // Controller aanmaken
@@ -154,7 +283,7 @@ namespace mvc_api.Tests.Controllers
             };
 
             //we veranderen de waardes van veilingnr 1
-            var resultaat = await controller.Update(1, updateDto, testNow: now, ct: CancellationToken.None);
+            var resultaat = await controller.Update(1, updateDto, ct: CancellationToken.None);
 
             var request = Assert.IsType<OkObjectResult>(resultaat.Result);
 
@@ -167,13 +296,13 @@ namespace mvc_api.Tests.Controllers
         [Fact]
         public async Task VeilingUpdateMetEntityNull()
         {
-            var now = new DateTime(2026, 01, 06, 12, 0, 0, DateTimeKind.Utc);
+            var now = _myDate.LocalTime;
 
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDbUpdateVeiling")
                 .Options;
 
-        var updatedVeilingen = context.Veiling.ToList();
+            using var context = new AppDbContext(options);
 
             //Geen waardes toegevoegd aan db dus er is geen bestaande veiling
             // Controller aanmaken
@@ -199,7 +328,7 @@ namespace mvc_api.Tests.Controllers
             var nepId = 99;
 
             //we veranderen de waardes van veilingnr 1
-            var resultaat = await controller.Update(nepId, updateDto, testNow: now, ct: CancellationToken.None);
+            var resultaat = await controller.Update(nepId, updateDto, ct: CancellationToken.None);
 
             var request = Assert.IsType<NotFoundObjectResult>(resultaat.Result);
 
@@ -214,6 +343,7 @@ namespace mvc_api.Tests.Controllers
         [Fact]
         public async Task VeilingPostExceptionError()
         {
+            var now = _myDate.LocalTime;
             var controller = VeilingControllerMockFactory.CreateVeilingControllerException("VeilingExceptionError");
 
             controller.ControllerContext = new ControllerContext
@@ -221,19 +351,17 @@ namespace mvc_api.Tests.Controllers
                 HttpContext = new DefaultHttpContext()
             };
 
-            //De reden voor vaste date time is omdat je anders een badrequest krijgt door de if statement van validatetime
-            //het zal altijd net onder de 60, 120 of 180 zijn als je utcnow gebruikt doordat het een miliseconde eerder is dan de eindtijd
-            var tijd = new DateTime(2026, 01, 07, 12, 0, 0, DateTimeKind.Utc);
+        
 
             var veiling =
             new VeilingCreateDto
             {
                 VeilingNaam = "TestToevoegen",
-                Begintijd = tijd.AddHours(1),
-                Eindtijd = tijd.AddHours(2)
+                Begintijd = now.AddHours(1),
+                Eindtijd = now.AddHours(2)
             };
 
-            var resultaat = await controller.Create(veiling, tijd, CancellationToken.None);
+            var resultaat = await controller.Create(veiling, CancellationToken.None);
 
             var errorCode = Assert.IsType<ObjectResult>(resultaat.Result);
             var errorDetail = Assert.IsType<ProblemDetails>(errorCode.Value);
@@ -246,19 +374,18 @@ namespace mvc_api.Tests.Controllers
         [Fact]
         public async Task GetVoorKoper()
         {
+            var now = _myDate.LocalTime;
             var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("VeilingGetVoorKoper");
             var db = (DbContext)controller.GetType()
                         .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                         .GetValue(controller);
 
-            var tijd = new DateTime(2026, 01, 07, 12, 0, 0, DateTimeKind.Utc);
-
             db.Set<Veiling>().Add(new Veiling
             {
                 VeilingNr = 1,
                 VeilingNaam = "TestToevoegen",
-                Begintijd = tijd.AddHours(-1),
-                Eindtijd = tijd.AddHours(2),
+                Begintijd = now.AddHours(-1),
+                Eindtijd = now.AddHours(2),
                 Status = VeilingStatus.Active
             });
 
@@ -279,7 +406,7 @@ namespace mvc_api.Tests.Controllers
                 HttpContext = new DefaultHttpContext { User = gebruiker }
             };
 
-            var resultaat = await controller.GetKlant(null, null, null, false, testNow: tijd);
+            var resultaat = await controller.GetKlant(null, null, null, false);
 
             var request = Assert.IsType<OkObjectResult>(resultaat.Result);
             var items = Assert.IsAssignableFrom<IEnumerable<Klant_VeilingDto>>(request.Value);
@@ -289,26 +416,26 @@ namespace mvc_api.Tests.Controllers
             Assert.Equal(1, waardes.VeilingNr);
             Assert.Equal("TestToevoegen", waardes.VeilingNaam);
             Assert.Equal("active", waardes.Status);
-            Assert.Equal(tijd.AddHours(-1), waardes.Begintijd);
-            Assert.Equal(tijd.AddHours(2), waardes.Eindtijd);
+            Assert.Equal(now.AddHours(-1), waardes.Begintijd);
+            Assert.Equal(now.AddHours(2), waardes.Eindtijd);
         }
         
         [Fact]
         public async Task GetVoorKoperStatusVeranderen()
         {
+            var now = _myDate.LocalTime;
+
             var controller = VeilingControllerMockFactory.CreateVeilingControllerWithInMemoryDb("VeilingGetVoorKoperStatusVeranderen");
             var db = (DbContext)controller.GetType()
                         .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                         .GetValue(controller);
 
-            var tijd = new DateTime(2026, 01, 07, 12, 0, 0, DateTimeKind.Utc);
-
             db.Set<Veiling>().Add(new Veiling
             {
                 VeilingNr = 1,
                 VeilingNaam = "TestToevoegen",
-                Begintijd = tijd.AddHours(-1),
-                Eindtijd = tijd,
+                Begintijd = now.AddHours(-1),
+                Eindtijd = now,
                 Status = VeilingStatus.Active
             });
 
@@ -329,7 +456,7 @@ namespace mvc_api.Tests.Controllers
                 HttpContext = new DefaultHttpContext { User = gebruiker }
             };
 
-            var resultaat = await controller.GetKlant(null, null, null, false, testNow: tijd);
+            var resultaat = await controller.GetKlant(null, null, null, false);
 
             var request = Assert.IsType<OkObjectResult>(resultaat.Result);
             var items = Assert.IsAssignableFrom<IEnumerable<Klant_VeilingDto>>(request.Value);
@@ -338,9 +465,9 @@ namespace mvc_api.Tests.Controllers
 
             Assert.Equal(1, waardes.VeilingNr);
             Assert.Equal("TestToevoegen", waardes.VeilingNaam);
-            Assert.Equal("inactive", waardes.Status);
-            Assert.Equal(tijd.AddHours(-1), waardes.Begintijd);
-            Assert.Equal(tijd, waardes.Eindtijd);
+            Assert.Equal("afgesloten", waardes.Status);
+            Assert.Equal(now.AddHours(-1), waardes.Begintijd);
+            Assert.Equal(now, waardes.Eindtijd);
         }
     
     }

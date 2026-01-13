@@ -525,5 +525,4 @@ public class VeilingproductControllerTests
         Assert.Equal(3, result.VeilingNr);
         repository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
-
 }

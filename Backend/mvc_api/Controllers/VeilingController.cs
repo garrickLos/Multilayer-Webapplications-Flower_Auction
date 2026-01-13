@@ -5,6 +5,7 @@ using mvc_api.Data;
 using mvc_api.Models;
 using ApiGetFilters;
 
+
 namespace mvc_api.Controllers;
 
 [ApiController]
@@ -17,12 +18,13 @@ public class VeilingController : ControllerBase
     private readonly ProjectieVeilingController _projectie;
     private readonly IVeilingControllerFilter _filter;
 
+    private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
+
+
     // public VeilingController(AppDbContext db)
     //     : this(db, new ProjectieVeilingController(), new VeilingControllerFilter(db))
     // {
     // }
-
-    private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
     
     public VeilingController(
         AppDbContext db,
@@ -44,15 +46,14 @@ public class VeilingController : ControllerBase
         [FromQuery] bool onlyActive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
-        DateTime? testNow = null,
         CancellationToken ct = default)
-    {   
-        var now = testNow ?? _myDate.LocalTime;
+    {
+        var now = _myDate.LocalTime;
 
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
-            (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now && v.Status != VeilingStatus.Cancelled) 
+            (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
             || 
             // Scenario B: Moet sluiten
             (v.Status == VeilingStatus.Active && v.Eindtijd <= now)
@@ -66,7 +67,7 @@ public class VeilingController : ControllerBase
                 if (now >= v.Eindtijd)
                 {
                     // Tijd is voorbij -> Sluiten
-                    v.Status = VeilingStatus.Closed;
+                    v.Status = VeilingStatus.Inactive;
                 }
                 else if (now >= v.Begintijd && now < v.Eindtijd)
                 {
@@ -113,20 +114,16 @@ public class VeilingController : ControllerBase
         [FromQuery] bool onlyActive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
-        DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = testNow ?? _myDate.LocalTime;
+        var now = _myDate.LocalTime;
 
-        // if (testNow == null)
-        // {
-        //     now = now.ToLocalTime();
-        // }
+        
 
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
-            (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now && v.Status != VeilingStatus.Cancelled) 
+            (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
             || 
             // Scenario B: Moet sluiten
             (v.Status == VeilingStatus.Active && v.Eindtijd <= now)
@@ -140,7 +137,7 @@ public class VeilingController : ControllerBase
                 if (v.Eindtijd <= now)
                 {
                     // Tijd is voorbij -> Sluiten
-                    v.Status = VeilingStatus.Closed;
+                    v.Status = VeilingStatus.Inactive;
                 }
                 else if (v.Begintijd <= now && v.Eindtijd > now)
                 {
@@ -194,16 +191,15 @@ public class VeilingController : ControllerBase
         [FromQuery] bool onlyActive = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
-        DateTime? testNow = null,
 
         CancellationToken ct = default)
     {
-        var now = testNow ?? _myDate.LocalTime;
-
+        var now = _myDate.LocalTime;
+        
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
-            (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now && v.Status != VeilingStatus.Cancelled) 
+            (v.Status != VeilingStatus.Active && v.Begintijd <= now && v.Eindtijd > now) 
             || 
             // Scenario B: Moet sluiten
             (v.Status == VeilingStatus.Active && v.Eindtijd <= now)
@@ -217,7 +213,7 @@ public class VeilingController : ControllerBase
                 if (now >= v.Eindtijd)
                 {
                     // Tijd is voorbij -> Sluiten
-                    v.Status = VeilingStatus.Closed;
+                    v.Status = VeilingStatus.Inactive;
                 }
                 else if (now >= v.Begintijd && now < v.Eindtijd)
                 {
@@ -257,7 +253,8 @@ public class VeilingController : ControllerBase
         } else
         {
             return Unauthorized();
-        }   
+        }
+        
     }
 
     // GET: api/Veiling/{id}
@@ -298,12 +295,12 @@ public class VeilingController : ControllerBase
     [Authorize (Roles ="VeilingMeester")]
     public async Task<ActionResult<VeilingCreateDto>> Create(
         [FromBody] VeilingCreateDto dto,
-        DateTime? testNow = null,
 
         CancellationToken ct = default)
     {
 
-        var now = testNow ?? _myDate.LocalTime;
+        var now = _myDate.LocalTime;
+
 
         // Validatie van [Required] gebeurt automatisch door [ApiController]
         var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
@@ -347,28 +344,19 @@ public class VeilingController : ControllerBase
     // PUT: api/Veiling/{id}
     [HttpPut("{id:int}")]
     [Authorize (Roles ="VeilingMeester")]
-    public async Task<ActionResult<VeilingMeester_VeilingDto>> Update(
+    public async Task<ActionResult<VeilingUpdateDto>> Update(
         int id,
         [FromBody] VeilingUpdateDto dto,
-        DateTime? testNow = null,
         CancellationToken ct = default)
     {
-        var now = testNow ?? _myDate.LocalTime;
+        var now = _myDate.LocalTime;
 
+        
         var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
         
         if (entity is null)
             return NotFound(($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
 
-        var requestedStatus = NormalizeStatusValue(dto.Status);
-        if (requestedStatus == VeilingStatus.Cancelled)
-        {
-            await CancelAuctionAsync(entity, ct);
-            await _db.SaveChangesAsync(ct);
-            var cancelledDto = await GetVeilingResponseAsync(entity.VeilingNr, now, ct);
-            return Ok(cancelledDto);
-        }
-        
         var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
         if (timeValidation is not null)
             return timeValidation;
@@ -378,17 +366,13 @@ public class VeilingController : ControllerBase
         entity.Begintijd = dto.Begintijd;
         entity.Eindtijd = dto.Eindtijd;
 
-        // if (!string.IsNullOrWhiteSpace(dto.Status))
-        //     entity.Status = NormalizeStatus(dto.Status);
 
-        // Business Logic check
-        //Deze check is onbereikbaar
-        if (entity.Eindtijd <= now && entity.Status == VeilingStatus.Active)
-            entity.Status = VeilingStatus.Closed;
-        
-        await _db.SaveChangesAsync(ct);
-
-        var resultDto = await GetVeilingResponseAsync(entity.VeilingNr, now, ct);
+        var resultDto = new VeilingUpdateDto
+            {
+                VeilingNaam = entity.VeilingNaam,
+                Begintijd = entity.Begintijd,
+                Eindtijd = entity.Eindtijd,
+            };
 
         return Ok(resultDto);
     }
@@ -404,21 +388,17 @@ public class VeilingController : ControllerBase
         
         if (entity is null)
             return NotFound(Problem($"Geen veiling met ID {id}.", statusCode: 404, title: "Niet gevonden"));
-        
-        if (dto.GeupdateBeginTijd.HasValue)
-        {
-            var updatedTimeConverted = new DateTimeWithZone(dto.GeupdateBeginTijd.Value, TijdZoneConfig.Amsterdam);
 
-            var nieuweTijd = updatedTimeConverted.LocalTime;
+        // Update fields
+        entity.GeupdateBeginTijd = dto.GeupdateBeginTijd;
 
-            // Update fields
-            entity.GeupdateBeginTijd = nieuweTijd;
-        }
+        // if (!string.IsNullOrWhiteSpace(dto.Status))
+        //     entity.Status = NormalizeStatus(dto.Status);
 
         // Business Logic check
         if (entity.Eindtijd <= dto.GeupdateBeginTijd && entity.Status == VeilingStatus.Active)
-            entity.Status = VeilingStatus.Closed;
-        
+            entity.Status = VeilingStatus.Inactive;
+
         await _db.SaveChangesAsync(ct);
         
         return Ok(dto);
@@ -435,47 +415,12 @@ public class VeilingController : ControllerBase
         if (entity is null)
             return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
 
-        await CancelAuctionAsync(entity, ct);
+        _db.Veiling.Remove(entity);
         await _db.SaveChangesAsync(ct);
 
         return NoContent();
     }
 
-    private async Task CancelAuctionAsync(Veiling entity, CancellationToken ct)
-    {
-        entity.Status = VeilingStatus.Cancelled;
-
-        var products = await _db.Veilingproducten
-            .Where(product => product.VeilingNr == entity.VeilingNr)
-            .ToListAsync(ct);
-
-        foreach (var product in products)
-        {
-            product.VeilingNr = null;
-            product.Startprijs = null;
-        }
-    }
-
-    private static string? NormalizeStatusValue(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-            return null;
-
-        return status.Trim().ToLowerInvariant() switch
-        {
-            "geannuleerd" => VeilingStatus.Cancelled,
-            "cancelled" => VeilingStatus.Cancelled,
-            "deleted" => VeilingStatus.Cancelled,
-            _ => null
-        };
-    }
-
-    private async Task<VeilingMeester_VeilingDto?> GetVeilingResponseAsync(int id, DateTime now, CancellationToken ct)
-    {
-        var query = _db.Veiling.AsNoTracking().Where(v => v.VeilingNr == id);
-        return await _projectie.ProjectToVeiling_VeilingMeesterDto(query, now).FirstOrDefaultAsync(ct);
-    }
-    
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
     {
