@@ -1,5 +1,5 @@
 import "../css/SellerScreenInfo.css";
-import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
+import { UseDataApi as GetProduct } from "../Componenten/ApiGet";
 import { NavLink } from 'react-router-dom';
 import { resolveImageUrl } from "../config/api";
 
@@ -24,7 +24,7 @@ export default function SellerScreenInfo() {
     return (
         <main className="SellerScreenInfo">
             <div className="productToevoegenKnop_container">    
-                <NavLink to='/veilingPlaatsen'
+                <NavLink to='/productPlaatsen'
                 className="productToevoegenKnop">Product toevoegen</NavLink>
             </div>
             <section className="productScroller">
@@ -40,7 +40,7 @@ export default function SellerScreenInfo() {
                         <div className="kolomRechts">
                                 <div className="productNaam">Product naam: {product.naam}</div>
                                 <div className="productCategorie">Product categorie: {product.categorie}</div>
-                                <div className="datum">Geplaatst op: {product.geplaatstDatum.replace("T", " om ")} uur</div>
+                                <div className="datum">Geplaatst op: {product.geplaatstDatum.split("T")[0]}</div>
                                 <div className="hoeveelheid">Hoeveelheid bloemen: {product.voorraad}</div>
                                 <div className="aantalFusten">Aantal fusten: {product.fust}</div>
                                 <div className="plaats">Plaats: {product.plaats}</div>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
-import { useFetchDatajson } from '../../typeScript/jsonOphalen';
-
+import { useFetchDatajson } from '../../Componenten/index';
 import { renderContent } from './../privacyBeleid/Componenten/index';
 
 // import index types

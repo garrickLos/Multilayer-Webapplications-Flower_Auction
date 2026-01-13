@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import type { TimerProps, VeilingLogica } from '../../Veilingscherm/VeilingSchermComponenten/index';
 
-import { DelenDoor as convertToEuro } from "../../../typeScript/RekenFuncties";
+import { DelenDoor as convertToEuro } from "../../../Componenten/RekenFuncties";
 
 // Hulpfunctie: Bereken de gegevens van het huidige actieve product
 export function berekenHuidigeVeilingStaat(veiling?: VeilingLogica) {

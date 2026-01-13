@@ -1,5 +1,5 @@
 // api import
-import { ApiRequest } from "../../../typeScript/ApiRequest";
+import { ApiRequest } from '../../../Componenten/index';
 
 import type { KwekerInfo } from '../../hoofdscherm/Componenten/index';
 

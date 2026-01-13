@@ -12,6 +12,16 @@ export { laadIcon } from './Laadicon';
 
 export { getBearerToken, getRefreshToken } from './TokensGet';
 
+export { ApiRequest } from './ApiRequest';
+
+export { DelenDoor, Vermenigvuldigen} from './RekenFuncties'; 
+
+export { GetIsoTimeByZone, GetDate } from './FetchDate'; 
+
+export { useFetchDatajson } from './jsonOphalen';
+
+export { useAutorefresh } from './TimerComponents';
+
 // types:
 
 export type { InputFieldProps } from './ComponentTypes/InputFieldTypes';

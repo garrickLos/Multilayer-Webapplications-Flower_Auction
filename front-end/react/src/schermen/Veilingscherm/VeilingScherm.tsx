@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 
 //api calls
-import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
-import { ApiRequest } from '../../typeScript/ApiRequest';
+import { useAutorefresh as ApiRefresh} from '../../Componenten/index.tsx';
 
 //types import van index
 import type { VeilingLogica, VeilingschermProps } from './VeilingSchermComponenten/index';
@@ -11,7 +10,7 @@ import type { KwekerInfo } from '../hoofdscherm/Componenten/index';
 
 // index componenten imports
 import { InfoVeld, GenereerKnop, InputField, checkInputField, 
-    getBearerToken as Token, getRefreshToken as refreshToken } from '../../Componenten/index';
+    getBearerToken as Token, getRefreshToken as refreshToken, ApiRequest } from '../../Componenten/index';
 import { ContainerSideMenu, Timer, 
     VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/index';
 

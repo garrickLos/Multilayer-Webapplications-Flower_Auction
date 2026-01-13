@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import "../css/CustomerScreenInfo.css";
-import { ApiRequest } from "../typeScript/ApiRequest";
 import { resolveImageUrl } from "../config/api";
+
+import { ApiRequest } from '../Componenten/index';
 
 
 

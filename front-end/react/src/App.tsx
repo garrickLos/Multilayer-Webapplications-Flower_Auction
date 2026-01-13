@@ -13,7 +13,7 @@ import ErrorPage from './schermen/404Scherm/404.tsx';
 import AuctionScreen from './schermen/Veilingscherm/VeilingScherm.tsx';
 
 // import { UpdateApi } from './typeScript/ApiPut.tsx'
-import { useAutorefresh } from './typeScript/ApiRefresh.tsx'
+import { useAutorefresh } from './Componenten/index.tsx';
 import { resolveApiUrl } from './config/api.ts'
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
