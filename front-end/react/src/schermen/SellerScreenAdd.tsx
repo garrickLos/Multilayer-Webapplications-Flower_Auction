@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
 import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
-import type { CategorieListDto } from "../api/dtos";
 
 interface CategorieType {
     categorieNr: number;
@@ -19,7 +18,7 @@ export default function SellerScreenAdd() {
         status: true,
         Kwekernr: sessionStorage.getItem("gebruikerNummer"),
         ImagePath: Default_ImagePlaceholder,
-        VoorraadBloemen: 10
+        VoorraadBloemen: 1000
     };
 
     const [product, setProduct] = useState({

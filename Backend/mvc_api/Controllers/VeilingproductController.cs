@@ -5,6 +5,7 @@ using mvc_api.Data;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
 
+
 namespace mvc_api.Controllers;
 
 [ApiController]
@@ -15,8 +16,13 @@ public class VeilingproductController : ControllerBase
 {
     private readonly IVeilingproductRepository _repository;
 
-    public VeilingproductController(IVeilingproductRepository repository) =>
+    //private readonly IImageStorageService _imageStorage;
+
+    public VeilingproductController(IVeilingproductRepository repository)
+    {
         _repository = repository;
+       // _imageStorage = imageStorage;
+    }
 
     private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
 
@@ -85,10 +91,12 @@ public class VeilingproductController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Bedrijf")]
+    //[Consumes("multipart/form-data")]
     public async Task<ActionResult<VeilingproductKwekerListDto>> Create(
         [FromBody] VeilingproductCreateDto dto,
         CancellationToken ct = default)
     {
+        //string? imagePath = null;
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
@@ -99,20 +107,26 @@ public class VeilingproductController : ControllerBase
         if (!TryGetUserId(out var userId))
             return Forbid();
 
+        // if(dto.Image != null && dto.Image.Length > 0)
+        // {
+        //     imagePath = await _imageStorage.UploadAsync(dto.Image, ct);
+        // }
+
         var entity = new Veilingproduct
         {
-            Naam            = dto.Naam.Trim(),
-            GeplaatstDatum  = dto.GeplaatstDatum ?? DateTime.UtcNow,
-            AantalFusten    = dto.AantalFusten,
+            Naam = dto.Naam.Trim(),
+            GeplaatstDatum = dto.GeplaatstDatum ?? DateTime.UtcNow,
+            AantalFusten = dto.AantalFusten,
             VoorraadBloemen = dto.VoorraadBloemen,
-            Startprijs      = null,
-            CategorieNr     = dto.CategorieNr,
-            Plaats          = dto.Plaats,
-            Minimumprijs    = dto.Minimumprijs,
-            Kwekernr        = userId,
-            BeginDatum      = dto.BeginDatum,
-            Status          = ModelStatus.Active,
-            ImagePath       = dto.ImagePath
+            Startprijs = null,
+            CategorieNr = dto.CategorieNr,
+            Plaats = dto.Plaats,
+            Minimumprijs = dto.Minimumprijs,
+            Kwekernr = userId,
+            BeginDatum = dto.BeginDatum,
+            Status = ModelStatus.Active,
+            ImagePath = dto.ImagePath
+            // ImagePath       = imagePath ?? "/images/placeholders/product.webp"
         };
 
         _repository.Add(entity);

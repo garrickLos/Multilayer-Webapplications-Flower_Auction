@@ -32,6 +32,9 @@ public record VeilingproductCreateDto
 
     [Required, StringLength(200)]
     public string ImagePath { get; init; } = default!;
+
+    //Om de foto op te slaan
+    //public IFormFile? Image { get; init; }
 }
 
 public record VeilingproductUpdateDto
