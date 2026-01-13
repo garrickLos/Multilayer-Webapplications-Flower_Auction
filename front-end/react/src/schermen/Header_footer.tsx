@@ -61,9 +61,9 @@ export default function Header() {
                     <NavLink to="/home">
                         <img src="/src/assets/pictures/webp/floraHolidayLogo.webp"
                              alt="Royal Flora Holland logo"
-                             className="floraLogo" />
+                             className="floraLogo"/>
                     </NavLink>
-                    <h1>Royal Flora Holland</h1>
+                    <h1>Bloemen met Biedstress</h1>
                 </div>
 
                 <nav>
