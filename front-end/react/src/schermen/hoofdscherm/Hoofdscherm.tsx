@@ -1,18 +1,18 @@
 import { NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
-import '../../css/HoofdSchermStyle.css';
-
-import { CountPages, scrollSlider } from '../../typeScript/sliderCommand.tsx';
-import { useAutorefresh as ApiRefresh } from '../../typeScript/ApiRefresh.tsx';
-import { ApiRequest } from '../../typeScript/ApiRequest.tsx';
+import { CountPages, scrollSlider } from './Componenten/sliderCommand.tsx';
+import { useAutorefresh as ApiRefresh } from '../../Componenten/index.tsx';
 
 // import components
+import { ApiRequest } from '../../Componenten/index.tsx';
 import { AuctionCard } from '../hoofdscherm/Componenten/index.tsx';
 import { ErrorScherm, Laadscherm } from '../Veilingscherm/VeilingSchermComponenten/index.tsx';
 
 // import index types
 import type {VeilingItem} from '../hoofdscherm/Componenten/index.tsx';
+
+import '../../css/HoofdSchermStyle.css';
 
 export default function MainScreen() {
     const RefreshTimeMS = 60000; // 6000 miliseconden zou 6 seconden moeten zijn

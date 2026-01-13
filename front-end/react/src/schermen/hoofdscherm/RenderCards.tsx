@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect } from "react";
-import { GenereerKnop } from "../../Componenten/Knop";
-import { DelenDoor as SetEuro } from "../../typeScript/RekenFuncties";
-import { GetDate } from "../../typeScript/FetchDate";
+
+import { GenereerKnop } from '../../Componenten/index.tsx';
+
+import { DelenDoor as SetEuro } from "../../Componenten/RekenFuncties.tsx";
+import { GetDate } from "../../Componenten/FetchDate.tsx";
 import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
 import { resolveImageUrl } from "../../config/api";
 
@@ -26,12 +28,10 @@ export function AuctionCard({ product, parentVeiling }: AuctionCardProps) {
 
     // States pas initialiseren NA de guard clause
     const [currentSrc, setCurrentSrc] = useState(resolveImageUrl(product.imagePath) || Default_ImagePlaceholder);
-    const [hasError, setHasError] = useState(false);
     const [kweker, setKweker] = useState<KwekerInfo | null > (null);
 
     const handleError = () => {
         setCurrentSrc(Default_ImagePlaceholder);
-        setHasError(true);
     };
 
     useEffect(() => {
@@ -61,7 +61,6 @@ export function AuctionCard({ product, parentVeiling }: AuctionCardProps) {
             />
             
             <div className='RenderCard_text-container'>
-                {hasError && <p className='ImageErrorMsg'>foto kan niet gevonden worden</p>}
                 
                 <h3>{product.naam || 'Geen Titel'}</h3>
                 

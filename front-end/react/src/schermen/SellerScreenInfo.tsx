@@ -1,5 +1,5 @@
 import "../css/SellerScreenInfo.css";
-import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
+import { UseDataApi as GetProduct } from "../Componenten/ApiGet";
 import { NavLink } from 'react-router-dom';
 import { resolveImageUrl } from "../config/api";
 

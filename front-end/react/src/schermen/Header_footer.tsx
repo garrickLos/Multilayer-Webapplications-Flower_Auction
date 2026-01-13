@@ -2,12 +2,14 @@ import { NavLink } from 'react-router-dom';
 import '../css/HeaderStylesheet.css';
 import '../css/FooterStylesheet.css';
 import { jwtDecode } from "jwt-decode";
+
 import { useEffect, useState } from "react";
+
 import floraHolidayLogo from "../assets/pictures/webp/floraHolidayLogo.webp";
 import veilingPlaatsenLogo from "../assets/pictures/webp/veilingPlaatsen.webp";
 import mijnVeilingenLogo from "../assets/pictures/webp/mijnVeilingenBekijken.webp";
 import klantGegevensLogo from "../assets/pictures/webp/klantGegevens.webp";
-import footerIcon from "../assets/pictures/ico/RoyalFloraFooter_Icon.ico";
+import footerIcon from "../assets/pictures/webp/floraHolidayLogo.webp";
 
 export default function Header() {
     interface JwtClaims {
