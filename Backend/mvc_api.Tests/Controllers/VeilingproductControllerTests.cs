@@ -488,6 +488,14 @@ public class VeilingproductControllerTests
         var repository = new Mock<IVeilingproductRepository>();
         repository.Setup(r => r.FindAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
         repository.Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        repository.Setup(r => r.GetVeilingAsync(3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Veiling
+            {
+                VeilingNr = 3,
+                VeilingNaam = "Planning veiling",
+                Begintijd = DateTime.UtcNow.AddDays(1),
+                Eindtijd = DateTime.UtcNow.AddDays(2)
+            });
         repository.Setup(r => r.GetVeilingmeesterListByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new VeilingproductVeilingmeesterListDto(
                 10,

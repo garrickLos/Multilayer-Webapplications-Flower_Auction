@@ -10,8 +10,8 @@ public class NormalizeStatusServices
     [Theory 
         (DisplayName = "Input normal string")]
     [InlineData ("ASdnaskdnasdk",   "inactive")]
-    [InlineData ("Sold",            "sold")]
-    [InlineData ("SOLD",            "sold")]
+    [InlineData ("Sold",            "uitverkocht")]
+    [InlineData ("SOLD",            "uitverkocht")]
     [InlineData ("Active",          "active")]
     [InlineData ("INACTIVE",        "inactive")]
     [InlineData ("ACTIVE",          "active")]
