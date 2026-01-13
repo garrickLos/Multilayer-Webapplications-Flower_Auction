@@ -3,9 +3,11 @@ import type { Product } from "../api";
 import { formatCurrency } from "../helpers";
 import { mapProductStatusToUiStatus } from "../rules";
 import { StatusBadge } from "./ui";
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
+import { resolveImageUrl } from "../../config/api";
 
 // Fallback-afbeelding bij ontbrekende productfoto
-const fallbackImage = "/src/assets/pictures/webp/MissingPicture.webp";
+const fallbackImage = MissingPicture;
 
 type ProductCardProps = {
     readonly product: Product;
@@ -24,7 +26,7 @@ export function ProductKaart({product, action, showStartPrice = true, showStatus
         >
             {/* Productafbeelding */}
             <img
-                src={product.imagePath ?? fallbackImage}
+                src={resolveImageUrl(product.imagePath) || fallbackImage}
                 alt={product.name}
                 className="rounded-3 flex-shrink-0"
                 style={{ width: 120, height: 90, objectFit: "cover" }}
@@ -73,7 +75,7 @@ export function ProductThumbnail({product,}: {
 }): JSX.Element {
     return (
         <img
-            src={product.imagePath ?? fallbackImage}
+            src={resolveImageUrl(product.imagePath) || fallbackImage}
             alt={product.name}
             className="rounded-3"
             style={{ width: 48, height: 48, objectFit: "cover" }}

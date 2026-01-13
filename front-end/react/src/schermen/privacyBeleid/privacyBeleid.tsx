@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
-import { useFetchDatajson } from '../../typeScript/jsonOphalen';
-
+import { useFetchDatajson } from '../../Componenten/index';
 import { renderContent } from './../privacyBeleid/Componenten/index';
 
 // import index types
@@ -9,7 +8,7 @@ import type { ContentBlock } from './../privacyBeleid/Componenten/index';
 
 import '../../css/privacybeleidStylesheet.css';
 
-const url = "src/resources/json/privacyBeleid.json";
+const url = new URL("../../resources/Json/privacyBeleid.json", import.meta.url).toString();
 
 export default function PrivacyScherm() {
     const [openItemId, setOpenItemId] = useState<string | null>(null);

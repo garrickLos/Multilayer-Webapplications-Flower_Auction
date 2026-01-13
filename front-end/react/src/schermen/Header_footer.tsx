@@ -2,7 +2,14 @@ import { NavLink } from 'react-router-dom';
 import '../css/HeaderStylesheet.css';
 import '../css/FooterStylesheet.css';
 import { jwtDecode } from "jwt-decode";
+
 import { useEffect, useState } from "react";
+
+import floraHolidayLogo from "../assets/pictures/webp/floraHolidayLogo.webp";
+import veilingPlaatsenLogo from "../assets/pictures/webp/veilingPlaatsen.webp";
+import mijnVeilingenLogo from "../assets/pictures/webp/mijnVeilingenBekijken.webp";
+import klantGegevensLogo from "../assets/pictures/webp/klantGegevens.webp";
+import footerIcon from "../assets/pictures/webp/floraHolidayLogo.webp";
 
 export default function Header() {
     interface JwtClaims {
@@ -11,14 +18,12 @@ export default function Header() {
 }
 
     const [role, setRole] = useState<string | null>(null);
-    const [gebruikerNummer, setGebruikerNummer] = useState<string | null>(null);
     
     useEffect(() => {
         const updateRoleFromToken = () => {
             const token = sessionStorage.getItem("token");
             if (!token) {
                 setRole(null);
-                setGebruikerNummer(null);
                 return;
             }
 
@@ -29,7 +34,6 @@ export default function Header() {
                 setRole(decoded[RolClaim] || null);
                 
                 const nummer = decoded[gebruikerClaim] || null;
-                setGebruikerNummer(nummer);
 
                 if(nummer != null){
                     sessionStorage.setItem("gebruikerNummer", nummer);
@@ -39,7 +43,6 @@ export default function Header() {
                 TokenOphalen.setToken(token);
             } catch {
                 setRole(null);
-                setGebruikerNummer(null);
             }
         };
         updateRoleFromToken();
@@ -59,7 +62,7 @@ export default function Header() {
             <div className="HoofschermContainer">
                 <div className="logoTitel">
                     <NavLink to="/home">
-                        <img src="/src/assets/pictures/webp/floraHolidayLogo.webp"
+                        <img src={floraHolidayLogo}
                              alt="Royal Flora Holland logo"
                              className="floraLogo"/>
                     </NavLink>
@@ -70,7 +73,7 @@ export default function Header() {
                     <ul>
                         {role === "Bedrijf" && (
                             <div className="veilingPLaatsen">
-                                <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
+                                <img src={veilingPlaatsenLogo}
                                      alt="houten hamer"
                                      className="veilingPlaatsenLogo" />
                                 <NavLink to='/productPlaatsen'>Product plaatsen</NavLink>
@@ -79,7 +82,7 @@ export default function Header() {
 
                         {role === "Bedrijf" && (
                             <div className="mijnVeilingenBekijken">
-                                <img src="/src/assets/pictures/webp/mijnVeilingenBekijken.webp"
+                                <img src={mijnVeilingenLogo}
                                      alt="foto van een blad"
                                      className="mijnVeilingenBekijkenLogo" />
                                 <NavLink to='/productBekijken'>Mijn producten bekijken</NavLink>
@@ -88,7 +91,7 @@ export default function Header() {
 
                         {role === "Koper" && (
                             <div className="klantGegevens">
-                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                <img src={klantGegevensLogo}
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
                                 <NavLink to='/klantGegevens'>Mijn biedingen</NavLink>
@@ -97,7 +100,7 @@ export default function Header() {
 
                         {role === "VeilingMeester" && (
                             <div className="veilingPLaatsen">
-                                <img src="/src/assets/pictures/webp/veilingPlaatsen.webp"
+                                <img src={veilingPlaatsenLogo}
                                      alt="houten hamer"
                                      className="veilingPlaatsenLogo" />
                                 <NavLink to='/veilingmeester'>Veilingmeester</NavLink>
@@ -106,7 +109,7 @@ export default function Header() {
 
                         {!isLoggedIn && (
                             <div className="uitloggen">
-                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                <img src={klantGegevensLogo}
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
                                 <NavLink to="/inloggen">Inloggen</NavLink>
@@ -114,7 +117,7 @@ export default function Header() {
                         )}
                         {!isLoggedIn && (
                             <div className="uitloggen">
-                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                <img src={klantGegevensLogo}
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
                                 <NavLink to="/registreren">Registreren</NavLink>
@@ -123,7 +126,7 @@ export default function Header() {
 
                         {isLoggedIn && (
                             <div className="uitloggen">
-                                <img src="/src/assets/pictures/webp/klantGegevens.webp"
+                                <img src={klantGegevensLogo}
                                      alt="foto van een persoon"
                                      className="klantGegevensLogo" />
                                 <NavLink to="/home" onClick={() => {
@@ -147,7 +150,7 @@ export function Footer() {
             <div className="overlayBlock">
                 <div className="footerText">
                     <div className="footer-image">
-                        <img src="/src/assets/pictures/ico/RoyalFloraFooter_Icon.ico" alt=""></img>
+                        <img src={footerIcon} alt=""></img>
                     </div>
                     <div className="text-column">
                         <NavLink to='/privacyBeleid'>privacy beleid</NavLink>

@@ -13,7 +13,8 @@ import ErrorPage from './schermen/404Scherm/404.tsx';
 import AuctionScreen from './schermen/Veilingscherm/VeilingScherm.tsx';
 
 // import { UpdateApi } from './typeScript/ApiPut.tsx'
-import { useAutorefresh } from './typeScript/ApiRefresh.tsx'
+import { useAutorefresh } from './Componenten/index.tsx';
+import { resolveApiUrl } from './config/api.ts'
 
 import Header, {Footer} from './schermen/Header_footer.tsx'
 import SellerScreenInfo from "./schermen/SellerScreenInfo.tsx";
@@ -50,7 +51,7 @@ async function performSilentRefresh() {
     if (!token || !refreshToken) return;
 
     try {
-        const response = await fetch("http://localhost:5105/auth/refresh", { 
+        const response = await fetch(resolveApiUrl("/auth/refresh"), { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, refreshToken })

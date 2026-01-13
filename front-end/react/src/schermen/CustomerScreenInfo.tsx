@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import "../css/CustomerScreenInfo.css";
-import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
-import {ApiRequest} from "../typeScript/ApiRequest";
-import { reference } from "@popperjs/core";
+import { resolveImageUrl } from "../config/api";
+
+import { ApiRequest } from '../Componenten/index';
 
 
 
@@ -85,7 +85,7 @@ export default function CustomerScreenInfo() {
                     return (
                         <div key={bieding.gebruikerNr} className="rij">
                             <div className="kolomLinks">
-                                { <img src={product.imagePath} alt={product.naam} className="fotoProduct" /> }
+                                { <img src={resolveImageUrl(product.imagePath)} alt={product.naam} className="fotoProduct" /> }
                             </div>
                             <div className="kolomRechts">
                                 <div className="linkerHelft">

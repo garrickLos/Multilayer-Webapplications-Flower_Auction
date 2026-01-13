@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "../css/SellerScreenAdd.css";
-import { UseDataApi as GetCategorie } from "../typeScript/ApiGetCategorien";
+import { UseDataApi as GetCategorie } from "../Componenten/ApiGetCategorien";
+import { resolveApiUrl, resolveImageUrl } from "../config/api";
+import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
 
 interface CategorieType {
     categorieNr: number;
@@ -9,8 +11,8 @@ interface CategorieType {
 
 export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
-    const bestandsPad = "../../src/assets/pictures/productBloemen/";
-    const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+    const bestandsPad = `${import.meta.env.BASE_URL}productBloemen/`;
+    const Default_ImagePlaceholder = MissingPicture;
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
 
@@ -41,6 +43,10 @@ export default function SellerScreenAdd() {
     });
 
     const [imagePath, setImagePath] = useState(Data.ImagePath);
+    const resolvedImagePath =
+        imagePath === Default_ImagePlaceholder
+            ? Default_ImagePlaceholder
+            : resolveImageUrl(imagePath);
 
     const validateField = (id: string, value: string | number) => {
         let error = "";
@@ -116,7 +122,7 @@ export default function SellerScreenAdd() {
 
         try {
             console.log(product.CategorieNr);
-            const response = await fetch("/api/Veilingproduct", {
+            const response = await fetch(resolveApiUrl("/api/Veilingproduct"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
                 "Authorization": "Bearer " + token},
@@ -143,7 +149,7 @@ export default function SellerScreenAdd() {
                     <div className="Container">
                         <section className="schermDeel1">
                             <div className="fotoContainer">
-                                <img src={imagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
+                                <img src={resolvedImagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
                             </div>
                             <div className="ordenen-bestand">
                                 <label htmlFor="BestandPad" className="bestand"></label>

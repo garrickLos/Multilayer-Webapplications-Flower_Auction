@@ -1,6 +1,7 @@
 import "../css/SellerScreenInfo.css";
-import { UseDataApi as GetProduct } from "../typeScript/ApiGet";
+import { UseDataApi as GetProduct } from "../Componenten/ApiGet";
 import { NavLink } from 'react-router-dom';
+import { resolveImageUrl } from "../config/api";
 
 
 export default function SellerScreenInfo() {
@@ -31,7 +32,7 @@ export default function SellerScreenInfo() {
                     <div key={product.veilingProductNr} className="rij">
                         <div className="kolomLinks">
                             <img
-                                src={product.imagePath}
+                                src={resolveImageUrl(product.imagePath)}
                                 alt={product.naam}
                                 className="fotoProduct"
                             />

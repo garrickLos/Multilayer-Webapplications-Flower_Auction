@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 
 //api calls
-import { useAutorefresh as ApiRefresh} from '../../typeScript/ApiRefresh';
-import { ApiRequest } from '../../typeScript/ApiRequest';
+import { useAutorefresh as ApiRefresh} from '../../Componenten/index.tsx';
 
 //types import van index
 import type { VeilingLogica, VeilingschermProps } from './VeilingSchermComponenten/index';
@@ -11,12 +10,13 @@ import type { KwekerInfo } from '../hoofdscherm/Componenten/index';
 
 // index componenten imports
 import { InfoVeld, GenereerKnop, InputField, checkInputField, 
-    getBearerToken as Token, getRefreshToken as refreshToken } from '../../Componenten/index';
+    getBearerToken as Token, getRefreshToken as refreshToken, ApiRequest } from '../../Componenten/index';
 import { ContainerSideMenu, Timer, 
-    berekenHuidigeVeilingStaat as huidigeVeilingStaat, 
     VeilingProductitem_Update, mapVeilingData } from './VeilingSchermComponenten/index';
 
 import { getKwekerInfo } from '../hoofdscherm/Componenten/index';
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
+import { resolveImageUrl } from "../../config/api";
 
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
@@ -24,7 +24,7 @@ import '../../css/VeilingScherm.css';
 let token = Token() || "";
 let token_refresh = "";
 
-const Default_ImagePlaceholder = '/src/assets/pictures/webp/MissingPicture.webp';
+const Default_ImagePlaceholder = MissingPicture;
 
 export default function AuctionScreen() {
     const [toonEindScherm, setToonEindScherm] = useState(false);
@@ -72,8 +72,6 @@ export default function AuctionScreen() {
     let veilingIsOngeldig = false;
 
     if (actieveVeiling != null) {
-        let isAfgelopen = huidigeVeilingStaat(actieveVeiling).isAfgelopen;
-
         veilingIsOngeldig= actieveVeiling?.status == 'inactive' || token == null;
     }
     
@@ -216,7 +214,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
             <div className="Auction_Container">
                 <section className="Auction_Foto">
                     <div className="Auction_fotoContainer">
-                        <img src={huidigProduct?.imagePath == undefined ? Default_ImagePlaceholder : huidigProduct?.imagePath} alt="Foto van een bloem" className="Auction_veilingFoto"></img>
+                        <img src={resolveImageUrl(huidigProduct?.imagePath) || Default_ImagePlaceholder} alt="Foto van een bloem" className="Auction_veilingFoto"></img>
                     </div>
                 </section>
 

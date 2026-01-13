@@ -1,9 +1,6 @@
 import { jwtDecode } from "jwt-decode";
-import { ApiRequest } from "../../../typeScript/ApiRequest";
 
-import { Vermenigvuldigen as naarCenten } from "../../../typeScript/RekenFuncties";
-
-import { GetIsoTimeByZone } from "../../../typeScript/FetchDate";
+import { ApiRequest, Vermenigvuldigen as naarCenten, GetIsoTimeByZone} from '../../../Componenten/index';
 
 /********************
 ** gebruikte types **

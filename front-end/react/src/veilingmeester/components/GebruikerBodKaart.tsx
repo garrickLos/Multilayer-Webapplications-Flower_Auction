@@ -3,9 +3,11 @@ import type { Auction, Bid, Product } from "../api";
 import { formatCurrency, formatDateTime } from "../helpers";
 import { mapProductStatusToUiStatus } from "../rules";
 import { StatusBadge } from "./ui";
+import MissingPicture from "../../assets/pictures/webp/MissingPicture.webp";
+import { resolveImageUrl } from "../../config/api";
 
 // Fallback-afbeelding bij ontbrekende productfoto
-const fallbackImage = "/src/assets/pictures/webp/MissingPicture.webp";
+const fallbackImage = MissingPicture;
 
 // Gedeelde card-styling
 const cardClass = "d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4";
@@ -23,7 +25,7 @@ export function UserBidCard({bid, product, auction,}: {
         <div className={cardClass}>
             {/* Productafbeelding */}
             <img
-                src={product?.imagePath ?? fallbackImage}
+                src={resolveImageUrl(product?.imagePath) || fallbackImage}
                 alt={product?.name ?? `Product ${bid.productId}`}
                 className="rounded-3 flex-shrink-0"
                 style={{ width: 120, height: 90, objectFit: "cover" }}
@@ -67,7 +69,7 @@ export function UserProductCard({
         <div className={cardClass}>
             {/* Productafbeelding */}
             <img
-                src={product.imagePath ?? fallbackImage}
+                src={resolveImageUrl(product.imagePath) || fallbackImage}
                 alt={product.name}
                 className="rounded-3 flex-shrink-0"
                 style={{ width: 120, height: 90, objectFit: "cover" }}

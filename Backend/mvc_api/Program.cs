@@ -80,21 +80,14 @@ builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>(
 
 // ORM / DbContext
 var connectionString = builder.Configuration.GetConnectionString("Default");
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+var allowCredentials = builder.Configuration.GetValue<bool>("Cors:AllowCredentials");
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
-if (builder.Environment.IsDevelopment())
-{
-    // Gebruik SQLite als standaard (kan eenvoudig naar SQL Server worden omgezet)
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("SQL_SERVER-CONNECTIONSTRING")));
-}
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 // Identity configuratie (alleen registratie, verdere auth volgt later)
 builder.Services.AddIdentity<Gebruiker, IdentityRole<int>>(options =>
@@ -133,11 +126,19 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalhost5174", policy =>
+    options.AddPolicy("ConfiguredCors", policy =>
     {
-        policy.WithOrigins("http://localhost:5174")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        if (corsOrigins is { Length: > 0 })
+        {
+            policy.WithOrigins(corsOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+
+            if (allowCredentials)
+            {
+                policy.AllowCredentials();
+            }
+        }
     });
 });
 
@@ -208,10 +209,14 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowLocalhost5174");
+if (corsOrigins is { Length: > 0 })
+{
+    app.UseCors("ConfiguredCors");
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 app.Run();
