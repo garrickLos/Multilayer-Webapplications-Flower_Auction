@@ -9,54 +9,54 @@ It includes **EF Core** models, controllers with **CRUD** endpoints, and seed da
 
 ```mermaid
 erDiagram
-    Gebruiker ||--o{ Bieding : "heeft"
+    Gebruiker ||--o{ Bieding : heeft
     Veilingproduct ||--o{ Bieding : "biedingen op"
-    Categorie ||--o{ Veilingproduct : "bevat"
+    Categorie ||--o{ Veilingproduct : bevat
     Veilingproduct ||--o{ Veiling : "wordt geveild in"
 
-    Gebruiker {{
+    Gebruiker {
         int GebruikerNr PK
         string Naam
-        string Email UNIQUE
+        string Email "UNIQUE"
         string Wachtwoord
-        DateTime LaatstIngelogd?
+        datetime LaatstIngelogd "nullable"
         string Soort
-        string Kvk?
-        string StraatAdres?
-        string Postcode?
+        string Kvk "nullable"
+        string StraatAdres "nullable"
+        string Postcode "nullable"
         int Assortiment
-        string PersoneelsNr?
-    }}
+        string PersoneelsNr "nullable"
+    }
 
-    Bieding {{
+    Bieding {
         int BiedNr PK
-        decimal(18,2) BedragPerFust
+        decimal BedragPerFust
         int AantalStuks
-        int GebruikerNr FK -> Gebruiker.GebruikerNr
-        int VeilingNr FK -> Veilingproduct.VeilingNr
-    }}
+        int GebruikerNr FK
+        int VeilingNr FK
+    }
 
-    Veilingproduct {{
+    Veilingproduct {
         int VeilingNr PK
         string Naam
-        DateTime GeplaatstDatum
+        datetime GeplaatstDatum
         int Fust
         int Voorraad
-        decimal(18,2) Startprijs
-        int CategorieNr FK -> Categorie.CategorieNr
-    }}
+        decimal Startprijs
+        int CategorieNr FK
+    }
 
-    Categorie {{
+    Categorie {
         int CategorieNr PK
         string Naam
-    }}
+    }
 
-    Veiling {{
+    Veiling {
         int VeilingNr PK
-        DateTime Begintijd?
-        DateTime Eindtijd?
-        int VeilingProduct FK -> Veilingproduct.VeilingNr
-    }}
+        datetime Begintijd "nullable"
+        datetime Eindtijd "nullable"
+        int VeilingProduct FK
+    }
 ```
 
 ### Cardinality & delete behavior
@@ -98,38 +98,28 @@ erDiagram
 
 ### Bieding (`/api/Bieding`)
 - `GET /api/Bieding` — list (filters: `gebruikerNr`, `veilingNr`, `page`, `pageSize`)
-- `GET /api/Bieding/{id}` — detail
 - `POST /api/Bieding` — create
 - `PUT /api/Bieding/{id}` — update (amount & quantity)
-- `DELETE /api/Bieding/{id}` — delete
 
 ### Categorie (`/api/Categorie`)
 - `GET /api/Categorie` — list (search `q`, paging)
-- `GET /api/Categorie/{id}` — detail
 - `POST /api/Categorie` — create
 - `PUT /api/Categorie/{id}` — update
-- `DELETE /api/Categorie/{id}` — delete
 
 ### Gebruiker (`/api/Gebruiker`)
 - `GET /api/Gebruiker` — list (search `q`, paging)
-- `GET /api/Gebruiker/{id}` — detail (incl. recent `Biedingen`)
 - `POST /api/Gebruiker` — create (requires `Wachtwoord`)
 - `PUT /api/Gebruiker/{id}` — update
-- `DELETE /api/Gebruiker/{id}` — delete
 
 ### Veiling (`/api/Veiling`)
 - `GET /api/Veiling` — list (filters: `veilingProduct`, `from`, `to`, paging)
-- `GET /api/Veiling/{id}` — detail
 - `POST /api/Veiling` — create
 - `PUT /api/Veiling/{id}` — update
-- `DELETE /api/Veiling/{id}` — delete
 
 ### Veilingproduct (`/api/Veilingproduct`)
 - `GET /api/Veilingproduct` — list (search `q`, `categorieNr`, paging)
-- `GET /api/Veilingproduct/{id}` — detail (incl. recent `Biedingen`)
 - `POST /api/Veilingproduct` — create
 - `PUT /api/Veilingproduct/{id}` — update
-- `DELETE /api/Veilingproduct/{id}` — delete
 
 ---
 
