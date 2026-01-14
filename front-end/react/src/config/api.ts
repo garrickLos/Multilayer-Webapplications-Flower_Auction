@@ -9,12 +9,10 @@ const normalizeBaseUrl = (value?: string) => {
 };
 
 const envBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
-const envImageBaseUrl = normalizeBaseUrl(import.meta.env.VITE_IMAGE_URL);
 const devFallbackUrl = "http://localhost:5105";
 const isProd = import.meta.env.PROD;
 
 export const API_BASE_URL = envBaseUrl || (import.meta.env.DEV ? devFallbackUrl : "");
-export const IMAGE_BASE_URL = envImageBaseUrl;
 
 if (isProd) {
     if (!envBaseUrl) {
@@ -32,7 +30,7 @@ export const resolveApiUrl = (path: string) => {
 
 export const resolveImageUrl = (path?: string | null) => {
     if (!path) return "";
-    if (/^https?:\/\//i.test(path) || path.startsWith("data:")) return path;
-    if (!IMAGE_BASE_URL) return path;
-    return `${IMAGE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    if (path.startsWith("data:")) return path;
+    if (/^https?:\/\//i.test(path)) return "";
+    return path.startsWith("/") ? path : `/${path}`;
 };
