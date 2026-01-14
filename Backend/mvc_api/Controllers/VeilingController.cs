@@ -327,7 +327,7 @@ public class VeilingController : ControllerBase
     // PUT: api/Veiling/{id}
     [HttpPut("{id:int}")]
     [Authorize(Roles = "VeilingMeester")]
-    public async Task<ActionResult<VeilingUpdateDto>> Update(int id, [FromBody] VeilingUpdateDto dto, CancellationToken ct = default)
+    public async Task<ActionResult<VeilingMeester_VeilingDto>> Update(int id, [FromBody] VeilingUpdateDto dto, CancellationToken ct = default)
     {
         var now = _myDate.LocalTime;
 
@@ -343,12 +343,20 @@ public class VeilingController : ControllerBase
         entity.VeilingNaam = dto.VeilingNaam ?? entity.VeilingNaam;
         entity.Begintijd = dto.Begintijd;
         entity.Eindtijd = dto.Eindtijd;
-
-        var resultDto = new VeilingUpdateDto
+        if (!string.IsNullOrWhiteSpace(dto.Status))
         {
+            entity.Status = dto.Status;
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        var resultDto = new VeilingMeester_VeilingDto
+        {
+            VeilingNr = entity.VeilingNr,
             VeilingNaam = entity.VeilingNaam,
             Begintijd = entity.Begintijd,
             Eindtijd = entity.Eindtijd,
+            Status = entity.Status
         };
 
         return Ok(resultDto);
