@@ -11,10 +11,17 @@ interface CategorieType {
 
 export default function SellerScreenAdd() {
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
-    const bestandsPad = `${import.meta.env.BASE_URL}productBloemen/`;
     const Default_ImagePlaceholder = MissingPicture;
     const { data } = GetCategorie('/api/Categorie');
     const categorieLijst = (data as CategorieType[]) || [];
+    const categorieAfbeeldingen = [
+        { label: "Chrysant", value: "productBloemen/Chrysant.webp" },
+        { label: "Dahlia", value: "productBloemen/DecoratieveDahliaSunsetFlare.webp" },
+        { label: "Lelie", value: "productBloemen/Lelie.webp" },
+        { label: "Pioenroos", value: "productBloemen/Pioenroos.webp" },
+        { label: "Roos", value: "productBloemen/Roos.webp" },
+        { label: "Tulp", value: "productBloemen/EleganteTulpCrimsonGlory.webp" }
+    ];
 
     const Data = {
         status: true,
@@ -86,17 +93,14 @@ export default function SellerScreenAdd() {
         validateField(id, value);
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!file.name.endsWith(".webp")) {
-            alert("Het bestand moet eindigen op '.webp'");
+    const handleImageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { value } = e.target;
+        if (!value) {
+            setImagePath(Default_ImagePlaceholder);
             return;
         }
 
-        const volledigeBestand = bestandsPad + file.name;
-        setImagePath(volledigeBestand);
+        setImagePath(value);
     };
     
     const huidigeTijd = new Date().toISOString();
@@ -152,8 +156,17 @@ export default function SellerScreenAdd() {
                                 <img src={resolvedImagePath || Default_ImagePlaceholder} alt="productfoto" className="grote-foto" />
                             </div>
                             <div className="ordenen-bestand">
-                                <label htmlFor="BestandPad" className="bestand"></label>
-                                <input type="file" id="BestandPad" onChange={handleFileChange} />
+                                <label htmlFor="CategorieAfbeelding" className="bestand">Categorie afbeelding:</label>
+                                <select
+                                    id="CategorieAfbeelding"
+                                    value={imagePath === Default_ImagePlaceholder ? "" : imagePath}
+                                    onChange={handleImageSelect}
+                                >
+                                    <option value="">selecteer een categorie afbeelding</option>
+                                    {categorieAfbeeldingen.map((image) => (
+                                        <option key={image.value} value={image.value}>{image.label}</option>
+                                    ))}
+                                </select>
                             </div>
                         </section>
 

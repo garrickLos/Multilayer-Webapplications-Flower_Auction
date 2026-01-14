@@ -270,7 +270,7 @@ public static class DataSeeder
                 Minimumprijs    = 10,
                 Kwekernr        = kwekerMario.Id,
                 BeginDatum      = startdag,
-                ImagePath       = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+                ImagePath       = "productBloemen/DecoratieveDahliaSunsetFlare.webp"
             },
             new Veilingproduct
             {
@@ -285,7 +285,7 @@ public static class DataSeeder
                 Minimumprijs    = 15,
                 Kwekernr        = kwekerMario.Id,
                 BeginDatum      = startdag,
-                ImagePath       = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
+                ImagePath       = "productBloemen/EleganteTulpCrimsonGlory.webp"
             },
             new Veilingproduct
             {
@@ -300,7 +300,7 @@ public static class DataSeeder
                 Minimumprijs    = 12,
                 Kwekernr        = kwekerMario.Id,
                 BeginDatum      = startdag,
-                ImagePath       = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+                ImagePath       = "productBloemen/DecoratieveDahliaSunsetFlare.webp"
             },
             new Veilingproduct
             {
@@ -315,7 +315,7 @@ public static class DataSeeder
                 Minimumprijs    = 18,
                 Kwekernr        = kwekerGroen?.Id ?? kwekerMario.Id,
                 BeginDatum      = startdag,
-                ImagePath       = "../../src/assets/pictures/productBloemen/EleganteTulpCrimsonGlory.webp"
+                ImagePath       = "productBloemen/EleganteTulpCrimsonGlory.webp"
             },
             new Veilingproduct
             {
@@ -330,7 +330,7 @@ public static class DataSeeder
                 Minimumprijs    = 20,
                 Kwekernr        = kwekerGroen?.Id ?? kwekerMario.Id,
                 BeginDatum      = startdag,
-                ImagePath       = "../../src/assets/pictures/productBloemen/DecoratieveDahliaSunsetFlare.webp"
+                ImagePath       = "productBloemen/DecoratieveDahliaSunsetFlare.webp"
             }
         };
 
