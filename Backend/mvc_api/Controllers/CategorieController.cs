@@ -87,20 +87,6 @@ public class CategorieController : ControllerBase
         return Ok(new CDetail(e.CategorieNr, e.Naam));
     }
 
-    // DELETE: api/Categorie/123
-    [HttpDelete("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
-    {
-        var e = await _db.Categorieen.FindAsync(new object[] { id }, ct);
-        if (e is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen categorie met ID {id}.", 404));
-
-        _db.Categorieen.Remove(e);
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
-    }
-
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
         {

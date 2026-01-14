@@ -404,23 +404,6 @@ public class VeilingController : ControllerBase
         return Ok(dto);
     }
 
-    // DELETE: api/Veiling/{id}
-    //verwijderd ook alle producten die in de veiling zitten (mss handig om een softdelete te gebruiken)
-    [HttpDelete("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
-    {
-        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
-        
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
-
-        _db.Veiling.Remove(entity);
-        await _db.SaveChangesAsync(ct);
-
-        return NoContent();
-    }
-
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
     {
