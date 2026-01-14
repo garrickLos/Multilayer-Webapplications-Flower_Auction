@@ -125,7 +125,8 @@ public sealed class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    public async Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshRequest request)
+    public async Task<ActionResult<LoginResponse>> Refresh(
+        [FromBody] RefreshRequest request)
     {
         var storedToken = await _tokenService.GetStoredRefreshToken(request.RefreshToken);
 

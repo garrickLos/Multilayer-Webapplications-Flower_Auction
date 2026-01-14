@@ -175,7 +175,7 @@ export default function SellerScreenAdd() {
                             </div>
                             <div className="ordenen-bestand">
                                 <label htmlFor="BestandPad" className="bestand"></label>
-                                <input type="file" id="BestandPad" accept=".webp" onChange={handleFileChange} />
+                                <input type="file" id="BestandPad" onChange={handleFileChange} />
                             </div>
                         </section>
 

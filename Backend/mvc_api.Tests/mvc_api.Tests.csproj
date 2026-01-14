@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../mvc_api/mvc_api.csproj" />
+    <ProjectReference Include="../mvc_api/mvc_api.csproj" AdditionalProperties="OutputPath=bin\$(Configuration)\$(TargetFramework)\ReferencedProjects\mvc_api\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />

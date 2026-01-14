@@ -133,26 +133,6 @@ public class BiedingController : ControllerBase
         }
     }
 
-    // DELETE: api/Bieding/1001
-    [HttpDelete("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
-    {
-        try
-        {
-            await _repository.DeleteAsync(id, ct);
-
-            return NoContent();
-
-        } catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen bieding met ID {id}" + " errorMessage: " + ex.Message, 404));
-        } catch (Exception ex)
-        {
-            return StatusCode(500, CreateProblemDetails("Verwijderfout", "Er is een fout opgetreden bij het verwijderen." + " ErrorMessage: " + ex.Message, 500));
-        }
-    }
-
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
         new()
         {

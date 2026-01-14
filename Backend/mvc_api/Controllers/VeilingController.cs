@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using mvc_api.Data;
 using mvc_api.Models;
 using ApiGetFilters;
+using mvc_api.Controllers.Constants;
 
 
 namespace mvc_api.Controllers;
@@ -18,13 +19,9 @@ public class VeilingController : ControllerBase
     private readonly ProjectieVeilingController _projectie;
     private readonly IVeilingControllerFilter _filter;
 
+    private readonly VeilingUpdate _updateVeiling = new VeilingUpdate();
+
     private DateTimeWithZone _myDate = new DateTimeWithZone(DateTime.UtcNow, TijdZoneConfig.Amsterdam);
-
-
-    // public VeilingController(AppDbContext db)
-    //     : this(db, new ProjectieVeilingController(), new VeilingControllerFilter(db))
-    // {
-    // }
     
     public VeilingController(
         AppDbContext db,
@@ -61,21 +58,7 @@ public class VeilingController : ControllerBase
 
         if (veilingenTeUpdaten.Any())
         {
-            foreach (var v in veilingenTeUpdaten)
-            {
-                // Check opnieuw per item wat er moet gebeuren
-                if (now >= v.Eindtijd)
-                {
-                    // Tijd is voorbij -> Sluiten
-                    v.Status = VeilingStatus.Inactive;
-                }
-                else if (now >= v.Begintijd && now < v.Eindtijd)
-                {
-                    v.Status = VeilingStatus.Active;
-                }
-            }
-            // Sla alle wijzigingen in één keer op
-            await _db.SaveChangesAsync(ct);
+            await _updateVeiling.ForEachUpdateProduct(veilingenTeUpdaten, now, _db, ct);
         }
         
         page = Math.Max(1, page);
@@ -118,8 +101,6 @@ public class VeilingController : ControllerBase
     {
         var now = _myDate.LocalTime;
 
-        
-
         var veilingenTeUpdaten = _db.Veiling
         .Where(v => 
             // Scenario A: Moet open gaan
@@ -131,22 +112,7 @@ public class VeilingController : ControllerBase
 
         if (veilingenTeUpdaten.Any())
         {
-            foreach (var v in veilingenTeUpdaten)
-            {
-                // Check opnieuw per item wat er moet gebeuren
-                if (v.Eindtijd <= now)
-                {
-                    // Tijd is voorbij -> Sluiten
-                    v.Status = VeilingStatus.Inactive;
-                }
-                else if (v.Begintijd <= now && v.Eindtijd > now)
-                {
-                    // Tijd is bezig -> Openen
-                    v.Status = VeilingStatus.Active;
-                }
-            }
-            // Sla alle wijzigingen in één keer op
-            await _db.SaveChangesAsync(ct);
+            await _updateVeiling.ForEachUpdateProduct(veilingenTeUpdaten, now, _db, ct);
         }
         
         page = Math.Max(1, page);
@@ -207,21 +173,7 @@ public class VeilingController : ControllerBase
 
         if (veilingenTeUpdaten.Any())
         {
-            foreach (var v in veilingenTeUpdaten)
-            {
-                // Check opnieuw per item wat er moet gebeuren
-                if (now >= v.Eindtijd)
-                {
-                    // Tijd is voorbij -> Sluiten
-                    v.Status = VeilingStatus.Inactive;
-                }
-                else if (now >= v.Begintijd && now < v.Eindtijd)
-                {
-                    v.Status = VeilingStatus.Active;
-                }
-            }
-            // Sla alle wijzigingen in één keer op
-            await _db.SaveChangesAsync(ct);
+            await _updateVeiling.ForEachUpdateProduct(veilingenTeUpdaten, now, _db, ct);
         }
         
         page = Math.Max(1, page);
@@ -298,9 +250,7 @@ public class VeilingController : ControllerBase
 
         CancellationToken ct = default)
     {
-
         var now = _myDate.LocalTime;
-
 
         // Validatie van [Required] gebeurt automatisch door [ApiController]
         var timeValidation = ValidateVeilingTimes(dto.Begintijd, dto.Eindtijd, now);
@@ -402,23 +352,6 @@ public class VeilingController : ControllerBase
         await _db.SaveChangesAsync(ct);
         
         return Ok(dto);
-    }
-
-    // DELETE: api/Veiling/{id}
-    //verwijderd ook alle producten die in de veiling zitten (mss handig om een softdelete te gebruiken)
-    [HttpDelete("{id:int}")]
-    [Authorize (Roles ="VeilingMeester")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
-    {
-        var entity = await _db.Veiling.FindAsync(new object[] { id }, ct);
-        
-        if (entity is null)
-            return NotFound(CreateProblemDetails("Niet gevonden", $"Geen veiling met ID {id}.", 404));
-
-        _db.Veiling.Remove(entity);
-        await _db.SaveChangesAsync(ct);
-
-        return NoContent();
     }
 
     private ProblemDetails CreateProblemDetails(string title, string? detail = null, int statusCode = 400) =>
