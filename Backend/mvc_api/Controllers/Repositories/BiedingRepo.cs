@@ -20,7 +20,7 @@ public class BiedingRepository :  IBiedingRepo
         _db = db;
     }
 
-    // geef een typel terug van de items en het totale aantal items dat is gevonden
+    // geef een typen terug van de items en het totale aantal items dat is gevonden
     public async Task<(List<klantBiedingGet_dto> Items, int Total)> GetKlantBiedingenAsync(
         int? gebruikerNr, 
         int? veilingProductNr,
@@ -86,9 +86,9 @@ public class BiedingRepository :  IBiedingRepo
     }
 
     public async Task<VeilingMeester_BiedingDto> GetById(
-        int id, 
+        int id,
         CancellationToken ct = default)
-    {        
+    {
         var items = await _db.Biedingen.AsNoTracking()
             .Where(x => x.BiedNr == id)
             .ProjectToBieding_VeilingMeester()
@@ -97,6 +97,13 @@ public class BiedingRepository :  IBiedingRepo
         return items;
     }
 
+    /// <summary>
+    /// maakt een nieuwe bieding aan voor een veilingproduct. Hierbij controlleert hij
+    /// of de gebruiker en het veilingproduct bestaan en of de veiling actief is.
+    /// </summary>
+    /// <param name="dto">gegevens die meegegeven zijn</param>
+    /// <param name="ct">cancelation token</param>
+    /// <returns>een dto met de gegevens van de gemaakte bieding</returns>
     public async Task<VeilingMeester_BiedingDto> CreateAsync(BiedingCreateDto dto, CancellationToken ct)
     {
         // Gebruiker moet bestaan
@@ -107,34 +114,42 @@ public class BiedingRepository :  IBiedingRepo
         if (!gebruikerBestaat)
             throw new KeyNotFoundException("Gebruiker bestaat niet.");
 
+        //filtert op veilingproducten waar de veilingproductnummer die is meegegeven door de dto
+        //haalt de eerste match op
+        //als er geen match is wordt null teruggegeven
         var veilingproduct = await _db.Veilingproducten
             .Include(vp => vp.Veiling)
             .FirstOrDefaultAsync(vp => vp.VeilingProductNr == dto.VeilingproductNr, ct);
-        
+
+        //als er geen veilingproduct gevonden is met de veilingproductnummer van de dto geeft hij deze foutmelding
         if (veilingproduct is null)
             throw new KeyNotFoundException("Veilingproduct bestaat niet.");
-        
+
+        //controleert of een veiling actief is en geeft fout,elding als het niet zo is
         if (!string.Equals(veilingproduct.Veiling?.Status, "Active", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Er kan alleen geboden worden op een actieve veiling.");
 
+        //maakt de bieding aan
         var entity = new Bieding
         {
-            BedragPerFust    = dto.BedragPerFust,
-            AantalStuks      = dto.AantalStuks,
-            GebruikerNr      = dto.GebruikerNr,
+            BedragPerFust = dto.BedragPerFust,
+            AantalStuks = dto.AantalStuks,
+            GebruikerNr = dto.GebruikerNr,
             VeilingproductNr = dto.VeilingproductNr
         };
 
+        //voegt de bieding toe en slaat deze op
         _db.Biedingen.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        return new VeilingMeester_BiedingDto        
-        { 
-            BiedingNr        = entity.BiedNr,
-            BedragPerFust    = entity.BedragPerFust,
-            AantalStuks      = entity.AantalStuks,
-            GebruikerNr      = entity.GebruikerNr,
-            VeilingNr        = veilingproduct.Veiling?.VeilingNr,
+        //zet de opgeslagen bieding om in een dto voor terugsturen
+        return new VeilingMeester_BiedingDto
+        {
+            BiedingNr = entity.BiedNr,
+            BedragPerFust = entity.BedragPerFust,
+            AantalStuks = entity.AantalStuks,
+            GebruikerNr = entity.GebruikerNr,
+            VeilingNr = veilingproduct.Veiling?.VeilingNr,
             VeilingProductNr = entity.VeilingproductNr,
         };
     }

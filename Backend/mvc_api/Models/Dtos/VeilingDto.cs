@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using mvc_api.Models.Dtos;
 
-// Veiling CRUD
+//basis gegevens
 public abstract record BaseVeiling_Dto {
 
     [Required]
@@ -16,21 +16,23 @@ public abstract record BaseVeiling_Dto {
     
 }
 
+//gegevens die gebruikers kunnen zien die niet ingelogd zijn
 public record Anonymous_VeilingDto : BaseVeiling_Dto
 {
     public int VeilingNr { get; set; }
-    
-    [StringLength(20)] 
+
+    [StringLength(20)]
     public string? Status { get; set; }
 
     public IEnumerable<VeilingproductPublicListDto>? Producten { get; init; } = Enumerable.Empty<VeilingproductPublicListDto>();
 }
 
+//gegevens die een gebruiker mag krijgen/sturen
 public record Klant_VeilingDto : BaseVeiling_Dto
 {
     public int VeilingNr { get; set; }
-    
-    [StringLength(20)] 
+
+    [StringLength(20)]
     public string? Status { get; set; }
 
     public DateTime? GeupdateBeginTijd { get; set; }

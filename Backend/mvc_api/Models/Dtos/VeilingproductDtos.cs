@@ -33,19 +33,15 @@ public record VeilingproductCreateDto
     [Required, StringLength(200)]
     public string ImagePath { get; init; } = default!;
 
-    //Om de foto op te slaan
-    //public IFormFile? Image { get; init; }
 }
 
 public record VeilingproductUpdateDto
 {
-    // String is nu nullable (string?) en Required is weg.
     [StringLength(200)]
     public string? Naam { get; init; }
 
     public DateTime? GeplaatstDatum { get; init; }
 
-    // Int is nu nullable (int?). Range werkt nog steeds als er wel een getal wordt ingevuld.
     [Range(0, int.MaxValue)]
     public int? AantalFusten { get; init; }
 
@@ -120,7 +116,6 @@ public record VeilingproductVeilingmeesterListDto(
     DateOnly? BeginDatum
 );
 
-//tijdelijke dtos
 //kweker get dto
 public sealed record kwekerVeilingproductGet_dto
 (

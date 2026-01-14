@@ -20,6 +20,7 @@ public static class GebruikerSoorten
     }
 }
 
+
 public record GebruikerSelfUpdateDto(
     [property: Required, StringLength(200)] string BedrijfsNaam,
     [property: Required, EmailAddress, StringLength(200)] string Email,

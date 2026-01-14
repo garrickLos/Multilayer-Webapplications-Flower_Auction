@@ -1,15 +1,18 @@
 import { resolveApiUrl } from "../config/api";
 
+
 export async function ApiRequest<T>(
     url: string, 
     method: 'GET' | 'POST' | 'PUT' | 'DELETE', 
     data: any | null, token: string | null, refreshToken: string | null
     ): Promise<T> {
 
+    //als er geen token        
     if (!isValidToken(token)) {
         throw new Error("Geen geldig token gevonden.");
     }
 
+    //stuurt een http aanvraag naar de backend met de volgende waardes
     let response = await RequestFetch(url, method, data, token as string); 
 
     if (response.status === 401 && refreshToken) {
@@ -41,6 +44,14 @@ export async function ApiRequest<T>(
     return await response.json();
 }
 
+/**
+ * verpakt fetch aanvraag met headers en body
+ * @param url Api-url 
+ * @param method type crud: get, post, put, delete
+ * @param data data voor crud: nummer, string etc
+ * @param token bearer token
+ * @returns maakt een http aanvraag naar de server en returnt een response object van de fetch api
+ */
 async function RequestFetch(url: string, method: string, data: any, token: string): Promise <Response> {
     const resolvedUrl = resolveApiUrl(url);
     const headers: HeadersInit = {
