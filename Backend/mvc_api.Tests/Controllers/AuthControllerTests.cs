@@ -176,8 +176,6 @@ public class AuthControllerTests
     public async Task Login_WrongSignIn_Failure()
     {
         // 1. Arrange
-        
-
         var fakeUser = new Gebruiker
         {
             Email = "flora@gmail.com",
@@ -209,5 +207,27 @@ public class AuthControllerTests
         var response = Assert.IsType<LoginResponse>(actionResult.Value);
 
         Assert.False(response.Success);
+    }
+
+    [Fact 
+        (DisplayName = "Testen refreshToken: return ok")]
+
+    public async Task SendRefreshReturnOk ()
+    {
+        var fakeUser = new Gebruiker
+        {
+            Email = "flora@gmail.com",
+            UserName = "flora@gmail.com",
+            Status = ModelStatus.Active
+        };
+
+        var mocks = AuthMockData.Build("AuthTestDb", fakeUser);
+
+        var request = new LoginRequest
+        {
+            Email = "flora@gmail.com",
+            Password = "FoutWachtwoord!",
+            RememberMe = true
+        };
     }
 }

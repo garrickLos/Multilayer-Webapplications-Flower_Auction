@@ -126,6 +126,7 @@ public static class MockHelpers
     {
         var contextAccessor = new Mock<IHttpContextAccessor>();
         var claimsFactory = new Mock<IUserClaimsPrincipalFactory<TUser>>();
+        
         return new Mock<SignInManager<TUser>>(
             userManager,
             contextAccessor.Object,
