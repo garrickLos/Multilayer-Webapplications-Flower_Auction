@@ -6,6 +6,24 @@
   <component name="ChangeListManager">
     <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/AuthController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/AuthController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/BiedingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/BiedingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/CategorieController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/CategorieController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/DtoProjecties/ProjectieBiedingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/DtoProjecties/ProjectieBiedingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/DtoProjecties/ProjectieVeilingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/DtoProjecties/ProjectieVeilingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/GebruikerController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/GebruikerController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/PrijsHistorieController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/PrijsHistorieController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/VeilingController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/VeilingController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Controllers/VeilingproductController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Controllers/VeilingproductController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260114132017_InitialCreate.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260114132017_InitialCreate.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/AppDbContextModelSnapshot.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Models/Modellen/BiedingModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Models/Modellen/BiedingModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Models/Modellen/CategorieModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Models/Modellen/CategorieModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Models/Modellen/GebruikerModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Models/Modellen/GebruikerModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Models/Modellen/ModelStatus.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Models/Modellen/ModelStatus.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Models/Modellen/VeilingModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Models/Modellen/VeilingModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Models/Modellen/Veilingproduct.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Models/Modellen/Veilingproduct.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,21 +48,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    ".NET Launch Settings Profile.mvc_api: http.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Launch Settings Profile.mvc_api: http.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;sprint7__Bayram&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected=".NET Launch Settings Profile.mvc_api: http">
     <configuration name="mvc_api: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/mvc_api/mvc_api.csproj" />
@@ -98,6 +116,7 @@
       <workItem from="1768210186342" duration="3738000" />
       <workItem from="1768294165412" duration="6952000" />
       <workItem from="1768306423850" duration="1244000" />
+      <workItem from="1768422061348" duration="1537000" />
     </task>
     <servers />
   </component>
