@@ -2,6 +2,10 @@ import type { JSX } from "react";
 import { useLiveStats } from "../hooks";
 import { formatDateTime } from "../helpers";
 
+/**
+ * Dashboard component die live statistieken toont (gebruikers, veilingen, producten, biedingen).
+ * Gebruikt useLiveStats() om data op te halen en toont nette fallbacks tijdens loading.
+ */
 export function DashboardStatistiek(): JSX.Element {
     const { stats, loading, error, lastUpdated } = useLiveStats();
 
@@ -14,7 +18,7 @@ export function DashboardStatistiek(): JSX.Element {
     // Laatst bijgewerkt (veilig bij null)
     const refreshedAt = formatDateTime(lastUpdated ?? null);
 
-    // Definitie van de dashboard-tegels
+    // Definitie van de dashboard-tegels (label + value + kleine context)
     const metrics = [
         { id: "users", label: "Gebruikers", value: users, helper: "Totaal" },
         { id: "auctions", label: "Actieve veilingen", value: activeAuctions, helper: "Live" },
@@ -25,7 +29,7 @@ export function DashboardStatistiek(): JSX.Element {
     return (
         <section className="card border-0 shadow-sm rounded-4 mb-4" aria-label="Dashboard overzicht">
             <div className="card-body p-4 d-flex flex-column gap-4">
-                {/* Header */}
+                {/* Header: titel + laatst bijgewerkt + eventuele foutmelding */}
                 <header className="d-flex flex-column flex-lg-row justify-content-between gap-3">
                     <div>
                         <p className="text-uppercase text-success-emphasis small fw-semibold mb-1">
@@ -39,7 +43,7 @@ export function DashboardStatistiek(): JSX.Element {
                         </p>
                     </div>
 
-                    {/* Foutmelding */}
+                    {/* Foutmelding als stats niet geladen kunnen worden */}
                     {error && (
                         <div className="alert alert-danger py-2 mb-0">
                             Statistieken konden niet worden geladen.
@@ -47,7 +51,7 @@ export function DashboardStatistiek(): JSX.Element {
                     )}
                 </header>
 
-                {/* Metrics */}
+                {/* Metrics: tegels met waarde + helper badge */}
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
                     {metrics.map((metric) => (
                         <article key={metric.id} className="col">
@@ -58,17 +62,19 @@ export function DashboardStatistiek(): JSX.Element {
                                             {metric.label}
                                         </p>
 
-                                        {/* Waarde of placeholder */}
+                                        {/* Waarde of placeholder tijdens loading */}
                                         <div className="fs-2 fw-semibold text-success" aria-live="polite">
                                             {loading ? "—" : metric.value}
                                         </div>
                                     </div>
 
+                                    {/* Kleine context badge (bijv. Totaal/Live/24u) */}
                                     <span className="badge text-success-emphasis bg-success-subtle rounded-pill">
                                         {metric.helper}
                                     </span>
                                 </div>
 
+                                {/* Extra tekst alleen zichtbaar tijdens loading */}
                                 {loading && (
                                     <p className="text-muted small mt-2 mb-0">
                                         Bezig met bijwerken…

@@ -1,24 +1,28 @@
 /* ===== Design tokens ===== */
+/* Centrale variabelen voor kleuren, radius en animaties (makkelijk te hergebruiken). */
 :root {
-  --bg: #f1f1f1;
-  --ink: #0f172a;
-  --muted: #6b7280;
-  --brand: #2e4a41;
-  --brand-2: #cfe5d2;
-  --focus: #64d5c4;
-  --shadow-soft: 0 0 0 1px rgba(0, 0, 0, .06) inset;
-  --radius: 8px;
-  --transition-fast: 0.18s ease-out;
+  --bg: #f1f1f1;                 /* Pagina achtergrond */
+  --ink: #0f172a;                /* Standaard tekstkleur */
+  --muted: #6b7280;              /* Gedempte tekstkleur */
+  --brand: #2e4a41;              /* Hoofdkleur (donkergroen) */
+  --brand-2: #cfe5d2;            /* Secundaire kleur (lichtgroen) */
+  --focus: #64d5c4;              /* Focus outline kleur */
+  --shadow-soft: 0 0 0 1px rgba(0, 0, 0, .06) inset; /* Subtiele inset border/shadow */
+  --radius: 8px;                 /* Standaard afronding */
+  --transition-fast: 0.18s ease-out; /* Snelle overgang voor hover/focus */
 }
 
+/* Zorgt dat padding/borders meetellen in width/height */
 * { box-sizing: border-box; }
 
+/* Full-height layout basis */
 html, body, main, .BODY {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
+/* Basis typografie en achtergrond */
 body {
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--ink);
@@ -26,12 +30,14 @@ body {
   line-height: 1.4;
 }
 
+/* Centrale content wrapper met maximale breedte */
 .container {
   width: min(1100px, 92%);
   margin-inline: auto;
 }
 
 /* ===== Hero ===== */
+/* Hero sectie met decoratieve radial-gradients als achtergrond */
 .hero {
   position: relative;
   overflow: hidden;
@@ -42,12 +48,14 @@ body {
           radial-gradient(500px 500px at 85% 110%, var(--brand-2) 60.5%, transparent 61%) right bottom no-repeat;
 }
 
+/* Grid layout: links form, rechts decor/beeldvlak */
 .hero-grid {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: 2rem;
 }
 
+/* Titel styling binnen hero (wit voor contrast) */
 .hero-left h1 {
   color: #fff;
   margin: 0 0 1rem;
@@ -55,6 +63,7 @@ body {
 }
 
 /* ===== Formulier ===== */
+/* Form wrapper: beperkt breedte + verticale spacing tussen velden */
 .form {
   width: min(600px, 100%);
   display: flex;
@@ -63,6 +72,7 @@ body {
 }
 
 /* Inputs & selects (via .form-control) */
+/* Uniforme styling voor alle inputs/selects */
 .form-control {
   width: 100%;
   padding: 14px;
@@ -74,13 +84,16 @@ body {
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
+/* Select: verwijdert native styling zodat het beter aansluit op inputs */
 select.form-control {
   appearance: none;
   -webkit-appearance: none;
 }
 
+/* Placeholder kleur subtiel */
 .form-control::placeholder { color: #9ca3af; }
 
+/* Toegankelijke focus styling voor inputs en primary button */
 .form-control:focus-visible,
 .btn-primary:focus-visible {
   outline: 2px solid var(--focus);
@@ -88,13 +101,15 @@ select.form-control {
 }
 
 /* ===== Layout helpers ===== */
+/* Twee-koloms layout voor velden (bijv. wachtwoord + bevestigen) */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
-/* ===== Checkbox / voorwaarden (voor andere formulieren) ===== */
+/* ===== Checkbox / voorwaarden ===== */
+/* Rijtjes voor checkbox/consent styling (ook bruikbaar in andere formulieren) */
 .consent-row,
 .consent-row-inline {
   display: flex;
@@ -102,16 +117,19 @@ select.form-control {
   font-size: 0.9rem;
 }
 
+/* Standaard consent row styling (kleur is licht op donkere hero) */
 .consent-row {
   margin-top: 6px;
   gap: 1rem;
   color: #e5e7eb;
 }
 
+/* Inline variant: ruimte tussen links/rechts */
 .consent-row-inline {
   justify-content: space-between;
 }
 
+/* Checkbox wrapper: label + input netjes uitgelijnd */
 .checkbox {
   display: flex;
   gap: 0.6rem;
@@ -119,6 +137,7 @@ select.form-control {
   user-select: none;
 }
 
+/* Checkbox input styling */
 .checkbox input {
   width: 16px;
   height: 16px;
@@ -127,6 +146,7 @@ select.form-control {
 }
 
 /* ===== Links / acties ===== */
+/* "Link" knop (button) styling, vooral voor login/forgot acties */
 .forgot-link {
   background: none;
   border: 0;
@@ -139,6 +159,7 @@ select.form-control {
 .forgot-link:hover { color: #ffffff; }
 
 /* ===== Knop ===== */
+/* Primary button met gradient en hover animatie */
 .btn-primary {
   margin-top: 6px;
   border: 0;
@@ -150,30 +171,40 @@ select.form-control {
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
+
+/* Hover effect: gradient omdraaien + lichte lift */
 .btn-primary:hover {
   background: linear-gradient(90deg, #8fd6df, #45d0be);
   color: #fff;
   transform: translateY(-1px);
 }
+
+/* Disabled state: minder opvallend, geen hover cursor */
 .btn-primary:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
 /* ===== Login hint ===== */
+/* Tekst onder de knop met link naar login/registreren */
 .login-hint {
   margin: 0.5rem 0 0;
   color: #cbd5e1;
   font-size: 0.95rem;
 }
+
+/* Link in hint: opvallend wit met underline */
 .login-hint a {
   color: #fff;
   font-weight: 600;
   text-decoration: underline;
 }
+
+/* Hover: donkere kleur (valt op tegen lichtgroen vlak) */
 .login-hint a:hover { color: #000; }
 
 /* ===== Accessibility ===== */
+/* Verberg tekst visueel maar houd het beschikbaar voor screenreaders */
 .visually-hidden {
   position: absolute !important;
   width: 1px;
@@ -186,12 +217,14 @@ select.form-control {
 }
 
 /* ===== Footer fix ===== */
+/* Zorgt dat footer niet extra ruimte toevoegt onder hero pagina's */
 footer {
   margin-top: 0 !important;
   padding-top: 0 !important;
 }
 
 /* ===== Responsive ===== */
+/* Op kleinere schermen: hero wordt 1 kolom, grid-2 ook 1 kolom */
 @media (max-width: 900px) {
   .hero-grid { grid-template-columns: 1fr; }
   .hero-left h1 { margin-bottom: 1rem; }
@@ -199,16 +232,19 @@ footer {
 }
 
 /* ===== Form fields ===== */
+/* Wrapper per veld: label + input + error */
 .field-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+/* Als er een error is: input krijgt rode inset border */
 .field-group-error .form-control {
   box-shadow: 0 0 0 1px rgba(239, 68, 68) inset;
 }
 
+/* Label styling (licht op donkere achtergrond) */
 .field-label {
   font-size: 0.9rem;
   font-weight: 500;
@@ -216,6 +252,7 @@ footer {
 }
 
 /* Meldingen */
+/* Basis styling voor error/success blokken */
 .field-error,
 .form-error,
 .form-success {
@@ -225,6 +262,7 @@ footer {
   font-size: 0.85rem;
 }
 
+/* Field error: gradient rood + icoon */
 .field-error {
   margin-top: 2px;
   display: inline-flex;
@@ -238,11 +276,13 @@ footer {
   font-size: 0.8rem;
 }
 
+/* Algemene form error (bijv. backend error) */
 .form-error {
   color: #fee2e2;
   background: #991b1b;
 }
 
+/* Succesmelding (groen) */
 .form-success {
   color: #064e3b;
   background: #bbf7d0;

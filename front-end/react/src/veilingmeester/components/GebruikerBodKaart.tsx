@@ -9,11 +9,19 @@ import { resolveImageUrl } from "../../config/api";
 // Fallback-afbeelding bij ontbrekende productfoto
 const fallbackImage = MissingPicture;
 
-// Gedeelde card-styling
-const cardClass = "d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4";
+// Gedeelde card-styling (layout + padding + achtergrond + rounded)
+const cardClass =
+    "d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4";
 
-// Kaart met informatie over een bod van een gebruiker
-export function UserBidCard({bid, product, auction,}: {
+/**
+ * Kaart met informatie over één bod van een gebruiker.
+ * Toont: productfoto, productnaam, veiling info, bodnummer, status, hoeveelheid, bedrag en datum.
+ */
+export function UserBidCard({
+                                bid,
+                                product,
+                                auction,
+                            }: {
     readonly bid: Bid;
     readonly product?: Product;
     readonly auction?: Auction;
@@ -23,7 +31,7 @@ export function UserBidCard({bid, product, auction,}: {
 
     return (
         <div className={cardClass}>
-            {/* Productafbeelding */}
+            {/* Productafbeelding (fallback als imagePath ontbreekt) */}
             <img
                 src={resolveImageUrl(product?.imagePath) || fallbackImage}
                 alt={product?.name ?? `Product ${bid.productId}`}
@@ -59,7 +67,10 @@ export function UserBidCard({bid, product, auction,}: {
     );
 }
 
-// Kaart met product informatie voor gebruikers detail
+/**
+ * Kaart met productinformatie (bijv. op gebruikersdetail pagina).
+ * Toont: productfoto, naam, categorie, locatie, status en minimumprijs.
+ */
 export function UserProductCard({
                                     product,
                                 }: {
@@ -67,7 +78,7 @@ export function UserProductCard({
 }): JSX.Element {
     return (
         <div className={cardClass}>
-            {/* Productafbeelding */}
+            {/* Productafbeelding (fallback als imagePath ontbreekt) */}
             <img
                 src={resolveImageUrl(product.imagePath) || fallbackImage}
                 alt={product.name}
@@ -86,10 +97,8 @@ export function UserProductCard({
                         </p>
                     </div>
 
-                    {/* Productstatus */}
-                    <StatusBadge
-                        status={mapProductStatusToUiStatus(product.status)}
-                    />
+                    {/* Productstatus (mapped naar UI status) */}
+                    <StatusBadge status={mapProductStatusToUiStatus(product.status)} />
                 </div>
 
                 {/* Prijsinformatie */}

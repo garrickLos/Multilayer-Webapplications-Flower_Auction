@@ -7,6 +7,15 @@ import { Table, type TableColumn } from "./Table";
 import { EmptyState, StatusBadge } from "./ui";
 import { VeilingFilters } from "./VeilingFilters.tsx";
 
+/**
+ * Props voor het veilingen-overzicht:
+ * - auctions: lijst met veilingen
+ * - loading/error: status voor UI meldingen
+ * - onCreateRequested: openen van "nieuwe veiling" flow
+ * - onOpenLinkProducts: openen van product-koppelen modal per veiling
+ * - onCancelAuction: actie om veiling te annuleren
+ * - onRefresh: handmatige refresh (data opnieuw ophalen)
+ */
 type AuctionsTabProps = {
     readonly auctions: readonly Auction[];
     readonly loading: boolean;
@@ -18,6 +27,16 @@ type AuctionsTabProps = {
     readonly onRefresh: () => void;
 };
 
+/**
+ * VeilingenOverzicht:
+ * Toont een tabel met veilingen inclusief:
+ * - titel
+ * - klokprijs (dynamisch op basis van tijd)
+ * - start/eindtijd
+ * - aantal gekoppelde producten
+ * - statusbadge
+ * - acties (koppelen/annuleren) met regels op basis van status/tijd
+ */
 export function VeilingenOverzicht({
                                        auctions,
                                        loading,
@@ -27,8 +46,12 @@ export function VeilingenOverzicht({
                                        onCancelAuction,
                                        onRefresh,
                                    }: AuctionsTabProps): JSX.Element {
-
-    // Zoeken, filters en paginering uit centrale hook
+    /**
+     * Centrale hook regelt:
+     * - filteren + zoeken
+     * - paging state
+     * - "now" tijdstip (voor live status/klokprijs)
+     */
     const {
         filtered,
         search,
@@ -42,7 +65,10 @@ export function VeilingenOverzicht({
         setPageSize,
     } = useAuctionsPage(auctions);
 
-    // Tabelkolommen
+    /**
+     * Tabelkolommen definitie:
+     * getValue wordt gebruikt voor sortering waar nodig.
+     */
     const columns: TableColumn<Auction>[] = [
         {
             key: "title",
@@ -57,11 +83,11 @@ export function VeilingenOverzicht({
             header: "Klokprijs",
             sortable: true,
             render: (auction) => {
-                // Startprijs bepalen
+                // Startprijs bepalen (fallbacks zodat er altijd een getal is)
                 const startPrice = auction.maxPrice ?? auction.minPrice ?? 0;
                 const minPrice = auction.minPrice ?? 0;
 
-                // Actuele klokprijs
+                // Actuele klokprijs (op basis van start/eind + huidige tijd)
                 const currentPrice = calculateClockPrice(
                     startPrice,
                     minPrice,
@@ -79,7 +105,7 @@ export function VeilingenOverzicht({
                     </div>
                 );
             },
-            // Eenvoudige sorteerwaarde
+            // Sorteren op minimumprijs (simpel en stabiel)
             getValue: (auction) => auction.minPrice ?? 0,
         },
 
@@ -88,6 +114,7 @@ export function VeilingenOverzicht({
             header: "Tijd",
             sortable: true,
             render: (auction) => {
+                // Startdatum als label + eindtijd als tijd-only
                 const startLabel = formatDateTime(auction.startDate);
                 const end = new Date(auction.endDate);
                 const endTime = Number.isNaN(end.getTime()) ? "—" : formatTimeInput(end);
@@ -100,7 +127,7 @@ export function VeilingenOverzicht({
             key: "products",
             header: "Producten",
             sortable: true,
-            // Aantal gekoppelde producten
+            // Aantal gekoppelde producten (fallback op products array)
             render: (auction) =>
                 auction.linkedProductIds?.length ??
                 auction.products?.length ??
@@ -115,6 +142,7 @@ export function VeilingenOverzicht({
             key: "status",
             header: "Status",
             sortable: true,
+            // Status wordt berekend op basis van veilingdata + huidige tijd
             render: (auction) => (
                 <StatusBadge status={deriveAuctionUiStatus(auction, now)} />
             ),
@@ -125,14 +153,18 @@ export function VeilingenOverzicht({
             key: "actions",
             header: "Acties",
             render: (auction) => {
+                // Status + regels voor knoppen
                 const status = deriveAuctionUiStatus(auction, now);
 
                 const isActive = status === "active";
                 const hasEnded = new Date(auction.endDate) < now;
+
+                // Annuleren mag niet na afloop en niet als al geannuleerd
                 const canCancel = !hasEnded && status !== "deleted";
 
                 return (
                     <div className="d-flex justify-content-end gap-2">
+                        {/* Producten koppelen: niet toegestaan tijdens actieve veiling */}
                         <button
                             type="button"
                             className="btn btn-outline-success btn-sm"
@@ -141,9 +173,12 @@ export function VeilingenOverzicht({
                                 onOpenLinkProducts(auction.id);
                             }}
                             disabled={isActive}
-                            title={isActive ? "Actieve veiling" : undefined}> Koppel producten
+                            title={isActive ? "Actieve veiling" : undefined}
+                        >
+                            Koppel producten
                         </button>
 
+                        {/* Annuleren: alleen als het nog kan volgens regels */}
                         <button
                             type="button"
                             className="btn btn-outline-danger btn-sm"
@@ -152,11 +187,9 @@ export function VeilingenOverzicht({
                                 onCancelAuction(auction.id);
                             }}
                             disabled={!canCancel}
-                            title={
-                                !canCancel
-                                    ? "Annuleren niet meer mogelijk"
-                                    : undefined
-                            }> Annuleer
+                            title={!canCancel ? "Annuleren niet meer mogelijk" : undefined}
+                        >
+                            Annuleer
                         </button>
                     </div>
                 );
@@ -164,7 +197,7 @@ export function VeilingenOverzicht({
         },
     ];
 
-    // Gepagineerde rijen
+    // Gepagineerde rijen voor huidige pagina
     const pagedRows = useMemo(
         () => paginate(filtered, page, pageSize),
         [filtered, page, pageSize]
@@ -173,6 +206,7 @@ export function VeilingenOverzicht({
     return (
         <section className="card border-0 shadow-sm rounded-4" aria-label="Veilingen">
             <div className="card-body p-4 d-flex flex-column gap-3">
+                {/* Filters + zoeken + actions boven de tabel */}
                 <VeilingFilters
                     search={search}
                     filters={filters}
@@ -195,6 +229,7 @@ export function VeilingenOverzicht({
                     </div>
                 )}
 
+                {/* Tabel met paginering + empty state */}
                 <Table
                     columns={columns}
                     rows={pagedRows}

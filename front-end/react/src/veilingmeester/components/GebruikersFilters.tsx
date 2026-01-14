@@ -3,20 +3,33 @@ import type { UiStatus, User } from "../api";
 import type { UserFilters } from "../rules";
 import { Field, Select } from "./ui";
 
+/**
+ * Props voor het filterblok:
+ * - filters: huidige filterwaarden
+ * - onFiltersChange: callback om filters te updaten (met updater functie)
+ * - onRefresh: handmatige refresh actie (bijv. opnieuw ophalen van data)
+ */
 type UsersFiltersProps = {
     readonly filters: UserFilters;
     readonly onFiltersChange: (updater: (prev: UserFilters) => UserFilters) => void;
     readonly onRefresh: () => void;
 };
 
+/**
+ * Filter UI voor gebruikersoverzicht.
+ * Bevat:
+ * - Rolfilter (Koper/Bedrijf/Alle)
+ * - Statusfilter (active/inactive/sold/deleted/Alle)
+ * - Knop om handmatig te verversen
+ */
 export function GebruikersFilters({
-                                 filters,
-                                 onFiltersChange,
-                                 onRefresh,
-                             }: UsersFiltersProps): JSX.Element {
+                                      filters,
+                                      onFiltersChange,
+                                      onRefresh,
+                                  }: UsersFiltersProps): JSX.Element {
     return (
         <div className="row g-3 align-items-end">
-            {/* Rolfilter */}
+            {/* Rolfilter: filter op type gebruiker */}
             <div className="col-12 col-md-4">
                 <Field label="Rol" htmlFor="user-role">
                     <Select
@@ -36,7 +49,7 @@ export function GebruikersFilters({
                 </Field>
             </div>
 
-            {/* Statusfilter */}
+            {/* Statusfilter: filter op status van de gebruiker/record */}
             <div className="col-12 col-md-4">
                 <Field label="Status" htmlFor="user-status">
                     <Select
@@ -58,7 +71,7 @@ export function GebruikersFilters({
                 </Field>
             </div>
 
-            {/* Handmatige refresh */}
+            {/* Handmatige refresh: triggert opnieuw laden van gebruikers/statistieken */}
             <div className="col-12 col-md-4">
                 <button
                     type="button"

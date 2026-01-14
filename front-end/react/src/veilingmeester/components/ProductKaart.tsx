@@ -9,6 +9,14 @@ import { resolveImageUrl } from "../../config/api";
 // Fallback-afbeelding bij ontbrekende productfoto
 const fallbackImage = MissingPicture;
 
+/**
+ * Props voor de productkaart:
+ * - product: product data die getoond wordt
+ * - action: optionele actie rechtsboven (bijv. knop of menu)
+ * - showStartPrice: toont startprijs naast minimumprijs (default true)
+ * - showStatus: toont status badge (default false)
+ * - className: extra classes voor layout/styling
+ */
 type ProductCardProps = {
     readonly product: Product;
     readonly action?: ReactNode;
@@ -17,14 +25,28 @@ type ProductCardProps = {
     readonly className?: string;
 };
 
-export function ProductKaart({product, action, showStartPrice = true, showStatus = false, className,}: ProductCardProps): JSX.Element {
+/**
+ * ProductKaart:
+ * Toont een product met afbeelding, naam, categorie/locatie en prijsinformatie.
+ * Optioneel:
+ * - een actie element (bijv. knop)
+ * - startprijs
+ * - statusbadge
+ */
+export function ProductKaart({
+                                 product,
+                                 action,
+                                 showStartPrice = true,
+                                 showStatus = false,
+                                 className,
+                             }: ProductCardProps): JSX.Element {
     return (
         <div
             className={`d-flex flex-column flex-md-row gap-3 align-items-start p-3 bg-body-secondary rounded-4 ${
                 className ?? ""
             }`}
         >
-            {/* Productafbeelding */}
+            {/* Productafbeelding (fallback als imagePath ontbreekt) */}
             <img
                 src={resolveImageUrl(product.imagePath) || fallbackImage}
                 alt={product.name}
@@ -43,11 +65,11 @@ export function ProductKaart({product, action, showStartPrice = true, showStatus
                         </p>
                     </div>
 
-                    {/* Optionele actie (bijv. knop) */}
+                    {/* Optionele actie (bijv. knop, dropdown, icon button) */}
                     {action}
                 </div>
 
-                {/* Prijsinformatie */}
+                {/* Prijsinformatie (min. prijs en optioneel startprijs) */}
                 <p className="mb-0 text-muted">
                     Min. prijs {formatCurrency(product.minimumPrice)}
                     {showStartPrice &&
@@ -57,20 +79,23 @@ export function ProductKaart({product, action, showStartPrice = true, showStatus
                 </p>
             </div>
 
-            {/* Optionele statusbadge */}
+            {/* Optionele statusbadge (bijv. active/inactive/sold) */}
             {showStatus && (
                 <div className="align-self-start">
-                    <StatusBadge
-                        status={mapProductStatusToUiStatus(product.status)}
-                    />
+                    <StatusBadge status={mapProductStatusToUiStatus(product.status)} />
                 </div>
             )}
         </div>
     );
 }
 
-// Compacte productafbeelding voor lijsten / previews
-export function ProductThumbnail({product,}: {
+/**
+ * ProductThumbnail:
+ * Kleine, compacte productafbeelding voor tabellen/lijsten/previews.
+ */
+export function ProductThumbnail({
+                                     product,
+                                 }: {
     readonly product: Product;
 }): JSX.Element {
     return (

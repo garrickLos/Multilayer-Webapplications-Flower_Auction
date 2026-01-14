@@ -3,12 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { resolveApiUrl } from '../config/api';
 import './css/Registration.css';
 
+/**
+ * Request body voor /auth/login.
+ */
 interface LoginRequest {
     email: string;
     password: string;
     rememberMe: boolean;
 }
 
+/**
+ * Response van /auth/login.
+ * Bij succes komen token + refreshToken mee.
+ */
 interface LoginResponse {
     success: boolean;
     token?: string;
@@ -16,24 +23,40 @@ interface LoginResponse {
     errors: string[];
 }
 
+/**
+ * Local state voor formulierfouten per veld + algemene foutmelding.
+ */
 type FormErrors = {
     email?: string;
     password?: string;
     general?: string;
 };
 
+/**
+ * Startwaarden van het formulier.
+ */
 const initialForm: LoginRequest = Object.freeze({
     email: '',
     password: '',
     rememberMe: false
 });
 
+/**
+ * Helper: geeft de juiste class terug voor een field-group, incl. error styling.
+ */
 const fieldGroupClass = (err?: string) =>
     `field-group${err ? ' field-group-error' : ''}`;
 
+/**
+ * Helper: geeft de juiste class terug voor input, incl. invalid styling.
+ */
 const inputClass = (err?: string) =>
     `form-control${err ? ' is-invalid' : ''}`;
 
+/**
+ * Login pagina/component.
+ * Valideert invoer, doet POST naar /auth/login en slaat tokens op in sessionStorage.
+ */
 export default function Login() {
     const [form, setForm] = useState<LoginRequest>(initialForm);
     const [errors, setErrors] = useState<FormErrors>({});
@@ -41,6 +64,12 @@ export default function Login() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
+    /**
+     * Update form state bij input changes.
+     * - Werkt voor input & checkbox
+     * - Reset foutmelding van het betreffende veld
+     * - Reset eventuele succesmelding
+     */
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, type, checked, value } = e.target;
         const newValue = type === 'checkbox' ? checked : value;
@@ -58,6 +87,10 @@ export default function Login() {
         setSubmittedMessage(null);
     };
 
+    /**
+     * Frontend validatie zodat je niet onnodig een request doet.
+     * Controleert email format en minimale wachtwoordlengte.
+     */
     const validate = (): FormErrors => {
         const errs: FormErrors = {};
         const email = form.email.trim();
@@ -77,9 +110,17 @@ export default function Login() {
         return errs;
     };
 
+    /**
+     * Submit handler:
+     * - Valideert velden
+     * - Stuurt POST request naar backend
+     * - Toont errors bij mislukken
+     * - Slaat JWT + refresh token op bij succes en navigeert naar home
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Voorkom dubbel submitten
         if (isSubmitting) return;
 
         setErrors({});
@@ -91,6 +132,7 @@ export default function Login() {
             return;
         }
 
+        // Payload opschonen (email trimmen)
         const payloadToSend: LoginRequest = {
             email: form.email.trim(),
             password: form.password,
@@ -106,6 +148,7 @@ export default function Login() {
                 body: JSON.stringify(payloadToSend)
             });
 
+            // Probeer response body te lezen (kan leeg zijn)
             let payload: LoginResponse | null = null;
 
             if (response.headers.get('Content-Length') !== '0') {
@@ -119,6 +162,7 @@ export default function Login() {
             const isUnauthorized = response.status === 401;
             const isOk = response.ok && payload?.success;
 
+            // Fouten tonen (backend errors indien beschikbaar)
             if (!isOk) {
                 setErrors({
                     general:
@@ -130,18 +174,20 @@ export default function Login() {
                 });
                 return;
             }
-            
-            //plaatst jwt en refresh token in session storage
+
+            // Sla tokens op zodat de frontend API-calls kan doen
             if (payload?.success && payload.token && payload.refreshToken) {
                 sessionStorage.setItem('token', payload.token);
                 sessionStorage.setItem('refreshToken', payload.refreshToken);
-                
+
+                // Custom event zodat de rest van de app kan reageren (bijv. navbar refresh)
                 window.dispatchEvent(new Event('login'));
             }
 
             setSubmittedMessage('Inloggen geslaagd! Je wordt doorgestuurd...');
             setForm(initialForm);
 
+            // Kleine delay voor UX (toon succesmelding), daarna naar home
             setTimeout(() => {
                 navigate('/');
             }, 1500);

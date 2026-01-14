@@ -10,21 +10,31 @@ import { UserProductsModal } from "./components/UserProductsModal";
 import { UsersTab } from "./components/UsersTab";
 import { useOffline, useVeilingmeesterData } from "./hooks";
 
-const cx = (...classes: Array<string | false | null | undefined>): string => classes.filter(Boolean).join(" ");
+// Helper om classnames conditioneel te combineren (netter dan veel if's in JSX)
+const cx = (...classes: Array<string | false | null | undefined>): string =>
+    classes.filter(Boolean).join(" ");
 
+// Welke modal is open + welke data hoort daarbij (auctionId/userId)
 type ModalState =
     | { key: "newAuction" }
     | { key: "linkProducts"; auctionId: number }
     | { key: "userBids"; userId: number }
     | { key: "userProducts"; userId: number };
 
+// Keys voor de tab-navigatie op de pagina
 type TabKey = "users" | "auctions" | "products";
 
 export function VeilingmeesterPage() {
+    // Detecteert of de gebruiker offline is (voor waarschuwing in UI)
     const offline = useOffline();
+
+    // Actieve tab (veilingen/producten/gebruikers)
     const [activeTab, setActiveTab] = useState<TabKey>("auctions");
+
+    // Actieve modal (of null als geen modal open staat)
     const [activeModal, setActiveModal] = useState<ModalState | null>(null);
 
+    // Centrale data + refresh-functies voor veilingmeester dashboard
     const {
         users,
         auctions,
@@ -39,22 +49,39 @@ export function VeilingmeesterPage() {
         refreshProducts,
         refreshUsers,
     } = useVeilingmeesterData();
+
+    // Haalt de gekozen veiling op voor de "koppel producten" modal
     const activeAuction = useMemo(
-        () => (activeModal && "auctionId" in activeModal ? auctions.find((entry) => entry.id === activeModal.auctionId) ?? null : null),
+        () =>
+            activeModal && "auctionId" in activeModal
+                ? auctions.find((entry) => entry.id === activeModal.auctionId) ?? null
+                : null,
         [activeModal, auctions],
     );
+
+    // Haalt de gekozen gebruiker op voor de "biedingen/producten" modals
     const activeUser = useMemo(
-        () => (activeModal && "userId" in activeModal ? users.find((entry) => entry.id === activeModal.userId) ?? null : null),
+        () =>
+            activeModal && "userId" in activeModal
+                ? users.find((entry) => entry.id === activeModal.userId) ?? null
+                : null,
         [activeModal, users],
     );
 
-    const { handleCreateAuction, handleLinkProducts, handleUnlinkProduct, handleCancelAuction } = useAuctionActions({
+    // Acties die API-calls doen en state netjes bijwerken (create/link/unlink/cancel)
+    const {
+        handleCreateAuction,
+        handleLinkProducts,
+        handleUnlinkProduct,
+        handleCancelAuction,
+    } = useAuctionActions({
         auctions,
         setAuctions,
         setProducts,
         setError,
     });
 
+    // Tab-config: label + render functie per tab (houdt JSX overzichtelijk)
     const tabs: { key: TabKey; label: string; render: () => JSX.Element }[] = [
         {
             key: "auctions",
@@ -64,9 +91,15 @@ export function VeilingmeesterPage() {
                     auctions={auctions}
                     loading={loading}
                     error={error}
+                    // Opent modal voor aanmaken veiling
                     onCreateRequested={() => setActiveModal({ key: "newAuction" })}
-                    onOpenLinkProducts={(auctionId) => setActiveModal({ key: "linkProducts", auctionId })}
+                    // Opent modal voor koppelen producten (met auctionId)
+                    onOpenLinkProducts={(auctionId) =>
+                        setActiveModal({ key: "linkProducts", auctionId })
+                    }
+                    // Cancel actie komt uit hook (werkt state bij)
                     onCancelAuction={handleCancelAuction}
+                    // Handmatig verversen van veilingen-tab
                     onRefresh={() => void refreshAuctions()}
                 />
             ),
@@ -75,7 +108,14 @@ export function VeilingmeesterPage() {
             key: "products",
             label: "Producten",
             render: () => (
-                <ProductenOverzicht auctions={auctions} products={products} loading={loading} error={error} onRefresh={() => void refreshProducts()} />
+                <ProductenOverzicht
+                    auctions={auctions}
+                    products={products}
+                    loading={loading}
+                    error={error}
+                    // Handmatig verversen van producten-tab
+                    onRefresh={() => void refreshProducts()}
+                />
             ),
         },
         {
@@ -86,8 +126,13 @@ export function VeilingmeesterPage() {
                     users={users}
                     loading={loading}
                     error={error}
+                    // Opent modal voor biedingen van gekozen gebruiker
                     onViewBids={(userId) => setActiveModal({ key: "userBids", userId })}
-                    onViewProducts={(userId) => setActiveModal({ key: "userProducts", userId })}
+                    // Opent modal voor producten van gekozen gebruiker
+                    onViewProducts={(userId) =>
+                        setActiveModal({ key: "userProducts", userId })
+                    }
+                    // Handmatig verversen van gebruikers-tab
                     onRefresh={() => void refreshUsers()}
                 />
             ),
@@ -97,34 +142,63 @@ export function VeilingmeesterPage() {
     return (
         <div className="bg-body-tertiary min-vh-100">
             <div className="container py-4 py-lg-5 d-flex flex-column gap-4">
-                <nav className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4" aria-label="Hoofdnavigatie veilingmeester">
-                    <span className="navbar-brand fw-semibold text-success">Veilingmeester</span>
+                {/* Top navigatiebalk */}
+                <nav
+                    className="navbar navbar-expand-lg bg-white rounded-4 shadow-sm border border-success-subtle px-4"
+                    aria-label="Hoofdnavigatie veilingmeester"
+                >
+                    <span className="navbar-brand fw-semibold text-success">
+                        Veilingmeester
+                    </span>
                     <div className="ms-auto d-flex align-items-center gap-3">
-                        <div className="text-muted small">Simpel beheer voor veilingen, producten en gebruikers</div>
+                        <div className="text-muted small">
+                            Simpel beheer voor veilingen, producten en gebruikers
+                        </div>
                     </div>
                 </nav>
 
+                {/* Statusmeldingen bovenaan */}
                 {offline && (
-                    <div className="alert alert-warning border-0 rounded-4 shadow-sm mb-0" role="status">
+                    <div
+                        className="alert alert-warning border-0 rounded-4 shadow-sm mb-0"
+                        role="status"
+                    >
                         Je bent offline. Gegevens verversen zodra de verbinding terug is.
                     </div>
                 )}
+
                 {error && (
-                    <div className="alert alert-danger border-0 rounded-4 shadow-sm mb-0" role="alert">
+                    <div
+                        className="alert alert-danger border-0 rounded-4 shadow-sm mb-0"
+                        role="alert"
+                    >
                         {error}
                     </div>
                 )}
+
                 {loading && !error && (
-                    <div className="alert alert-info border-0 rounded-4 shadow-sm mb-0" role="status">
+                    <div
+                        className="alert alert-info border-0 rounded-4 shadow-sm mb-0"
+                        role="status"
+                    >
                         Gegevens worden geladen…
                     </div>
                 )}
 
+                {/* Samenvattende statistieken boven de tabs */}
                 <DashboardStatistiek />
 
-                <section className="card border-0 shadow-sm rounded-4" aria-label="Navigatie tabs">
+                {/* Tab-navigatie */}
+                <section
+                    className="card border-0 shadow-sm rounded-4"
+                    aria-label="Navigatie tabs"
+                >
                     <div className="card-body p-4 d-flex flex-column gap-3">
-                        <div className="d-flex flex-wrap justify-content-center gap-2" role="tablist" aria-label="Veiling tabs">
+                        <div
+                            className="d-flex flex-wrap justify-content-center gap-2"
+                            role="tablist"
+                            aria-label="Veiling tabs"
+                        >
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.key}
@@ -139,6 +213,7 @@ export function VeilingmeesterPage() {
                                     aria-selected={activeTab === tab.key}
                                     aria-controls={`tab-${tab.key}`}
                                     id={`tab-${tab.key}-tab`}
+                                    // Wisselt actieve tab
                                     onClick={() => setActiveTab(tab.key)}
                                 >
                                     {tab.label}
@@ -148,6 +223,7 @@ export function VeilingmeesterPage() {
                     </div>
                 </section>
 
+                {/* Inhoud per tab (alleen de actieve renderen) */}
                 {tabs.map((tab) => (
                     <section
                         key={tab.key}
@@ -161,33 +237,58 @@ export function VeilingmeesterPage() {
                     </section>
                 ))}
 
+                {/* Modal: nieuwe veiling aanmaken */}
                 {activeModal?.key === "newAuction" && (
-                    <NieuweVeilingModal onClose={() => setActiveModal(null)} onSave={(draft) => handleCreateAuction(draft, () => setActiveModal(null))} />
+                    <NieuweVeilingModal
+                        onClose={() => setActiveModal(null)}
+                        onSave={(draft) =>
+                            handleCreateAuction(draft, () => setActiveModal(null))
+                        }
+                    />
                 )}
+
+                {/* Modal: producten koppelen aan veiling */}
                 {activeModal?.key === "linkProducts" && activeAuction && (
                     <ProductKoppelenModal
                         auction={activeAuction}
                         products={products}
                         onClose={() => setActiveModal(null)}
+                        // Koppelt product en sluit modal bij succes
                         onSave={(productId, startPrice) =>
-                            void handleLinkProducts(activeAuction.id, productId, startPrice, () => setActiveModal(null))
+                            void handleLinkProducts(
+                                activeAuction.id,
+                                productId,
+                                startPrice,
+                                () => setActiveModal(null),
+                            )
                         }
-                        onUnlink={(productId) => void handleUnlinkProduct(activeAuction.id, productId)}
+                        // Ontkoppelt product van veiling
+                        onUnlink={(productId) =>
+                            void handleUnlinkProduct(activeAuction.id, productId)
+                        }
                     />
                 )}
+
+                {/* Modal: biedingen van een gebruiker */}
                 {activeModal?.key === "userBids" && activeUser && (
                     <GebruikerBiedingenModal
                         user={activeUser}
+                        // Filtert alle biedingen naar alleen deze gebruiker
                         bids={bids.filter((bid) => bid.userId === activeUser.id)}
                         products={products}
                         auctions={auctions}
                         onClose={() => setActiveModal(null)}
                     />
                 )}
+
+                {/* Modal: producten van een gebruiker */}
                 {activeModal?.key === "userProducts" && activeUser && (
                     <UserProductsModal
                         user={activeUser}
-                        products={products.filter((product) => product.growerId === activeUser.id)}
+                        // Filtert alle producten naar alleen deze kweker/verkoper
+                        products={products.filter(
+                            (product) => product.growerId === activeUser.id,
+                        )}
                         onClose={() => setActiveModal(null)}
                     />
                 )}
