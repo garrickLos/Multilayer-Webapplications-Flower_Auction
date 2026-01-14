@@ -5,36 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/Componenten/InputErrors.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/Componenten/InputErrors.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/Componenten/InputVeld.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/Componenten/InputVeld.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/Componenten/Knop.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/Componenten/Knop.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/Componenten/jsonOphalen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/Componenten/jsonOphalen.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/registratie_login/Login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/registratie_login/Login.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/registratie_login/Registration.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/registratie_login/Registration.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/registratie_login/css/Registration.css" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/registratie_login/css/Registration.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/auctionActions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/auctionActions.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/DashboardStatistiek.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/DashboardStatistiek.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/GebruikerBiedingenModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/GebruikerBiedingenModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/GebruikerBodKaart.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/GebruikerBodKaart.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/GebruikersFilters.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/GebruikersFilters.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/Modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/Modal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/NieuweVeilingModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/NieuweVeilingModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductFilters.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductFilters.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductKaart.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductKaart.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductKoppelenModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductKoppelenModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductLinking.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductLinking.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductenOverzicht.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ProductenOverzicht.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/Table.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/Table.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/UserProductsModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/UserProductsModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/UsersTab.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/UsersTab.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/VeilingFilters.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/VeilingFilters.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/VeilingenOverzicht.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/VeilingenOverzicht.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ui.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/components/ui.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/helpers.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/helpers.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/hooks.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/hooks.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/rules.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/rules.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/react/src/veilingmeester/uitleg.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Data/DataSeeder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Data/DataSeeder.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260114204507_InitialCreate.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260114204507_InitialCreate.cs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,6 +102,7 @@
       <workItem from="1768294165412" duration="6952000" />
       <workItem from="1768306423850" duration="1244000" />
       <workItem from="1768422061348" duration="2246000" />
+      <workItem from="1768429782826" duration="230000" />
     </task>
     <servers />
   </component>
