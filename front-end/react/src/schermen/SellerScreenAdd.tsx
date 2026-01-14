@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../css/SellerScreenAdd.css";
-import { UseDataApi as GetCategorie } from "../Componenten/ApiGetCategorien";
+import { ApiRequest, getBearerToken, getRefreshToken } from "../Componenten/index";
 import { resolveApiUrl, resolveImageUrl } from "../config/api";
 import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
 
@@ -9,13 +9,16 @@ interface CategorieType {
     naam: string;
 }
 
+let token = getBearerToken() || "";
+let refreshtoken = getRefreshToken() || "";
+
 export default function SellerScreenAdd() {
+    const [categorieLijst, setCategorieLijst] = useState<CategorieType[]>([]);
+
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const bestandsPad = `${import.meta.env.BASE_URL}productBloemen/`;
     const Default_ImagePlaceholder = MissingPicture;
-    const { data } = GetCategorie('/api/Categorie');
-    const categorieLijst = (data as CategorieType[]) || [];
-
+    
     const Data = {
         status: true,
         Kwekernr: sessionStorage.getItem("gebruikerNummer"),
@@ -41,6 +44,25 @@ export default function SellerScreenAdd() {
         BeginDatum: "",
         Minimumprijs: ""
     });
+
+        useEffect(() => {
+        const dataOphalen = async () => {
+        const response = await ApiRequest<CategorieType[]>(
+          '/api/Categorie',
+          "GET",
+          null,
+          token,
+          refreshtoken
+        );
+    
+        console.log("Categorie response:", response);
+
+        const categorieLijst = response as CategorieType[];
+        setCategorieLijst(categorieLijst);
+        };
+    
+        dataOphalen();
+        }, [refreshtoken]);
 
     const [imagePath, setImagePath] = useState(Data.ImagePath);
     const resolvedImagePath =
@@ -102,7 +124,7 @@ export default function SellerScreenAdd() {
     const huidigeTijd = new Date().toISOString();
     
     const GegevensVersturen = async () => {
-        const token = sessionStorage.getItem("token");
+        const token = getBearerToken;
         if (!token) {
             alert("Je bent niet ingelogd.");
             return;
