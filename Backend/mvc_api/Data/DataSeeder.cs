@@ -4,6 +4,9 @@ using mvc_api.Models;
 
 namespace mvc_api.Data;
 
+/// <summary>
+/// Klas die ervoor zorgt dat de data die nodig is in de database de database vult.
+/// </summary>
 public static class DataSeeder
 {
     // Centrale constants
@@ -15,6 +18,11 @@ public static class DataSeeder
 
     private const string ProductSpecifiek = "Tulp Mix";
 
+    /// <summary>
+    /// Roept de Seeder items op vanaf 1 locatie zodat de database gevult wordt met nepdata die gebruikt kan worden voor het testen van de front-end en back-end
+    /// </summary>
+    /// <param name="services"></param>
+    /// <returns></returns>
     public static async Task Seed(IServiceProvider services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -36,6 +44,10 @@ public static class DataSeeder
         await EnsureBiedingen(dbContext, userManager);
     }
 
+    /// <summary>
+    /// Alle soorten gebruikers die we gebruiken voor het testen van de applicatie (Mockdata).
+    /// Vult alle data die nodig is onder andere ook de rol en wachtwoord dat we gebruiken om het te testen.
+    /// </summary>
     private static readonly (Gebruiker user, string password, string role)[] _gebruikers =
     [
         (
@@ -115,6 +127,13 @@ public static class DataSeeder
         )
     ];
 
+    /// <summary>
+    /// Vult alle rollen in de ASP.NET table van de database. Als ze niet bestaan vult hij ze in.
+    /// Als ze bestaan gaat die door naar de volgende
+    /// </summary>
+    /// <param name="roleManager">De table in de database die checkt of de rol er al instaat</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">ErrorHandling die specifiek uitlegt welke rol niet aangemaakt kon worden en waarom.</exception>
     private static async Task EnsureRoles(RoleManager<IdentityRole<int>> roleManager)
     {
         string[] rollen = { "VeilingMeester", "Koper", "Bedrijf" };
@@ -132,6 +151,15 @@ public static class DataSeeder
         }
     }
 
+    /// <summary>
+    /// Zorgt ervoor dat alle gebruikers uit de <c>_gebruikers</c>-array in de database staan.
+    /// Voor elke gebruiker word er gekeken of de gebruiker nog niet bestaat dan wordt deze aangemaakt met het opgegeven wachtwoord en rol.
+    /// Als de gebruiker al bestaat dan wordt gecontroleerd of de gebruikerNr overeenoomt met de Id in de database en zo nodig geüpdatet.
+    /// De juiste rol wordt toegekend als deze nog niet is ingesteld.
+    /// </summary>
+    /// <param name="userManager">Wordt gebruikt om de gebruikers te beheren die in de database staan</param>
+    /// <returns>Een asynchrone taak die voltooid is als alle gebruikers zijn verwerkt.</returns>
+    /// <exception cref="InvalidOperationException">Wordt gegooid als een gebruiker niet aangemaakt, geüpdatet of aan een rol gekoppeld kan worden.</exception>
     private static async Task EnsureUsers(UserManager<Gebruiker> userManager)
     {
         foreach (var (gebruiker, password, role) in _gebruikers)
@@ -173,6 +201,11 @@ public static class DataSeeder
         }
     }
 
+    /// <summary>
+    /// Verwerkt alle categorieen die in de database nodig zijn om de applicatie te laten werken.
+    /// </summary>
+    /// <param name="dbContext">Database connectie variable</param>
+    /// <returns>Een asynchrone taak die voltooid is als alle categorieen zijn verwerkt.</returns>
     private static async Task EnsureCategorie(AppDbContext dbContext)
     {
         var seedCategorie = new[]
@@ -197,6 +230,11 @@ public static class DataSeeder
         await dbContext.SaveChangesAsync();
     }
     
+    /// <summary>
+    /// Vult de database met veilingen die gebruikt kunnen worden voor de applicatie.
+    /// </summary>
+    /// <param name="dbContext">Database connectie variable</param>
+    /// <returns>Asynchrone taak wanneer alle Veilingen zijn toegekend aan de database</returns>
     private static async Task EnsureVeiling(AppDbContext dbContext)
     {
         var veilingBasis = DateTime.UtcNow.AddDays(-10);
@@ -230,6 +268,13 @@ public static class DataSeeder
         await dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    ///     Vult de database met veilingproducten die zijn opgesteld als een mockdata voor gebruik van de applicatie.
+    ///     Zorgt ervoor dat de producten die aangemaakt moeten worden worden toegevoegd. Of als het al bestaat dat het wordt overgeslagen en dan naar de volgende item gaat.
+    /// </summary>
+    /// <param name="dbContext">Connectie variable die ervoor zorgt dat de correct database gebruikt wordt.</param>
+    /// <param name="userManager">De database table link die makkelijk de gebruiker verbind met de veilingproduct</param>
+    /// <returns>asynchrone Task die teruggestuurd wordt wanneer alle veilingproducten zijn gevuld in de database</returns>
     private static async Task EnsureVeilingproducten(AppDbContext dbContext, UserManager<Gebruiker> userManager)
     {
         var kwekerMario = await userManager.FindByEmailAsync(EmailKwekerMario);
@@ -348,6 +393,12 @@ public static class DataSeeder
         await dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    ///     Maakt nieuwe biedingen aan in de database en vult het met de benodigde data die gevuld wordt in andere ensures.
+    /// </summary>
+    /// <param name="dbContext"></param>
+    /// <param name="userManager">Manager van de gebruikers in de database table om het linken van gebruikers aan de Biedingen makkelijker te laten te verlopen</param>
+    /// <returns></returns>
     private static async Task EnsureBiedingen(AppDbContext dbContext, UserManager<Gebruiker> userManager)
     {
         var koper1 = await userManager.FindByEmailAsync(EmailKoper1);
@@ -426,8 +477,13 @@ public static class DataSeeder
         }
     }
 
-    // Voegt biedingen toe als ze nog niet bestaan.
-    // Bestaat-check: VeilingproductNr + GebruikerNr + BedragPerFust.
+    /// <summary>
+    ///     Voegt biedingen toe als ze nog niet bestaan.
+    //      Bestaat-check: VeilingproductNr + GebruikerNr + BedragPerFust.
+    /// </summary>
+    /// <param name="dbContext">Link met de op het moment gebruikte database</param>
+    /// <param name="biedingen"> array van alle biedingen die er aangemaakt worden in de ensureBiedingen </param>
+    /// <returns></returns>
     private static async Task AddBidsIfMissing(AppDbContext dbContext, Bieding[] biedingen)
     {
         foreach (var bieding in biedingen)

@@ -6,6 +6,10 @@ using mvc_api.Models.Dtos;
 
 namespace mvc_api.Data;
 
+/// <summary>
+/// Interface voor het beheren en ophalen van veilingproducten in de database.
+/// Gebruik deze interface om veilingproduct-gerelateerde data te manipuleren en op te vragen.
+/// </summary>
 public interface IVeilingproductRepository
 {
     Task<Veilingproduct?> FindAsync(int veilingproductNr, CancellationToken ct);

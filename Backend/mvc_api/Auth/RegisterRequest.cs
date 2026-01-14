@@ -2,6 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace mvc_api.DTOs.Auth;
 
+/// <summary>
+/// Dit record definieert het gegevensmodel voor een registratieverzoek in de applicatie.
+/// Het bevat alle benodigde velden voor het registreren van een nieuw account, inclusief validatie-attributen.
+/// Bevat errorhandling wanneer er fouten zijn begaan.
+/// </summary>
 public sealed record RegisterRequest
 {
     [Required, EmailAddress, StringLength(200)]

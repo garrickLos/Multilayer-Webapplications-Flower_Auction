@@ -6,6 +6,12 @@ using mvc_api.Models;
 
 namespace mvc_api.Data;
 
+/// <summary>
+/// Het opstellen van de database tables,
+/// relaties die de tables hebben met de andere (1 op veel, veel op veel etc...)
+/// Opstellen van de foreign key eigenschappen in de tables.
+/// Ook voor het opstellen van de cascade evenementen (OnDelete, OnUpdate, OnChange).
+/// </summary>
 public class AppDbContext : IdentityDbContext<Gebruiker, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }

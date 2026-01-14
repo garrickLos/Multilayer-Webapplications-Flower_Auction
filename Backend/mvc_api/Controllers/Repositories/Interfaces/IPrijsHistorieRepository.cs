@@ -4,6 +4,9 @@ using mvc_api.Controllers;
 
 namespace mvc_api.Data;
 
+/// <summary>
+/// DTO waardes die terug worden gestuurd wanneer de endpoint succesvol waardes terugstuurd
+/// </summary>
 public sealed class PrijsHistorieResultaat
 {
     public PrijsHistorieResultaat(IReadOnlyList<PrijsHistorieItem> items, decimal? averageBedrag)
@@ -16,6 +19,9 @@ public sealed class PrijsHistorieResultaat
     public decimal? AverageBedrag { get; }
 }
 
+/// <summary>
+/// Interface voor de prijsHistory controller endpoint die ervoor zorgt dat de database gescheiden is van de endpoint die testen makkelijker maakt.
+/// </summary>
 public interface IPrijsHistorieRepository
 {
     PrijsHistorieResultaat GetPrijsHistorieIedereen(int categorieNr, CancellationToken ct = default);

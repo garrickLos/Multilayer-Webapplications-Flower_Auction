@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using mvc_api.Data;
@@ -31,11 +30,18 @@ public class GenereerBearerToken : IGenereerAccessTokens
         _dbContext = dbContext;
     }
 
+    /// <summary>
+    /// genereert een access token (JWT token). Hierbij maakt het een nieuwe jwt token met de benodige items.
+    /// 
+    /// </summary>
+    /// <param name="user">Wordt gebruikt om de gegevens van de gebruiker te vullen: nr, email, soort (kweker, koper, veilingmeester etc..)</param>
+    /// <returns>een geschreven jwt token met de gegevens die nodig zijn voor de gebruiker identificatie</returns>
     public async Task<string> GenerateJwtToken(Gebruiker user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        // vult de jwt token met claims die nodig zijn voor de inhoud.
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.GebruikerNr.ToString()),
@@ -56,6 +62,12 @@ public class GenereerBearerToken : IGenereerAccessTokens
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    /// <summary>
+    /// Maakt een nieuwe of ververst een bestaande refresh token voor de gebruiker om ervoor te zorgen dat de gebruiker niet wordt uitgeschreven.
+    /// </summary>
+    /// <param name="user">Gegevens van de gebruiker om de refreshToken te vullen met specifiek oude waardes (userId en userEmail)
+    /// Als de userId al bestaat in de database dan wordt de refresh token ververst </param>
+    /// <returns> een gevulde  </returns>
     public async Task<string> GenerateRefreshTokenAsync(Gebruiker user)
     {
         // checked of de RefreshToken bestaat of niet op basis van gebruiker Id
@@ -94,6 +106,11 @@ public class GenereerBearerToken : IGenereerAccessTokens
         return NewToken_Waarde;
     }
 
+    /// <summary>
+    /// Haalt de refreshToken op uit de database
+    /// </summary>
+    /// <param name="token">de sring van de refreshToken om te checken of hij bestaat of niet</param>
+    /// <returns>de refreshToken die in de database staat </returns>
     public async Task<RefreshToken?> GetStoredRefreshToken(string token)
     {
         return await _dbContext.RefreshTokens
