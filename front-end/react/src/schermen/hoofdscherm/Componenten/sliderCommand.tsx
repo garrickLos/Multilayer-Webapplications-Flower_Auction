@@ -3,6 +3,9 @@ let maxPage: number = 0; // maximale pagina's die er zijn
 
 let OutPutClass: string = '';
 
+/**
+ * Renderd de hoeveelheid pagina's op de locatie van de klas die is meegegeven
+ */
 function updatePageCount(){
     // zoekt de destination element op basis van de class
     const destinationEl = document.getElementsByClassName(OutPutClass)[0];
@@ -13,6 +16,12 @@ function updatePageCount(){
     }
 }
 
+/**
+ * 
+ * @param id Het id van de slider knop waarop gedrukt moet worden
+ * @param direction Welke richting de slider op gaat. 1 is naar rechts en -1 is naar links
+ * @returns 
+ */
 export function scrollSlider(id: string, direction: number): void {
     const slider = document.getElementById(id);
 
@@ -32,6 +41,11 @@ export function scrollSlider(id: string, direction: number): void {
     updatePageCount();
 }
 
+/**
+ * 
+ * @param countClass Telt de hoeveelheid items die in deze class zitten
+ * @param DestinationClass De locatie waar de hoeveelheid uiteindelijk naartoe wordt geleid wanneer het klaar is met tellen
+ */
 export function CountPages(countClass: string, DestinationClass: string) {
     OutPutClass = DestinationClass;
 

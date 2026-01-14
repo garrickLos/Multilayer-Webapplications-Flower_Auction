@@ -2,14 +2,19 @@ import { jwtDecode } from "jwt-decode";
 
 import { ApiRequest, Vermenigvuldigen as naarCenten, GetIsoTimeByZone} from '../../../Componenten/index';
 
-/********************
-** gebruikte types **
-*********************/
-import type { ProductLogica } from "./VeilingSchermTypes/VeilingSchermTypes";
-import type { VeilingproductUpdate, VeilingTijdUpdate } from "./VeilingSchermTypes/VeilingTypes";
-import type { NieuweBieding } from "./VeilingSchermTypes/BiedingTypes";
-import type { MyTokenPayload } from "./VeilingSchermTypes/TokenPayloadTypes";
+import type { ProductLogica, VeilingproductUpdate, VeilingTijdUpdate, NieuweBieding, MyTokenPayload } from '../VeilingSchermComponenten/index';
 
+/**
+ * 
+ * @param huidigProduct informatie van de product waarop geboden wordt
+ * @param veilingNummer veilingnummer van de huidige veiling, gebruikt om de huidige veiling info te update
+ * @param InvoerAantal ingevoerde aantal fusten die gekoopt wordt
+ * @param HuidigePrijs huidige prijs waarbij geboden werdt op het product
+ * @param url url voor het updaten van de veilingItem
+ * @param token de jwttoken van de gebruiker om de api verbinding te behouden
+ * @param refreshToken de refreshtoken van de gebruiker om de api verbinding te behouden
+ * @returns 
+ */
 export async function VeilingProductitem_Update(
     huidigProduct: ProductLogica,
     veilingNummer: number,

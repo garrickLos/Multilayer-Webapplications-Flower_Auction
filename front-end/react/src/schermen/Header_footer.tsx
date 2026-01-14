@@ -11,6 +11,10 @@ import mijnVeilingenLogo from "../assets/pictures/webp/mijnVeilingenBekijken.web
 import klantGegevensLogo from "../assets/pictures/webp/klantGegevens.webp";
 import footerIcon from "../assets/pictures/webp/floraHolidayLogo.webp";
 
+/**
+ * 
+ * @returns de header items die aan de bovenkant van de webpaginawordt getoond
+ */
 export default function Header() {
     interface JwtClaims {
     "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
@@ -143,7 +147,10 @@ export default function Header() {
     );
 }
 
-
+/**
+ * 
+ * @returns geeft de footer informatie terug die getoond wordt aan de onderkant van de pagina
+ */
 export function Footer() {
     return (
         <footer>

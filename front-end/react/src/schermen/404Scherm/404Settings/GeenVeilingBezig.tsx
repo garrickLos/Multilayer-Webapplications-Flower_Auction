@@ -1,5 +1,9 @@
 import { GenereerKnop } from '../../../Componenten/Knop';
 
+/**
+ * 
+ * @returns Extra informatie voor de 404 pagina die getoond wordt als de correcte state is meegegeven
+ */
 // voor wanneer de veiling niet gevonden kan worden of als de gebruiker niet is ingelogd.
 export function GeenVeilingBezig() {
     return (

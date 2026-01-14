@@ -7,6 +7,7 @@ namespace mvc_api.Models;
 /// </summary>
 public class RefreshToken
 {
+    /// <summary>Unieke identifier van de refresh token.</summary>
     public int Id { get; set; }
     
     public string? Token { get; set; }

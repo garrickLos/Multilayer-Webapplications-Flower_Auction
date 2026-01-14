@@ -1,9 +1,7 @@
-/*
-to do:
-- ervoor zorgen dat deze gebruikt kan worden voor eventuele errors
-    - Geen items gevonden, Niet ingelogd, etc..
-*/
-
+/**
+ * 
+ * @returns een kleine div die laat zien dat er geen items gevonden kan worden.
+ */
 export function ErrorScherm (){
     return (
         <main className="Laadscherm-main">

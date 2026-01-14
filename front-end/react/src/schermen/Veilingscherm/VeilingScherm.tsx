@@ -26,6 +26,13 @@ let token_refresh = "";
 
 const Default_ImagePlaceholder = MissingPicture;
 
+/**
+ * 
+ * @returns kan meerdere dingen teruggeven op basis van sommige elementen: 
+ *      - als de veiling ongeldig is of niet meer bezig. een 404 met specifieke informatie
+ *      - Het veilingscherm als alle informatie correct is en alles klopt
+ *      - een 404 scherm wanneer de jwt token ongeldig is of niet een koper is.
+ *  */
 export default function AuctionScreen() {
     const [toonEindScherm, setToonEindScherm] = useState(false);
     const [actieveVeiling, setActieveVeiling] = useState<any>(null);
@@ -104,7 +111,7 @@ export default function AuctionScreen() {
             />
         );
     // als er geen token is gevonden dan gaat het naar de 404 pagina
-    } else if (sessionStorage.getItem('token') == null) {
+    } else if (sessionStorage.getItem('token') == null || token !== "Koper") {
         return (
             <Navigate 
                 to="/404" 
@@ -116,6 +123,12 @@ export default function AuctionScreen() {
     }
 }
 
+/**
+ * 
+ * @param actieveVeiling de huidige veiling die getoond wordt bij het veilingscherm
+ * @param veilingItemNr de veilingItem die op het moment bezig is. Wordt gebruikt om de correcte veilingproduct te vinden. 
+ * @returns de gehele veilingscherm met alle informatie die nodig op het veilingscherm. met een foto, informatie over het product en de veilingklok.
+ */
 //voor de veilingscherm zelf, wanneer de gebruiker naar een veiling wilt gaan.
 function VeilingschermComponent({ actieveVeiling, veilingItemNr }: VeilingschermProps) {
 
@@ -174,13 +187,12 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
         }
     };
 
-    const [isOpen] = React.useState(true);
-
     const dataIsOpgehaald = useRef(false);
 
     useEffect(() => {
 
-        if (dataIsOpgehaald.current || !isOpen) return;
+        if (dataIsOpgehaald.current) return;
+
         const fetchKweker = async () => {
             // Als er geen kwekerNr is, stoppen we
             if (!huidigProduct?.kwekerNr) return;
@@ -267,8 +279,7 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
 
                     <div className='SideMenuInfo'>
                         <div className='SideMenuInfo'>
-                            <ContainerSideMenu 
-                                isOpen={isOpen} 
+                            <ContainerSideMenu
                                 kwekerNaam={kweker?.bedrijfsNaam} 
                                 categorieNr={huidigProduct?.categorieNr} 
                                 productNaam={huidigProduct?.naam}
@@ -281,6 +292,12 @@ function VeilingschermComponent({ actieveVeiling, veilingItemNr }: Veilingscherm
     );
 }
 
+/**
+ * 
+ * @param activeVeiling Is de actieve veiling die gebruikt wordt voor het veilingscherm.
+ * @param actieveProductIndex Nummer van de veilingproduct dat op het moment actief is.
+ * @returns brengt de correcte actieve veiling terug op basis van de actieveVeilingProduct nummer en als die niet bestaat is het null en geeft het niks terug.
+ */
 function getHuidigeProduct(activeVeiling: VeilingLogica, actieveProductIndex: number) {
 
     let actieveVeiling = activeVeiling && activeVeiling.producten[actieveProductIndex] 

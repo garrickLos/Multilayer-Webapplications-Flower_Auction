@@ -1,5 +1,9 @@
 import { GenereerKnop } from '../../../Componenten/Knop';
 
+/**
+ * 
+ * @returns Extra informatie die getoond wordt op de 404 pagina wanneer de "VerlopenSessie" wordt meegegeven aan de state
+ */
 export function sessieVerlopenError() {
   return (
     <>

@@ -3,6 +3,11 @@ import { ApiRequest } from '../../../Componenten/index';
 
 import type { KwekerInfo } from '../../hoofdscherm/Componenten/index';
 
+/**
+ * 
+ * @param gebruikerNr Is het nummer van de gebruiker die gebruikt wordt om informatie op te zoeken
+ * @returns data die de kweker informatie opvult voor de veilingkaart op de hoofdpagina
+ */
 export async function getKwekerInfo(gebruikerNr: number) {
     const aanvoerderUrl: string = `/api/Gebruiker/kwekerNaam?GebruikerNr=${gebruikerNr}`;
 

@@ -1,3 +1,7 @@
+/**
+ * Wordt gebruikt voor een gezamelijke import van componenten en types
+ */
+
 // components
 export { AuctionCard } from '../RenderCards';
 

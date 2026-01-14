@@ -1,5 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 
+/**
+ * 
+ * @param intervalTime de tijd in seconden waarbij de refresh zich triggered
+ * @returns een trigger die ervoor zorgt dat het om de zoveel seconden opnieuw refreshed
+ */
 // berekend tijd in miliseconden
 export function useAutorefresh(intervalTime: number) {
     const [refreshTrigger, setRefreshTrigger] = useState<number>(Date.now());
@@ -15,6 +20,15 @@ export function useAutorefresh(intervalTime: number) {
     return refreshTrigger;
 }
 
+/**
+ * Voert een actie uit na een bepaalde vertraging, als de opgegeven conditie waar is.
+ * Handig voor bijvoorbeeld notificaties, reloads of uitgestelde acties in React componenten.
+ *
+ * @param condition Boolean conditie die bepaalt of de timeout gestart wordt.
+ * @param delayMs Aantal milliseconden vertraging voordat de actie wordt uitgevoerd.
+ * @param action Functie die uitgevoerd wordt na de vertraging als de conditie waar is.
+ * @returns void (de hook retourneert niets)
+ */
 export function useConditionalTimeout(condition: boolean,delayMs: number, action: () => void) {
     const savedAction = useRef(action);
 

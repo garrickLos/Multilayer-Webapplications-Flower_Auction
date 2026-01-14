@@ -11,8 +11,6 @@ export interface PrijsHistorieResultaatLogica {
 }
 
 export interface ContainerSideMenuProps {
-    isOpen: boolean;
-
     kwekerNaam?: string;
     categorieNr?: number;
     productNaam?: string;

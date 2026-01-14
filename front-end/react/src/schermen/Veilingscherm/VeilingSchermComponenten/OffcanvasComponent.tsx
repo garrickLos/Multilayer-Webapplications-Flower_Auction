@@ -10,9 +10,14 @@ import type { PrijsHistorieItemLogica, ContainerSideMenuProps } from '../../Veil
 
 import '../../../css/Componenten/OffcanvasComponent.css';
 
-
-
-export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam }: ContainerSideMenuProps) {
+/**
+ * 
+ * @param kwekerNaam Is de naam van de aanvoerder die verbonden is aan het product dat op het moment zichtbaar is in de veiling
+ * @param CategorieNr Categorienr van het huidige product in de veiling
+ * @param productNaam Naam van het product dat wordt getoond in de veiling
+ * @returns De side bar die de informatie bevat die nodig is om het prijsgeschiedenis toont
+ */
+export function ContainerSideMenu({ kwekerNaam, categorieNr, productNaam }: ContainerSideMenuProps) {
 
     const [configSpecifiekeData, setConfigSpecifiekeData] = useState<PrijsHistorieItemLogica[]>([]);
     const [configAllKwekerData, setConfigAllKwekerData] = useState<PrijsHistorieItemLogica[]>([]);
@@ -24,7 +29,7 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
 
     useEffect(() => {
         // Validatie: Stop direct als essentiële gegevens ontbreken
-        if (!isOpen || !kwekerNaam || !categorieNr) {
+        if (!kwekerNaam || !categorieNr) {
             return;
         }
 
@@ -67,10 +72,10 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
         
         fetchData();
     
-    }, [isOpen, kwekerNaam, categorieNr]); // Voeg dependencies toe
+    }, [kwekerNaam, categorieNr]); // Voeg dependencies toe
 
     return (
-        <div className={`sideBarMenu ${isOpen ? 'open' : 'closed'}`}>
+        <div className={`sideBarMenu`}>
             <div className="Auction_Informatievelden_Container aanbieder_informatie">
                 <div className="kopje">Aanbieder informatie</div>
                 
@@ -90,6 +95,13 @@ export function ContainerSideMenu({ isOpen, kwekerNaam, categorieNr, productNaam
     );
 };
 
+/**
+ * @param className naam van de class die de sidebar menu heeft (voor hopelijke herbruikbaarheid)
+ * @param data die getoond wordt op de sidebar menu
+ * @param renderAanbieder of de aanbieder/aanvoerder toont op de sidebar menu
+ * @param renderDate of de datum wordt gerenderd in de sidebar menu
+ * @returns een div die alle specifieke informatie toont in de sidebar menu
+ */
 const repeatClasses = (className: string, data: PrijsHistorieItemLogica[], renderAanbieder: boolean, renderDate: boolean) => {
     if (!data || data.length === 0) {
         return <div className="loading-state">Geen historie gevonden...</div>;

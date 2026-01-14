@@ -19,6 +19,13 @@ import '../../css/Componenten/AuctionCards.css';
 
 const Default_ImagePlaceholder = MissingPicture;
 
+/**
+ * 
+ * @param product onderdeel van de AuctionCardProps die het product informatie bevat om verder te zoeken op items
+ * bevat info die gebruikt wordt voor onder andere de beschrijving
+ * @param parentVeiling VeilingItem waar de kaart over gaat die de info gebruikt voor de beschrijving en het doorsturen van de gebruiker naar de correcte veiling 
+ * @returns De div container van de veilingkaart die gebruikt wordt in de grid-container op de hoofdpagina
+ */
 export function AuctionCard({ product, parentVeiling }: AuctionCardProps) {
 
     // Stopt de item als de product of veliing niet gevonden kan worden en vult de kaart met een laadscherm
@@ -80,6 +87,13 @@ export function AuctionCard({ product, parentVeiling }: AuctionCardProps) {
     );
 }
 
+/**
+ * 
+ * @param product De informatie van het specifieke product dat gerenderd wordt.
+ * @param item De veilingitem die de gegevens van de veiling renderd.
+ * @param kwekerInfo informatie van de kweker die op de veilingkaart komt te staan.
+ * @returns 
+ */
 // creert een beschrijving die gebruikt wordt in de rendercard zelf
 export function beschrijving(product: Producten, item: VeilingItem, kwekerInfo: KwekerInfo) {   
     // Gebruik kwekerNaam of naam afhankelijk van je API response

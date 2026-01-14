@@ -14,6 +14,12 @@ import type {VeilingItem} from '../hoofdscherm/Componenten/index.tsx';
 
 import '../../css/HoofdSchermStyle.css';
 
+/**
+ * genereert de homescherm en de elementen die erin zitten:
+ *  - teller voor de hoeveelheid pagina's die in de grid zitten
+ *  - veilingItem die op het moment actief is
+ * @returns het hoofdscherm die laat zien welke veilingen op het moment op actief staat
+ */
 export default function MainScreen() {
     const RefreshTimeMS = 60000; // 6000 miliseconden zou 6 seconden moeten zijn
     const refreshTimer = ApiRefresh(RefreshTimeMS);
@@ -45,8 +51,6 @@ export default function MainScreen() {
         return () => { isMounted = false; };
 
     }, [refreshTimer]);
-
-    console.log(veilingen);
 
     const actieveVeilingen = veilingen;
 
@@ -82,6 +86,11 @@ export default function MainScreen() {
     )
 }
 
+/**
+ * 
+ * @param dataToRender is de data die gerenderd moet worden op de getoonde items in het hoofdscherm
+ * @returns de grid-container waarin alle veilingkaarten staan die de actieve veilingen toont
+ */
 function renderSliderContent(dataToRender: VeilingItem[]) {
     // Maak een platte lijst van alle producten van alle veilingen
     // We voegen de veilinginformatie toe aan elk product-object

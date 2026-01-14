@@ -7,6 +7,7 @@ namespace mvc_api.DTOs.Auth;
 /// </summary>
 public sealed class LoginRequest
 {
+    /// <summary>Het e-mailadres van de gebruiker.</summary>
     // wanneer de email leeg is
     [Required(ErrorMessage = "Email is verplicht.")]
     [EmailAddress(ErrorMessage = "Voer een geldig e-mailadres in.")]

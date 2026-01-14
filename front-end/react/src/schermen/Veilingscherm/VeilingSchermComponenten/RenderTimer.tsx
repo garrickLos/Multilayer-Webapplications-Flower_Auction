@@ -4,6 +4,11 @@ import type { TimerProps, VeilingLogica } from '../../Veilingscherm/VeilingScher
 
 import { DelenDoor as convertToEuro } from "../../../Componenten/RekenFuncties";
 
+/**
+ * 
+ * @param veiling De veiling en informatie over de veiling die nodig is om de tijd van de veiling te genereren
+ * @returns geeft de klok terug die automatisch update elke seconden om 1 cent naar beneden te gaan
+ */
 // Hulpfunctie: Bereken de gegevens van het huidige actieve product
 export function berekenHuidigeVeilingStaat(veiling?: VeilingLogica) {
 
