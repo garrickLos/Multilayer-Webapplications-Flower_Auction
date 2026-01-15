@@ -41,8 +41,8 @@ export function berekenHuidigeVeilingStaat(veiling?: VeilingLogica) {
             continue;
         }
 
-        let startprijs = product.startPrijs / 100;
-        let minimumPrijs = product.minPrijs / 100;
+        let startprijs = product.startPrijs;
+        let minimumPrijs = product.minPrijs;
         
         const prijsVerschil = startprijs - minimumPrijs;
         const productDuurSec = Math.floor(prijsVerschil / dalingPerSeconde);
