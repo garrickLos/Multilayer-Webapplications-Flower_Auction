@@ -1,3 +1,4 @@
+//dit object wordt gebruikt voor het formatteren van datums en tijd
 const datumOpties: Intl.DateTimeFormatOptions = {
     weekday: "short",
     year: "numeric",
@@ -9,6 +10,7 @@ const datumOpties: Intl.DateTimeFormatOptions = {
         second: '2-digit'
 };
 
+//dit zet een string van tijd om naar een leesbare datum in een bepaalde regio
 export function GetDate(time: string, region: string) {
     return new Date(time).toLocaleString(region, datumOpties);
 }

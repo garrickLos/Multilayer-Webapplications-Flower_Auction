@@ -1,19 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../css/SellerScreenAdd.css";
-import { UseDataApi as GetCategorie } from "../Componenten/ApiGetCategorien";
 import { resolveApiUrl, resolveImageUrl } from "../config/api";
 import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
+import { getRefreshToken, getBearerToken, ApiRequest } from "../Componenten/index";
 
 interface CategorieType {
     categorieNr: number;
     naam: string;
 }
 
+let token = getBearerToken() || "";
+let refreshtoken = getRefreshToken() || "";
+
 export default function SellerScreenAdd() {
+    const [categorieLijst, setCategorieLijst] = useState<CategorieType[]>([]);
+
+    /**Haalt categorien op via api en slaat die op */
+        useEffect(() => {
+        const dataOphalen = async () => {
+        const response = await ApiRequest<CategorieType[]>(
+          '/api/Categorie',
+          "GET",
+          null,
+          token,
+          refreshtoken
+        );
+
+        const categorieLijst = response as CategorieType[];
+        setCategorieLijst(categorieLijst);
+        };
+    
+        dataOphalen();
+        }, [refreshtoken]);
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const Default_ImagePlaceholder = MissingPicture;
-    const { data } = GetCategorie('/api/Categorie');
-    const categorieLijst = (data as CategorieType[]) || [];
+
     const categorieAfbeeldingen = [
         { label: "Chrysant", value: "productBloemen/Chrysant.webp" },
         { label: "Dahlia", value: "productBloemen/DecoratieveDahliaSunsetFlare.webp" },
@@ -23,6 +44,7 @@ export default function SellerScreenAdd() {
         { label: "Tulp", value: "productBloemen/EleganteTulpCrimsonGlory.webp" }
     ];
 
+    //vaste data die wordt meegegeven aan de endpoint
     const Data = {
         status: true,
         Kwekernr: sessionStorage.getItem("gebruikerNummer"),
@@ -30,6 +52,7 @@ export default function SellerScreenAdd() {
         VoorraadBloemen: 1000
     };
 
+    //beginwaardes van productvelden
     const [product, setProduct] = useState({
         Naam: "",
         AantalFusten: "",
@@ -40,6 +63,7 @@ export default function SellerScreenAdd() {
         GeplaatstDatum: ""
     });
 
+    //beginwaardes van validatiefouten
     const [errors, setErrors] = useState({
         Naam: "",
         AantalFusten: "",
@@ -55,6 +79,12 @@ export default function SellerScreenAdd() {
             ? Default_ImagePlaceholder
             : resolveImageUrl(imagePath);
 
+    /**
+     * controlleert op welke inputveld het is en controlleert of er een fout is opgetreden
+     * @param id naam van het veld waar er een error is
+     * @param value waarden wat er is ingevoerd
+     * @returns geeft een passende foutmelding bij de fout en anders geeft het true terug als er niks fout is
+     */
     const validateField = (id: string, value: string | number) => {
         let error = "";
 
@@ -82,6 +112,7 @@ export default function SellerScreenAdd() {
         return error === "";
     };
 
+    //update de product state bij een input wijziging
     const verwerkInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
 
@@ -90,6 +121,7 @@ export default function SellerScreenAdd() {
             [id]: value
         }));
 
+        //roept de functie validateField die de waarde controlleerd op foute input
         validateField(id, value);
     };
 
@@ -103,8 +135,15 @@ export default function SellerScreenAdd() {
         setImagePath(value);
     };
     
+
     const huidigeTijd = new Date().toISOString();
     
+    /**
+     * controlleert of je bent ingelogd, vervolgens valideert hij alle velden of er fouten zijn.
+     * Daarna combineert hij 'vaste data' met de ingevoerde data en berekent hij de minimumprijs in hele ints.
+     * Hij stuurt een post request naar de backend api om producten toe te voegen
+     * @returns product toegevoegd als het geslaagd is en een foutmelding als er iets fout is gegaan
+     */
     const GegevensVersturen = async () => {
         const token = sessionStorage.getItem("token");
         if (!token) {
@@ -116,6 +155,7 @@ export default function SellerScreenAdd() {
             alert("Controleer de velden in rood!");
             return;
         }
+
         const AlleGegevens = {
             ...Data,
             ...product,

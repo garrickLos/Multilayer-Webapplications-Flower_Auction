@@ -11,6 +11,7 @@ import '../../css/privacybeleidStylesheet.css';
 const url = new URL("../../resources/Json/privacyBeleid.json", import.meta.url).toString();
 
 export default function PrivacyScherm() {
+    //houdt bij welke items momenteel opengeklapt zijn null betekent alle items dicht
     const [openItemId, setOpenItemId] = useState<string | null>(null);
 
     // Fetching data met het juiste type
@@ -18,10 +19,12 @@ export default function PrivacyScherm() {
     const persoonlijkeDataState = useFetchDatajson<ContentBlock>("persoonlijke gegevens", url);
     const cookiesDataState = useFetchDatajson<ContentBlock>("cookies", url);
 
+    //klapt de bijbehorende blok info open
     const handleHeaderClick = (itemId: string) => {
         setOpenItemId(itemId === openItemId ? null : itemId);
     };
 
+    //status van de blok info (open of dicht)
     const getItemClass = (itemId: string) => {
         return openItemId === itemId ? 'gegevens open' : 'gegevens closed';
     };

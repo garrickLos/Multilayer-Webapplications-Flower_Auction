@@ -7,6 +7,7 @@ import { ApiRequest } from '../Componenten/index';
 
 
 export default function CustomerScreenInfo() {
+    //lijst van biedingen van de huidige gebruiker en lijst van producten van de api
     const [biedingLijst, setBiedingLijst] = useState<BiedingType[]>([]);
     const [productLijst, setProductLijst] = useState<ProductType[]>([]);
 
@@ -19,7 +20,7 @@ export default function CustomerScreenInfo() {
         return null;
     }
 
-    //biedingen op halen gebaseerd op gebruikerNr
+    //biedingen op halen gebaseerd op gebruikerNr en die opslaan in de lijst
     useEffect(() => {
     const dataOphalen = async () => {
     const response = await ApiRequest<BiedingType[]>(
@@ -37,7 +38,7 @@ export default function CustomerScreenInfo() {
     dataOphalen();
     }, [refreshtoken]);
 
-    //productinformatie ophalen gebaseerd op veilingproductNr
+    //productinformatie ophalen gebaseerd op veilingproductNr en die opslaan in de lijst
     useEffect(() => {
     const dataOphalen = async () => {
     const response = await ApiRequest<ProductType[]>(
@@ -56,6 +57,7 @@ export default function CustomerScreenInfo() {
     }, [refreshtoken]);
 
 
+    //beschrijft hoe elk product en bieding object eruit ziet
     interface BiedingType {
         aantalStuks: number;
         bedragPerFust: number;
@@ -70,14 +72,20 @@ export default function CustomerScreenInfo() {
         plaats: string; 
     }
 
+    //huidige gebruikernummer omzetten naar een int
     const nieuweNummer = Number.parseInt(nummer, 10);
+
+    //filtert biedinglijst zodat alleen biedingen van de ingelogde gebruiker te zien zijn
     const mijnBiedingen = biedingLijst.filter(v => v.gebruikerNr === nieuweNummer);
 
-    
+    //loopt door elke bieding van de gebruiker en vind de bijbehorende product in productlijst.
     return (
         <main className="SellerScreenInfo">
             <section className="productScroller">
-                {mijnBiedingen.map((bieding) => {
+                {biedingLijst.length < 1 && productLijst.length < 1 ?(
+                    <div className="geenInfo">Er zijn nog geen biedingen geplaatst</div>
+                ) :
+                (mijnBiedingen.map((bieding) => {
                     const product = productLijst.find(
                         (p) => p.veilingProductNr === bieding.veilingProductNr
                     );
@@ -104,7 +112,8 @@ export default function CustomerScreenInfo() {
                             </div>
                         </div>
                     );
-                })}
+                })
+            )}
             </section>
         </main>
 

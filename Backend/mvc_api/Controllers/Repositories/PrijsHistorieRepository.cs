@@ -8,6 +8,11 @@ namespace mvc_api.Data
     {
         private readonly string _connectionString;
 
+        /// <summary>
+        /// deze query geeft de eerte 10 recenste datums en de gemiddelde bod per fust waar de
+        /// categorienummer gelijk is aan de meegegeven categorie nummer en waar de bedrijfsnaam gelijk is
+        /// aan de meegegeven bedrijfsnaam als die meegegeven is. De waardes zijn van nieuw naar oud geordend.
+        /// </summary>
         private const string ItemsQueryKweker = @"
             SELECT TOP (10)
                 CAST(V.BeginDatum AS date) AS BeginDatum,
@@ -20,6 +25,10 @@ namespace mvc_api.Data
             GROUP BY CAST(V.BeginDatum AS date)
             ORDER BY CAST(V.BeginDatum AS date) DESC;";
 
+        /// <summary>
+        /// deze query haalt voor de laatste 10 veilingdatums van een bepaalde categorie
+        /// per bedrijfsnaam het gemiddelde bod per fust op
+        /// </summary>
         private const string ItemsQueryIedereen = @"
             SELECT
                 U.BedrijfsNaam,
@@ -39,6 +48,10 @@ namespace mvc_api.Data
             GROUP BY U.BedrijfsNaam, CAST(V.BeginDatum AS date)
             ORDER BY BeginDatum DESC, U.BedrijfsNaam;";
 
+        /// <summary>
+        /// deze quey berekent het gemiddelde bod per fust voor veilingproducten in een
+        /// opgegeven categorie met een optionele filter op bedrijfsnaam
+        /// </summary>
         private const string AverageQuery = @"
             SELECT AVG(CAST(B.BedragPerFust AS DECIMAL(18,2)))
             FROM Veilingproduct V
@@ -53,17 +66,33 @@ namespace mvc_api.Data
                 ?? throw new InvalidOperationException("Connection string 'Default' ontbreekt.");
         }
 
+        /// <summary>
+        /// Roept de juiste prijshistorie query aan (voor iedereen of alleen een specifieke kweker)
+        /// en haalt de resultaten op, inclusief per datum bedragen en het gemiddelde bod per fust
+        /// </summary>
+       
         public PrijsHistorieResultaat GetPrijsHistorieIedereen(int categorieNr, CancellationToken ct = default)
             => GetPrijsHistorie(categorieNr, null, ct);
 
         public PrijsHistorieResultaat GetPrijsHistorieAlleenKweker(int categorieNr, string bedrijfsNaam, CancellationToken ct = default)
             => GetPrijsHistorie(categorieNr, bedrijfsNaam, ct);
 
+        /// <summary>
+        /// Haalt per datum het gemiddelde bod per fust en
+        /// het algemene gemiddelde berekent op aan de hand van de
+        /// meegegeven categorienummer en optionele bedrijfsnaam
+        /// </summary>
+        /// <param name="categorieNr">meegegeven categorienummer die wordt gebruikt voor het filteren</param>
+        /// <param name="bedrijfsNaam">optionele bedrijfsnaam die wordt gebruikt voor het filteren</param>
+        /// <param name="ct">cancelation token</param>
+        /// <returns>geeft alles terug in een PrijsHistorieResultaat</returns>
         private PrijsHistorieResultaat GetPrijsHistorie(int categorieNr, string? bedrijfsNaam, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
 
             var items = new List<PrijsHistorieItem>();
+
+            //kijkt of er een bedrijfsnaam is meegegeven
             var isKwekerFilter = !string.IsNullOrWhiteSpace(bedrijfsNaam);
 
             using var connection = new SqlConnection(_connectionString);
@@ -73,6 +102,7 @@ namespace mvc_api.Data
             {
                 cmd.CommandText = isKwekerFilter ? ItemsQueryKweker : ItemsQueryIedereen;
                 cmd.Parameters.Add("@CategorieNr", SqlDbType.Int).Value = categorieNr;
+                //Als er een bedrijfsnaam is meegegeven dan geeft hij die mee als parameter
                 if (isKwekerFilter)
                     cmd.Parameters.Add("@BedrijfsNaam", SqlDbType.NVarChar, 256).Value = bedrijfsNaam!;
 
@@ -81,6 +111,7 @@ namespace mvc_api.Data
                 var ordAvg = reader.GetOrdinal("GemiddeldePerFust");
                 var ordBedrijf = !isKwekerFilter ? reader.GetOrdinal("BedrijfsNaam") : -1;
 
+                //zolang er waardes zijn slaat hij datum, gemiddelde bod per fust en eventueel bedrijfsnaam op
                 while (reader.Read())
                 {
                     var item = new PrijsHistorieItem
@@ -97,6 +128,8 @@ namespace mvc_api.Data
             }
 
             decimal? average;
+            //voert de averagequery uit die het algemene gemiddelde bod per fust berekent
+            //als er geen resultaat is wordt er null teruggegeven
             using (var cmd = connection.CreateCommand())
             {
                 cmd.CommandText = AverageQuery;

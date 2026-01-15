@@ -1,16 +1,43 @@
 import "../css/SellerScreenInfo.css";
-import { UseDataApi as GetProduct } from "../Componenten/ApiGet";
 import { NavLink } from 'react-router-dom';
 import { resolveImageUrl } from "../config/api";
+import { useEffect, useState } from "react";
+import { ApiRequest } from '../Componenten/index';
 
 
 export default function SellerScreenInfo() {
-    const nummer = sessionStorage.getItem("gebruikerNummer");
-    console.log("gebruikernummer: " + nummer);
-    const { data: ProductData } = GetProduct(`/api/Veilingproduct/kweker?Nummer=${nummer}`);
-    const productLijst = (ProductData as ProductType[]) || [];
-    console.log(productLijst);
+    //haalt de gebruikernummer op om producten te vinden van de ingelogde kweker
+    const refreshtoken = sessionStorage.getItem("refreshToken");
+    const token = sessionStorage.getItem("token");
 
+    const nummer = sessionStorage.getItem("gebruikerNummer")
+    if(!nummer)
+    {
+        return null;
+    }
+
+    const [productLijst, setProductLijst] = useState<ProductType[]>([]);
+    
+
+    //productinformatie ophalen gebaseerd op veilingproductNr en die opslaan in de lijst
+        useEffect(() => {
+        const dataOphalen = async () => {
+        const response = await ApiRequest<ProductType[]>(
+          `/api/Veilingproduct/kweker?Nummer=${nummer}`,
+          "GET",
+          null,
+          token,
+          refreshtoken
+        );
+    
+        const productLijst = response as ProductType[];
+        setProductLijst(productLijst);
+        };
+    
+        dataOphalen();
+        }, [refreshtoken]);
+
+    //beschrijft hoe elk product object eruit ziet
     interface ProductType {
         veilingProductNr: number;
         naam: string;
@@ -21,6 +48,7 @@ export default function SellerScreenInfo() {
         imagePath: string;
         plaats: string;
     } 
+
     return (
         <main className="SellerScreenInfo">
             <div className="productToevoegenKnop_container">    
@@ -28,7 +56,10 @@ export default function SellerScreenInfo() {
                 className="productToevoegenKnop">Product toevoegen</NavLink>
             </div>
             <section className="productScroller">
-                {productLijst.map((product) => (
+                {productLijst.length < 1 ?(
+                    <div className="geenInfo">Er zijn nog geen producten toegevoegd.</div>
+                ) :
+                (productLijst.map((product) => (
                     <div key={product.veilingProductNr} className="rij">
                         <div className="kolomLinks">
                             <img
@@ -46,7 +77,8 @@ export default function SellerScreenInfo() {
                                 <div className="plaats">Plaats: {product.plaats}</div>
                         </div>
                     </div>
-                ))}
+                ))
+            )}
             </section>
         </main>
     );
