@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.mvc_api/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Data/DataSeeder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/mvc_api/Data/DataSeeder.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260114204507_InitialCreate.Designer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvc_api/Migrations/20260114204507_InitialCreate.cs" beforeDir="false" />
-    </list>
+    <list default="true" id="437bd972-a8d9-4b25-b9b3-53fdbd5a302b" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -103,6 +98,7 @@
       <workItem from="1768306423850" duration="1244000" />
       <workItem from="1768422061348" duration="2246000" />
       <workItem from="1768429782826" duration="230000" />
+      <workItem from="1768471687582" duration="2258000" />
     </task>
     <servers />
   </component>
