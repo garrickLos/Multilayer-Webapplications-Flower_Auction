@@ -5,6 +5,8 @@ import { jwtDecode } from "jwt-decode";
 
 import { useEffect, useState } from "react";
 
+import { GetTokenInfo } from '../Componenten/GetTokenInfo';
+
 import floraHolidayLogo from "../assets/pictures/webp/floraHolidayLogo.webp";
 import veilingPlaatsenLogo from "../assets/pictures/webp/veilingPlaatsen.webp";
 import mijnVeilingenLogo from "../assets/pictures/webp/mijnVeilingenBekijken.webp";
@@ -13,42 +15,22 @@ import footerIcon from "../assets/pictures/webp/floraHolidayLogo.webp";
 
 /**
  * 
- * @returns de header items die aan de bovenkant van de webpaginawordt getoond
+ * @returns de header items die aan de bovenkant van de webpaginawordt getoond. OP basis van de rol die de gebruiker heeft in de jwt token
+ * worden er aparte items getoond in de header. Niet ingelogd 2 knoppen voor inloggen.
+ * Koper is de biedingen zien.
+ * kweker is het toevoegen van de biedingen en eigen biedingen zien
+ * veilingmeester is een knopw om naar de veilingmeester scherm te gaan.
  */
 export default function Header() {
-    interface JwtClaims {
-    "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
-    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"?: string;
-}
 
     const [role, setRole] = useState<string | null>(null);
-    
+
+    // Voeg deze functie toe om de rol te updaten
+    function updateRoleFromToken() {
+        setRole(GetTokenInfo());
+    }
+
     useEffect(() => {
-        const updateRoleFromToken = () => {
-            const token = sessionStorage.getItem("token");
-            if (!token) {
-                setRole(null);
-                return;
-            }
-
-            try {
-                const decoded = jwtDecode<JwtClaims>(token);
-                const RolClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-                const gebruikerClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
-                setRole(decoded[RolClaim] || null);
-                
-                const nummer = decoded[gebruikerClaim] || null;
-
-                if(nummer != null){
-                    sessionStorage.setItem("gebruikerNummer", nummer);
-                }
-
-            
-                TokenOphalen.setToken(token);
-            } catch {
-                setRole(null);
-            }
-        };
         updateRoleFromToken();
 
         const handleLogin = () => updateRoleFromToken();

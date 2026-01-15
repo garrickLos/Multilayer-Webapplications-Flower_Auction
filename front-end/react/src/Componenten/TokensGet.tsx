@@ -3,7 +3,13 @@
  * @returns de jwt token uit de sessionStorage
  */
 export function getBearerToken() {
-    return sessionStorage.getItem("token");
+    let token = sessionStorage.getItem("token");
+
+    if (token === null) {
+        token = "";
+    }
+
+    return token;
 }
 
 /**

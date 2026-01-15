@@ -20,6 +20,7 @@ import { resolveImageUrl } from "../../config/api";
 
 // Css voor de veilingscherm
 import '../../css/VeilingScherm.css';
+import { GetTokenInfo } from '../../Componenten/GetTokenInfo.tsx';
 
 let token = Token() || "";
 let token_refresh = "";
@@ -84,6 +85,8 @@ export default function AuctionScreen() {
     
     const timerInSec = 1 * 1000; // van miliseconden naar seconden
 
+    let rol = GetTokenInfo();
+
     // zodat er een timer is die afteld totdat de error scherm er is nadat een veiling is afgelopen.
     // is er niet opeens een snelle verwijzing naar de homescherm nadat de veiling is afgelopen
     useEffect(() => {
@@ -110,8 +113,9 @@ export default function AuctionScreen() {
                 veilingItemNr={veilingItemNr} 
             />
         );
+    
     // als er geen token is gevonden dan gaat het naar de 404 pagina
-    } else if (sessionStorage.getItem('token') == null || token !== "Koper") {
+    } else if (sessionStorage.getItem('token') == null || rol !== "Koper") {
         return (
             <Navigate 
                 to="/404" 

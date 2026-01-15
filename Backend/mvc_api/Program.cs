@@ -2,7 +2,7 @@
 //     
 // dotnet ef database drop --force
 // dotnet ef migrations remove
-//
+
 // dotnet ef migrations add InitialCreate 
 // dotnet ef database update
 
@@ -79,7 +79,7 @@ builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>(
 
 
 // ORM / DbContext
-var connectionString = builder.Configuration.GetConnectionString("Default");
+var connectionString = builder.Configuration.GetConnectionString("LocaldbConnection");
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 var allowCredentials = builder.Configuration.GetValue<bool>("Cors:AllowCredentials");
 
@@ -194,11 +194,11 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db       = services.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
 
     try
     {
-        await DataSeeder.Seed(app.Services);
+        db.Database.Migrate();
+        await DataSeeder.Seed(services);
     }
     catch (Exception ex)
     {

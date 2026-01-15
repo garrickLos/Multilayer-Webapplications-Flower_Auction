@@ -148,7 +148,7 @@ export default function SellerScreenAdd() {
      * @returns product toegevoegd als het geslaagd is en een foutmelding als er iets fout is gegaan
      */
     const GegevensVersturen = async () => {
-        const token = getBearerToken;
+        const token = getBearerToken();
         if (!token) {
             alert("Je bent niet ingelogd.");
             return;
@@ -178,8 +178,6 @@ export default function SellerScreenAdd() {
 
             if (response.ok) {
                 alert("Product toegevoegd!");
-                const data = await response.json();
-                console.log(data);
             } else {
                 alert("Fout bij toevoegen product!");
             }
