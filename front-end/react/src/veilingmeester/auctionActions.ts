@@ -72,7 +72,7 @@ export function useAuctionActions({
         ) => {
             try {
                 const updatedProduct = await updateProductPlanning(productId, {
-                    startprijs: startPrice,
+                    startprijs: startPrice * 100,
                     veilingNr: auctionId,
                 });
 

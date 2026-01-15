@@ -83,9 +83,11 @@ export function VeilingenOverzicht({
             header: "Klokprijs",
             sortable: true,
             render: (auction) => {
-                // Startprijs bepalen (fallbacks zodat er altijd een getal is)
-                const startPrice = auction.maxPrice ?? auction.minPrice ?? 0;
-                const minPrice = auction.minPrice ?? 0;
+                // Eerst naar cent-bedragen met veilige fallbacks, daarna naar euro
+                const startPriceCents = auction?.maxPrice ?? auction?.minPrice ?? 0;
+                const minPriceCents = auction?.minPrice ?? 0;
+                const startPrice = startPriceCents / 100;
+                const minPrice = minPriceCents / 100;
 
                 // Actuele klokprijs (op basis van start/eind + huidige tijd)
                 const currentPrice = calculateClockPrice(
