@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using mvc_api.Models;
 using mvc_api.Models.Dtos;
@@ -85,7 +81,7 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
-        var query = ApplySearchFilters(QueryWithCategorie(), null, q, categorieNr)
+        var query = ApplySearchFilters(QueryWithCategorie(), Nummer, q, categorieNr)
             .OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);
         var items = await query

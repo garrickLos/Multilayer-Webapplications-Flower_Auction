@@ -82,8 +82,10 @@ export default function CustomerScreenInfo() {
     return (
         <main className="SellerScreenInfo">
             <section className="productScroller">
-                
-                {mijnBiedingen.map((bieding) => {
+                {biedingLijst.length < 1 && productLijst.length < 1 ?(
+                    <div className="geenInfo">Er zijn nog geen biedingen geplaatst</div>
+                ) :
+                (mijnBiedingen.map((bieding) => {
                     const product = productLijst.find(
                         (p) => p.veilingProductNr === bieding.veilingProductNr
                     );
@@ -111,7 +113,7 @@ export default function CustomerScreenInfo() {
                         </div>
                     );
                 })
-            }
+            )}
             </section>
         </main>
 
