@@ -79,7 +79,7 @@ builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>(
 
 
 // ORM / DbContext
-var connectionString = builder.Configuration.GetConnectionString("LocaldbConnection");
+var connectionString = builder.Configuration.GetConnectionString("Default");
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 var allowCredentials = builder.Configuration.GetValue<bool>("Cors:AllowCredentials");
 
