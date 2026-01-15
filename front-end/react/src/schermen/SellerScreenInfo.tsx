@@ -56,7 +56,10 @@ export default function SellerScreenInfo() {
                 className="productToevoegenKnop">Product toevoegen</NavLink>
             </div>
             <section className="productScroller">
-                {productLijst.map((product) => (
+                {productLijst.length < 1 ?(
+                    <div className="geenInfo">Er zijn nog geen producten toegevoegd.</div>
+                ) :
+                (productLijst.map((product) => (
                     <div key={product.veilingProductNr} className="rij">
                         <div className="kolomLinks">
                             <img
@@ -74,7 +77,8 @@ export default function SellerScreenInfo() {
                                 <div className="plaats">Plaats: {product.plaats}</div>
                         </div>
                     </div>
-                ))}
+                ))
+            )}
             </section>
         </main>
     );
