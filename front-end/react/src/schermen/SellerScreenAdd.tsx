@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "../css/SellerScreenAdd.css";
+import { ApiRequest, getBearerToken, getRefreshToken } from "../Componenten/index";
 import { resolveApiUrl, resolveImageUrl } from "../config/api";
 import MissingPicture from "../assets/pictures/webp/MissingPicture.webp";
-import { getRefreshToken, getBearerToken, ApiRequest } from "../Componenten/index";
 
 interface CategorieType {
     categorieNr: number;
@@ -13,7 +13,8 @@ let token = getBearerToken() || "";
 let refreshtoken = getRefreshToken() || "";
 
 export default function SellerScreenAdd() {
-    const [categorieLijst, setCategorieLijst] = useState<CategorieType[]>([]);
+    
+        const [categorieLijst, setCategorieLijst] = useState<CategorieType[]>([]);
 
     /**Haalt categorien op via api en slaat die op */
         useEffect(() => {
@@ -32,9 +33,10 @@ export default function SellerScreenAdd() {
     
         dataOphalen();
         }, [refreshtoken]);
+
     const mogelijkePlaatsen = ["Aalsmeer", "Rijnsburg", "Eelde", "Naaldwijk"];
     const Default_ImagePlaceholder = MissingPicture;
-
+    
     const categorieAfbeeldingen = [
         { label: "Chrysant", value: "productBloemen/Chrysant.webp" },
         { label: "Dahlia", value: "productBloemen/DecoratieveDahliaSunsetFlare.webp" },
@@ -43,7 +45,7 @@ export default function SellerScreenAdd() {
         { label: "Roos", value: "productBloemen/Roos.webp" },
         { label: "Tulp", value: "productBloemen/EleganteTulpCrimsonGlory.webp" }
     ];
-
+    
     //vaste data die wordt meegegeven aan de endpoint
     const Data = {
         status: true,
@@ -73,6 +75,7 @@ export default function SellerScreenAdd() {
         Minimumprijs: ""
     });
 
+    
     const [imagePath, setImagePath] = useState(Data.ImagePath);
     const resolvedImagePath =
         imagePath === Default_ImagePlaceholder
@@ -145,7 +148,7 @@ export default function SellerScreenAdd() {
      * @returns product toegevoegd als het geslaagd is en een foutmelding als er iets fout is gegaan
      */
     const GegevensVersturen = async () => {
-        const token = sessionStorage.getItem("token");
+        const token = getBearerToken;
         if (!token) {
             alert("Je bent niet ingelogd.");
             return;

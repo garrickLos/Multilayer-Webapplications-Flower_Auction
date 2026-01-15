@@ -21,9 +21,6 @@ export function useAutorefresh(intervalTime: number) {
 }
 
 /**
- * Voert een actie uit na een bepaalde vertraging, als de opgegeven conditie waar is.
- * Handig voor bijvoorbeeld notificaties, reloads of uitgestelde acties in React componenten.
- *
  * @param condition Boolean conditie die bepaalt of de timeout gestart wordt.
  * @param delayMs Aantal milliseconden vertraging voordat de actie wordt uitgevoerd.
  * @param action Functie die uitgevoerd wordt na de vertraging als de conditie waar is.
