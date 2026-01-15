@@ -81,6 +81,10 @@ public class VeilingproductRepository : IVeilingproductRepository
     {
         NormalizePaging(ref page, ref pageSize);
 
+<<<<<<< Updated upstream
+=======
+        
+>>>>>>> Stashed changes
         var query = ApplySearchFilters(QueryWithCategorie(), Nummer, q, categorieNr)
             .OrderBy(vp => vp.Naam);
         var total = await query.CountAsync(ct);

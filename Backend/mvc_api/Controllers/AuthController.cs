@@ -77,6 +77,15 @@ public sealed class AuthController : ControllerBase
 
         if (result.Succeeded)
         {
+            if(user.GebruikerNr != user.Id)
+            {
+                user.GebruikerNr = user.Id;
+                var updateResult = await _userManager.UpdateAsync(user);
+                if(!updateResult.Succeeded)
+                {
+                    return BadRequest(new RegisterResponse(false, updateResult.Errors.Select(e => $"{e.Code}: {e.Description}").ToArray()));
+                }
+            }
             // Rol koppelen (bijv. klant/kweker/veilingmeester)
             await _userManager.AddToRoleAsync(user, request.Soort);
         }
