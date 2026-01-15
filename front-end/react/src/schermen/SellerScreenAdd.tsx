@@ -250,7 +250,7 @@ export default function SellerScreenAdd() {
                                 </div>
 
                                 <div className="ordenen">
-                                    <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs in centen:</label>
+                                    <label htmlFor="Minimumprijs" className="minimumPrice">Minimum prijs in euro's:</label>
                                     <input type="number" id="Minimumprijs" step="0.01" value={product.Minimumprijs} onChange={verwerkInput} placeholder="0,01-10000" min={0.01} />
                                     {errors.Minimumprijs && <span className="error">{errors.Minimumprijs}</span>}
                                 </div>
