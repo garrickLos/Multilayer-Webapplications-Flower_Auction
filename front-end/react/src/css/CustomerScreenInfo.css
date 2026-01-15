@@ -26,10 +26,25 @@
     justify-content: flex-start;
     align-items: stretch;
     gap: 15px;
+    min-width: 1000px;
     max-width: 1200px;
     margin: 0 auto;
     padding-left: 10px;
     padding-right: 10px;
+}
+
+.CustomerScreenInfo .fotoProduct {
+    min-width: 200px;
+    width: auto;
+    max-width: 250px;
+
+    min-height: 200px;
+    height: auto;
+    max-height: 250px;
+    
+    object-fit: cover;
+
+    outline: 1px solid saddlebrown;
 }
 
 .kolomLinks {
