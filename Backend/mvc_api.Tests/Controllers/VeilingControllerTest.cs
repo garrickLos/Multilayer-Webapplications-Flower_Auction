@@ -287,7 +287,7 @@ namespace mvc_api.Tests.Controllers
 
             var request = Assert.IsType<OkObjectResult>(resultaat.Result);
 
-            var updated = Assert.IsType<VeilingUpdateDto>(request.Value);
+            var updated = Assert.IsType<VeilingMeester_VeilingDto>(request.Value);
             Assert.Equal("GewijzigdeVeiling", updated.VeilingNaam);
             Assert.Equal(now.AddMinutes(60), updated.Begintijd);
             Assert.Equal(now.AddMinutes(120), updated.Eindtijd);
@@ -338,6 +338,58 @@ namespace mvc_api.Tests.Controllers
             Assert.Equal(404, tuple.Status);
             Assert.Equal("Niet gevonden", tuple.Title);
 
+        }
+        
+        [Fact]
+        public async Task VeilingCancel_UpdatesStatusWithoutDeleting()
+        {
+            var now = _myDate.LocalTime;
+
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDbCancelVeiling")
+                .Options;
+
+            using var context = new AppDbContext(options);
+
+            var bestaandeVeiling = new Veiling
+            {
+                VeilingNr = 10,
+                VeilingNaam = "TeAnnuleren",
+                Begintijd = now.AddHours(2),
+                Eindtijd = now.AddHours(3),
+                Status = VeilingStatus.Inactive
+            };
+            context.Veiling.Add(bestaandeVeiling);
+            context.SaveChanges();
+
+            var controller = new VeilingController
+            (
+                context,
+                new Mock<ProjectieVeilingController>().Object,
+                new VeilingControllerFilter(context)
+            );
+
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var updateDto = new VeilingUpdateDto
+            {
+                VeilingNaam = bestaandeVeiling.VeilingNaam,
+                Begintijd = bestaandeVeiling.Begintijd,
+                Eindtijd = bestaandeVeiling.Eindtijd,
+                Status = VeilingStatus.Cancelled
+            };
+
+            var resultaat = await controller.Update(bestaandeVeiling.VeilingNr, updateDto, ct: CancellationToken.None);
+
+            var request = Assert.IsType<OkObjectResult>(resultaat.Result);
+            var updated = Assert.IsType<VeilingMeester_VeilingDto>(request.Value);
+            Assert.Equal(VeilingStatus.Cancelled, updated.Status);
+
+            var stored = context.Veiling.Single(v => v.VeilingNr == bestaandeVeiling.VeilingNr);
+            Assert.Equal(VeilingStatus.Cancelled, stored.Status);
         }
 
         [Fact]

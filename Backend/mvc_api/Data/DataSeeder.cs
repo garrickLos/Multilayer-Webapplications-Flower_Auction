@@ -237,12 +237,15 @@ public static class DataSeeder
     /// <returns>Asynchrone taak wanneer alle Veilingen zijn toegekend aan de database</returns>
     private static async Task EnsureVeiling(AppDbContext dbContext)
     {
-        var veilingBasis = DateTime.UtcNow.AddDays(-10);
-        if (!await dbContext.Veiling.AnyAsync())
+        if (await dbContext.Veiling.AnyAsync())
         {
-            // Forceer start-id (SQL Server specifiek)
-            await dbContext.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('Veiling', RESEED, 200)");
+            return;
         }
+
+        var veilingBasis = DateTime.UtcNow.AddDays(-10);
+
+        // Forceer start-id (SQL Server specifiek)
+        await dbContext.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('Veiling', RESEED, 200)");
 
         var veilingen = new[]
         {

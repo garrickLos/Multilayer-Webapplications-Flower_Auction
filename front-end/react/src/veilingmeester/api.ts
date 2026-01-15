@@ -1,4 +1,4 @@
-import { getBearerToken } from "../Componenten/index";
+import { getBearerToken } from "../Componenten";
 import { API_BASE_URL, resolveApiUrl } from "../config/api";
 const DEFAULT_PAGE_SIZE = 200;
 
@@ -15,8 +15,6 @@ export type PaginatedList<T> = {
     readonly hasNext: boolean;
     readonly totalResults?: number;
 };
-
-export type Category = { id: number; name: string };
 export type User = { id: number; name: string; email: string; role: UserRole; status: UiStatus; kvk?: string };
 export type Bid = {
     readonly id: number;
@@ -64,10 +62,6 @@ export type Auction = {
 
 export type VeilingCreateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
 export type VeilingUpdateDto = { veilingNaam: string; begintijd: string; eindtijd: string; status?: string | null };
-export type BiedingBaseAmountDto = { bedragPerFust: number; aantalStuks: number; gebruikerNr: number };
-export type BiedingCreateDto = BiedingBaseAmountDto & { biedingNr?: number; veilingNr?: number; veilingproductNr?: number };
-export type BiedingUpdateDto = BiedingBaseAmountDto;
-
 const jsonHeaders = { Accept: "application/json", "Content-Type": "application/json" };
 
 function toUiStatus(value?: AuctionStatus | string | null): UiStatus {
@@ -280,11 +274,6 @@ export async function fetchProducts(
 ): Promise<PaginatedList<Product>> {
     return fetchList("/api/Veilingproduct/veilingmeester", params, mapProduct, signal);
 }
-
-export async function fetchCategories(params: { q?: string; page?: number; pageSize?: number } = {}, signal?: AbortSignal): Promise<PaginatedList<Category>> {
-    return fetchList("/api/Categorie", params, (dto: { categorieNr: number; naam?: string }) => ({ id: dto.categorieNr, name: dto.naam ?? "" }), signal);
-}
-
 export async function updateProductPlanning(
     id: number,
     payload: { startprijs?: number | null; veilingNr?: number | null },

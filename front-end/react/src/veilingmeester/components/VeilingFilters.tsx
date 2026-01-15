@@ -4,6 +4,13 @@ import type { JSX } from "react";
 import type { AuctionFilters } from "../hooks";
 import { Field, Select } from "./ui";
 
+/**
+ * Props voor de veiling-filters:
+ * - search/filters: huidige waarden
+ * - onSearchChange/onFiltersChange: callbacks om state te updaten
+ * - onCreateRequested: opent flow voor "nieuwe veiling"
+ * - onRefresh: handmatige refresh van de data
+ */
 type AuctionsFiltersProps = {
     readonly search: string;
     readonly filters: AuctionFilters;
@@ -15,7 +22,25 @@ type AuctionsFiltersProps = {
     readonly onRefresh: () => void;
 };
 
-export function VeilingFilters({search, filters, onSearchChange, onFiltersChange, onCreateRequested, onRefresh,}: AuctionsFiltersProps): JSX.Element {
+/**
+ * VeilingFilters:
+ * Boven de tabel voor veilingen:
+ * - zoekveld (vrije tekst)
+ * - actieknoppen (ververs / nieuwe veiling)
+ * - filters (alleen actief, datum range, status)
+ */
+export function VeilingFilters({
+                                   search,
+                                   filters,
+                                   onSearchChange,
+                                   onFiltersChange,
+                                   onCreateRequested,
+                                   onRefresh,
+                               }: AuctionsFiltersProps): JSX.Element {
+    /**
+     * Kleine helper om filters te updaten met een "patch".
+     * Zo blijft de component leesbaar en update je alleen wat nodig is.
+     */
     const updateFilters = (patch: Partial<AuctionFilters>) =>
         onFiltersChange((prev) => ({ ...prev, ...patch }));
 
@@ -36,12 +61,22 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
                         </div>
                     </Field>
                 </div>
+
+                {/* Actieknoppen rechts */}
                 <div className="col-12 col-lg-auto">
                     <div className="btn-group" role="group" aria-label="Acties">
-                        <button type="button" className="btn btn-outline-success" onClick={onRefresh}>
+                        <button
+                            type="button"
+                            className="btn btn-outline-success"
+                            onClick={onRefresh}
+                        >
                             Ververs
                         </button>
-                        <button type="button" className="btn btn-success" onClick={onCreateRequested}>
+                        <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={onCreateRequested}
+                        >
                             Nieuwe veiling
                         </button>
                     </div>
@@ -52,6 +87,7 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
 
             {/* Filters */}
             <div className="row g-3">
+                {/* Alleen actieve veilingen */}
                 <div className="col-12 col-md-6 col-lg-3">
                     <Field label="Alleen actief" htmlFor="onlyActive">
                         <div className="form-check form-switch">
@@ -60,7 +96,9 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
                                 className="form-check-input"
                                 type="checkbox"
                                 checked={filters.onlyActive}
-                                onChange={(e) => updateFilters({ onlyActive: e.target.checked })}
+                                onChange={(e) =>
+                                    updateFilters({ onlyActive: e.target.checked })
+                                }
                             />
                             <label className="form-check-label" htmlFor="onlyActive">
                                 Toon alleen lopende veilingen
@@ -69,6 +107,7 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
                     </Field>
                 </div>
 
+                {/* Vanaf datum */}
                 <div className="col-12 col-md-6 col-lg-3">
                     <Field label="Vanaf datum" htmlFor="from">
                         <input
@@ -81,6 +120,7 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
                     </Field>
                 </div>
 
+                {/* Tot datum */}
                 <div className="col-12 col-md-6 col-lg-3">
                     <Field label="Tot datum" htmlFor="to">
                         <input
@@ -93,12 +133,17 @@ export function VeilingFilters({search, filters, onSearchChange, onFiltersChange
                     </Field>
                 </div>
 
+                {/* Status */}
                 <div className="col-12 col-md-6 col-lg-3">
                     <Field label="Status" htmlFor="auctionStatus">
                         <Select
                             id="auctionStatus"
                             value={filters.status}
-                            onChange={(event) => updateFilters({ status: event.target.value as AuctionFilters["status"] })}
+                            onChange={(event) =>
+                                updateFilters({
+                                    status: event.target.value as AuctionFilters["status"],
+                                })
+                            }
                         >
                             <option value="all">Alle statussen</option>
                             <option value="active">Actief</option>

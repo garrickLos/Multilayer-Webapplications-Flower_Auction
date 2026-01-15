@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { resolveApiUrl } from '../config/api';
 import './css/Registration.css';
 
+/**
+ * Request body voor /auth/register.
+ */
 interface RegisterRequest {
     email: string;
     password: string;
@@ -14,13 +17,22 @@ interface RegisterRequest {
     postcode?: string;
 }
 
+/**
+ * Response van /auth/register.
+ */
 interface RegisterResponse {
     success: boolean;
     errors: string[];
 }
 
+/**
+ * Local state voor errors per veld + algemene foutmelding.
+ */
 type FormErrors = Partial<Record<keyof RegisterRequest, string>> & { general?: string };
 
+/**
+ * Startwaarden van het registratieformulier.
+ */
 const initialForm: RegisterRequest = {
     email: '',
     password: '',
@@ -32,14 +44,27 @@ const initialForm: RegisterRequest = {
     postcode: ''
 };
 
+/**
+ * Pad waarnaar je navigeert na succesvolle registratie.
+ */
 const LOGIN_PATH = '/inloggen';
 
+/**
+ * Helper: class voor field-group, met error styling als er een fout is.
+ */
 const fieldGroupClass = (err?: string) =>
     `field-group${err ? ' field-group-error' : ''}`;
 
+/**
+ * Helper: class voor inputs, met invalid styling als er een fout is.
+ */
 const inputClass = (err?: string) =>
     `form-control${err ? ' is-invalid' : ''}`;
 
+/**
+ * Registratie pagina/component.
+ * Valideert invoer, doet POST naar /auth/register en stuurt de gebruiker door naar inloggen.
+ */
 export default function Registration() {
     const [form, setForm] = useState<RegisterRequest>(initialForm);
     const [errors, setErrors] = useState<FormErrors>({});
@@ -47,6 +72,12 @@ export default function Registration() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
+    /**
+     * Update form state bij input changes.
+     * - KvK: alleen cijfers, max 8
+     * - Postcode: spaties eruit, uppercase, max 6
+     * Reset veld-error en succesmelding bij wijziging.
+     */
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         let newValue = value;
@@ -62,6 +93,10 @@ export default function Registration() {
         setSubmittedMessage(null);
     };
 
+    /**
+     * Frontend validatie om simpele fouten direct te tonen.
+     * Controleert o.a. email, wachtwoord, confirmPassword, bedrijfsnaam, soort, KvK en postcode.
+     */
     const validate = (): FormErrors => {
         const errs: FormErrors = {};
         const email = form.email.trim();
@@ -95,10 +130,12 @@ export default function Registration() {
             errs.soort = 'Selecteer een soort (bijv. Bedrijf of Koper).';
         }
 
+        // Optioneel veld: alleen valideren als er iets ingevuld is
         if (kvk && !/^\d{8}$/.test(kvk)) {
             errs.kvk = 'KvK-nummer moet uit 8 cijfers bestaan.';
         }
 
+        // Optioneel veld: alleen valideren als er iets ingevuld is
         if (postcode && !/^[1-9][0-9]{3}[A-Z]{2}$/.test(postcode)) {
             errs.postcode = 'Postcode moet het formaat 1234AB hebben.';
         }
@@ -106,6 +143,13 @@ export default function Registration() {
         return errs;
     };
 
+    /**
+     * Submit handler:
+     * - Valideert velden
+     * - Stuurt POST request naar backend
+     * - Toont backend fouten of algemene error
+     * - Toont succesmelding en navigeert door naar login
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmittedMessage(null);
@@ -117,6 +161,7 @@ export default function Registration() {
             return;
         }
 
+        // Payload opschonen: trimmen en lege optionele velden als undefined sturen
         const payloadToSend: RegisterRequest = {
             ...form,
             email: form.email.trim(),
@@ -134,9 +179,7 @@ export default function Registration() {
                 body: JSON.stringify(payloadToSend)
             });
 
-            const payload = (await response
-                .json()
-                .catch(() => null)) as RegisterResponse | null;
+            const payload = (await response.json().catch(() => null)) as RegisterResponse | null;
 
             if (!response.ok || !payload || !payload.success) {
                 setErrors({
@@ -151,6 +194,7 @@ export default function Registration() {
             setSubmittedMessage('Registratie succesvol! Je wordt doorgestuurd naar de loginpagina...');
             setForm(initialForm);
 
+            // Kleine delay voor UX, daarna naar login
             setTimeout(() => navigate(LOGIN_PATH), 2000);
         } catch {
             setErrors({ general: 'Er ging iets mis bij het versturen van het formulier.' });

@@ -1,16 +1,30 @@
 import { useMemo, useState, type JSX, type ReactNode } from "react";
 
-// Simpele paginering helper
+/**
+ * Simpele paginering helper:
+ * Berekent start index op basis van page en pageSize en geeft een slice terug.
+ */
 const paginate = <T,>(rows: readonly T[], page: number, pageSize: number): readonly T[] => {
     const start = (page - 1) * pageSize;
     return rows.slice(start, start + pageSize);
 };
 
-// Helper voor conditionele classnames
+/**
+ * Helper voor conditionele classnames.
+ * Negeert falsy waarden en plakt de rest samen.
+ */
 const cx = (...classes: Array<string | false | null | undefined>): string =>
     classes.filter(Boolean).join(" ");
 
-// Definitie van een tabelkolom
+/**
+ * Definitie van een tabelkolom:
+ * - key: unieke sleutel (en default property key op row)
+ * - header: kolomtitel
+ * - sortable: of de kolom sorteerbaar is
+ * - render: custom render voor een cell
+ * - getValue: waarde die gebruikt wordt voor sorteren (als render anders is)
+ * - align: tekstuitlijning van de cellen
+ */
 export type TableColumn<T> = {
     readonly key: string;
     readonly header: string;
@@ -20,7 +34,16 @@ export type TableColumn<T> = {
     readonly align?: "start" | "center" | "end";
 };
 
-// Props voor de generieke tabel
+/**
+ * Props voor de generieke tabel:
+ * - columns/rows/getRowId: basis tabel data
+ * - search/filters: optionele zoekbalk en extra filters UI
+ * - page/pageSize/pageSizeOptions/total: paginering
+ * - onPageChange/onPageSizeChange: callbacks voor paginering
+ * - onRowClick: optioneel klikbaar maken van rijen
+ * - selectable: optionele selectie (checkboxes) per rij/pagina
+ * - emptyMessage/emptyState: weergave wanneer er geen resultaten zijn
+ */
 export type TableProps<T> = {
     readonly columns: readonly TableColumn<T>[];
     readonly rows: readonly T[];
@@ -48,7 +71,12 @@ export type TableProps<T> = {
     readonly emptyState?: ReactNode;
 };
 
-// Sorteer-icoon
+/**
+ * Sorteer-icoon voor kolomkoppen:
+ * - asc: ▲
+ * - desc: ▼
+ * - null: ↕ (niet actief)
+ */
 const SortIcon = ({ direction }: { readonly direction: "asc" | "desc" | null }): JSX.Element => (
     <span aria-hidden="true" className="ms-1">
         {direction === "asc" && "▲"}
@@ -57,6 +85,14 @@ const SortIcon = ({ direction }: { readonly direction: "asc" | "desc" | null }):
     </span>
 );
 
+/**
+ * Generieke Table component met:
+ * - sorteren (stabiel)
+ * - paginering
+ * - optioneel zoeken/filters
+ * - optioneel selecteerbare rijen
+ * - empty state weergave
+ */
 export function Table<T>({
                              columns,
                              rows,
@@ -74,11 +110,14 @@ export function Table<T>({
                              emptyState,
                              total,
                          }: TableProps<T>): JSX.Element {
-
-    // Huidige sorteertoestand
+    // Huidige sorteertoestand (kolom key + richting) of null als er niet gesorteerd wordt
     const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
-    // Gesorteerde rijen (stabiel sorteren)
+    /**
+     * Gesorteerde rijen (stabiel sorteren):
+     * - gebruikt getValue() indien aanwezig, anders row[column.key]
+     * - bij gelijke waarden blijft de originele volgorde gelijk (via index)
+     */
     const sortedRows = useMemo(() => {
         if (!sort) return rows;
 
@@ -109,33 +148,47 @@ export function Table<T>({
                             numeric: true,
                         });
 
+                // Bij gelijke waarde: gebruik originele index om stabiel te blijven
                 return comparison !== 0 ? comparison * factor : a.index - b.index;
             })
             .map((entry) => entry.row);
     }, [columns, rows, sort]);
 
-    // Paginering
+    // Paginering: total kan apart meegegeven worden (bijv. server-side paging)
     const totalRows = total ?? rows.length;
+
+    // Rows voor de huidige pagina (op basis van sorteerresultaat)
     const pageRows = useMemo(
         () => paginate(sortedRows, page, pageSize),
         [sortedRows, page, pageSize],
     );
 
+    // Bepaalt of er nog een volgende pagina is
     const hasNext = page * pageSize < totalRows;
 
-    // Selectie per pagina
+    /**
+     * Selectie per pagina:
+     * - selectedIds: huidige selectie
+     * - pageIds: ids van rijen op deze pagina
+     * - allPageSelected: true als alle ids op pagina geselecteerd zijn
+     */
     const selectedIds = selectable?.selectedIds ?? [];
     const pageIds = pageRows.map((row) => getRowId(row));
     const allPageSelected = selectable
         ? pageIds.every((id) => selectedIds.includes(id))
         : false;
 
+    // Selecteer/deselecteer alle rijen op huidige pagina
     const handleHeaderToggle = () => {
         if (!selectable) return;
         selectable.onTogglePage(pageIds, !allPageSelected);
     };
 
-    // Sorteren bij klik op kolomkop
+    /**
+     * Sorteren bij klik op kolomkop:
+     * - als dezelfde kolom opnieuw: toggle asc/desc
+     * - anders: start met asc
+     */
     const handleSort = (column: TableColumn<T>) => {
         if (!column.sortable) return;
 
@@ -166,8 +219,10 @@ export function Table<T>({
                         </label>
                     )}
 
+                    {/* Extra filters UI (van buitenaf meegegeven) */}
                     {filters}
 
+                    {/* Pagina grootte selector */}
                     <label className="d-flex flex-column gap-1" style={{ minWidth: "140px" }}>
                         <span className="small text-uppercase text-success-emphasis fw-semibold">
                             Per pagina
@@ -187,7 +242,7 @@ export function Table<T>({
                 </div>
             )}
 
-            {/* Lege staat */}
+            {/* Lege staat: geen rows op deze pagina */}
             {pageRows.length === 0 ? (
                 emptyState ?? (
                     <div className="text-center text-muted py-4">
@@ -199,6 +254,7 @@ export function Table<T>({
                     <table className="table table-hover align-middle mb-0">
                         <thead className="bg-success-subtle">
                         <tr>
+                            {/* Checkbox header voor selectie (alleen als selectable aan staat) */}
                             {selectable && (
                                 <th scope="col" className="text-center" style={{ width: 48 }}>
                                     <input
@@ -211,6 +267,7 @@ export function Table<T>({
                                 </th>
                             )}
 
+                            {/* Kolom headers */}
                             {columns.map((column) => {
                                 const direction =
                                     sort?.key === column.key ? sort.direction : null;
@@ -250,6 +307,7 @@ export function Table<T>({
                             const isSelected =
                                 selectable?.selectedIds.includes(id) ?? false;
 
+                            // Als onRowClick bestaat, wordt de hele rij klikbaar
                             const interactive = Boolean(onRowClick);
 
                             return (
@@ -261,6 +319,7 @@ export function Table<T>({
                                     )}
                                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                                 >
+                                    {/* Checkbox per rij */}
                                     {selectable && (
                                         <td className="text-center">
                                             <input
@@ -268,13 +327,12 @@ export function Table<T>({
                                                 className="form-check-input border-success-subtle"
                                                 checked={isSelected}
                                                 onClick={(event) => event.stopPropagation()}
-                                                onChange={() =>
-                                                    selectable.onToggleRow(id)
-                                                }
+                                                onChange={() => selectable.onToggleRow(id)}
                                             />
                                         </td>
                                     )}
 
+                                    {/* Cellen */}
                                     {columns.map((column) => (
                                         <td
                                             key={`${column.key}-${index}`}
@@ -285,9 +343,7 @@ export function Table<T>({
                                         >
                                             {column.render
                                                 ? column.render(row)
-                                                : ((row as Record<string, ReactNode>)[
-                                                    column.key
-                                                    ] ?? "")}
+                                                : ((row as Record<string, ReactNode>)[column.key] ?? "")}
                                         </td>
                                     ))}
                                 </tr>
@@ -298,7 +354,7 @@ export function Table<T>({
                 </div>
             )}
 
-            {/* Paginering */}
+            {/* Paginering knoppen */}
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div className="text-muted small">Pagina {page}</div>
 
@@ -307,13 +363,17 @@ export function Table<T>({
                         type="button"
                         className="btn btn-outline-success btn-sm"
                         onClick={() => onPageChange(Math.max(1, page - 1))}
-                        disabled={page <= 1}> Vorige
+                        disabled={page <= 1}
+                    >
+                        Vorige
                     </button>
                     <button
                         type="button"
                         className="btn btn-success btn-sm"
                         onClick={() => onPageChange(page + 1)}
-                        disabled={!hasNext}> Volgende
+                        disabled={!hasNext}
+                    >
+                        Volgende
                     </button>
                 </div>
             </div>

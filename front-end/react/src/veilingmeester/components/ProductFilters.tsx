@@ -3,6 +3,13 @@ import type { Auction } from "../api";
 import type { ProductFilters } from "../hooks";
 import { Field, Input, Select } from "./ui";
 
+/**
+ * Props voor het product-filterblok:
+ * - auctions: lijst met veilingen voor het veiling-filter dropdown
+ * - filters: huidige filterwaarden
+ * - onFiltersChange: callback om filters te updaten (met updater functie)
+ * - onRefresh: handmatige refresh actie (bijv. opnieuw ophalen van data)
+ */
 type ProductsFiltersProps = {
     readonly auctions: readonly Auction[];
     readonly filters: ProductFilters;
@@ -10,10 +17,24 @@ type ProductsFiltersProps = {
     readonly onRefresh: () => void;
 };
 
-export function ProductFilters({auctions, filters, onFiltersChange, onRefresh,}: ProductsFiltersProps): JSX.Element {
+/**
+ * Filter UI voor het productenoverzicht.
+ * Bevat:
+ * - statusfilter
+ * - verkoper (tekst)
+ * - veiling (dropdown)
+ * - vrij zoeken (tekst)
+ * - knop om handmatig te verversen
+ */
+export function ProductFilters({
+                                   auctions,
+                                   filters,
+                                   onFiltersChange,
+                                   onRefresh,
+                               }: ProductsFiltersProps): JSX.Element {
     return (
         <div className="row g-3 align-items-end">
-            {/* Statusfilter */}
+            {/* Statusfilter: filter op productstatus */}
             <div className="col-12 col-md-3">
                 <Field label="Status" htmlFor="product-status">
                     <Select
@@ -35,7 +56,7 @@ export function ProductFilters({auctions, filters, onFiltersChange, onRefresh,}:
                 </Field>
             </div>
 
-            {/* Verkoper */}
+            {/* Verkoper: filter op (deel van) verkopersnaam */}
             <div className="col-12 col-md-3">
                 <Field label="Verkoper" htmlFor="product-seller">
                     <Input
@@ -52,7 +73,7 @@ export function ProductFilters({auctions, filters, onFiltersChange, onRefresh,}:
                 </Field>
             </div>
 
-            {/* Veilingfilter */}
+            {/* Veilingfilter: filter op gekoppelde veiling */}
             <div className="col-12 col-md-3">
                 <Field label="Veiling" htmlFor="product-auction">
                     <Select
@@ -75,7 +96,7 @@ export function ProductFilters({auctions, filters, onFiltersChange, onRefresh,}:
                 </Field>
             </div>
 
-            {/* Vrij zoeken */}
+            {/* Vrij zoeken: filter op productnaam/tekst (afhankelijk van je filterlogica) */}
             <div className="col-12 col-md-3">
                 <Field label="Zoek" htmlFor="product-search">
                     <Input
@@ -92,7 +113,7 @@ export function ProductFilters({auctions, filters, onFiltersChange, onRefresh,}:
                 </Field>
             </div>
 
-            {/* Handmatige refresh */}
+            {/* Handmatige refresh: triggert opnieuw ophalen van producten */}
             <div className="col-12 col-md-3">
                 <button
                     type="button"

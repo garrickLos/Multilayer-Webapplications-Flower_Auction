@@ -4,14 +4,24 @@ import type {
     JSX,
     ReactNode,
     SelectHTMLAttributes,
-    TextareaHTMLAttributes,
 } from "react";
 import type { UiStatus, User, UserRole } from "../api";
 
-// Helper voor conditionele classnames
+/**
+ * Helper voor conditionele classnames.
+ * Negeert falsy waarden en plakt de rest samen met spaties.
+ */
 const cx = (...classes: Array<string | false | null | undefined>): string =>
     classes.filter(Boolean).join(" ");
 
+/**
+ * Props voor Field:
+ * - label: titel van het veld
+ * - htmlFor: koppelt label aan input id
+ * - helperText: extra uitleg onder het veld
+ * - className: extra styling
+ * - children: input/select/textarea element
+ */
 type FieldProps = {
     readonly label: string;
     readonly htmlFor?: string;
@@ -20,7 +30,10 @@ type FieldProps = {
     readonly children: ReactNode;
 };
 
-// Wrapper: label + helperText rondom form elements
+/**
+ * Wrapper component: label + helperText rondom een form element.
+ * Handig voor consistente spacing en styling.
+ */
 export function Field({
                           label,
                           htmlFor,
@@ -42,6 +55,12 @@ export function Field({
     );
 }
 
+/**
+ * Props voor Input:
+ * - label/hideLabel/helperText: optionele label en uitleg (hideLabel voor a11y)
+ * - onChange: type-safe wrapper om ChangeEvent door te geven
+ * - rest: alle standaard input props (behalve onChange, die overschreven wordt)
+ */
 type InputProps = {
     readonly label?: string;
     readonly hideLabel?: boolean;
@@ -49,7 +68,10 @@ type InputProps = {
     readonly onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange">;
 
-// Input met optionele label/helperText
+/**
+ * Input component met optioneel label en helperText.
+ * Als label ontbreekt, returnt hij alleen het input element.
+ */
 export function Input({
                           label,
                           hideLabel = false,
@@ -84,8 +106,18 @@ export function Input({
     );
 }
 
+/**
+ * Select option type: value + label.
+ */
 type SelectOption<T> = { readonly value: T; readonly label: string };
 
+/**
+ * Props voor Select:
+ * - label/hideLabel/helperText: optionele label en uitleg
+ * - options: optioneel lijstje options (anders gebruik je children)
+ * - value: generiek (string/number) maar wordt in de DOM als string gezet
+ * - onChange: change handler
+ */
 type SelectProps<T extends string | number = string> = {
     readonly label?: string;
     readonly hideLabel?: boolean;
@@ -96,7 +128,11 @@ type SelectProps<T extends string | number = string> = {
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange" | "value"> &
     ({ readonly value?: T } | { readonly value: T });
 
-// Select met options óf children
+/**
+ * Select component:
+ * - je kunt options meegeven als array, of children (<option>...) gebruiken
+ * - value wordt altijd naar String(value) omgezet voor de select
+ */
 export function Select<T extends string | number>({
                                                       label,
                                                       hideLabel = false,
@@ -143,49 +179,10 @@ export function Select<T extends string | number>({
     );
 }
 
-type TextAreaProps = {
-    readonly label?: string;
-    readonly hideLabel?: boolean;
-    readonly helperText?: string;
-    readonly onChange?: (event: ChangeEvent<HTMLTextAreaElement>) => void;
-} & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange">;
-
-// Textarea met optionele label/helperText
-export function TextArea({
-                             label,
-                             hideLabel = false,
-                             helperText,
-                             className,
-                             onChange,
-                             ...props
-                         }: TextAreaProps): JSX.Element {
-    const textArea = (
-        <textarea
-            {...props}
-            className={cx("form-control border-success-subtle", className)}
-            onChange={(event) => onChange?.(event)}
-        />
-    );
-
-    if (!label) return textArea;
-
-    return (
-        <label className="w-100 d-flex flex-column gap-1">
-            <span
-                className={cx(
-                    "small text-uppercase text-success-emphasis fw-semibold",
-                    hideLabel && "visually-hidden",
-                )}
-            >
-                {label}
-            </span>
-            {textArea}
-            {helperText && <span className="text-muted small">{helperText}</span>}
-        </label>
-    );
-}
-
-// Badge voor algemene UI-status
+/**
+ * StatusBadge:
+ * Toont een badge met vaste kleuren/labels op basis van UiStatus.
+ */
 export function StatusBadge({ status }: { readonly status: UiStatus }): JSX.Element {
     const variants: Record<UiStatus, string> = {
         active: "bg-success-subtle text-success-emphasis",
@@ -206,7 +203,10 @@ export function StatusBadge({ status }: { readonly status: UiStatus }): JSX.Elem
     return <span className={cx("badge rounded-pill", variants[status])}>{labels[status]}</span>;
 }
 
-// Badge voor rol van gebruiker
+/**
+ * RoleBadge:
+ * Toont een badge voor de gebruikersrol met een eenvoudige variant mapping.
+ */
 export function RoleBadge({ role }: { readonly role: UserRole }): JSX.Element {
     const variant =
         role === "Admin" || role === "Veilingmeester"
@@ -222,30 +222,10 @@ export function RoleBadge({ role }: { readonly role: UserRole }): JSX.Element {
     );
 }
 
-// Klein "chip" label met optioneel verwijderen
-export function Chip({
-                         label,
-                         onRemove,
-                     }: {
-    readonly label: string;
-    readonly onRemove?: () => void;
-}): JSX.Element {
-    return (
-        <span className="badge bg-success-subtle text-success-emphasis d-inline-flex align-items-center gap-1">
-            {label}
-            {onRemove && (
-                <button
-                    type="button"
-                    className="btn-close btn-close-sm"
-                    aria-label="Verwijder filter"
-                    onClick={onRemove}
-                />
-            )}
-        </span>
-    );
-}
-
-// Compacte user weergave: naam + email + rol
+/**
+ * UserBadge:
+ * Compacte user weergave met naam, email en rol badge.
+ */
 export function UserBadge({ user }: { readonly user: User }): JSX.Element {
     return (
         <span className="d-inline-flex align-items-center gap-2">
@@ -256,13 +236,21 @@ export function UserBadge({ user }: { readonly user: User }): JSX.Element {
     );
 }
 
+/**
+ * Props voor EmptyState:
+ * - title: korte titel bovenaan
+ * - description/message: tekst eronder (description heeft voorrang)
+ */
 type EmptyStateProps = {
     readonly title?: string;
     readonly description?: string;
     readonly message?: string;
 };
 
-// Lege staat voor tabellen/overzichten
+/**
+ * EmptyState:
+ * Lege staat voor tabellen/overzichten als er geen items zijn.
+ */
 export function EmptyState({ title, description, message }: EmptyStateProps): JSX.Element {
     return (
         <div className="text-center text-muted py-4">

@@ -14,17 +14,25 @@ import type { AuctionFormState, AuctionPayload } from "../types";
 import { Modal } from "./Modal";
 import { Field, Input, Select } from "./ui";
 
+/**
+ * Props voor de "Nieuwe veiling" modal:
+ * - onSave: callback om de veiling op te slaan (kan async zijn)
+ * - onClose: sluit callback voor de modal
+ */
 type NewAuctionModalProps = {
     readonly onSave: (auction: AuctionPayload) => Promise<void> | void;
     readonly onClose: () => void;
 };
 
+/**
+ * Modal om een nieuwe veiling aan te maken.
+ * Bevat basisvalidatie, berekent automatisch de eindtijd en stuurt de payload naar onSave.
+ */
 export function NieuweVeilingModal({
-                                    onSave,
-                                    onClose,
-                                }: NewAuctionModalProps): JSX.Element {
-
-    // Form state
+                                       onSave,
+                                       onClose,
+                                   }: NewAuctionModalProps): JSX.Element {
+    // Form state (draft) voor het aanmaken van een veiling
     const [draft, setDraft] = useState<AuctionFormState>({
         title: "",
         date: "",
@@ -32,20 +40,31 @@ export function NieuweVeilingModal({
         durationHours: 1,
     });
 
+    // UI state voor submit flow en error melding
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
 
-    // Standaard datum en starttijd instellen bij openen
+    /**
+     * Bij openen: zet een standaard datum + starttijd (bijv. vandaag en een logische starttijd).
+     * Dit voorkomt lege velden en maakt de modal gebruiksvriendelijker.
+     */
     useEffect(() => {
         setDraft((prev) => ({ ...prev, ...getDefaultAuctionTimes() }));
     }, []);
 
-    // Start- en eindtijd berekenen op basis van invoer
+    /**
+     * Starttijd als Date object (gebaseerd op gekozen datum + startTime).
+     * useMemo zodat dit alleen opnieuw berekent wanneer inputs veranderen.
+     */
     const startDateTime = useMemo(
         () => buildDateTime(draft.date, draft.startTime),
         [draft.date, draft.startTime]
     );
 
+    /**
+     * Eindtijd als Date object (gebaseerd op datum + startTime + duur).
+     * Wordt herberekend bij verandering van datum/start/duur.
+     */
     const endDateTime = useMemo(
         () =>
             calculateAuctionEndTime(
@@ -56,7 +75,14 @@ export function NieuweVeilingModal({
         [draft.date, draft.startTime, draft.durationHours]
     );
 
-    // Opslaan met basisvalidatie
+    /**
+     * Opslaan:
+     * - reset eventuele oude error
+     * - controleer titel + geldige tijden
+     * - starttijd mag niet in het verleden
+     * - eindtijd moet op dezelfde dag vallen
+     * - roep onSave aan met ISO strings
+     */
     const handleSubmit = async () => {
         setFormError(null);
 
@@ -106,10 +132,14 @@ export function NieuweVeilingModal({
                 <button
                     className="btn btn-success"
                     onClick={handleSubmit}
-                    disabled={submitting}> Opslaan
+                    disabled={submitting}
+                >
+                    Opslaan
                 </button>
-            }>
+            }
+        >
             <div className="d-flex flex-column gap-3">
+                {/* Titel invoer */}
                 <Field label="Titel" htmlFor="auction-title">
                     <Input
                         id="auction-title"
@@ -124,6 +154,7 @@ export function NieuweVeilingModal({
                     />
                 </Field>
 
+                {/* Datum, starttijd en duur */}
                 <div className="row g-3">
                     <div className="col-12 col-md-4">
                         <Field label="Datum" htmlFor="auction-date">
@@ -186,19 +217,14 @@ export function NieuweVeilingModal({
                     <Input
                         id="auction-end"
                         type="time"
-                        value={
-                            endDateTime
-                                ? formatTimeInput(endDateTime)
-                                : ""
-                        }
+                        value={endDateTime ? formatTimeInput(endDateTime) : ""}
                         readOnly
                     />
                 </Field>
 
+                {/* Form error */}
                 {formError && (
-                    <div className="alert alert-danger mb-0">
-                        {formError}
-                    </div>
+                    <div className="alert alert-danger mb-0">{formError}</div>
                 )}
             </div>
         </Modal>

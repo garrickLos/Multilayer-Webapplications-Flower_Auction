@@ -12,7 +12,7 @@ using mvc_api.Data;
 namespace mvc_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260114132017_InitialCreate")]
+    [Migration("20260114223126_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -321,7 +321,6 @@ namespace mvc_api.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ExpiryDate")
@@ -331,7 +330,6 @@ namespace mvc_api.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Token")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("User_Id")

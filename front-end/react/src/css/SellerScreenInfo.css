@@ -21,11 +21,11 @@
     padding: 10px;
 }
 
-.rij {
+.SellerScreenInfo .rij {
     display: flex;
     justify-content: flex-start;
     align-items: stretch;
-    gap: 15px;
+    gap: 150px;
     max-width: 1200px;
     margin: 0 auto;
     padding-left: 10px;
@@ -41,12 +41,12 @@
     gap: 5px;
 }
 
-.fotoProduct {
-    width: 30%;
+.SellerScreenInfo .fotoProduct {
+    width: 160%;
     height: auto;
 }
 
-.linkerHelft, .rechterHelft {
+.SellerScreenInfo .linkerHelft, .rechterHelft {
     display: flex;
     justify-content: space-between;
     flex-direction: column;

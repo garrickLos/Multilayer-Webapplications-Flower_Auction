@@ -6,6 +6,14 @@ import { Modal } from "./Modal";
 import { EmptyState, Field, Input, Select } from "./ui";
 import { LinkedProductPreview, LinkedProductsList } from "./ProductLinking";
 
+/**
+ * Props voor de "product koppelen" modal:
+ * - auction: de veiling waar je aan koppelt
+ * - products: lijst met alle producten (gekoppeld + beschikbaar)
+ * - onClose: sluit callback
+ * - onSave: callback om een product te koppelen met startprijs
+ * - onUnlink: callback om een product te ontkoppelen
+ */
 type LinkProductsModalProps = {
     readonly auction: Auction;
     readonly products: readonly Product[];
@@ -14,24 +22,46 @@ type LinkProductsModalProps = {
     readonly onUnlink: (productId: number) => void;
 };
 
-export function ProductKoppelenModal({auction, products, onClose, onSave, onUnlink,}: LinkProductsModalProps): JSX.Element {
-    // Koppelen niet toegestaan bij actieve veiling
+/**
+ * Modal om producten aan een veiling te koppelen.
+ * - toont gekoppelde producten (met optioneel ontkoppelen)
+ * - toont een formulier om een beschikbaar product te kiezen + startprijs te zetten
+ * - blokkeert wijzigingen als koppelen niet is toegestaan (actieve veiling)
+ */
+export function ProductKoppelenModal({
+                                         auction,
+                                         products,
+                                         onClose,
+                                         onSave,
+                                         onUnlink,
+                                     }: LinkProductsModalProps): JSX.Element {
+    // Koppelen niet toegestaan bij actieve veiling (lock-regel)
     const isLocked = isProductLinkingLocked(auction);
 
-    // Beschikbare en gekoppelde producten scheiden
+    /**
+     * Beschikbare producten: nog niet gekoppeld aan een veiling.
+     * useMemo om niet telkens opnieuw te filteren bij renders.
+     */
     const availableProducts = useMemo(
         () => products.filter((product) => !product.linkedAuctionId),
         [products]
     );
 
+    /**
+     * Gekoppelde producten: alleen producten die gekoppeld zijn aan deze veiling.
+     */
     const linkedProducts = useMemo(
         () => products.filter((product) => product.linkedAuctionId === auction.id),
         [auction.id, products]
     );
 
-    // Form state
-    const [productId, setProductId] = useState<string>(
-        () => (availableProducts[0]?.id ? String(availableProducts[0].id) : "")
+    /**
+     * Form state:
+     * - productId: string omdat <select> values strings zijn
+     * - startPrice: string voor inputveld (pas omzetten naar number bij opslaan)
+     */
+    const [productId, setProductId] = useState<string>(() =>
+        availableProducts[0]?.id ? String(availableProducts[0].id) : ""
     );
 
     const [startPrice, setStartPrice] = useState<string>(() => {
@@ -39,9 +69,13 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
         return first ? String(first.startPrice ?? first.minimumPrice ?? 0) : "";
     });
 
+    // Form error voor validatie/lock meldingen
     const [formError, setFormError] = useState<string | null>(null);
 
-    // Startprijs automatisch aanpassen bij productwissel
+    /**
+     * Startprijs automatisch aanpassen als de geselecteerde product verandert.
+     * Zet ook errors terug naar null bij een geldige selectie.
+     */
     useEffect(() => {
         const selected = availableProducts.find(
             (product) => product.id === Number(productId)
@@ -53,7 +87,13 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
         }
     }, [availableProducts, productId]);
 
-    // Opslaan met validatie
+    /**
+     * Opslaan met validatie:
+     * - blokkeer als veiling actief is
+     * - product moet gekozen zijn
+     * - startprijs moet een geldig positief getal zijn
+     * Daarna: onSave(productId, startPrice) aanroepen.
+     */
     const handleSave = () => {
         if (isLocked) {
             setFormError("Aanpassingen zijn niet toegestaan tijdens een actieve veiling.");
@@ -74,7 +114,7 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
         onSave(Number(productId), numericStartPrice);
     };
 
-    // Huidig geselecteerd product
+    // Huidig geselecteerd product (voor preview kaart)
     const selectedProduct = availableProducts.find(
         (product) => product.id === Number(productId)
     );
@@ -88,21 +128,25 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
                     type="button"
                     className="btn btn-success"
                     onClick={handleSave}
-                    disabled={availableProducts.length === 0}> Opslaan
+                    disabled={availableProducts.length === 0}
+                >
+                    Opslaan
                 </button>
-            }>
+            }
+        >
             <div className="d-flex flex-column gap-3">
                 <p className="text-muted mb-0">
                     Kies een product en stel de startprijs in.
                 </p>
 
+                {/* Waarschuwing wanneer de veiling actief is (koppelen/ontkoppelen uitgeschakeld) */}
                 {isLocked && (
                     <div className="alert alert-warning mb-0">
                         Deze veiling is actief. Aanpassen is niet mogelijk.
                     </div>
                 )}
 
-                {/* Gekoppelde producten */}
+                {/* Gekoppelde producten overzicht */}
                 <div>
                     <p className="text-uppercase text-muted small mb-2">
                         Gekoppelde producten
@@ -114,7 +158,7 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
                     />
                 </div>
 
-                {/* Koppelformulier */}
+                {/* Koppelformulier: alleen tonen als er nog beschikbare producten zijn */}
                 {availableProducts.length === 0 ? (
                     <EmptyState
                         title="Geen beschikbare producten"
@@ -122,6 +166,7 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
                     />
                 ) : (
                     <div className="row g-3">
+                        {/* Product select */}
                         <div className="col-12">
                             <Field label="Product" htmlFor="link-product">
                                 <Select
@@ -131,7 +176,8 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
                                         setProductId(event.target.value);
                                         setFormError(null);
                                     }}
-                                    disabled={isLocked}>
+                                    disabled={isLocked}
+                                >
                                     <option value="" disabled>
                                         Kies een product
                                     </option>
@@ -148,12 +194,14 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
                             </Field>
                         </div>
 
+                        {/* Preview van geselecteerde product */}
                         {selectedProduct && (
                             <div className="col-12">
                                 <LinkedProductPreview product={selectedProduct} />
                             </div>
                         )}
 
+                        {/* Startprijs input */}
                         <div className="col-12">
                             <Field label="Startprijs" htmlFor="link-startprice">
                                 <Input
@@ -169,6 +217,7 @@ export function ProductKoppelenModal({auction, products, onClose, onSave, onUnli
                             </Field>
                         </div>
 
+                        {/* Validatie error */}
                         {formError && (
                             <div className="col-12 alert alert-danger mb-0">
                                 {formError}
