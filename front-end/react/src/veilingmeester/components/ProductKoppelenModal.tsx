@@ -186,7 +186,7 @@ export function ProductKoppelenModal({
                                         <option key={product.id} value={product.id}>
                                             {product.name} (#{product.id}) ·{" "}
                                             {product.category ?? "Onbekend"} ·{" "}
-                                            {formatCurrency(product.minimumPrice)} ·{" "}
+                                            {formatCurrency(product.minimumPrice / 100)} ·{" "}
                                             {product.stock ?? 0} stuks
                                         </option>
                                     ))}

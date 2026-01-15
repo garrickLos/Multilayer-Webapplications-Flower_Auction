@@ -71,7 +71,7 @@ export function ProductKaart({
 
                 {/* Prijsinformatie (min. prijs en optioneel startprijs) */}
                 <p className="mb-0 text-muted">
-                    Min. prijs {formatCurrency(product.minimumPrice)}
+                    Min. prijs {formatCurrency(product.minimumPrice / 100)}
                     {showStartPrice &&
                         ` · Start ${formatCurrency(
                             product.startPrice ?? product.minimumPrice
