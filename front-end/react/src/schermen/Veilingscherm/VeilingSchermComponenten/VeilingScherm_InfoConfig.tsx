@@ -73,7 +73,7 @@ export async function VeilingProductitem_Update(
     totaalPrijs = Math.trunc(totaalPrijs);
 
     const BiedingAanmaken: NieuweBieding = {
-        BedragPerFust: totaalPrijs, // Gebruik de prijs van de klok
+        BedragPerFust: totaalPrijs / InvoerAantal, // Gebruik de prijs van de klok
         AantalStuks: InvoerAantal,
         GebruikerNr: decoded.sub,
         VeilingProductNr: productId

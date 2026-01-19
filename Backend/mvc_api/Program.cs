@@ -65,15 +65,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// // Blob Storage
-// builder.Services.AddSingleton(_ =>
-//     new Azure.Storage.Blobs.BlobServiceClient(
-//         builder.Configuration.GetConnectionString("AzureBlobStorage")
-//     )
-// );
-
-// builder.Services.AddScoped<IImageStorageService, AzureBlobImageStorageService>();
-
 // Repositories
 builder.Services.AddScoped<IVeilingproductRepository, VeilingproductRepository>();
 
