@@ -61,7 +61,7 @@ export default function MainScreen() {
 
             <div className="banner">
                 <div className="banner-content">
-                    <h1>Royal Flora Holland - Veiling</h1>
+                    <h1>Bloemen met Biedstress - Veiling</h1>
                     <h2>Verkoop wereldwijd met Royal FloraHolland</h2>
                     <div className="registratie-knoppen">
                         <NavLink to='/inloggen' className="knop-inloggen knoppen" aria-label="knop voor het inloggen bij de website">inloggen &#10095; </NavLink>
