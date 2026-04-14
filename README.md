@@ -1,4 +1,4 @@
-# MVC API — Bitbusters-Multilayer-Webapplications-Groep-6
+# Multilayer-Webapplications-Flower_Auction
 
 This repo contains a small ASP.NET Core Web API for a flower auction domain.  
 It includes **EF Core** models, controllers with **CRUD** endpoints, and seed data.
